@@ -4,7 +4,12 @@ from Subject.json and SubjectHit.json extracted by extractor.exe.
 
 Usage: python3 db/seed_index.py
 """
-import sys, json, time
+import sys, json, time, io
+# Ensure UTF-8 output on Windows
+if hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'buffer'):
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 import ijson
 import psycopg2
 import psycopg2.extras

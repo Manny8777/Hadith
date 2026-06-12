@@ -31,7 +31,7 @@ export default async function TopicsPage() {
      AND child.right_value < sc.right_value
      AND child.is_leaf = true
     LEFT JOIN hadith_subjects hs ON hs.subject_id = child.id
-    WHERE sc.parent_id = 0
+    WHERE sc.parent_id = 1
     GROUP BY sc.id
     ORDER BY sc.left_value
   `)
