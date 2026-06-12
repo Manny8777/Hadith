@@ -282,7 +282,11 @@ export default async function BookPage({
           <h1 className="text-xl font-bold text-amber-100 leading-snug">{book.title}</h1>
           {book.takhrij_author && (
             <p className="text-amber-200/70 text-sm mt-1">
-              {book.takhrij_author}
+              {book.author_id ? (
+                <Link href={`/authors/${book.author_id}`} className="hover:text-amber-100 transition-colors">
+                  {book.takhrij_author}
+                </Link>
+              ) : book.takhrij_author}
               {book.takhrij_death ? ` (ت ${book.takhrij_death} هـ)` : ''}
             </p>
           )}
