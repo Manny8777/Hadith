@@ -57,6 +57,7 @@ export default async function NarratorPage({
        ORDER BY b.title`,
       [narratorId]
     ),
+    // Teachers (شيوخه): is_sheikh=true means second_id IS the sheikh; first_id=narrator is student
     pool.query<NarratorLink>(
       `SELECT DISTINCT n.id, n.name
        FROM narrator_relations nr
@@ -65,6 +66,7 @@ export default async function NarratorPage({
        ORDER BY n.name LIMIT 100`,
       [narratorId]
     ),
+    // Students (تلاميذه): is_sheikh=true means second_id IS the sheikh; second_id=narrator → first_id are students
     pool.query<NarratorLink>(
       `SELECT DISTINCT n.id, n.name
        FROM narrator_relations nr
@@ -79,8 +81,8 @@ export default async function NarratorPage({
 
   const narrator = narratorRes.rows[0]
   const books = booksRes.rows
-  const students = studentsRes.rows
-  const teachers = teachersRes.rows
+  const teachers = studentsRes.rows
+  const students = teachersRes.rows
 
   const gradingColor = (grade: string | null) => {
     if (!grade) return 'bg-gray-100 text-gray-600'

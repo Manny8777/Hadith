@@ -37,9 +37,9 @@ export async function GET(
       [narratorId]
     )
 
-    // Students: narrator is sheikh (teacher), so first_id=$id and is_sheikh=true
-    // second_id is the student
-    const studentsRes = await pool.query(
+    // Teachers (شيوخه): is_sheikh=true means second_id IS the sheikh.
+    // So first_id=narrator is the student, second_id are his teachers.
+    const teachersRes = await pool.query(
       `SELECT n.id, n.name
        FROM narrator_relations nr
        JOIN narrators n ON n.id = nr.second_id
@@ -49,9 +49,9 @@ export async function GET(
       [narratorId]
     )
 
-    // Teachers: narrator is the student, so second_id=$id and is_sheikh=true
-    // first_id is the teacher
-    const teachersRes = await pool.query(
+    // Students (تلاميذه): is_sheikh=true means second_id IS the sheikh.
+    // So second_id=narrator is the teacher, first_id are his students.
+    const studentsRes = await pool.query(
       `SELECT n.id, n.name
        FROM narrator_relations nr
        JOIN narrators n ON n.id = nr.first_id
