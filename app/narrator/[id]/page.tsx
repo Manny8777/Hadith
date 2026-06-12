@@ -149,6 +149,9 @@ export default async function NarratorPage({
             ← قائمة الرواة
           </Link>
           <h1 className="text-lg font-bold text-amber-100">موسوعة الحديث الشريف</h1>
+          <Link href={`/compare?a=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            مقارنة
+          </Link>
         </div>
       </header>
 
