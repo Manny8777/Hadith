@@ -3,6 +3,23 @@ import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
+const BIO_BOOKS = [
+  'تقريب التهذيب',
+  'تهذيب الكمال',
+  'الكاشف في معرفة من له رواية في الكتب الستة',
+  'تهذيب التهذيب',
+  'الجرح والتعديل لابن أبي حاتم',
+  'لسان الميزان',
+  'سير أعلام النبلاء',
+  'الإصابة في تمييز الصحابة',
+  'الكامل في الضعفاء',
+  'تاريخ الإسلام',
+  'تاريخ بغداد',
+  'الثقات',
+  'تحفة التحصيل في المراسيل',
+  'تعريف أهل التقديس',
+]
+
 interface BioResult {
   narrator_id: number
   book_name: string
@@ -24,20 +41,25 @@ function gradeColor(grade: string | null) {
 
 function BioSearchInner() {
   const [q, setQ] = useState('')
+  const [bookFilter, setBookFilter] = useState('')
   const [results, setResults] = useState<BioResult[]>([])
   const [hasMore, setHasMore] = useState(false)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [currentQ, setCurrentQ] = useState('')
+  const [currentBook, setCurrentBook] = useState('')
 
-  const doSearch = useCallback(async (query: string, pg = 1) => {
+  const doSearch = useCallback(async (query: string, book: string, pg = 1) => {
     if (query.length < 3) return
     setLoading(true)
     setSearched(true)
     setCurrentQ(query)
+    setCurrentBook(book)
     try {
-      const res = await fetch(`/api/bio-search?q=${encodeURIComponent(query)}&page=${pg}`)
+      let url = `/api/bio-search?q=${encodeURIComponent(query)}&page=${pg}`
+      if (book) url += `&book=${encodeURIComponent(book)}`
+      const res = await fetch(url)
       const data = await res.json()
       if (pg === 1) {
         setResults(data.results || [])
@@ -55,7 +77,7 @@ function BioSearchInner() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    doSearch(q.trim())
+    doSearch(q.trim(), bookFilter)
   }
 
   return (
@@ -67,7 +89,7 @@ function BioSearchInner() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-8">
+      <form onSubmit={handleSubmit} className="mb-8 space-y-3">
         <div className="flex gap-3">
           <input
             type="text"
@@ -85,7 +107,18 @@ function BioSearchInner() {
             بحث
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
+        <select
+          value={bookFilter}
+          onChange={e => setBookFilter(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700"
+          dir="rtl"
+        >
+          <option value="">جميع كتب الرجال والتراجم</option>
+          {BIO_BOOKS.map(b => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-400">
           مثال: ابحث عن اسم شيخ، أو مدينة، أو صفة (تدليس، إرسال، أخطأ فيه...)
         </p>
       </form>
@@ -155,7 +188,7 @@ function BioSearchInner() {
           {hasMore && (
             <div className="mt-6 text-center">
               <button
-                onClick={() => doSearch(currentQ, page + 1)}
+                onClick={() => doSearch(currentQ, currentBook, page + 1)}
                 disabled={loading}
                 className="px-8 py-3 bg-white border border-gray-200 rounded-xl text-green-800 hover:border-green-300 hover:shadow-sm transition-all text-sm disabled:opacity-50"
               >
