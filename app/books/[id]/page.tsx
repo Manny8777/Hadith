@@ -3,123 +3,364 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-
-interface TocRow {
-  main_id: number
-  id: number
-  parent_id: number
-  content: string
-  is_leaf: boolean
-  is_paragraph: boolean
-  section_text: string
-  chapter_text: string
-  part_num: number
-  page_num: number
-  tarf: string
-  left_value: number
-  right_value: number
-  tarqeem_harf: string
-  tarqeem_matboa1: string
-}
+import HadithNumSearch from '@/app/components/HadithNumSearch'
 
 function stripTags(html: string): string {
-  return (html || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-export default async function BookPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const bookId = parseInt(id)
+function chapterLabel(row: { content: string | null; chapter_text: string | null; section_text: string | null }): string {
+  return stripTags(row.content || '') || row.chapter_text?.trim() || row.section_text?.trim() || '—'
+}
 
-  const [bookRes, tocRes] = await Promise.all([
+export default async function BookPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ section?: string; page?: string }>
+}) {
+  const { id } = await params
+  const sp = await searchParams
+  const bookId = parseInt(id)
+  const sectionId = sp.section ? parseInt(sp.section) : null
+  const page = Math.max(1, parseInt(sp.page || '1'))
+  const LIMIT = 50
+  const offset = (page - 1) * LIMIT
+
+  const [bookRes, rootRes] = await Promise.all([
     pool.query('SELECT * FROM books WHERE id = $1', [bookId]),
     pool.query(
-      `SELECT main_id, id, parent_id, is_leaf, is_paragraph, content,
-              section_text, chapter_text, part_num, page_num, tarf,
-              left_value, right_value, tarqeem_harf, tarqeem_matboa1
-       FROM hadith_toc
-       WHERE book_id = $1
-       ORDER BY left_value
-       LIMIT 500`,
+      `SELECT main_id FROM hadith_toc WHERE book_id = $1 AND (parent_id = 0 OR parent_id IS NULL) LIMIT 1`,
       [bookId]
     ),
   ])
 
   if (!bookRes.rows[0]) notFound()
   const book = bookRes.rows[0]
-  const toc: TocRow[] = tocRes.rows
+  const rootId: number | null = rootRes.rows[0]?.main_id ?? null
 
-  // Get top-level chapters (direct children of book root)
-  const rootNode = toc.find(r => r.parent_id === 0 || r.parent_id === null)
-  const rootId = rootNode?.main_id
+  // Helper to build hrefs
+  const buildHref = (overrides: Record<string, string | number | undefined>) => {
+    const p: Record<string, string> = { }
+    if (sectionId) p.section = String(sectionId)
+    if (page > 1) p.page = String(page)
+    Object.entries(overrides).forEach(([k, v]) => {
+      if (v !== undefined) p[k] = String(v)
+      else delete p[k]
+    })
+    const qs = new URLSearchParams(p).toString()
+    return `/books/${bookId}${qs ? '?' + qs : ''}`
+  }
 
-  const chapters = toc.filter(r =>
-    r.parent_id === rootId && !r.is_leaf
-  )
+  if (sectionId !== null) {
+    // ── Section view: show sub-chapters + paginated hadiths ──
+    const [sectionRes, subChapRes, hadithsRes, countRes] = await Promise.all([
+      // The section node itself (for breadcrumb)
+      pool.query(
+        `SELECT main_id, parent_id, content, chapter_text, section_text, left_value, right_value
+         FROM hadith_toc WHERE main_id = $1`,
+        [sectionId]
+      ),
+      // Direct non-leaf children (sub-chapters)
+      pool.query(
+        `SELECT main_id, content, chapter_text, section_text, left_value, right_value,
+                (SELECT COUNT(*) FROM hadith_toc
+                 WHERE book_id = $2 AND is_leaf = true AND is_paragraph = true
+                   AND left_value > t.left_value AND left_value < t.right_value) AS hadith_count
+         FROM hadith_toc t
+         WHERE book_id = $2 AND parent_id = $1 AND is_leaf = false
+         ORDER BY left_value`,
+        [sectionId, bookId]
+      ),
+      // Paginated leaf hadiths in this section
+      pool.query(
+        `SELECT main_id, tarf, content, section_text, chapter_text, part_num, page_num,
+                tarqeem_harf, tarqeem_matboa1
+         FROM hadith_toc t
+         WHERE book_id = $1 AND is_leaf = true AND is_paragraph = true
+           AND t.left_value > (SELECT left_value FROM hadith_toc WHERE main_id = $2)
+           AND t.left_value < (SELECT right_value FROM hadith_toc WHERE main_id = $2)
+         ORDER BY t.left_value
+         LIMIT $3 OFFSET $4`,
+        [bookId, sectionId, LIMIT, offset]
+      ),
+      // Total count of hadiths in this section
+      pool.query(
+        `SELECT COUNT(*) FROM hadith_toc t
+         WHERE book_id = $1 AND is_leaf = true AND is_paragraph = true
+           AND t.left_value > (SELECT left_value FROM hadith_toc WHERE main_id = $2)
+           AND t.left_value < (SELECT right_value FROM hadith_toc WHERE main_id = $2)`,
+        [bookId, sectionId]
+      ),
+    ])
 
-  // Get first 50 leaf (hadith) entries for quick view
-  const leaves = toc.filter(r => r.is_leaf && r.is_paragraph).slice(0, 50)
+    const section = sectionRes.rows[0]
+    if (!section) notFound()
+    const subChapters = subChapRes.rows
+    const hadiths = hadithsRes.rows
+    const total = parseInt(countRes.rows[0]?.count || '0')
+    const totalPages = Math.ceil(total / LIMIT)
 
-  return (
-    <div>
-      <Link href="/books" className="text-green-700 hover:underline text-sm">← الكتب</Link>
+    // Breadcrumb: walk up the parent chain
+    const crumbs: Array<{ id: number; label: string }> = []
+    let curId = section.parent_id
+    while (curId && curId !== rootId) {
+      const res = await pool.query(
+        `SELECT main_id, parent_id, content, chapter_text, section_text FROM hadith_toc WHERE main_id = $1`,
+        [curId]
+      )
+      if (!res.rows[0]) break
+      crumbs.unshift({ id: res.rows[0].main_id, label: chapterLabel(res.rows[0]) })
+      curId = res.rows[0].parent_id
+    }
 
-      <h1 className="text-3xl font-bold text-green-900 mt-4 mb-2">{book.title}</h1>
-      {book.takhrij_author && (
-        <p className="text-gray-600 mb-6">
-          {book.takhrij_author}
-          {book.takhrij_death ? ` (ت ${book.takhrij_death} هـ)` : ''}
-        </p>
-      )}
-
-      {chapters.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-green-800 mb-3">فهرس الكتاب</h2>
-          <div className="grid gap-2">
-            {chapters.map(ch => (
-              <div key={ch.main_id} className="bg-white rounded-lg border border-gray-100 px-5 py-3">
-                <p className="font-semibold text-gray-800">{stripTags(ch.content) || ch.chapter_text || ch.section_text}</p>
-              </div>
-            ))}
+    return (
+      <div dir="rtl" className="min-h-screen bg-amber-50">
+        <header className="bg-green-900 text-white shadow-lg">
+          <div className="max-w-5xl mx-auto px-4 py-4">
+            <div className="flex items-center gap-2 text-sm flex-wrap">
+              <Link href="/books" className="text-amber-300 hover:text-amber-100">الكتب</Link>
+              <span className="text-white/30">›</span>
+              <Link href={`/books/${bookId}`} className="text-amber-300 hover:text-amber-100 truncate max-w-48">{book.title}</Link>
+              {crumbs.map(c => (
+                <>
+                  <span key={`sep-${c.id}`} className="text-white/30">›</span>
+                  <Link key={c.id} href={`/books/${bookId}?section=${c.id}`} className="text-amber-300 hover:text-amber-100 truncate max-w-32">
+                    {c.label}
+                  </Link>
+                </>
+              ))}
+              <span className="text-white/30">›</span>
+              <span className="text-white/70 truncate max-w-40">{chapterLabel(section)}</span>
+            </div>
           </div>
-        </div>
-      )}
+        </header>
 
-      {leaves.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold text-green-800 mb-3">الأحاديث</h2>
-          <div className="grid gap-3">
-            {leaves.map(h => (
-              <Link
-                key={h.main_id}
-                href={`/hadith/${h.main_id}`}
-                className="block bg-white rounded-lg border border-gray-100 px-5 py-4 hover:shadow-md hover:border-green-200 transition-all"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <p className="text-gray-800 text-sm leading-relaxed line-clamp-3">
-                    {stripTags(h.tarf || h.content).slice(0, 200)}
-                  </p>
-                  {(h.part_num > 0 || h.page_num > 0) && (
-                    <span className="text-xs text-gray-400 whitespace-nowrap mt-1">
-                      ج{h.part_num} ص{h.page_num}
+        <main className="max-w-5xl mx-auto px-4 py-6">
+          <h2 className="text-xl font-bold text-green-900 mb-5">{chapterLabel(section)}</h2>
+
+          {/* Sub-chapters */}
+          {subChapters.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">الأبواب الفرعية</h3>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {subChapters.map(ch => (
+                  <Link
+                    key={ch.main_id}
+                    href={`/books/${bookId}?section=${ch.main_id}`}
+                    className="bg-white border border-gray-100 hover:border-green-300 rounded-xl px-4 py-3 flex items-center justify-between group transition-all"
+                  >
+                    <span className="text-sm text-green-900 group-hover:text-green-700 font-medium leading-snug">
+                      {chapterLabel(ch)}
                     </span>
+                    {parseInt(ch.hadith_count) > 0 && (
+                      <span className="text-xs text-gray-400 shrink-0 mr-2">{parseInt(ch.hadith_count).toLocaleString('ar-EG')}</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Hadiths */}
+          {hadiths.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-500">
+                  الأحاديث
+                  {total > 0 && <span className="text-gray-400 font-normal mr-2">({total.toLocaleString('ar-EG')})</span>}
+                </h3>
+                {totalPages > 1 && (
+                  <span className="text-xs text-gray-400">صفحة {page} من {totalPages}</span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {hadiths.map(h => (
+                  <Link
+                    key={h.main_id}
+                    href={`/hadith/${h.main_id}`}
+                    className="block bg-white rounded-xl border border-gray-100 px-5 py-4 hover:shadow-sm hover:border-green-200 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <p className="text-gray-800 text-sm leading-relaxed line-clamp-3 flex-1">
+                        {stripTags(h.tarf || h.content).slice(0, 250)}
+                      </p>
+                      <div className="shrink-0 text-xs text-gray-400 text-left whitespace-nowrap">
+                        {h.tarqeem_harf?.trim() && <div className="text-green-700 font-medium">{h.tarqeem_harf.trim()}</div>}
+                        {(h.part_num > 0 || h.page_num > 0) && <div>ج{h.part_num} ص{h.page_num}</div>}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+                  {page > 1 && (
+                    <Link href={buildHref({ page: page - 1 })}
+                      className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-green-800 hover:border-green-300 text-sm">
+                      السابق
+                    </Link>
+                  )}
+                  {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                    let pg: number
+                    if (totalPages <= 7) pg = i + 1
+                    else if (page <= 4) pg = i + 1
+                    else if (page >= totalPages - 3) pg = totalPages - 6 + i
+                    else pg = page - 3 + i
+                    return (
+                      <Link key={pg} href={buildHref({ page: pg })}
+                        className={`px-4 py-2 rounded-lg border text-sm ${pg === page ? 'bg-green-800 text-white border-green-800' : 'border-gray-200 bg-white text-green-800 hover:border-green-300'}`}>
+                        {pg.toLocaleString('ar-EG')}
+                      </Link>
+                    )
+                  })}
+                  {page < totalPages && (
+                    <Link href={buildHref({ page: page + 1 })}
+                      className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-green-800 hover:border-green-300 text-sm">
+                      التالي
+                    </Link>
                   )}
                 </div>
-                {h.tarqeem_harf && h.tarqeem_harf.trim() && (
-                  <span className="text-xs text-green-700 mt-2 block">رقم: {h.tarqeem_harf.trim()}</span>
-                )}
-              </Link>
-            ))}
+              )}
+            </div>
+          )}
+
+          {subChapters.length === 0 && hadiths.length === 0 && (
+            <p className="text-gray-400 text-center py-12">لا توجد أحاديث في هذا الباب</p>
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  // ── Book overview: show top-level chapters ──
+  const [topChapRes, sampleRes, statsRes] = await Promise.all([
+    // Top-level chapters (direct children of root)
+    rootId ? pool.query(
+      `SELECT main_id, content, chapter_text, section_text, left_value, right_value,
+              (SELECT COUNT(*) FROM hadith_toc
+               WHERE book_id = $2 AND is_leaf = true AND is_paragraph = true
+                 AND left_value > t.left_value AND left_value < t.right_value) AS hadith_count
+       FROM hadith_toc t
+       WHERE book_id = $2 AND parent_id = $1 AND is_leaf = false
+       ORDER BY left_value
+       LIMIT 200`,
+      [rootId, bookId]
+    ) : pool.query(
+      `SELECT main_id, content, chapter_text, section_text, left_value, right_value, 0 as hadith_count
+       FROM hadith_toc WHERE book_id = $1 AND is_leaf = false ORDER BY left_value LIMIT 100`,
+      [bookId]
+    ),
+    // First few hadiths as a preview
+    pool.query(
+      `SELECT main_id, tarf, content, part_num, page_num, tarqeem_harf
+       FROM hadith_toc WHERE book_id = $1 AND is_leaf = true AND is_paragraph = true
+       ORDER BY left_value LIMIT 5`,
+      [bookId]
+    ),
+    // Stats
+    pool.query(
+      `SELECT COUNT(*) as total_hadiths FROM hadith_toc WHERE book_id = $1 AND is_leaf = true AND is_paragraph = true`,
+      [bookId]
+    ),
+  ])
+
+  const topChapters = topChapRes.rows
+  const sampleHadiths = sampleRes.rows
+  const totalHadiths = parseInt(statsRes.rows[0]?.total_hadiths || '0')
+
+  return (
+    <div dir="rtl" className="min-h-screen bg-amber-50">
+      <header className="bg-green-900 text-white shadow-lg">
+        <div className="max-w-5xl mx-auto px-4 py-5">
+          <div className="flex items-center gap-2 text-sm mb-3">
+            <Link href="/books" className="text-amber-300 hover:text-amber-100">← الكتب</Link>
           </div>
-          {toc.filter(r => r.is_leaf && r.is_paragraph).length > 50 && (
-            <p className="text-center text-gray-400 mt-4 text-sm">
-              تعرض أول 50 حديث — استخدم البحث لاستعراض المزيد
+          <h1 className="text-xl font-bold text-amber-100 leading-snug">{book.title}</h1>
+          {book.takhrij_author && (
+            <p className="text-amber-200/70 text-sm mt-1">
+              {book.takhrij_author}
+              {book.takhrij_death ? ` (ت ${book.takhrij_death} هـ)` : ''}
             </p>
           )}
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-amber-200/60">
+            <span>{totalHadiths.toLocaleString('ar-EG')} حديث</span>
+            {topChapters.length > 0 && <span>{topChapters.length} باب</span>}
+            <Link href={`/books/${bookId}/narrators`} className="text-amber-300 hover:text-amber-100 transition-colors">
+              رواة الكتاب ←
+            </Link>
+          </div>
+          {/* Quick hadith number lookup */}
+          <div className="mt-3">
+            <HadithNumSearch bookId={bookId} />
+          </div>
         </div>
-      )}
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        {/* Chapters */}
+        {topChapters.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
+              فهرس الكتاب
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {topChapters.map(ch => (
+                <Link
+                  key={ch.main_id}
+                  href={`/books/${bookId}?section=${ch.main_id}`}
+                  className="bg-white border border-gray-100 hover:border-green-300 hover:shadow-sm rounded-xl px-4 py-3.5 flex items-center justify-between group transition-all"
+                >
+                  <span className="text-sm text-green-900 group-hover:text-green-700 font-medium leading-snug">
+                    {chapterLabel(ch)}
+                  </span>
+                  {parseInt(ch.hadith_count) > 0 && (
+                    <span className="text-xs text-gray-400 shrink-0 mr-2 bg-gray-50 px-2 py-0.5 rounded-full">
+                      {parseInt(ch.hadith_count).toLocaleString('ar-EG')}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sample hadiths preview */}
+        {sampleHadiths.length > 0 && (
+          <div>
+            <h2 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-green-500 rounded-full inline-block"></span>
+              نموذج من الأحاديث
+            </h2>
+            <div className="space-y-2">
+              {sampleHadiths.map(h => (
+                <Link
+                  key={h.main_id}
+                  href={`/hadith/${h.main_id}`}
+                  className="block bg-white rounded-xl border border-gray-100 px-5 py-4 hover:shadow-sm hover:border-green-200 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <p className="text-gray-800 text-sm leading-relaxed line-clamp-2 flex-1">
+                      {stripTags(h.tarf || h.content).slice(0, 200)}
+                    </p>
+                    {h.tarqeem_harf?.trim() && (
+                      <span className="text-xs text-green-700 font-medium shrink-0">{h.tarqeem_harf.trim()}</span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {topChapters.length === 0 && sampleHadiths.length === 0 && (
+          <p className="text-gray-400 text-center py-16">لا توجد بيانات لهذا الكتاب</p>
+        )}
+      </main>
     </div>
   )
 }

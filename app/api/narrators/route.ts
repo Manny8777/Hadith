@@ -20,13 +20,13 @@ export async function GET(req: Request) {
       const pattern = `%${q.trim()}%`
       const [countRes, dataRes] = await Promise.all([
         pool.query(
-          `SELECT COUNT(*) FROM narrators WHERE name ILIKE $1 OR abb_name ILIKE $1 OR kunia ILIKE $1`,
+          `SELECT COUNT(*) FROM narrators WHERE name_normalized ILIKE normalize_arabic($1) OR name ILIKE $1 OR abb_name ILIKE $1 OR kunia ILIKE $1`,
           [pattern]
         ),
         pool.query(
           `SELECT id, name, abb_name, kunia, death_year_num, hadiths_count, martaba_ibn_hajar
            FROM narrators
-           WHERE name ILIKE $1 OR abb_name ILIKE $1 OR kunia ILIKE $1
+           WHERE name_normalized ILIKE normalize_arabic($1) OR name ILIKE $1 OR abb_name ILIKE $1 OR kunia ILIKE $1
            ORDER BY hadiths_count DESC NULLS LAST, name
            LIMIT $2 OFFSET $3`,
           [pattern, limit, offset]

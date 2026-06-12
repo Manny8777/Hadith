@@ -14,7 +14,46 @@ export async function GET(req: Request) {
   const limit = 20
   const offset = (page - 1) * limit
 
-  // Narrator-in-isnad search mode
+  // Combined narrator + text search
+  if (narratorId !== null && !isNaN(narratorId) && q && q.length >= 2) {
+    const [hadithsRes, countRes] = await Promise.all([
+      pool.query(
+        `SELECT DISTINCT ht.main_id, ht.book_id, b.title as book_name, ht.tarf,
+                ht.section_text, ht.chapter_text, ht.part_num, ht.page_num
+         FROM isnad_hadiths iha
+         JOIN isnad_chains ic ON iha.isnad_id = ic.id
+         JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+         JOIN books b ON b.id = ht.book_id
+         WHERE ic.narrator_id_array @> ARRAY[$1::integer]
+           AND ht.is_leaf = true
+           AND to_tsvector('simple', coalesce(ht.tarf,'') || ' ' || coalesce(ht.content,''))
+               @@ plainto_tsquery('simple', $2)
+         ORDER BY ht.book_id, ht.main_id
+         LIMIT $3 OFFSET $4`,
+        [narratorId, q, limit, offset]
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT ht.main_id) as cnt
+         FROM isnad_hadiths iha
+         JOIN isnad_chains ic ON iha.isnad_id = ic.id
+         JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+         WHERE ic.narrator_id_array @> ARRAY[$1::integer]
+           AND ht.is_leaf = true
+           AND to_tsvector('simple', coalesce(ht.tarf,'') || ' ' || coalesce(ht.content,''))
+               @@ plainto_tsquery('simple', $2)`,
+        [narratorId, q]
+      ),
+    ])
+    return NextResponse.json({
+      results: hadithsRes.rows,
+      total: parseInt(countRes.rows[0]?.cnt || '0'),
+      page,
+      limit,
+      mode: 'narrator+text',
+    })
+  }
+
+  // Narrator-only isnad search mode
   if (narratorId !== null && !isNaN(narratorId)) {
     const [hadithsRes, countRes] = await Promise.all([
       pool.query(
@@ -43,12 +82,13 @@ export async function GET(req: Request) {
       total: parseInt(countRes.rows[0]?.cnt || '0'),
       page,
       limit,
+      mode: 'narrator',
     })
   }
 
   if (!q || q.length < 2) return NextResponse.json({ results: [], total: 0 })
 
-  // Build dynamic WHERE clause for text search
+  // Pure text search
   const conditions: string[] = [
     'h.is_leaf = true',
     `to_tsvector('simple', coalesce(h.tarf,'') || ' ' || coalesce(h.content,'')) @@ plainto_tsquery('simple', $1)`,
@@ -99,5 +139,6 @@ export async function GET(req: Request) {
     total: parseInt(countResult.rows[0].count),
     page,
     limit,
+    mode: 'text',
   })
 }

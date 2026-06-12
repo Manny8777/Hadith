@@ -109,6 +109,29 @@ export default async function Home() {
           </Link>
         </div>
 
+        {/* الكتب الستة quick links */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+          <h2 className="text-base font-bold text-green-900 mb-4">الكتب الستة والمسانيد الكبرى</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { id: 1, name: 'صحيح البخاري', count: '٧٤١٠', color: 'border-green-200 hover:border-green-400 text-green-800' },
+              { id: 2, name: 'صحيح مسلم', count: '٧٦٦٦', color: 'border-green-200 hover:border-green-400 text-green-800' },
+              { id: 5, name: 'سنن النسائي', count: '٥٧٨٠', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
+              { id: 3, name: 'سنن أبي داود', count: '٥٢٦٠', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
+              { id: 4, name: 'جامع الترمذي', count: '٤٤١٢', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
+              { id: 6, name: 'سنن ابن ماجه', count: '٤٤٦٧', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
+              { id: 7, name: 'موطأ مالك', count: '١٧٨١', color: 'border-blue-200 hover:border-blue-400 text-blue-800' },
+              { id: 8, name: 'مسند أحمد', count: '٢٨٢٤٥', color: 'border-blue-200 hover:border-blue-400 text-blue-800' },
+            ].map(book => (
+              <Link key={book.id} href={`/books/${book.id}`}
+                className={`bg-gray-50 border rounded-xl px-4 py-3 flex flex-col hover:shadow-sm transition-all ${book.color}`}>
+                <span className="font-semibold text-sm leading-snug">{book.name}</span>
+                <span className="text-xs text-gray-400 mt-1">{book.count} حديث</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
         {/* Narrator Grade Shortcuts */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <h2 className="text-base font-bold text-green-900 mb-4">تصفح الرواة حسب الدرجة</h2>
@@ -143,9 +166,11 @@ export default async function Home() {
           <h2 className="text-base font-bold text-amber-900 mb-3">ملاحظات للباحثين</h2>
           <ul className="text-sm text-amber-800 space-y-2 leading-relaxed list-disc list-inside">
             <li>كل راوٍ يعرض ترجمته من كتب التراجم الكبرى (تهذيب الكمال، الكاشف، تقريب التهذيب...)</li>
-            <li>قسم «جرح وتعديل» يجمع أقوال العلماء في الراوي من مصادرها الأصلية</li>
+            <li>قسم «جرح وتعديل» يجمع أقوال العلماء مع <strong>درجة الجرح أو التعديل</strong> من جانب كل قول</li>
             <li>الأسانيد تربط كل حديث برواته مع روابط مباشرة لصفحة كل راوٍ</li>
-            <li>يمكن تصفية الرواة بالدرجة (ثقة، صدوق، ضعيف، مجهول) وبالطبقة والوفاة</li>
+            <li>البحث يدعم <strong>البحث المركَّب</strong>: نص + راوٍ معاً للوصول لأحاديث راوٍ بعينه تتضمن لفظاً محدداً</li>
+            <li>تصفح نصوص <strong>كتب التراجم</strong> مباشرة عبر قسم «التراجم» في الشريط العلوي</li>
+            <li>كل كتاب يعرض <strong>فهرساً تفصيلياً بالأبواب</strong> مع إمكانية الانتقال برقم الحديث</li>
           </ul>
         </div>
       </div>

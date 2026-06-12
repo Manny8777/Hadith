@@ -102,6 +102,35 @@ export default async function ComparePage({
     criticismB = Object.values(mapB)
   }
 
+  // Find shared hadiths (hadiths where both narrators appear in the same isnad chain)
+  let sharedHadiths: Array<{ main_id: number; book_id: number; tarf: string | null; book_name: string }> = []
+  let sharedTotal = 0
+  if (idA && idB && narratorA && narratorB) {
+    const [sharedRes, sharedCnt] = await Promise.all([
+      pool.query(
+        `SELECT DISTINCT ht.main_id, ht.book_id, ht.tarf, b.title as book_name
+         FROM isnad_hadiths iha
+         JOIN isnad_chains ic ON iha.isnad_id = ic.id
+         JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+         JOIN books b ON b.id = ht.book_id
+         WHERE ic.narrator_id_array @> ARRAY[$1::integer, $2::integer]
+         ORDER BY ht.book_id, ht.main_id
+         LIMIT 10`,
+        [idA, idB]
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT ht.main_id) as cnt
+         FROM isnad_hadiths iha
+         JOIN isnad_chains ic ON iha.isnad_id = ic.id
+         JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+         WHERE ic.narrator_id_array @> ARRAY[$1::integer, $2::integer]`,
+        [idA, idB]
+      ),
+    ])
+    sharedHadiths = sharedRes.rows
+    sharedTotal = parseInt(sharedCnt.rows[0]?.cnt || '0')
+  }
+
   // Check if they have a direct teacher-student relationship
   if (idA && idB && narratorA && narratorB) {
     const relRes = await pool.query(
@@ -238,6 +267,58 @@ export default async function ComparePage({
         ) : (
           <div className="text-center text-gray-400 py-16">
             ابحث عن راويين لمقارنتهما
+          </div>
+        )}
+
+        {/* Shared hadiths */}
+        {narratorA && narratorB && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h3 className="text-base font-bold text-green-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-blue-500 rounded-full inline-block"></span>
+              الأحاديث المشتركة في السند
+              {sharedTotal > 0 ? (
+                <span className="text-sm text-gray-400 font-normal">
+                  ({sharedTotal.toLocaleString('ar-EG')} حديث{sharedTotal > 10 ? ' — يُعرض أول ١٠' : ''})
+                </span>
+              ) : (
+                <span className="text-sm text-gray-400 font-normal">(لا يوجد)</span>
+              )}
+            </h3>
+            {sharedTotal > 0 && (
+              <>
+                <div className="space-y-2">
+                  {sharedHadiths.map(h => (
+                    <Link
+                      key={h.main_id}
+                      href={`/hadith/${h.main_id}`}
+                      className="block bg-gray-50 rounded-xl border border-gray-100 px-4 py-3 hover:border-green-200 hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-xs text-green-700 font-semibold shrink-0 mt-0.5">{h.book_name}</span>
+                        <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 flex-1">
+                          {(h.tarf || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150) || `حديث رقم ${h.main_id}`}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {sharedTotal > 10 && narratorA && narratorB && (
+                  <div className="mt-4 text-center">
+                    <Link
+                      href={`/search?narrator_id=${idA}&narrator_name=${encodeURIComponent(narratorA.abb_name || narratorA.name)}`}
+                      className="text-sm text-green-700 hover:underline"
+                    >
+                      عرض جميع أحاديث {narratorA.abb_name || narratorA.name} ←
+                    </Link>
+                  </div>
+                )}
+              </>
+            )}
+            {sharedTotal === 0 && (
+              <p className="text-gray-400 text-sm text-center py-4">
+                لا توجد أحاديث يشتركان في سندها في قاعدة البيانات
+              </p>
+            )}
           </div>
         )}
       </main>

@@ -37,6 +37,7 @@ function SearchInner() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [mode, setMode] = useState<string>('text')
 
   useEffect(() => {
     fetch('/api/books')
@@ -50,7 +51,11 @@ function SearchInner() {
     setSearched(true)
     try {
       let url: string
-      if (nid) {
+      if (nid && query.trim().length >= 2) {
+        // Combined narrator + text search
+        url = `/api/search?narrator_id=${encodeURIComponent(nid)}&q=${encodeURIComponent(query)}&page=${pg}`
+      } else if (nid) {
+        // Narrator-only: all hadiths in chain
         url = `/api/search?narrator_id=${encodeURIComponent(nid)}&page=${pg}`
       } else {
         if (query.trim().length < 2) { setLoading(false); return }
@@ -62,6 +67,7 @@ function SearchInner() {
       setResults(data.results || [])
       setTotal(data.total || 0)
       setPage(pg)
+      setMode(data.mode || 'text')
     } catch {
       setResults([])
     } finally {
@@ -71,25 +77,33 @@ function SearchInner() {
 
   useEffect(() => {
     if (narratorIdParam) {
-      doSearch('', '', 1, narratorIdParam)
+      doSearch(initialQ, '', 1, narratorIdParam)
     } else if (initialQ.length >= 2) {
       doSearch(initialQ, initialBookId)
     }
   }, [narratorIdParam, initialQ, initialBookId, doSearch])
 
+  const isNarratorMode = !!narratorIdParam
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = q.trim()
-    let url = `/search?q=${encodeURIComponent(trimmed)}`
-    if (bookId) url += `&book_id=${encodeURIComponent(bookId)}`
-    router.push(url)
-    doSearch(trimmed, bookId)
+    if (isNarratorMode) {
+      // Update URL and search within narrator's hadiths
+      let url = `/search?narrator_id=${encodeURIComponent(narratorIdParam)}`
+      if (narratorNameParam) url += `&narrator_name=${encodeURIComponent(narratorNameParam)}`
+      if (trimmed) url += `&q=${encodeURIComponent(trimmed)}`
+      router.push(url)
+      doSearch(trimmed, '', 1, narratorIdParam)
+    } else {
+      let url = `/search?q=${encodeURIComponent(trimmed)}`
+      if (bookId) url += `&book_id=${encodeURIComponent(bookId)}`
+      router.push(url)
+      doSearch(trimmed, bookId)
+    }
   }
 
   const totalPages = Math.ceil(total / 20)
-
-  // Narrator mode: show results for a specific narrator in isnad
-  const isNarratorMode = !!narratorIdParam
 
   return (
     <div dir="rtl">
@@ -97,12 +111,15 @@ function SearchInner() {
 
       {/* Narrator mode banner */}
       {isNarratorMode && narratorNameParam && (
-        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center justify-between">
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center justify-between">
           <div className="text-sm text-amber-800">
-            عرض الأحاديث التي يروي فيها:
+            يروي:
             <Link href={`/narrator/${narratorIdParam}`} className="font-bold text-green-800 hover:underline mr-2">
               {narratorNameParam}
             </Link>
+            {mode === 'narrator+text' && q && (
+              <span className="text-amber-700 mr-2">— يحتوي على: <strong>{q}</strong></span>
+            )}
           </div>
           <Link href="/search" className="text-xs text-gray-400 hover:text-gray-600">
             بحث نصي
@@ -110,26 +127,30 @@ function SearchInner() {
         </div>
       )}
 
-      {/* Text search form (hidden in narrator mode) */}
-      {!isNarratorMode && (
-        <form onSubmit={handleSubmit} className="mb-8">
-          <div className="flex gap-3 mb-3">
-            <input
-              type="text"
-              value={q}
-              onChange={e => setQ(e.target.value)}
-              placeholder="ابحث في الأحاديث النبوية..."
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-700"
-              dir="rtl"
-            />
-            <button
-              type="submit"
-              className="bg-green-900 text-white px-6 py-3 rounded-lg hover:bg-green-800 transition-colors font-semibold"
-            >
-              بحث
-            </button>
-          </div>
+      {/* Search form — always visible */}
+      <form onSubmit={handleSubmit} className="mb-8">
+        <div className="flex gap-3 mb-3">
+          <input
+            type="text"
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder={isNarratorMode
+              ? `بحث في أحاديث ${narratorNameParam || 'الراوي'}...`
+              : 'ابحث في الأحاديث النبوية...'
+            }
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+            dir="rtl"
+          />
+          <button
+            type="submit"
+            className="bg-green-900 text-white px-6 py-3 rounded-lg hover:bg-green-800 transition-colors font-semibold"
+          >
+            بحث
+          </button>
+        </div>
 
+        {/* Book filter — only in text-only mode */}
+        {!isNarratorMode && (
           <div className="flex gap-3 items-center">
             <label className="text-sm text-gray-600 shrink-0">تصفية حسب الكتاب:</label>
             <select
@@ -153,8 +174,22 @@ function SearchInner() {
               </button>
             )}
           </div>
-        </form>
-      )}
+        )}
+
+        {/* Clear narrator filter */}
+        {isNarratorMode && q && (
+          <button
+            type="button"
+            onClick={() => {
+              setQ('')
+              doSearch('', '', 1, narratorIdParam)
+            }}
+            className="text-xs text-gray-400 hover:text-gray-600 underline mt-1"
+          >
+            عرض جميع أحاديث الراوي
+          </button>
+        )}
+      </form>
 
       {loading && <p className="text-gray-500 text-center py-8">جاري البحث...</p>}
 
@@ -163,7 +198,7 @@ function SearchInner() {
           {total > 0 ? (
             <>
               <span className="font-semibold">{total.toLocaleString('ar-EG')}</span> حديث
-              {bookId && books.length > 0 && (
+              {!isNarratorMode && bookId && books.length > 0 && (
                 <span className="text-amber-700 mr-2">
                   — في: {books.find(b => String(b.id) === bookId)?.title || ''}
                 </span>

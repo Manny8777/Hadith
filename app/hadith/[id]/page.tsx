@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import TakhrijSection from '@/app/components/TakhrijSection'
 import ServicesBadges from '@/app/components/ServicesBadges'
+import HadithExport from '@/app/components/HadithExport'
 
 function stripTags(html: string): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -19,6 +20,20 @@ interface NarratorInChain {
   is_companion: boolean
 }
 
+function chainDepthLabel(count: number): string {
+  const labels: Record<number, string> = {
+    3: 'ثلاثي',
+    4: 'رباعي',
+    5: 'خماسي',
+    6: 'سداسي',
+    7: 'سباعي',
+    8: 'ثماني',
+    9: 'تساعي',
+    10: 'عشاري',
+  }
+  return labels[count] || ''
+}
+
 function gradeColor(grade: string | null) {
   if (!grade) return null
   if (/ثقة|ثبت|حجة|عدل|صحابي/.test(grade)) return 'bg-green-100 text-green-700 border-green-200'
@@ -31,9 +46,9 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const { id } = await params
   const mainId = parseInt(id)
 
-  const [hadithRes, judgmentsRes, isnadRes] = await Promise.all([
+  const [hadithRes, judgmentsRes, isnadRes, takhrijBooksRes] = await Promise.all([
     pool.query(
-      `SELECT h.*, b.title as book_title, b.takhrij_author
+      `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death
        FROM hadith_toc h
        JOIN books b ON h.book_id = b.id
        WHERE h.main_id = $1`,
@@ -55,6 +70,17 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
        LIMIT 5`,
       [mainId]
     ),
+    // Takhrij books for export
+    pool.query(
+      `SELECT DISTINCT b.title
+       FROM takhrij t
+       JOIN books b ON b.id = t.book_id
+       WHERE t.group_id = (SELECT group_id FROM takhrij WHERE hadith_id = $1 LIMIT 1)
+         AND t.hadith_id != $1
+       ORDER BY b.title
+       LIMIT 20`,
+      [mainId]
+    ).catch(() => ({ rows: [] })),
   ])
 
   if (!hadithRes.rows[0]) notFound()
@@ -101,6 +127,19 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const primaryChain = chains[0]
   const hasWeakLink = primaryChain?.hasWeak ?? false
   const allStrong = primaryChain?.allStrong ?? false
+  const takhrijBooks = (takhrijBooksRes as { rows: Array<{ title: string }> }).rows.map(r => r.title)
+
+  // Find narrators shared across ALL chains (common pivot points in multi-chain hadiths)
+  let commonNarrators: NarratorInChain[] = []
+  if (chains.length > 1) {
+    const idSets = chains.map(c => new Set(c.narrators.map(n => n.id)))
+    const sharedIds = Array.from(idSets[0]).filter(id => idSets.every(s => s.has(id)))
+    if (sharedIds.length > 0) {
+      const narMap: Record<number, NarratorInChain> = {}
+      chains[0].narrators.forEach(n => { narMap[n.id] = n })
+      commonNarrators = sharedIds.map(id => narMap[id]).filter(Boolean)
+    }
+  }
 
   return (
     <div>
@@ -123,8 +162,27 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {/* Feature-flag badges */}
-      <ServicesBadges hadithId={mainId} />
+      {/* Feature-flag badges + export */}
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <ServicesBadges hadithId={mainId} />
+        <HadithExport
+          hadith={{
+            main_id: mainId,
+            book_title: h.book_title,
+            takhrij_author: h.takhrij_author,
+            takhrij_death: h.takhrij_death,
+            section_text: h.section_text,
+            chapter_text: h.chapter_text,
+            part_num: h.part_num,
+            page_num: h.page_num,
+            tarqeem_harf: h.tarqeem_harf,
+            tarqeem_matboa1: h.tarqeem_matboa1,
+            tarf: h.tarf,
+          }}
+          chain={primaryChain?.narrators || []}
+          takhrijBooks={takhrijBooks}
+        />
+      </div>
 
       {/* Hadith content */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6 text-lg leading-loose">
@@ -137,8 +195,13 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
           {chains.map((chain, ci) => (
             <div key={ci} className={`rounded-xl border p-5 ${chain.hasWeak ? 'bg-red-50 border-red-100' : chain.allStrong ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-green-800 text-base">
+                <h2 className="font-bold text-green-800 text-base flex items-center gap-2">
                   {chains.length > 1 ? `السند ${ci === 0 ? 'الأول' : ci === 1 ? 'الثاني' : ci === 2 ? 'الثالث' : ci + 1}` : 'السند'}
+                  {chainDepthLabel(chain.narrators.length) && (
+                    <span className="text-xs font-normal text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                      {chainDepthLabel(chain.narrators.length)} ({chain.narrators.length} رواة)
+                    </span>
+                  )}
                 </h2>
                 <div className="flex gap-2">
                   {chain.hasWeak && (
@@ -174,6 +237,21 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Common narrators across chains */}
+      {commonNarrators.length > 0 && (
+        <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <p className="text-xs font-semibold text-blue-700 mb-2">النقطة المشتركة في جميع الأسانيد</p>
+          <div className="flex flex-wrap gap-2">
+            {commonNarrators.map(n => (
+              <Link key={n.id} href={`/narrator/${n.id}`}
+                className={`text-sm px-3 py-1 rounded-lg border ${gradeColor(n.martaba_ibn_hajar || n.martaba_zahabi) || 'bg-white border-blue-200'} hover:shadow-sm transition-all`}>
+                {n.abb_name || n.name}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

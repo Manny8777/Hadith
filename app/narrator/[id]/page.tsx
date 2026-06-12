@@ -32,8 +32,9 @@ interface Narrator {
 }
 
 interface Book { id: number; title: string }
-interface NarratorLink { id: number; name: string }
-interface Criticism { scientist_name: string; scientist_noun_id: number | null; texts: string[] }
+interface NarratorLink { id: number; name: string; martaba_ibn_hajar: string | null; is_companion: boolean }
+interface CriticismEntry { text: string; garh_label: string | null }
+interface Criticism { scientist_name: string; scientist_noun_id: number | null; entries: CriticismEntry[] }
 interface Biography { book_name: string; book_id: number; entries: { title: string; content: string }[] }
 
 function gradingColor(grade: string | null) {
@@ -53,7 +54,7 @@ export default async function NarratorPage({
   const narratorId = parseInt(id, 10)
   if (isNaN(narratorId)) notFound()
 
-  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes] = await Promise.all([
+  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes] = await Promise.all([
     pool.query<Narrator>(
       `SELECT id, name, abb_name, esm_shuhra, kunia, laqab, nasab,
               tabaqa, tabaqa_num, birth_year, death_year, death_year_num,
@@ -73,7 +74,7 @@ export default async function NarratorPage({
     ),
     // Teachers (شيوخه): first_id=narrator, second_id=sheikh
     pool.query<NarratorLink>(
-      `SELECT DISTINCT n.id, n.name
+      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.is_companion
        FROM narrator_relations nr
        JOIN narrators n ON n.id = nr.second_id
        WHERE nr.first_id = $1 AND nr.is_sheikh = true
@@ -82,7 +83,7 @@ export default async function NarratorPage({
     ),
     // Students (تلاميذه): second_id=narrator is teacher, first_id are students
     pool.query<NarratorLink>(
-      `SELECT DISTINCT n.id, n.name
+      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.is_companion
        FROM narrator_relations nr
        JOIN narrators n ON n.id = nr.first_id
        WHERE nr.second_id = $1 AND nr.is_sheikh = true
@@ -90,8 +91,8 @@ export default async function NarratorPage({
       [narratorId]
     ),
     // جرح وتعديل — all criticism from all scholars
-    pool.query<{ scientist_name: string; scientist_noun_id: number | null; say_text: string; say_sort: number }>(
-      `SELECT scientist_name, scientist_noun_id, say_text, say_sort
+    pool.query<{ scientist_name: string; scientist_noun_id: number | null; say_text: string; say_sort: number; garh_label: string | null }>(
+      `SELECT scientist_name, scientist_noun_id, say_text, say_sort, garh_label
        FROM narrator_criticism
        WHERE narrator_id = $1
        ORDER BY scientist_noun_id, say_sort, id`,
@@ -105,23 +106,35 @@ export default async function NarratorPage({
        ORDER BY main_id, book_name`,
       [narratorId]
     ),
+    // Grade consensus from NounsGarh labels
+    pool.query<{ garh_label: string; cnt: number }>(
+      `SELECT garh_label, COUNT(DISTINCT scientist_noun_id) as cnt
+       FROM narrator_criticism
+       WHERE narrator_id = $1 AND garh_label IS NOT NULL AND garh_label != ''
+       GROUP BY garh_label
+       ORDER BY cnt DESC`,
+      [narratorId]
+    ),
   ])
 
   if (narratorRes.rows.length === 0) notFound()
 
   const narrator = narratorRes.rows[0]
   const books = booksRes.rows
+  const gradeStats: Array<{ garh_label: string; cnt: number }> = gradeStatsRes.rows
   const teachers = studentsRes.rows
   const students = teachersRes.rows
 
-  // Group criticism by scientist
+  // Group criticism by scientist, preserving garh_label per entry
   const criticismMap: Record<string, Criticism> = {}
   for (const row of criticismRes.rows) {
     const name = row.scientist_name || 'غير معروف'
     if (!criticismMap[name]) {
-      criticismMap[name] = { scientist_name: name, scientist_noun_id: row.scientist_noun_id, texts: [] }
+      criticismMap[name] = { scientist_name: name, scientist_noun_id: row.scientist_noun_id, entries: [] }
     }
-    if (row.say_text) criticismMap[name].texts.push(row.say_text)
+    if (row.say_text) {
+      criticismMap[name].entries.push({ text: row.say_text, garh_label: row.garh_label || null })
+    }
   }
   const criticism: Criticism[] = Object.values(criticismMap)
 
@@ -177,6 +190,7 @@ export default async function NarratorPage({
               narrator={narrator}
               criticism={criticism}
               biographies={biographies}
+              gradeStats={gradeStats}
               booksCount={books.length}
               teachersCount={teachers.length}
               studentsCount={students.length}
@@ -317,16 +331,27 @@ export default async function NarratorPage({
         {/* جرح وتعديل Section */}
         {criticism.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-bold text-green-900 mb-5 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-green-900 mb-3 flex items-center gap-2">
               <span className="w-1 h-5 bg-red-500 rounded-full inline-block"></span>
               جرح وتعديل
               <span className="text-sm text-gray-400 font-normal">({criticism.length} عالم)</span>
             </h3>
+            {/* Grade consensus summary */}
+            {gradeStats.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-5">
+                {gradeStats.map((gs, i) => (
+                  <span key={i} className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${gradingColor(gs.garh_label)}`}>
+                    {gs.garh_label}
+                    {gs.cnt > 1 && <span className="opacity-70 mr-1">({gs.cnt})</span>}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="space-y-4">
               {criticism.map((c, i) => (
                 <div key={i} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 min-w-28">
                       {c.scientist_noun_id ? (
                         <Link
                           href={`/narrator/${c.scientist_noun_id}`}
@@ -339,8 +364,15 @@ export default async function NarratorPage({
                       )}
                     </div>
                     <div className="flex-1 text-sm text-gray-700 leading-relaxed space-y-2">
-                      {c.texts.map((text, j) => (
-                        <p key={j} className="leading-7">{text}</p>
+                      {c.entries.map((entry, j) => (
+                        <div key={j} className="flex flex-wrap items-start gap-2">
+                          {entry.garh_label && (
+                            <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border ${gradingColor(entry.garh_label)}`}>
+                              {entry.garh_label}
+                            </span>
+                          )}
+                          <p className="leading-7 flex-1">{entry.text}</p>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -384,10 +416,16 @@ export default async function NarratorPage({
               </h3>
               <ul className="space-y-1.5 max-h-80 overflow-y-auto">
                 {teachers.map((t) => (
-                  <li key={t.id}>
-                    <Link href={`/narrator/${t.id}`} className="text-sm text-green-800 hover:text-green-600 hover:underline transition-colors">
+                  <li key={t.id} className="flex items-center gap-2">
+                    <Link href={`/narrator/${t.id}`} className="text-sm text-green-800 hover:text-green-600 hover:underline transition-colors flex-1">
+                      {t.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
                       {t.name}
                     </Link>
+                    {t.martaba_ibn_hajar && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full border shrink-0 ${gradingColor(t.martaba_ibn_hajar)}`}>
+                        {t.martaba_ibn_hajar}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -403,10 +441,16 @@ export default async function NarratorPage({
               </h3>
               <ul className="space-y-1.5 max-h-80 overflow-y-auto">
                 {students.map((s) => (
-                  <li key={s.id}>
-                    <Link href={`/narrator/${s.id}`} className="text-sm text-green-800 hover:text-green-600 hover:underline transition-colors">
+                  <li key={s.id} className="flex items-center gap-2">
+                    <Link href={`/narrator/${s.id}`} className="text-sm text-green-800 hover:text-green-600 hover:underline transition-colors flex-1">
+                      {s.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
                       {s.name}
                     </Link>
+                    {s.martaba_ibn_hajar && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full border shrink-0 ${gradingColor(s.martaba_ibn_hajar)}`}>
+                        {s.martaba_ibn_hajar}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

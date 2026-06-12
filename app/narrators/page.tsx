@@ -22,6 +22,8 @@ interface SearchParams {
   tabaqa?: string
   sort?: string
   page?: string
+  death_min?: string
+  death_max?: string
 }
 
 const GRADE_FILTERS = [
@@ -55,16 +57,18 @@ export default async function NarratorsPage({
   const tabaqaFilter = sp.tabaqa ?? ''
   const sortBy = sp.sort ?? 'hadiths'
   const page = Math.max(1, parseInt(sp.page ?? '1', 10))
+  const deathMin = sp.death_min ? parseInt(sp.death_min, 10) : null
+  const deathMax = sp.death_max ? parseInt(sp.death_max, 10) : null
   const limit = 40
   const offset = (page - 1) * limit
 
   // Build WHERE conditions
   const conditions: string[] = []
-  const queryParams: (string | boolean)[] = []
+  const queryParams: (string | boolean | number)[] = []
   let pi = 1
 
   if (q.trim()) {
-    conditions.push(`(name ILIKE $${pi} OR abb_name ILIKE $${pi} OR kunia ILIKE $${pi})`)
+    conditions.push(`(name_normalized ILIKE normalize_arabic($${pi}) OR name ILIKE $${pi} OR abb_name ILIKE $${pi} OR kunia ILIKE $${pi})`)
     queryParams.push(`%${q.trim()}%`)
     pi++
   }
@@ -79,6 +83,16 @@ export default async function NarratorsPage({
   if (tabaqaFilter) {
     conditions.push(`tabaqa ILIKE $${pi}`)
     queryParams.push(`%${tabaqaFilter}%`)
+    pi++
+  }
+  if (deathMin !== null && !isNaN(deathMin)) {
+    conditions.push(`death_year_num >= $${pi}`)
+    queryParams.push(deathMin)
+    pi++
+  }
+  if (deathMax !== null && !isNaN(deathMax)) {
+    conditions.push(`death_year_num <= $${pi}`)
+    queryParams.push(deathMax)
     pi++
   }
 
@@ -119,6 +133,8 @@ export default async function NarratorsPage({
     if (companionFilter) p.companion = '1'
     if (tabaqaFilter) p.tabaqa = tabaqaFilter
     if (sortBy !== 'hadiths') p.sort = sortBy
+    if (deathMin !== null) p.death_min = String(deathMin)
+    if (deathMax !== null) p.death_max = String(deathMax)
     Object.entries(overrides).forEach(([k, v]) => {
       if (v !== undefined && v !== '') p[k] = String(v)
       else delete p[k]
@@ -138,7 +154,7 @@ export default async function NarratorsPage({
     )
   }
 
-  const activeFilters = q || gradeFilter || companionFilter || tabaqaFilter
+  const activeFilters = q || gradeFilter || companionFilter || tabaqaFilter || deathMin || deathMax
 
   return (
     <div dir="rtl" className="min-h-screen bg-amber-50">
@@ -241,6 +257,39 @@ export default async function NarratorsPage({
                 <span className="text-xs text-amber-300">{tabaqaFilter}</span>
               )}
             </div>
+            {/* Death year range */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-white/50 text-xs">سنة الوفاة:</span>
+              <input
+                type="number"
+                name="death_min"
+                defaultValue={deathMin ?? ''}
+                placeholder="من"
+                min={1}
+                max={1500}
+                className="w-20 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-300"
+              />
+              <span className="text-white/40 text-xs">–</span>
+              <input
+                type="number"
+                name="death_max"
+                defaultValue={deathMax ?? ''}
+                placeholder="إلى"
+                min={1}
+                max={1500}
+                className="w-20 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-300"
+              />
+              <span className="text-white/40 text-xs">هـ</span>
+              <button type="submit" className="text-xs text-amber-300 hover:text-amber-100 px-2 py-1 rounded border border-amber-400/30 hover:border-amber-300 transition-colors">
+                تطبيق
+              </button>
+              {(deathMin || deathMax) && (
+                <a href={buildHref({ death_min: undefined, death_max: undefined, page: undefined })}
+                  className="text-xs text-white/40 hover:text-white/70 underline">
+                  إزالة
+                </a>
+              )}
+            </div>
           </form>
         </div>
       </header>
@@ -252,6 +301,11 @@ export default async function NarratorsPage({
             {q && <span className="text-gray-600 text-sm">البحث: <strong className="text-green-800">{q}</strong></span>}
             {gradeFilter && <span className="text-gray-600 text-sm">الدرجة: <strong className="text-green-800">{gradeFilter}</strong></span>}
             {tabaqaFilter && <span className="text-gray-600 text-sm">الطبقة: <strong className="text-green-800">{tabaqaFilter}</strong></span>}
+            {(deathMin || deathMax) && (
+              <span className="text-gray-600 text-sm">
+                الوفاة: <strong className="text-green-800">{deathMin ?? '...'} – {deathMax ?? '...'} هـ</strong>
+              </span>
+            )}
             {companionFilter && <span className="text-gray-600 text-sm font-medium text-amber-700">الصحابة</span>}
             {activeFilters && (
               <Link href="/narrators" className="text-xs text-gray-400 hover:text-gray-600 underline">إزالة التصفية</Link>

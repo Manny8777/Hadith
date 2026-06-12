@@ -17,19 +17,26 @@ interface NarratorInfo {
   is_companion: boolean
 }
 
+interface CriticismEntry { text: string; garh_label: string | null }
 interface CriticismItem {
   scientist_name: string
-  texts: string[]
+  entries: CriticismEntry[]
 }
 
 interface BiographyBook {
   book_name: string
 }
 
+interface GradeStat {
+  garh_label: string
+  cnt: number
+}
+
 function buildResearchText(
   narrator: NarratorInfo,
   criticism: CriticismItem[],
   biographies: BiographyBook[],
+  gradeStats: GradeStat[],
   booksCount: number,
   teachersCount: number,
   studentsCount: number
@@ -54,13 +61,20 @@ function buildResearchText(
   if (narrator.martaba_ibn_hajar) lines.push('  ابن حجر في تقريب التهذيب: ' + narrator.martaba_ibn_hajar)
   if (narrator.martaba_zahabi) lines.push('  الذهبي في الكاشف: ' + narrator.martaba_zahabi)
 
+  if (gradeStats.length > 0) {
+    lines.push('')
+    lines.push('خلاصة الحكم:')
+    lines.push('  ' + gradeStats.map(g => g.garh_label + (g.cnt > 1 ? ` (${g.cnt} عالم)` : '')).join(' ، '))
+  }
+
   if (criticism.length > 0) {
     lines.push('')
     lines.push('أقوال العلماء في الراوي:')
     for (const c of criticism) {
       lines.push('  ' + c.scientist_name + ':')
-      for (const t of c.texts) {
-        lines.push('    "' + t + '"')
+      for (const e of c.entries) {
+        const label = e.garh_label ? `[${e.garh_label}] ` : ''
+        lines.push('    ' + label + '"' + e.text + '"')
       }
     }
   }
@@ -83,6 +97,7 @@ export default function NarratorExport({
   narrator,
   criticism,
   biographies,
+  gradeStats,
   booksCount,
   teachersCount,
   studentsCount,
@@ -90,6 +105,7 @@ export default function NarratorExport({
   narrator: NarratorInfo
   criticism: CriticismItem[]
   biographies: BiographyBook[]
+  gradeStats: GradeStat[]
   booksCount: number
   teachersCount: number
   studentsCount: number
@@ -97,7 +113,7 @@ export default function NarratorExport({
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
-    const text = buildResearchText(narrator, criticism, biographies, booksCount, teachersCount, studentsCount)
+    const text = buildResearchText(narrator, criticism, biographies, gradeStats, booksCount, teachersCount, studentsCount)
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
