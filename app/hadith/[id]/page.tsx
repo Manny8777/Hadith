@@ -57,7 +57,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       )
       const narMap: Record<number, string> = {}
       narRes.rows.forEach(n => { narMap[n.id] = n.abb_name || n.name })
-      narratorNames = ids.map(id => narMap[id] || `[${id}]`)
+      narratorNames = ids.map(nid => narMap[nid] || `[${nid}]`)
     }
   }
 
