@@ -52,7 +52,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
        FROM isnad_hadiths ih
        JOIN isnad_chains ic ON ih.isnad_id = ic.id
        WHERE ih.hadith_id = $1
-       LIMIT 3`,
+       LIMIT 5`,
       [mainId]
     ),
   ])
@@ -60,27 +60,47 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
-  // Get narrator details including grades
-  let orderedIds: number[] = []
-  let narrators: NarratorInChain[] = []
-  if (isnadRes.rows[0]?.narrator_ids) {
-    orderedIds = (isnadRes.rows[0].narrator_ids as string)
-      .trim().split(/\s+/).filter(Boolean).map(Number)
-    if (orderedIds.length > 0) {
+  // Build chains: resolve narrator IDs to full narrator info for each chain
+  type Chain = { narrators: NarratorInChain[]; hasWeak: boolean; allStrong: boolean }
+  const chains: Chain[] = []
+
+  if (isnadRes.rows.length > 0) {
+    // Collect all unique narrator IDs across all chains
+    const allIds = new Set<number>()
+    const chainIdArrays: number[][] = []
+    for (const row of isnadRes.rows) {
+      const ids = (row.narrator_ids as string).trim().split(/\s+/).filter(Boolean).map(Number)
+      chainIdArrays.push(ids)
+      ids.forEach(id => allIds.add(id))
+    }
+
+    // Fetch all narrator info in one query
+    if (allIds.size > 0) {
       const narRes = await pool.query<NarratorInChain>(
         `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion
-         FROM narrators WHERE id = ANY($1) LIMIT 30`,
-        [orderedIds]
+         FROM narrators WHERE id = ANY($1)`,
+        [Array.from(allIds)]
       )
       const narMap: Record<number, NarratorInChain> = {}
       narRes.rows.forEach(n => { narMap[n.id] = n })
-      narrators = orderedIds.map(nid => narMap[nid] || { id: nid, name: `[${nid}]`, abb_name: null, martaba_ibn_hajar: null, martaba_zahabi: null, is_companion: false })
+
+      // Deduplicate chains (same chain may appear multiple times)
+      const seenChains = new Set<string>()
+      for (const ids of chainIdArrays) {
+        const key = ids.join('-')
+        if (seenChains.has(key)) continue
+        seenChains.add(key)
+        const narrators = ids.map(nid => narMap[nid] || { id: nid, name: `[${nid}]`, abb_name: null, martaba_ibn_hajar: null, martaba_zahabi: null, is_companion: false })
+        const hasWeak = narrators.some(n => n.martaba_ibn_hajar && /ضعيف|منكر|متروك|كذاب/.test(n.martaba_ibn_hajar))
+        const allStrong = narrators.length > 0 && narrators.every(n => !n.martaba_ibn_hajar || /ثقة|ثبت|حجة|عدل|صحابي|صدوق|مقبول/.test(n.martaba_ibn_hajar))
+        chains.push({ narrators, hasWeak, allStrong })
+      }
     }
   }
 
-  // Chain assessment: detect weak links
-  const hasWeakLink = narrators.some(n => n.martaba_ibn_hajar && /ضعيف|منكر|متروك|كذاب/.test(n.martaba_ibn_hajar))
-  const allStrong = narrators.length > 0 && narrators.every(n => !n.martaba_ibn_hajar || /ثقة|ثبت|حجة|عدل|صحابي|صدوق|مقبول/.test(n.martaba_ibn_hajar))
+  const primaryChain = chains[0]
+  const hasWeakLink = primaryChain?.hasWeak ?? false
+  const allStrong = primaryChain?.allStrong ?? false
 
   return (
     <div>
@@ -111,46 +131,49 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         {stripTags(h.content)}
       </div>
 
-      {/* Narrator chain */}
-      {narrators.length > 0 && (
-        <div className={`rounded-xl border p-5 mb-6 ${hasWeakLink ? 'bg-red-50 border-red-100' : allStrong ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-green-800 text-lg">السند</h2>
-            {hasWeakLink && (
-              <span className="text-xs font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full border border-red-200">
-                يوجد راوٍ ضعيف
-              </span>
-            )}
-            {allStrong && !hasWeakLink && (
-              <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full border border-green-200">
-                رجال السند ثقات
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2 items-start">
-            {narrators.map((nar, i) => {
-              const color = gradeColor(nar.martaba_ibn_hajar || nar.martaba_zahabi)
-              return (
-                <span key={i} className="flex items-center gap-1.5">
-                  <Link
-                    href={`/narrator/${nar.id}`}
-                    className={`flex flex-col items-center gap-0.5 group`}
-                  >
-                    <span className={`px-3 py-1.5 rounded-lg text-sm border transition-all group-hover:shadow-sm ${color || 'bg-white border-amber-200 hover:border-green-400'}`}>
-                      {nar.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
-                      {nar.abb_name || nar.name}
+      {/* Narrator chain(s) */}
+      {chains.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {chains.map((chain, ci) => (
+            <div key={ci} className={`rounded-xl border p-5 ${chain.hasWeak ? 'bg-red-50 border-red-100' : chain.allStrong ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-green-800 text-base">
+                  {chains.length > 1 ? `السند ${ci === 0 ? 'الأول' : ci === 1 ? 'الثاني' : ci === 2 ? 'الثالث' : ci + 1}` : 'السند'}
+                </h2>
+                <div className="flex gap-2">
+                  {chain.hasWeak && (
+                    <span className="text-xs font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full border border-red-200">
+                      يوجد راوٍ ضعيف
                     </span>
-                    {nar.martaba_ibn_hajar && (
-                      <span className="text-xs text-gray-500">{nar.martaba_ibn_hajar}</span>
-                    )}
-                  </Link>
-                  {i < narrators.length - 1 && (
-                    <span className="text-gray-300 text-lg mt-0.5">←</span>
                   )}
-                </span>
-              )
-            })}
-          </div>
+                  {chain.allStrong && !chain.hasWeak && (
+                    <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full border border-green-200">
+                      رجال السند ثقات
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 items-start">
+                {chain.narrators.map((nar, i) => {
+                  const color = gradeColor(nar.martaba_ibn_hajar || nar.martaba_zahabi)
+                  return (
+                    <span key={i} className="flex items-center gap-1.5">
+                      <Link href={`/narrator/${nar.id}`} className="flex flex-col items-center gap-0.5 group">
+                        <span className={`px-3 py-1.5 rounded-lg text-sm border transition-all group-hover:shadow-sm ${color || 'bg-white border-amber-200 hover:border-green-400'}`}>
+                          {nar.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
+                          {nar.abb_name || nar.name}
+                        </span>
+                        {nar.martaba_ibn_hajar && (
+                          <span className="text-xs text-gray-500">{nar.martaba_ibn_hajar}</span>
+                        )}
+                      </Link>
+                      {i < chain.narrators.length - 1 && <span className="text-gray-300 text-lg mt-0.5">←</span>}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
