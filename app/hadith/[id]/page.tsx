@@ -7,10 +7,24 @@ import TakhrijSection from '@/app/components/TakhrijSection'
 import ServicesBadges from '@/app/components/ServicesBadges'
 
 function stripTags(html: string): string {
-  return (html || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+interface NarratorInChain {
+  id: number
+  name: string
+  abb_name: string | null
+  martaba_ibn_hajar: string | null
+  martaba_zahabi: string | null
+  is_companion: boolean
+}
+
+function gradeColor(grade: string | null) {
+  if (!grade) return null
+  if (/ثقة|ثبت|حجة|عدل|صحابي/.test(grade)) return 'bg-green-100 text-green-700 border-green-200'
+  if (/صدوق|مقبول|لا بأس/.test(grade)) return 'bg-amber-100 text-amber-700 border-amber-200'
+  if (/ضعيف|منكر|متروك|كذاب/.test(grade)) return 'bg-red-100 text-red-700 border-red-200'
+  return 'bg-gray-100 text-gray-600 border-gray-200'
 }
 
 export default async function HadithPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,24 +60,27 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
-  // Get narrator names from chain (with IDs for links)
-  let narrators: { id: number; name: string }[] = []
+  // Get narrator details including grades
+  let orderedIds: number[] = []
+  let narrators: NarratorInChain[] = []
   if (isnadRes.rows[0]?.narrator_ids) {
-    const ids: number[] = (isnadRes.rows[0].narrator_ids as string)
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .map(Number)
-    if (ids.length > 0) {
-      const narRes = await pool.query(
-        `SELECT id, name, abb_name FROM narrators WHERE id = ANY($1) LIMIT 20`,
-        [ids]
+    orderedIds = (isnadRes.rows[0].narrator_ids as string)
+      .trim().split(/\s+/).filter(Boolean).map(Number)
+    if (orderedIds.length > 0) {
+      const narRes = await pool.query<NarratorInChain>(
+        `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion
+         FROM narrators WHERE id = ANY($1) LIMIT 30`,
+        [orderedIds]
       )
-      const narMap: Record<number, { id: number; name: string }> = {}
-      narRes.rows.forEach(n => { narMap[n.id] = { id: n.id, name: n.abb_name || n.name } })
-      narrators = ids.map(nid => narMap[nid] || { id: nid, name: `[${nid}]` })
+      const narMap: Record<number, NarratorInChain> = {}
+      narRes.rows.forEach(n => { narMap[n.id] = n })
+      narrators = orderedIds.map(nid => narMap[nid] || { id: nid, name: `[${nid}]`, abb_name: null, martaba_ibn_hajar: null, martaba_zahabi: null, is_companion: false })
     }
   }
+
+  // Chain assessment: detect weak links
+  const hasWeakLink = narrators.some(n => n.martaba_ibn_hajar && /ضعيف|منكر|متروك|كذاب/.test(n.martaba_ibn_hajar))
+  const allStrong = narrators.length > 0 && narrators.every(n => !n.martaba_ibn_hajar || /ثقة|ثبت|حجة|عدل|صحابي|صدوق|مقبول/.test(n.martaba_ibn_hajar))
 
   return (
     <div>
@@ -96,29 +113,50 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
 
       {/* Narrator chain */}
       {narrators.length > 0 && (
-        <div className="bg-amber-50 rounded-xl border border-amber-100 p-5 mb-6">
-          <h2 className="font-bold text-green-800 mb-3 text-lg">السند</h2>
-          <div className="flex flex-wrap gap-2 items-center">
-            {narrators.map((nar, i) => (
-              <span key={i} className="flex items-center gap-2">
-                <Link
-                  href={`/narrator/${nar.id}`}
-                  className="bg-white border border-amber-200 rounded-full px-3 py-1 text-sm hover:border-green-400 hover:text-green-800 transition-colors"
-                >
-                  {nar.name}
-                </Link>
-                {i < narrators.length - 1 && (
-                  <span className="text-gray-400">←</span>
-                )}
+        <div className={`rounded-xl border p-5 mb-6 ${hasWeakLink ? 'bg-red-50 border-red-100' : allStrong ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-green-800 text-lg">السند</h2>
+            {hasWeakLink && (
+              <span className="text-xs font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full border border-red-200">
+                يوجد راوٍ ضعيف
               </span>
-            ))}
+            )}
+            {allStrong && !hasWeakLink && (
+              <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full border border-green-200">
+                رجال السند ثقات
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 items-start">
+            {narrators.map((nar, i) => {
+              const color = gradeColor(nar.martaba_ibn_hajar || nar.martaba_zahabi)
+              return (
+                <span key={i} className="flex items-center gap-1.5">
+                  <Link
+                    href={`/narrator/${nar.id}`}
+                    className={`flex flex-col items-center gap-0.5 group`}
+                  >
+                    <span className={`px-3 py-1.5 rounded-lg text-sm border transition-all group-hover:shadow-sm ${color || 'bg-white border-amber-200 hover:border-green-400'}`}>
+                      {nar.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
+                      {nar.abb_name || nar.name}
+                    </span>
+                    {nar.martaba_ibn_hajar && (
+                      <span className="text-xs text-gray-500">{nar.martaba_ibn_hajar}</span>
+                    )}
+                  </Link>
+                  {i < narrators.length - 1 && (
+                    <span className="text-gray-300 text-lg mt-0.5">←</span>
+                  )}
+                </span>
+              )
+            })}
           </div>
         </div>
       )}
 
       {/* Judgments */}
       {judgmentsRes.rows.length > 0 && (
-        <div className="bg-green-50 rounded-xl border border-green-100 p-5">
+        <div className="bg-green-50 rounded-xl border border-green-100 p-5 mb-6">
           <h2 className="font-bold text-green-800 mb-3 text-lg">أقوال العلماء والتخريج</h2>
           <div className="grid gap-3">
             {judgmentsRes.rows.map((j, i) => (

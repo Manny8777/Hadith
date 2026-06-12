@@ -399,7 +399,7 @@ export default async function NarratorPage({
         </div>
 
         {/* Hadiths in isnad chain — lazy loaded */}
-        <NarratorHadiths narratorId={narratorId} />
+        <NarratorHadiths narratorId={narratorId} narratorName={narrator.abb_name || narrator.name} />
 
         {books.length === 0 && teachers.length === 0 && students.length === 0 && criticism.length === 0 && biographies.length === 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">

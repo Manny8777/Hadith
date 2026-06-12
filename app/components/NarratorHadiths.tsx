@@ -13,7 +13,7 @@ function stripTags(s: string) {
   return (s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-export default function NarratorHadiths({ narratorId }: { narratorId: number }) {
+export default function NarratorHadiths({ narratorId, narratorName }: { narratorId: number; narratorName?: string }) {
   const [hadiths, setHadiths] = useState<HadithRow[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -77,7 +77,7 @@ export default function NarratorHadiths({ narratorId }: { narratorId: number }) 
 
           {hadiths.length < total && (
             <Link
-              href={`/search?narrator_id=${narratorId}`}
+              href={`/search?narrator_id=${narratorId}${narratorName ? `&narrator_name=${encodeURIComponent(narratorName)}` : ''}`}
               className="inline-block text-xs text-green-700 hover:underline mt-2"
             >
               عرض كل {total.toLocaleString('ar-EG')} حديث ←
