@@ -301,6 +301,46 @@ export default async function BookPage({
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
+
+        {/* Quick search within this book */}
+        <div className="mb-6 flex gap-3">
+          <Link
+            href={`/search?book_id=${bookId}`}
+            className="text-sm bg-green-50 text-green-800 border border-green-200 rounded-xl px-4 py-2 hover:bg-green-100 transition-colors"
+          >
+            بحث في هذا الكتاب
+          </Link>
+          <Link
+            href={`/books/${bookId}/narrators`}
+            className="text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-xl px-4 py-2 hover:bg-amber-100 transition-colors"
+          >
+            رجال الكتاب
+          </Link>
+          <Link
+            href={`/chains?book=${bookId}`}
+            className="text-sm bg-blue-50 text-blue-800 border border-blue-200 rounded-xl px-4 py-2 hover:bg-blue-100 transition-colors"
+          >
+            علو الإسناد
+          </Link>
+        </div>
+
+        {/* Book summary */}
+        {book.summary?.trim() && (
+          <details className="mb-8 bg-white rounded-2xl border border-amber-100 group">
+            <summary className="px-6 py-4 cursor-pointer flex items-center justify-between list-none">
+              <h2 className="text-base font-bold text-amber-900 flex items-center gap-2">
+                <span className="w-1 h-4 bg-amber-500 rounded-full inline-block"></span>
+                منهج الكتاب ووصفه
+              </h2>
+              <span className="text-xs text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div className="px-6 pb-6 pt-2 text-sm text-gray-800 leading-8 whitespace-pre-line">
+              {stripTags(book.summary).slice(0, 3000)}
+              {stripTags(book.summary).length > 3000 && '...'}
+            </div>
+          </details>
+        )}
+
         {/* Chapters */}
         {topChapters.length > 0 && (
           <div className="mb-8">

@@ -46,7 +46,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const { id } = await params
   const mainId = parseInt(id)
 
-  const [hadithRes, judgmentsRes, isnadRes, takhrijBooksRes] = await Promise.all([
+  const [hadithRes, judgmentsRes, isnadRes, takhrijBooksRes, subjectsRes] = await Promise.all([
     pool.query(
       `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death
        FROM hadith_toc h
@@ -79,6 +79,16 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
          AND t.hadith_id != $1
        ORDER BY b.title
        LIMIT 20`,
+      [mainId]
+    ).catch(() => ({ rows: [] })),
+    // Subject tags from hadith_subjects
+    pool.query(
+      `SELECT si.id, si.title
+       FROM hadith_subjects hs
+       JOIN subject_items si ON si.id = hs.subject_id
+       WHERE hs.paragraph_main_id = $1
+       ORDER BY si.left_value
+       LIMIT 15`,
       [mainId]
     ).catch(() => ({ rows: [] })),
   ])
@@ -128,6 +138,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const hasWeakLink = primaryChain?.hasWeak ?? false
   const allStrong = primaryChain?.allStrong ?? false
   const takhrijBooks = (takhrijBooksRes as { rows: Array<{ title: string }> }).rows.map(r => r.title)
+  const subjects = (subjectsRes as { rows: Array<{ id: number; title: string }> }).rows
 
   // Find narrators shared across ALL chains (common pivot points in multi-chain hadiths)
   let commonNarrators: NarratorInChain[] = []
@@ -185,9 +196,24 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Hadith content */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6 text-lg leading-loose">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4 text-lg leading-loose">
         {stripTags(h.content)}
       </div>
+
+      {/* Subject tags */}
+      {subjects.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-6">
+          {subjects.map(s => (
+            <Link
+              key={s.id}
+              href={`/topics/item/${s.id}`}
+              className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full hover:bg-amber-100 hover:border-amber-300 transition-colors"
+            >
+              {s.title}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Narrator chain(s) */}
       {chains.length > 0 && (

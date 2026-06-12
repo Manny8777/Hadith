@@ -54,7 +54,7 @@ export default async function NarratorPage({
   const narratorId = parseInt(id, 10)
   if (isNaN(narratorId)) notFound()
 
-  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes] = await Promise.all([
+  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes, specialRelRes] = await Promise.all([
     pool.query<Narrator>(
       `SELECT id, name, abb_name, esm_shuhra, kunia, laqab, nasab,
               tabaqa, tabaqa_num, birth_year, death_year, death_year_num,
@@ -115,6 +115,21 @@ export default async function NarratorPage({
        ORDER BY cnt DESC`,
       [narratorId]
     ),
+    // Special relations: تدليس، إرسال، اختلاط، إدراك
+    pool.query<{ relation_type_text: string; other_id: number; other_name: string; is_sheikh: boolean }>(
+      `SELECT nrt.text as relation_type_text,
+              CASE WHEN nr.first_id = $1 THEN nr.second_id ELSE nr.first_id END as other_id,
+              n.name as other_name,
+              nr.is_sheikh
+       FROM narrator_relations nr
+       JOIN narrator_relation_types nrt ON nrt.id = nr.relation_type
+       JOIN narrators n ON n.id = CASE WHEN nr.first_id = $1 THEN nr.second_id ELSE nr.first_id END
+       WHERE (nr.first_id = $1 OR nr.second_id = $1)
+         AND nr.relation_type IN (2, 3, 5, 8, 14, 15, 16, 17)
+       ORDER BY nrt.id, n.name
+       LIMIT 100`,
+      [narratorId]
+    ).catch(() => ({ rows: [] })),
   ])
 
   if (narratorRes.rows.length === 0) notFound()
@@ -124,6 +139,15 @@ export default async function NarratorPage({
   const gradeStats: Array<{ garh_label: string; cnt: number }> = gradeStatsRes.rows
   const teachers = studentsRes.rows
   const students = teachersRes.rows
+
+  // Group special relations by type
+  type SpecialRel = { relation_type_text: string; other_id: number; other_name: string; is_sheikh: boolean }
+  const specialRelRows: SpecialRel[] = (specialRelRes as { rows: SpecialRel[] }).rows
+  const specialRelByType: Record<string, SpecialRel[]> = {}
+  for (const r of specialRelRows) {
+    if (!specialRelByType[r.relation_type_text]) specialRelByType[r.relation_type_text] = []
+    specialRelByType[r.relation_type_text].push(r)
+  }
 
   // Group criticism by scientist, preserving garh_label per entry
   const criticismMap: Record<string, Criticism> = {}
@@ -323,6 +347,36 @@ export default async function NarratorPage({
                     ))}
                   </div>
                 </details>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Special relations: تدليس، إرسال، اختلاط */}
+        {Object.keys(specialRelByType).length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6">
+            <h3 className="text-lg font-bold text-red-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-red-400 rounded-full inline-block"></span>
+              علل الإسناد
+            </h3>
+            <div className="space-y-4">
+              {Object.entries(specialRelByType).map(([relType, rels]) => (
+                <div key={relType}>
+                  <p className="text-xs font-bold text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-1.5 inline-block mb-2">
+                    {relType}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mr-2">
+                    {rels.map((r, i) => (
+                      <Link
+                        key={i}
+                        href={`/narrator/${r.other_id}`}
+                        className="text-xs text-green-800 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-lg hover:border-green-300 hover:shadow-sm transition-all"
+                      >
+                        {r.other_name.split('،')[0].trim()}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
