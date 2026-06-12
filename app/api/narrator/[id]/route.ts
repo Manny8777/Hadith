@@ -61,11 +61,60 @@ export async function GET(
       [narratorId]
     )
 
+    // جرح وتعديل — all scholar criticisms/gradings grouped by scientist
+    const criticismRes = await pool.query(
+      `SELECT scientist_name, say_text, say_sort, scientist_noun_id
+       FROM narrator_criticism
+       WHERE narrator_id = $1
+       ORDER BY scientist_noun_id, say_sort, id`,
+      [narratorId]
+    )
+
+    // Group criticism by scientist_name
+    const criticismByScientist: Record<string, { scientistNounId: number | null; saySort: number; texts: string[] }> = {}
+    for (const row of criticismRes.rows) {
+      const name = row.scientist_name || 'غير معروف'
+      if (!criticismByScientist[name]) {
+        criticismByScientist[name] = { scientistNounId: row.scientist_noun_id, saySort: row.say_sort, texts: [] }
+      }
+      if (row.say_text) criticismByScientist[name].texts.push(row.say_text)
+    }
+
+    const criticism = Object.entries(criticismByScientist).map(([name, data]) => ({
+      scientist_name: name,
+      scientist_noun_id: data.scientistNounId,
+      texts: data.texts,
+    }))
+
+    // Biography from classical books, deduplicated by main_id
+    const biographyRes = await pool.query(
+      `SELECT DISTINCT ON (main_id) book_name, book_id, title, content
+       FROM narrator_biography WHERE narrator_id = $1
+       ORDER BY main_id, book_name`,
+      [narratorId]
+    )
+
+    // Group biography by book
+    const bioMap: Record<string, { book_id: number; entries: { title: string; content: string }[] }> = {}
+    for (const row of biographyRes.rows) {
+      const bname = row.book_name || 'غير معروف'
+      if (!bioMap[bname]) bioMap[bname] = { book_id: row.book_id, entries: [] }
+      const content = (row.content || '').trim()
+      if (!content || content.length < 10) continue
+      const already = bioMap[bname].entries.some(e => e.content === content)
+      if (!already) bioMap[bname].entries.push({ title: row.title || '', content })
+    }
+    const biography = Object.entries(bioMap)
+      .filter(([, v]) => v.entries.length > 0)
+      .map(([book_name, v]) => ({ book_name, book_id: v.book_id, entries: v.entries }))
+
     return NextResponse.json({
       narrator: narratorRes.rows[0],
       books: booksRes.rows,
       students: studentsRes.rows,
       teachers: teachersRes.rows,
+      criticism,
+      biography,
     })
   } catch (err) {
     console.error('Narrator API error:', err)
