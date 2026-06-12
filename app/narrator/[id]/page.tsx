@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import pool from '@/lib/db'
 import NarratorHadiths from '@/app/components/NarratorHadiths'
+import NarratorExport from '@/app/components/NarratorExport'
 
 export const dynamic = 'force-dynamic'
 
@@ -149,9 +150,11 @@ export default async function NarratorPage({
             ← قائمة الرواة
           </Link>
           <h1 className="text-lg font-bold text-amber-100">موسوعة الحديث الشريف</h1>
-          <Link href={`/compare?a=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
-            مقارنة
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/compare?a=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              مقارنة
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -166,9 +169,19 @@ export default async function NarratorPage({
             <h2 className="text-2xl font-bold text-green-900 leading-snug flex-1">{narrator.name}</h2>
           </div>
 
-          {narrator.abb_name && narrator.abb_name !== narrator.name && (
-            <p className="text-gray-500 text-sm mb-3">الاسم المختصر: {narrator.abb_name}</p>
-          )}
+          <div className="flex items-center justify-between mb-3">
+            {narrator.abb_name && narrator.abb_name !== narrator.name ? (
+              <p className="text-gray-500 text-sm">الاسم المختصر: {narrator.abb_name}</p>
+            ) : <span />}
+            <NarratorExport
+              narrator={narrator}
+              criticism={criticism}
+              biographies={biographies}
+              booksCount={books.length}
+              teachersCount={teachers.length}
+              studentsCount={students.length}
+            />
+          </div>
           {narrator.esm_shuhra && narrator.esm_shuhra.trim() && (
             <p className="text-gray-500 text-sm mb-3">اشتهر بـ: {narrator.esm_shuhra}</p>
           )}
