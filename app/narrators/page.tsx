@@ -25,10 +25,22 @@ interface SearchParams {
 }
 
 const GRADE_FILTERS = [
-  { label: 'ثقة', pattern: '%ثق%' },
-  { label: 'صدوق', pattern: '%صدوق%' },
-  { label: 'ضعيف', pattern: '%ضعيف%' },
-  { label: 'مجهول', pattern: '%مجهول%' },
+  { label: 'ثقة', pattern: 'ثقة' },
+  { label: 'صدوق', pattern: 'صدوق' },
+  { label: 'ضعيف', pattern: 'ضعيف' },
+  { label: 'مجهول', pattern: 'مجهول' },
+]
+
+const TABAQA_FILTERS = [
+  { label: 'الثانية', desc: 'كبار التابعين' },
+  { label: 'الثالثة', desc: 'وسطى التابعين' },
+  { label: 'الرابعة', desc: 'أتباع التابعين' },
+  { label: 'الخامسة', desc: 'الطبقة الخامسة' },
+  { label: 'السادسة', desc: 'الطبقة السادسة' },
+  { label: 'السابعة', desc: 'الطبقة السابعة' },
+  { label: 'الثامنة', desc: 'الطبقة الثامنة' },
+  { label: 'التاسعة', desc: 'الطبقة التاسعة' },
+  { label: 'العاشرة', desc: 'الطبقة العاشرة' },
 ]
 
 export default async function NarratorsPage({
@@ -40,6 +52,7 @@ export default async function NarratorsPage({
   const q = sp.q ?? ''
   const gradeFilter = sp.grade ?? ''
   const companionFilter = sp.companion === '1'
+  const tabaqaFilter = sp.tabaqa ?? ''
   const sortBy = sp.sort ?? 'hadiths'
   const page = Math.max(1, parseInt(sp.page ?? '1', 10))
   const limit = 40
@@ -61,6 +74,11 @@ export default async function NarratorsPage({
   if (gradeFilter) {
     conditions.push(`(martaba_ibn_hajar ILIKE $${pi} OR martaba_zahabi ILIKE $${pi})`)
     queryParams.push(`%${gradeFilter}%`)
+    pi++
+  }
+  if (tabaqaFilter) {
+    conditions.push(`tabaqa ILIKE $${pi}`)
+    queryParams.push(`%${tabaqaFilter}%`)
     pi++
   }
 
@@ -99,6 +117,7 @@ export default async function NarratorsPage({
     if (q) p.q = q
     if (gradeFilter) p.grade = gradeFilter
     if (companionFilter) p.companion = '1'
+    if (tabaqaFilter) p.tabaqa = tabaqaFilter
     if (sortBy !== 'hadiths') p.sort = sortBy
     Object.entries(overrides).forEach(([k, v]) => {
       if (v !== undefined && v !== '') p[k] = String(v)
@@ -108,20 +127,18 @@ export default async function NarratorsPage({
     return `/narrators${qs ? '?' + qs : ''}`
   }
 
-  const gradingBadge = (grade: string | null, label?: string) => {
+  const gradingBadge = (grade: string | null) => {
     if (!grade) return null
     let cls = 'bg-gray-100 text-gray-500'
     if (/ثقة|صحيح|عدل|صحابي/.test(grade)) cls = 'bg-green-100 text-green-700'
     else if (/صدوق|حسن|مقبول/.test(grade)) cls = 'bg-amber-100 text-amber-700'
     else if (/ضعيف|منكر|متروك/.test(grade)) cls = 'bg-red-100 text-red-600'
     return (
-      <span className={`text-xs px-2 py-0.5 rounded-full ${cls}`}>
-        {label ? `${label}: ` : ''}{grade}
-      </span>
+      <span className={`text-xs px-2 py-0.5 rounded-full ${cls}`}>{grade}</span>
     )
   }
 
-  const activeFilters = q || gradeFilter || companionFilter
+  const activeFilters = q || gradeFilter || companionFilter || tabaqaFilter
 
   return (
     <div dir="rtl" className="min-h-screen bg-amber-50">
@@ -202,6 +219,28 @@ export default async function NarratorsPage({
                 ))}
               </div>
             </div>
+
+            {/* Tabaqa filters */}
+            <div className="flex flex-wrap gap-1.5 items-center">
+              <span className="text-white/50 text-xs">الطبقة:</span>
+              {TABAQA_FILTERS.map(tf => (
+                <Link
+                  key={tf.label}
+                  href={buildHref({ tabaqa: tabaqaFilter === tf.label ? '' : tf.label, page: undefined })}
+                  title={tf.desc}
+                  className={`text-xs px-2.5 py-0.5 rounded-full transition-colors ${
+                    tabaqaFilter === tf.label
+                      ? 'bg-amber-300 text-green-900 font-bold'
+                      : 'bg-white/5 text-white/50 hover:bg-white/15 hover:text-white/80'
+                  }`}
+                >
+                  {tf.label}
+                </Link>
+              ))}
+              {tabaqaFilter && !TABAQA_FILTERS.some(tf => tf.label === tabaqaFilter) && (
+                <span className="text-xs text-amber-300">{tabaqaFilter}</span>
+              )}
+            </div>
           </form>
         </div>
       </header>
@@ -210,28 +249,15 @@ export default async function NarratorsPage({
         {/* Results info */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
-            {q && (
-              <span className="text-gray-600 text-sm">
-                البحث: <strong className="text-green-800">{q}</strong>
-              </span>
-            )}
-            {gradeFilter && (
-              <span className="text-gray-600 text-sm">
-                الدرجة: <strong className="text-green-800">{gradeFilter}</strong>
-              </span>
-            )}
-            {companionFilter && (
-              <span className="text-gray-600 text-sm font-medium text-amber-700">الصحابة</span>
-            )}
+            {q && <span className="text-gray-600 text-sm">البحث: <strong className="text-green-800">{q}</strong></span>}
+            {gradeFilter && <span className="text-gray-600 text-sm">الدرجة: <strong className="text-green-800">{gradeFilter}</strong></span>}
+            {tabaqaFilter && <span className="text-gray-600 text-sm">الطبقة: <strong className="text-green-800">{tabaqaFilter}</strong></span>}
+            {companionFilter && <span className="text-gray-600 text-sm font-medium text-amber-700">الصحابة</span>}
             {activeFilters && (
-              <Link href="/narrators" className="text-xs text-gray-400 hover:text-gray-600 underline">
-                إزالة التصفية
-              </Link>
+              <Link href="/narrators" className="text-xs text-gray-400 hover:text-gray-600 underline">إزالة التصفية</Link>
             )}
           </div>
-          <span className="text-sm text-gray-500">
-            {total.toLocaleString('ar-EG')} راوٍ
-          </span>
+          <span className="text-sm text-gray-500">{total.toLocaleString('ar-EG')} راوٍ</span>
         </div>
 
         {/* Narrator Cards */}
@@ -259,9 +285,9 @@ export default async function NarratorsPage({
                   </div>
                   <div className="shrink-0 flex items-center gap-3 text-xs text-gray-400">
                     {narrator.tabaqa && (
-                      <span className="hidden sm:inline truncate max-w-24">{narrator.tabaqa}</span>
+                      <span className="hidden sm:inline truncate max-w-24">{narrator.tabaqa.replace(/\.$/, '').trim()}</span>
                     )}
-                    {narrator.death_year_num != null && (
+                    {narrator.death_year_num != null && narrator.death_year_num > 0 && (
                       <span>ت.{narrator.death_year_num}هـ</span>
                     )}
                     {narrator.hadiths_count != null && narrator.hadiths_count > 0 && (
