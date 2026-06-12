@@ -45,7 +45,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   // Get narrator names from chain
   let narratorNames: string[] = []
   if (isnadRes.rows[0]?.narrator_ids) {
-    const ids = isnadRes.rows[0].narrator_ids
+    const ids: number[] = (isnadRes.rows[0].narrator_ids as string)
       .trim()
       .split(/\s+/)
       .filter(Boolean)
