@@ -46,7 +46,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const { id } = await params
   const mainId = parseInt(id)
 
-  const [hadithRes, judgmentsRes, isnadRes, takhrijBooksRes, subjectsRes] = await Promise.all([
+  const [hadithRes, judgmentsRes, isnadRes, takhrijBooksRes, subjectsRes, relatedRes] = await Promise.all([
     pool.query(
       `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death
        FROM hadith_toc h
@@ -89,6 +89,19 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
        WHERE hs.paragraph_main_id = $1
        ORDER BY si.left_value
        LIMIT 15`,
+      [mainId]
+    ).catch(() => ({ rows: [] })),
+    // Related hadiths sharing subjects
+    pool.query(
+      `SELECT DISTINCT ht.main_id, ht.tarf, b.title as book_title
+       FROM hadith_subjects hs_other
+       JOIN hadith_toc ht ON ht.main_id = hs_other.paragraph_main_id
+       JOIN books b ON b.id = ht.book_id
+       WHERE hs_other.subject_id IN (
+         SELECT subject_id FROM hadith_subjects WHERE paragraph_main_id = $1
+       )
+       AND hs_other.paragraph_main_id != $1
+       LIMIT 8`,
       [mainId]
     ).catch(() => ({ rows: [] })),
   ])
@@ -139,6 +152,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const allStrong = primaryChain?.allStrong ?? false
   const takhrijBooks = (takhrijBooksRes as { rows: Array<{ title: string }> }).rows.map(r => r.title)
   const subjects = (subjectsRes as { rows: Array<{ id: number; title: string }> }).rows
+  const relatedHadiths = (relatedRes as { rows: Array<{ main_id: number; tarf: string | null; book_title: string }> }).rows
 
   // Find narrators shared across ALL chains (common pivot points in multi-chain hadiths)
   let commonNarrators: NarratorInChain[] = []
@@ -302,6 +316,32 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
 
       {/* Takhrij — cross-references in other books */}
       <TakhrijSection hadithId={mainId} />
+
+      {/* Related hadiths sharing subjects */}
+      {relatedHadiths.length > 0 && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-100 p-5">
+          <h2 className="font-bold text-gray-700 text-sm mb-3 flex items-center gap-2">
+            <span className="w-1 h-4 bg-amber-400 rounded-full inline-block"></span>
+            أحاديث ذات موضوع مشترك
+          </h2>
+          <div className="space-y-2">
+            {relatedHadiths.map(r => (
+              <Link
+                key={r.main_id}
+                href={`/hadith/${r.main_id}`}
+                className="flex items-start gap-3 text-sm hover:text-green-700 group"
+              >
+                <span className="shrink-0 text-xs text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded mt-0.5">
+                  {r.book_title}
+                </span>
+                <span className="text-gray-700 group-hover:text-green-700 leading-6 line-clamp-1">
+                  {stripTags(r.tarf || '').slice(0, 120) || `حديث ${r.main_id}`}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex justify-between mt-8 text-sm">
