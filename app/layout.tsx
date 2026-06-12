@@ -22,6 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
           <a href="/books" className="hover:text-amber-200 transition-colors">الكتب</a>
           <a href="/search" className="hover:text-amber-200 transition-colors">البحث</a>
+          <a href="/narrators" className="hover:text-amber-200 transition-colors">الرواة</a>
+          <a href="/topics" className="hover:text-amber-200 transition-colors">الفهارس</a>
+          <a href="/lexicon" className="hover:text-amber-200 transition-colors">غريب الحديث</a>
         </nav>
         <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
         <footer className="text-center text-xs text-gray-400 py-6 border-t border-gray-200">

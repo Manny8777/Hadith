@@ -37,22 +37,31 @@ export default function Home() {
         </button>
       </form>
 
-      <div className="flex gap-6 text-center">
-        <a
-          href="/books"
-          className="bg-white border border-gray-200 rounded-xl px-8 py-6 hover:shadow-md transition-shadow text-green-900 font-bold"
-        >
-          <div className="text-3xl mb-2">📚</div>
-          <div className="text-lg">تصفح الكتب</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl text-center">
+        <a href="/books" className="bg-white border border-gray-200 rounded-xl px-6 py-5 hover:shadow-md transition-shadow text-green-900 font-bold">
+          <div className="text-2xl mb-2">📚</div>
+          <div>تصفح الكتب</div>
           <div className="text-sm text-gray-500 mt-1">245 كتاباً</div>
         </a>
-        <a
-          href="/search"
-          className="bg-white border border-gray-200 rounded-xl px-8 py-6 hover:shadow-md transition-shadow text-green-900 font-bold"
-        >
-          <div className="text-3xl mb-2">🔍</div>
-          <div className="text-lg">البحث المتقدم</div>
-          <div className="text-sm text-gray-500 mt-1">مئات الآلاف من الأحاديث</div>
+        <a href="/search" className="bg-white border border-gray-200 rounded-xl px-6 py-5 hover:shadow-md transition-shadow text-green-900 font-bold">
+          <div className="text-2xl mb-2">🔍</div>
+          <div>البحث</div>
+          <div className="text-sm text-gray-500 mt-1">339,607 حديث</div>
+        </a>
+        <a href="/narrators" className="bg-white border border-gray-200 rounded-xl px-6 py-5 hover:shadow-md transition-shadow text-green-900 font-bold">
+          <div className="text-2xl mb-2">👤</div>
+          <div>الرواة</div>
+          <div className="text-sm text-gray-500 mt-1">30,087 راوٍ</div>
+        </a>
+        <a href="/topics" className="bg-white border border-gray-200 rounded-xl px-6 py-5 hover:shadow-md transition-shadow text-green-900 font-bold">
+          <div className="text-2xl mb-2">🗂</div>
+          <div>الفهارس الموضوعية</div>
+          <div className="text-sm text-gray-500 mt-1">25,922 موضوع</div>
+        </a>
+        <a href="/lexicon" className="bg-white border border-gray-200 rounded-xl px-6 py-5 hover:shadow-md transition-shadow text-green-900 font-bold">
+          <div className="text-2xl mb-2">📖</div>
+          <div>غريب الحديث</div>
+          <div className="text-sm text-gray-500 mt-1">13,399 لفظة</div>
         </a>
       </div>
     </div>

@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import TakhrijSection from '@/app/components/TakhrijSection'
+import ServicesBadges from '@/app/components/ServicesBadges'
 
 function stripTags(html: string): string {
   return (html || '')
@@ -44,8 +46,8 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
-  // Get narrator names from chain
-  let narratorNames: string[] = []
+  // Get narrator names from chain (with IDs for links)
+  let narrators: { id: number; name: string }[] = []
   if (isnadRes.rows[0]?.narrator_ids) {
     const ids: number[] = (isnadRes.rows[0].narrator_ids as string)
       .trim()
@@ -57,9 +59,9 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         `SELECT id, name, abb_name FROM narrators WHERE id = ANY($1) LIMIT 20`,
         [ids]
       )
-      const narMap: Record<number, string> = {}
-      narRes.rows.forEach(n => { narMap[n.id] = n.abb_name || n.name })
-      narratorNames = ids.map(nid => narMap[nid] || `[${nid}]`)
+      const narMap: Record<number, { id: number; name: string }> = {}
+      narRes.rows.forEach(n => { narMap[n.id] = { id: n.id, name: n.abb_name || n.name } })
+      narrators = ids.map(nid => narMap[nid] || { id: nid, name: `[${nid}]` })
     }
   }
 
@@ -84,22 +86,28 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {/* Feature-flag badges */}
+      <ServicesBadges hadithId={mainId} />
+
       {/* Hadith content */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6 text-lg leading-loose">
         {stripTags(h.content)}
       </div>
 
       {/* Narrator chain */}
-      {narratorNames.length > 0 && (
+      {narrators.length > 0 && (
         <div className="bg-amber-50 rounded-xl border border-amber-100 p-5 mb-6">
           <h2 className="font-bold text-green-800 mb-3 text-lg">السند</h2>
           <div className="flex flex-wrap gap-2 items-center">
-            {narratorNames.map((name, i) => (
+            {narrators.map((nar, i) => (
               <span key={i} className="flex items-center gap-2">
-                <span className="bg-white border border-amber-200 rounded-full px-3 py-1 text-sm">
-                  {name}
-                </span>
-                {i < narratorNames.length - 1 && (
+                <Link
+                  href={`/narrator/${nar.id}`}
+                  className="bg-white border border-amber-200 rounded-full px-3 py-1 text-sm hover:border-green-400 hover:text-green-800 transition-colors"
+                >
+                  {nar.name}
+                </Link>
+                {i < narrators.length - 1 && (
                   <span className="text-gray-400">←</span>
                 )}
               </span>
@@ -126,6 +134,9 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       )}
+
+      {/* Takhrij — cross-references in other books */}
+      <TakhrijSection hadithId={mainId} />
 
       {/* Navigation */}
       <div className="flex justify-between mt-8 text-sm">

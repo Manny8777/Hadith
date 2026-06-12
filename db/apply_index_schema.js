@@ -1,0 +1,21 @@
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+
+const pool = new Pool({
+  connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',
+  ssl: { rejectUnauthorized: false }
+});
+
+const sql = fs.readFileSync(path.join(__dirname, 'schema_index.sql'), 'utf8');
+
+pool.query(sql)
+  .then(() => {
+    console.log('Schema applied successfully');
+    return pool.end();
+  })
+  .catch(e => {
+    console.error('Error:', e.message);
+    pool.end();
+    process.exit(1);
+  });

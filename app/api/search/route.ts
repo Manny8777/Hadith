@@ -1,14 +1,34 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim()
   const page = parseInt(searchParams.get('page') || '1')
+  const bookIdParam = searchParams.get('book_id')
+  const bookId = bookIdParam ? parseInt(bookIdParam) : null
   const limit = 20
   const offset = (page - 1) * limit
 
   if (!q || q.length < 2) return NextResponse.json({ results: [], total: 0 })
+
+  // Build dynamic WHERE clause
+  const conditions: string[] = [
+    'h.is_leaf = true',
+    `to_tsvector('simple', coalesce(h.tarf,'') || ' ' || coalesce(h.content,'')) @@ plainto_tsquery('simple', $1)`,
+  ]
+  const params: (string | number)[] = [q, limit, offset]
+  let paramIdx = 4 // next available param index
+
+  if (bookId !== null && !isNaN(bookId)) {
+    conditions.push(`h.book_id = $${paramIdx}`)
+    params.push(bookId)
+    paramIdx++
+  }
+
+  const whereClause = conditions.join(' AND ')
 
   const { rows } = await pool.query(
     `SELECT h.main_id, h.book_id, h.book_name, h.tarf,
@@ -16,20 +36,29 @@ export async function GET(req: Request) {
             ts_rank(to_tsvector('simple', coalesce(h.tarf,'') || ' ' || coalesce(h.content,'')),
                     plainto_tsquery('simple', $1)) AS rank
      FROM hadith_toc h
-     WHERE h.is_leaf = true
-       AND (to_tsvector('simple', coalesce(h.tarf,'') || ' ' || coalesce(h.content,''))
-            @@ plainto_tsquery('simple', $1))
+     WHERE ${whereClause}
      ORDER BY rank DESC
      LIMIT $2 OFFSET $3`,
-    [q, limit, offset]
+    params
   )
 
+  // Count query params (no limit/offset)
+  const countParams: (string | number)[] = [q]
+  const countConditions: string[] = [
+    'is_leaf = true',
+    `to_tsvector('simple', coalesce(tarf,'') || ' ' || coalesce(content,'')) @@ plainto_tsquery('simple', $1)`,
+  ]
+  let countParamIdx = 2
+
+  if (bookId !== null && !isNaN(bookId)) {
+    countConditions.push(`book_id = $${countParamIdx}`)
+    countParams.push(bookId)
+    countParamIdx++
+  }
+
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM hadith_toc
-     WHERE is_leaf = true
-       AND to_tsvector('simple', coalesce(tarf,'') || ' ' || coalesce(content,''))
-           @@ plainto_tsquery('simple', $1)`,
-    [q]
+    `SELECT COUNT(*) FROM hadith_toc WHERE ${countConditions.join(' AND ')}`,
+    countParams
   )
 
   return NextResponse.json({

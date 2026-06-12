@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS hadith_services (
+    hadith_id      INTEGER PRIMARY KEY,
+    takhreg        BOOLEAN DEFAULT FALSE,
+    compound_matn  BOOLEAN DEFAULT FALSE,
+    rwah           BOOLEAN DEFAULT FALSE,
+    asnad          BOOLEAN DEFAULT FALSE,
+    shawahed       BOOLEAN DEFAULT FALSE,
+    ghareeb        BOOLEAN DEFAULT FALSE,
+    degree         BOOLEAN DEFAULT FALSE,
+    sharh          BOOLEAN DEFAULT FALSE,
+    subjects       BOOLEAN DEFAULT FALSE,
+    tafsser        BOOLEAN DEFAULT FALSE,
+    biography      BOOLEAN DEFAULT FALSE,
+    medicine       BOOLEAN DEFAULT FALSE,
+    feqh           BOOLEAN DEFAULT FALSE,
+    asbab          BOOLEAN DEFAULT FALSE,
+    mokhtalaf      BOOLEAN DEFAULT FALSE,
+    amthal         BOOLEAN DEFAULT FALSE,
+    motawater      BOOLEAN DEFAULT FALSE
+);

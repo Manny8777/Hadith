@@ -66,12 +66,62 @@ One-time extraction from local HadithDB binary format using Engine0200.dll
 - [x] 4.8 Search: 3,716 results for "قال", full Arabic results confirmed
 - [ ] 4.9 Mobile layout — pending manual browser test
 
-### Phase 5 — Advanced (post-launch)
-- [ ] 5.1 Narrator (Isnad) chain tree visualization
-- [ ] 5.2 Hadith judgment display (صحيح / حسن / ضعيف etc.) — data is in DB, UI basic
-- [ ] 5.3 Cross-reference links between hadiths
-- [ ] 5.4 Index-based browsing (الفهارس)
-- [ ] 5.5 Export/share individual hadiths
+### Phase 5 — Takhrij / Cross-references (HTakhreeg — 281,541 rows)
+- [ ] 5.1 Add `takhrij` table to schema (hadith_id, group_id, compound_matn_id, book_id)
+- [ ] 5.2 Seed HTakhreeg.json → takhrij table
+- [ ] 5.3 API: GET /api/hadith/[id]/takhrij → all hadiths sharing same group_id
+- [ ] 5.4 Component: TakhrijSection.tsx — "هذا الحديث في كتب أخرى"
+- [ ] 5.5 Wire TakhrijSection into /hadith/[id] page
+
+### Phase 6 — Narrator Detail Pages (NounsGarh, NounsBooks, NounsRelations — 140k rows)
+- [ ] 6.1 Add schema: narrator_grading (NounsGarh), narrator_books (NounsBooks), narrator_relations (NounsRelations + NounsRelationsTypes)
+- [ ] 6.2 Seed NounsGarh, NounsBooks, NounsRelations, NounsRelationsTypes, NounsScientists
+- [ ] 6.3 API: GET /api/narrator/[id] → biography + grading + books + teacher/student links
+- [ ] 6.4 Page: /narrator/[id] — full narrator profile
+- [ ] 6.5 Update hadith isnad display to make narrator names clickable → /narrator/[id]
+
+### Phase 7 — Subject Index / الفهارس (Index — 9 rows, IndexItem — 25,922 rows)
+- [ ] 7.1 Add schema: subject_categories (Index), subject_items (IndexItem)
+- [ ] 7.2 Seed Index.json and IndexItem.json
+- [ ] 7.3 API: GET /api/topics — all categories with counts
+- [ ] 7.4 API: GET /api/topics/[id] — items in a category (paginated)
+- [ ] 7.5 Page: /topics — topic category browser
+- [ ] 7.6 Page: /topics/[id] — hadiths under a topic (links to /hadith/[id])
+
+### Phase 8 — Hadith Service Flags (HadithServicesState — 277,396 rows)
+- [ ] 8.1 Add `hadith_services` table (22 boolean feature flags per hadith)
+- [ ] 8.2 Seed HadithServicesState.json
+- [ ] 8.3 API: GET /api/hadith/[id]/services → feature flags object
+- [ ] 8.4 Component: ServicesBadges.tsx — icon badges (تخريج، شرح، موضوعات، غريب…)
+- [ ] 8.5 Wire into /hadith/[id] page header
+
+### Phase 9 — Arabic Lexicon / غريب الحديث (LexiconItems — 13,399 rows)
+- [ ] 9.1 Add schema: lexicon_categories (Lexicon), lexicon_items (LexiconItems), lexicon_descrp (LexiconDescrp)
+- [ ] 9.2 Seed Lexicon.json, LexiconItems.json, LexiconDescrp.json
+- [ ] 9.3 API: GET /api/lexicon?q= — search lexicon by term
+- [ ] 9.4 API: GET /api/lexicon/[id] — lexicon entry with linked hadiths
+- [ ] 9.5 Page: /lexicon — Arabic lexicon browser with search
+
+### Phase 10 — Full Isnad Tree (AsanedTree — 797,473 rows)
+- [ ] 10.1 Add schema: isnad_tree (hierarchical tree of narrator paths, nested set model)
+- [ ] 10.2 Seed AsanedTree.json (large — use ijson streaming)
+- [ ] 10.3 API: GET /api/hadith/[id]/isnad-tree — tree nodes for a hadith
+- [ ] 10.4 Component: IsnadTree.tsx — visual collapsible tree
+- [ ] 10.5 Wire into /hadith/[id] page
+
+### Phase 11 — Search Improvements
+- [ ] 11.1 Filter by book (add ?book_id= param to /api/search)
+- [ ] 11.2 Filter by narrator name (join narrators table)
+- [ ] 11.3 Filter by hadith degree/grading
+- [ ] 11.4 Update /search page with filter UI (dropdowns for book, narrator)
+- [ ] 11.5 Narrator search: /api/search/narrators?q=
+
+### Phase 12 — UI Polish & Navigation
+- [ ] 12.1 Add nav links for /topics, /lexicon, /narrators to layout.tsx
+- [ ] 12.2 Home page stats (245 كتاب، 339,607 حديث، 30,087 راوٍ)
+- [ ] 12.3 Mobile layout test and fixes
+- [ ] 12.4 Loading skeletons / suspense boundaries
+- [ ] 12.5 Export/share individual hadiths (copy button, print view)
 
 ---
 
