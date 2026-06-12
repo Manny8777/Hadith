@@ -8,14 +8,21 @@ interface Narrator {
   id: number
   name: string
   abb_name: string | null
+  esm_shuhra: string | null
   kunia: string | null
-  death_year: string | null
-  death_year_num: number | null
-  birth_year: string | null
-  death_city: string | null
-  birth_city: string | null
+  laqab: string | null
+  nasab: string | null
   tabaqa: string | null
   tabaqa_num: number | null
+  birth_year: string | null
+  death_year: string | null
+  death_year_num: number | null
+  birth_city: string | null
+  death_city: string | null
+  living_city: string | null
+  journey_city: string | null
+  selat_karaba: string | null
+  mazhb: string | null
   hadiths_count: number | null
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
@@ -43,9 +50,11 @@ export default async function NarratorPage({
 
   const [narratorRes, booksRes, studentsRes, teachersRes] = await Promise.all([
     pool.query<Narrator>(
-      `SELECT id, name, abb_name, kunia, death_year, death_year_num,
-              birth_year, death_city, birth_city, tabaqa, tabaqa_num,
-              hadiths_count, martaba_ibn_hajar, martaba_zahabi, is_companion
+      `SELECT id, name, abb_name, esm_shuhra, kunia, laqab, nasab,
+              tabaqa, tabaqa_num, birth_year, death_year, death_year_num,
+              birth_city, death_city, living_city, journey_city,
+              selat_karaba, mazhb, hadiths_count,
+              martaba_ibn_hajar, martaba_zahabi, is_companion
        FROM narrators WHERE id = $1`,
       [narratorId]
     ),
@@ -136,42 +145,72 @@ export default async function NarratorPage({
             )}
           </div>
 
-          {/* Info Grid */}
+          {/* Info Grid — matches original software field layout */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-            {narrator.kunia && (
-              <div>
+            {narrator.laqab && narrator.laqab.trim() && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-gray-400 block text-xs mb-0.5">اللقب</span>
+                <span className="text-gray-800 font-medium">{narrator.laqab}</span>
+              </div>
+            )}
+            {narrator.kunia && narrator.kunia.trim() && (
+              <div className="col-span-2 sm:col-span-3">
                 <span className="text-gray-400 block text-xs mb-0.5">الكنية</span>
                 <span className="text-gray-800 font-medium">{narrator.kunia}</span>
               </div>
             )}
-            {narrator.tabaqa && (
-              <div>
-                <span className="text-gray-400 block text-xs mb-0.5">الطبقة</span>
-                <span className="text-gray-800 font-medium">{narrator.tabaqa}</span>
+            {narrator.nasab && narrator.nasab.trim() && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-gray-400 block text-xs mb-0.5">النسب</span>
+                <span className="text-gray-800 font-medium">{narrator.nasab}</span>
               </div>
             )}
-            {narrator.birth_year && (
-              <div>
-                <span className="text-gray-400 block text-xs mb-0.5">سنة الميلاد</span>
+            {narrator.living_city && narrator.living_city.trim() && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-gray-400 block text-xs mb-0.5">بلد الإقامة</span>
+                <span className="text-gray-800 font-medium">{narrator.living_city}</span>
+              </div>
+            )}
+            {narrator.selat_karaba && narrator.selat_karaba.trim() && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-gray-400 block text-xs mb-0.5">علاقات الراوي</span>
+                <span className="text-gray-800 font-medium leading-relaxed">{narrator.selat_karaba}</span>
+              </div>
+            )}
+            {narrator.birth_year && narrator.birth_year.trim() && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-gray-400 block text-xs mb-0.5">تاريخ الميلاد</span>
                 <span className="text-gray-800 font-medium">{narrator.birth_year}</span>
               </div>
             )}
-            {narrator.death_year && (
-              <div>
-                <span className="text-gray-400 block text-xs mb-0.5">سنة الوفاة</span>
+            {narrator.death_year && narrator.death_year.trim() && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-gray-400 block text-xs mb-0.5">تاريخ الوفاة</span>
                 <span className="text-gray-800 font-medium">{narrator.death_year}</span>
               </div>
             )}
-            {narrator.birth_city && (
+            {narrator.death_city && narrator.death_city.trim() && (
               <div>
-                <span className="text-gray-400 block text-xs mb-0.5">مكان الميلاد</span>
-                <span className="text-gray-800 font-medium">{narrator.birth_city}</span>
+                <span className="text-gray-400 block text-xs mb-0.5">بلد الوفاة</span>
+                <span className="text-gray-800 font-medium">{narrator.death_city}</span>
               </div>
             )}
-            {narrator.death_city && (
+            {narrator.journey_city && narrator.journey_city.trim() && (
               <div>
-                <span className="text-gray-400 block text-xs mb-0.5">مكان الوفاة</span>
-                <span className="text-gray-800 font-medium">{narrator.death_city}</span>
+                <span className="text-gray-400 block text-xs mb-0.5">بلد الرحلة</span>
+                <span className="text-gray-800 font-medium">{narrator.journey_city}</span>
+              </div>
+            )}
+            {narrator.mazhb && narrator.mazhb.trim() && (
+              <div>
+                <span className="text-gray-400 block text-xs mb-0.5">المذهب</span>
+                <span className="text-gray-800 font-medium">{narrator.mazhb}</span>
+              </div>
+            )}
+            {narrator.tabaqa && narrator.tabaqa.trim() && (
+              <div className="col-span-2">
+                <span className="text-gray-400 block text-xs mb-0.5">طبقة رواة التقريب</span>
+                <span className="text-gray-800 font-medium">{narrator.tabaqa}</span>
               </div>
             )}
             {narrator.hadiths_count != null && (
