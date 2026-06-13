@@ -15,9 +15,8 @@ import HadithNeighbors from './HadithNeighbors'
 import IsnadTree from './IsnadTree'
 import type { ReactNode } from 'react'
 
-function stripTags(html: string): string {
-  return (html || '')
-    .replace(/<[^>]+>/g, ' ')
+function decodeEntities(s: string): string {
+  return s
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, '&')
@@ -25,6 +24,31 @@ function stripTags(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)))
+}
+
+// Strip all tags and decode entities — for excerpt/card use
+function stripTags(html: string): string {
+  return decodeEntities(
+    (html || '').replace(/<[^>]+>/g, ' ')
+  ).replace(/\s+/g, ' ').trim()
+}
+
+// Full hadith body: remove Arabic XML structural elements that carry
+// reference numbers (رقم_حديث, رقم_الفقرة, نه) which are not display text,
+// strip remaining tags, decode entities, drop the leading " - " separator.
+function cleanHadithContent(xml: string): string {
+  return decodeEntities(
+    (xml || '')
+      // Remove hadith-number elements and their text content (closed by an HTML comment)
+      .replace(/<رقم_حديث[^>]*>[\s\S]*?<!--رقم_حديث-->/g, '')
+      // Remove self-closing structural refs
+      .replace(/<رقم_الفقرة[^/]*\/>/g, '')
+      .replace(/<نه\/>/g, '')
+      // Strip all remaining tags
+      .replace(/<[^>]+>/g, ' ')
+  )
+    // Strip the leading dash separator left after number removal
+    .replace(/^\s*[-–—]\s*/, '')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -220,10 +244,9 @@ export default function HadithSidebarLayout({
         <HadithNote hadithId={hadithId} />
 
         {/* Hadith text */}
-        <div
-          className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4 text-lg leading-loose"
-          dangerouslySetInnerHTML={{ __html: h.content }}
-        />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4 text-lg leading-loose">
+          {cleanHadithContent(h.content)}
+        </div>
 
         {/* Subject tags */}
         {subjects.length > 0 && (

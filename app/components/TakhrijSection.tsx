@@ -18,6 +18,9 @@ interface TakhrijRow {
 
 function stripTags(html: string): string {
   return (html || '')
+    .replace(/<رقم_حديث[^>]*>[\s\S]*?<!--رقم_حديث-->/g, '')
+    .replace(/<رقم_الفقرة[^/]*\/>/g, '')
+    .replace(/<نه\/>/g, '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
@@ -26,6 +29,7 @@ function stripTags(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/^\s*[-–—]\s*/, '')
     .replace(/\s+/g, ' ')
     .trim()
 }
