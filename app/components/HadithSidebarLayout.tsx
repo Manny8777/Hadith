@@ -29,8 +29,12 @@ function decodeEntities(s: string): string {
 // Strip all tags and decode entities — for excerpt/card use
 function stripTags(html: string): string {
   return decodeEntities(
-    (html || '').replace(/<[^>]+>/g, ' ')
-  ).replace(/\s+/g, ' ').trim()
+    (html || '')
+      .replace(/<رقم_حديث[^>]*>[^<]*<\/رقم_حديث>/g, '')
+      .replace(/<رقم_الفقرة[^>]*\/>/g, '')
+      .replace(/<نه\/>/g, '')
+      .replace(/<[^>]+>/g, ' ')
+  ).replace(/^\s*[-–—]\s*/, '').replace(/\s+/g, ' ').trim()
 }
 
 // Full hadith body: remove Arabic XML structural elements that carry
@@ -39,10 +43,10 @@ function stripTags(html: string): string {
 function cleanHadithContent(xml: string): string {
   return decodeEntities(
     (xml || '')
-      // Remove hadith-number elements and their text content (closed by an HTML comment)
-      .replace(/<رقم_حديث[^>]*>[\s\S]*?<!--رقم_حديث-->/g, '')
+      // Remove hadith-number elements (proper XML closing tags)
+      .replace(/<رقم_حديث[^>]*>[^<]*<\/رقم_حديث>/g, '')
       // Remove self-closing structural refs
-      .replace(/<رقم_الفقرة[^/]*\/>/g, '')
+      .replace(/<رقم_الفقرة[^>]*\/>/g, '')
       .replace(/<نه\/>/g, '')
       // Strip all remaining tags
       .replace(/<[^>]+>/g, ' ')
@@ -172,10 +176,10 @@ export default function HadithSidebarLayout({
         <div className="border-t border-gray-100 px-3 py-3 space-y-1.5">
           <p className="text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">روابط سريعة</p>
           {[
-            { href: `/hadith/${hadithId}/research-report`, label: 'التقرير البحثي' },
             { href: `/hadith/${hadithId}/witnesses`,       label: 'الشواهد والمتابعات' },
             { href: `/hadith/${hadithId}/pivot`,           label: 'مدار الحديث' },
             { href: `/hadith/${hadithId}/isnad-ranking`,   label: 'ترتيب الأسانيد' },
+            { href: `/hadith/${hadithId}/across-books`,    label: 'الحديث في المصادر' },
           ].map(lnk => (
             <a key={lnk.href} href={lnk.href}
               className="block text-xs text-green-700 hover:text-green-900 hover:underline py-0.5">
@@ -419,9 +423,7 @@ export default function HadithSidebarLayout({
                 { href: `/hadith/${hadithId}/across-books`,         label: 'الحديث في كتب الحديث',   desc: 'مقارنة نص الحديث عبر جميع الكتب التي خرّجته' },
                 { href: `/hadith/${hadithId}/pivot`,                label: 'مدار الحديث',            desc: 'الراوي الذي تجتمع عنده جميع أسانيد الحديث' },
                 { href: `/hadith/${hadithId}/isnad-ranking`,        label: 'ترتيب الأسانيد قوةً',    desc: 'ترتيب جميع أسانيد الحديث من الأقوى إلى الأضعف' },
-                { href: `/hadith/${hadithId}/matn-variants`,        label: 'فروق المتن',             desc: 'اختلافات الألفاظ بين الروايات المختلفة' },
                 { href: `/hadith/${hadithId}/chain-weakness`,       label: 'الحلقات الضعيفة',        desc: 'مواطن الضعف في السند' },
-                { href: `/hadith/${hadithId}/research-report`,      label: 'التقرير البحثي الشامل',  desc: 'تقرير أكاديمي متكامل يجمع النص والأسانيد والأحكام' },
               ].map(item => (
                 <a key={item.href} href={item.href}
                   className="flex flex-col gap-0.5 bg-white border border-gray-100 rounded-lg p-3 hover:border-green-200 hover:shadow-sm transition-all">
