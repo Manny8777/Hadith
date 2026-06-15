@@ -6,7 +6,6 @@ import PrintButton from './PrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
 import ChainTimeline from './ChainTimeline'
-import ChainAnalysis from './ChainAnalysis'
 import HadithNote from './HadithNote'
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
@@ -144,7 +143,6 @@ const SECTIONS = [
   { id: 'takhrij', label: 'التخريج' },
   { id: 'takhrij',  label: 'مقارنة المتون' },
   { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
-  { id: 'tahlil',  label: 'تحليل الحديث' },
   { id: 'adawat',  label: 'أدوات البحث' },
 ]
 
@@ -611,12 +609,6 @@ export default function HadithSidebarLayout({
             currentBookTitle={h.book_title}
             currentDeath={h.takhrij_death}
           />
-        </section>
-
-        {/* ── تحليل الحديث ── */}
-        <section id="tahlil" className="mb-8 scroll-mt-14">
-          <SectionHeader label="تحليل الحديث" sub="فحص رواة الإسناد من حيث الجرح والتعديل" />
-          <ChainAnalysis hadithId={hadithId} />
         </section>
 
         {/* ── أدوات البحث ── */}
