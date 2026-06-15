@@ -26,7 +26,7 @@ export async function GET(
     `SELECT
        t.hadith_id  AS main_id,
        t.book_id,
-       h.book_name,
+       b.title      AS book_name,
        b.title      AS book_title,
        h.tarf,
        h.part_num,

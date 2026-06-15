@@ -20,9 +20,10 @@ export async function GET(
       [itemId]
     ),
     pool.query(
-      `SELECT h.main_id, h.book_name, h.tarf, h.part_num, h.page_num
+      `SELECT h.main_id, h.book_id, b.title AS book_title, h.tarf, h.part_num, h.page_num
        FROM lexicon_hadith lh
        JOIN hadith_toc h ON h.main_id = lh.hadith_id
+       JOIN books b ON b.id = h.book_id
        WHERE lh.lexicon_item_id = $1
        LIMIT 20`,
       [itemId]

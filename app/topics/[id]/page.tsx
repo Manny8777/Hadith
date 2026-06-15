@@ -82,9 +82,25 @@ export default async function CategoryPage({
       </div>
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-green-900 mb-1">{cat.title}</h1>
-        <p className="text-gray-500 text-sm">{total.toLocaleString('ar-SA')} موضوع</p>
+      <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-green-900 mb-1">{cat.title}</h1>
+          <p className="text-gray-500 text-sm">{total.toLocaleString('ar-SA')} موضوع</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href={`/topics/${catId}/analysis`}
+            className="text-xs bg-blue-100 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-200 transition-colors font-medium"
+          >
+            التحليل الإسنادي
+          </Link>
+          <Link
+            href={`/search?subject_cat_id=${catId}`}
+            className="text-xs bg-green-100 text-green-800 border border-green-200 px-3 py-1.5 rounded-full hover:bg-green-200 transition-colors font-medium"
+          >
+            البحث في الموضوع
+          </Link>
+        </div>
       </div>
 
       {/* Items grid */}

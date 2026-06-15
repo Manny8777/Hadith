@@ -3,23 +3,29 @@ import pool from '@/lib/db'
 import { notFound } from 'next/navigation'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain } from '@/app/components/HadithSidebarLayout'
-import ServicesBadges from '@/app/components/ServicesBadges'
 import TakhrijSection from '@/app/components/TakhrijSection'
 
 export default async function HadithPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const mainId = parseInt(id)
 
-  const [hadithRes, judgmentsRes, isnadRes, takhrijBooksRes, subjectsRes, relatedRes, takhrijSummaryRes] = await Promise.all([
+  const [hadithRes, judgmentsRes, sourcesRes, isnadRes, takhrijBooksRes, subjectsRes, relatedRes, takhrijSummaryRes] = await Promise.all([
     pool.query(
-      `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death
+      `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death,
+              hs.takhreg, hs.compound_matn, hs.rwah, hs.asnad, hs.shawahed,
+              hs.ghareeb, hs.degree, hs.sharh, hs.subjects, hs.tafsser,
+              hs.biography, hs.medicine, hs.feqh, hs.asbab, hs.mokhtalaf,
+              hs.amthal, hs.motawater
        FROM hadith_toc h
        JOIN books b ON h.book_id = b.id
+       LEFT JOIN hadith_services hs ON hs.hadith_id = h.main_id
        WHERE h.main_id = $1`,
       [mainId]
     ),
     pool.query(
-      `SELECT j.say_text, n.name as scientist_name, n.abb_name,
+      `SELECT j.say_text, j.scientist_id,
+              n.name as scientist_name, n.abb_name,
+              n.death_year_num, n.martaba_ibn_hajar,
               CASE
                 WHEN j.say_text ~* 'صحيح' THEN 'صحيح'
                 WHEN j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND j.say_text !~* 'صحيح' THEN 'حسن'
@@ -29,12 +35,23 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
        FROM hadith_judgments j
        LEFT JOIN narrators n ON j.scientist_id = n.id
        WHERE j.hadith_id = $1
-       ORDER BY CASE
-         WHEN j.say_text ~* 'صحيح' THEN 1
-         WHEN j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' THEN 2
-         WHEN j.say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 3
-         ELSE 4 END
+       ORDER BY n.death_year_num ASC NULLS LAST
        LIMIT 30`,
+      [mainId]
+    ),
+    pool.query(
+      `SELECT DISTINCT ON (n.id, hjl.service_main_id)
+              n.id as scientist_id,
+              hjl.service_main_id, hsc.book_name, hsc.part_num, hsc.page_num
+       FROM (SELECT DISTINCT j.scientist_id FROM hadith_judgments j WHERE j.hadith_id = $1 AND j.scientist_id IS NOT NULL) jd
+       JOIN narrators n ON n.id = jd.scientist_id
+       JOIN hadith_judgment_hits jh ON jh.hadith_id = $1
+       JOIN hadith_judgment_links hjl ON hjl.say_id = jh.say_id AND hjl.is_book_toc = false
+       JOIN hadith_service_content hsc ON hsc.id = hjl.service_main_id
+       JOIN books b ON b.id = hsc.book_id
+       WHERE (b.takhrij_death = n.death_year_num
+              OR hsc.content LIKE '%ربط="' || n.id::text || '"%')
+       ORDER BY n.id, hjl.service_main_id`,
       [mainId]
     ),
     pool.query(
@@ -165,12 +182,53 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const takhrijSummary = takhrijSummaryRes as { mutabaatCount: number; shawahidCount: number }
   const subjects = (subjectsRes as { rows: Array<{ id: number; title: string }> }).rows
   const relatedHadiths = (relatedRes as { rows: Array<{ main_id: number; tarf: string | null; book_title: string }> }).rows
-  const judgments = judgmentsRes.rows.map(j => ({
-    say_text: j.say_text as string,
-    scientist_name: (j.scientist_name as string | null) || null,
-    abb_name: (j.abb_name as string | null) || null,
-    grade_class: (j as { grade_class?: string }).grade_class || null,
-  }))
+  // Build per-scientist source list (all distinct sources for each scientist on this hadith)
+  type SrcRow = { scientist_id: number; service_main_id: number; book_name: string; part_num: number; page_num: number }
+  const sourcesMap = new Map<number, SrcRow[]>()
+  for (const src of (sourcesRes as { rows: SrcRow[] }).rows) {
+    const k = Number(src.scientist_id)
+    if (!sourcesMap.has(k)) sourcesMap.set(k, [])
+    sourcesMap.get(k)!.push(src)
+  }
+  // Cycle counter: assigns a different source to each successive judgment for the same scientist
+  const srcCursor = new Map<number, number>()
+
+  const judgments = judgmentsRes.rows.map(j => {
+    const sciId = j.scientist_id != null ? Number(j.scientist_id) : null
+    let src: SrcRow | null = null
+    if (sciId != null) {
+      const srcs = sourcesMap.get(sciId) || []
+      const idx = srcCursor.get(sciId) ?? 0
+      src = srcs[idx] ?? srcs[0] ?? null
+      srcCursor.set(sciId, idx + 1)
+    }
+    return {
+      say_text: j.say_text as string,
+      scientist_id: sciId,
+      scientist_name: (j.scientist_name as string | null) || null,
+      abb_name: (j.abb_name as string | null) || null,
+      death_year_num: (j.death_year_num as number | null) || null,
+      martaba_ibn_hajar: (j.martaba_ibn_hajar as string | null) || null,
+      grade_class: (j as { grade_class?: string }).grade_class || null,
+      source_book: src?.book_name ?? null,
+      source_part: src?.part_num != null ? Number(src.part_num) : null,
+      source_page: src?.page_num != null ? Number(src.page_num) : null,
+      source_content_id: src?.service_main_id != null ? Number(src.service_main_id) : null,
+    }
+  })
+
+  // Extract hadith services flags from the joined row
+  const SERVICE_COLUMNS = [
+    'takhreg', 'compound_matn', 'rwah', 'asnad', 'shawahed',
+    'ghareeb', 'degree', 'sharh', 'subjects', 'tafsser',
+    'biography', 'medicine', 'feqh', 'asbab', 'mokhtalaf',
+    'amthal', 'motawater',
+  ] as const
+  type ServiceKey = typeof SERVICE_COLUMNS[number]
+  const hadithServices: Partial<Record<ServiceKey, boolean>> = {}
+  for (const col of SERVICE_COLUMNS) {
+    if (h[col] === true) hadithServices[col] = true
+  }
 
   return (
     <HadithSidebarLayout
@@ -183,7 +241,8 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       relatedHadiths={relatedHadiths}
       takhrijBooks={takhrijBooks}
       takhrijSummary={takhrijSummary}
-      servicesBadgesSlot={<ServicesBadges hadithId={mainId} />}
+      hadithServices={hadithServices}
+      servicesBadgesSlot={null}
       takhrijSlot={<TakhrijSection hadithId={mainId} />}
     />
   )

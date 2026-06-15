@@ -11,3 +11,12 @@ body {
   font-family: 'Amiri', 'Traditional Arabic', serif;
   line-height: 1.9;
 }
+
+@media print {
+  nav, footer, .no-print { display: none !important; }
+  body { background: white; font-size: 12pt; line-height: 1.6; }
+  main { max-width: 100% !important; padding: 0 !important; }
+  a { color: inherit; text-decoration: none; }
+  button { display: none !important; }
+  .shadow-sm, .shadow-md { box-shadow: none !important; }
+}

@@ -12,6 +12,7 @@ interface Narrator {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  is_mobham: boolean
   tabaqa: string | null
 }
 
@@ -24,6 +25,7 @@ interface SearchParams {
   page?: string
   death_min?: string
   death_max?: string
+  filter?: string
 }
 
 const GRADE_FILTERS = [
@@ -45,6 +47,14 @@ const TABAQA_FILTERS = [
   { label: 'العاشرة', desc: 'الطبقة العاشرة' },
 ]
 
+// Quick-filter options driven by the new boolean fields
+const QUICK_FILTERS = [
+  { key: 'companions', label: 'الصحابة فقط', color: 'amber' },
+  { key: 'scientists', label: 'العلماء الناقدون', color: 'blue' },
+  { key: 'mobham', label: 'المبهمون', color: 'gray' },
+  { key: 'unrated', label: 'بدون تقييم', color: 'rose' },
+] as const
+
 export default async function NarratorsPage({
   searchParams,
 }: {
@@ -59,6 +69,7 @@ export default async function NarratorsPage({
   const page = Math.max(1, parseInt(sp.page ?? '1', 10))
   const deathMin = sp.death_min ? parseInt(sp.death_min, 10) : null
   const deathMax = sp.death_max ? parseInt(sp.death_max, 10) : null
+  const quickFilter = sp.filter ?? ''   // companions | scientists | mobham | unrated
   const limit = 40
   const offset = (page - 1) * limit
 
@@ -95,6 +106,16 @@ export default async function NarratorsPage({
     queryParams.push(deathMax)
     pi++
   }
+  // Quick filters (new boolean fields)
+  if (quickFilter === 'companions') {
+    conditions.push(`is_companion = true`)
+  } else if (quickFilter === 'scientists') {
+    conditions.push(`is_scientist = true`)
+  } else if (quickFilter === 'mobham') {
+    conditions.push(`is_mobham = true`)
+  } else if (quickFilter === 'unrated') {
+    conditions.push(`martaba_ibn_hajar IS NULL AND martaba_zahabi IS NULL`)
+  }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
@@ -106,20 +127,38 @@ export default async function NarratorsPage({
   let narrators: Narrator[] = []
   let total = 0
 
+  // Stats for banner (run once regardless of current filter)
+  let statsTotal = 0
+  let statsCompanions = 0
+  let statsScientists = 0
+  let statsMobham = 0
+
   try {
-    const [countRes, dataRes] = await Promise.all([
+    const [countRes, dataRes, statsRes] = await Promise.all([
       pool.query(`SELECT COUNT(*) FROM narrators ${where}`, queryParams),
       pool.query<Narrator>(
         `SELECT id, name, abb_name, death_year_num, hadiths_count,
-                martaba_ibn_hajar, martaba_zahabi, is_companion, tabaqa
+                martaba_ibn_hajar, martaba_zahabi, is_companion, is_mobham, tabaqa
          FROM narrators ${where}
          ORDER BY ${orderClause}
          LIMIT $${pi} OFFSET $${pi + 1}`,
         [...queryParams, limit, offset]
       ),
+      pool.query<{ total: string; companions: string; scientists: string; mobham: string }>(`
+        SELECT
+          COUNT(*)                                    AS total,
+          COUNT(*) FILTER (WHERE is_companion = true) AS companions,
+          COUNT(*) FILTER (WHERE is_scientist = true) AS scientists,
+          COUNT(*) FILTER (WHERE is_mobham = true)    AS mobham
+        FROM narrators
+      `),
     ])
     total = parseInt(countRes.rows[0].count, 10)
     narrators = dataRes.rows
+    statsTotal      = parseInt(statsRes.rows[0].total, 10)
+    statsCompanions = parseInt(statsRes.rows[0].companions, 10)
+    statsScientists = parseInt(statsRes.rows[0].scientists, 10)
+    statsMobham     = parseInt(statsRes.rows[0].mobham, 10)
   } catch (err) {
     console.error('Narrators page error:', err)
   }
@@ -135,6 +174,7 @@ export default async function NarratorsPage({
     if (sortBy !== 'hadiths') p.sort = sortBy
     if (deathMin !== null) p.death_min = String(deathMin)
     if (deathMax !== null) p.death_max = String(deathMax)
+    if (quickFilter) p.filter = quickFilter
     Object.entries(overrides).forEach(([k, v]) => {
       if (v !== undefined && v !== '') p[k] = String(v)
       else delete p[k]
@@ -143,18 +183,7 @@ export default async function NarratorsPage({
     return `/narrators${qs ? '?' + qs : ''}`
   }
 
-  const gradingBadge = (grade: string | null) => {
-    if (!grade) return null
-    let cls = 'bg-gray-100 text-gray-500'
-    if (/ثقة|صحيح|عدل|صحابي/.test(grade)) cls = 'bg-green-100 text-green-700'
-    else if (/صدوق|حسن|مقبول/.test(grade)) cls = 'bg-amber-100 text-amber-700'
-    else if (/ضعيف|منكر|متروك/.test(grade)) cls = 'bg-red-100 text-red-600'
-    return (
-      <span className={`text-xs px-2 py-0.5 rounded-full ${cls}`}>{grade}</span>
-    )
-  }
-
-  const activeFilters = q || gradeFilter || companionFilter || tabaqaFilter || deathMin || deathMax
+  const activeFilters = q || gradeFilter || companionFilter || tabaqaFilter || deathMin || deathMax || quickFilter
 
   return (
     <div dir="rtl" className="min-h-screen bg-amber-50">
@@ -164,9 +193,20 @@ export default async function NarratorsPage({
           <div className="flex items-center justify-between mb-4">
             <Link href="/" className="text-amber-200 hover:text-white text-sm transition-colors">← الرئيسية</Link>
             <h1 className="text-xl font-bold text-amber-100">رواة الحديث</h1>
-            <Link href="/narrators/stats" className="text-amber-300 hover:text-amber-100 text-sm transition-colors">
-              إحصاءات ←
-            </Link>
+            <div className="flex gap-2 flex-wrap">
+              <Link href="/narrators/chain-filter" className="text-amber-300 hover:text-amber-100 text-xs border border-amber-400/30 px-2 py-1 rounded transition-colors">
+                تتبع الإسناد
+              </Link>
+              <Link href="/narrators/network" className="text-amber-300 hover:text-amber-100 text-xs border border-amber-400/30 px-2 py-1 rounded transition-colors">
+                المحورية
+              </Link>
+              <Link href="/narrators/cities" className="text-amber-300 hover:text-amber-100 text-xs border border-amber-400/30 px-2 py-1 rounded transition-colors">
+                البلدان
+              </Link>
+              <Link href="/narrators/stats" className="text-amber-300 hover:text-amber-100 text-xs border border-amber-400/30 px-2 py-1 rounded transition-colors">
+                إحصاءات
+              </Link>
+            </div>
           </div>
 
           {/* Search */}
@@ -257,6 +297,7 @@ export default async function NarratorsPage({
                 <span className="text-xs text-amber-300">{tabaqaFilter}</span>
               )}
             </div>
+
             {/* Death year range */}
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-white/50 text-xs">سنة الوفاة:</span>
@@ -290,11 +331,77 @@ export default async function NarratorsPage({
                 </a>
               )}
             </div>
+
+            {/* Quick filters row */}
+            <div className="flex flex-wrap gap-2 items-center pt-1 border-t border-white/10">
+              <span className="text-white/50 text-xs">تصنيف سريع:</span>
+              {QUICK_FILTERS.map(qf => {
+                const isActive = quickFilter === qf.key
+                return (
+                  <Link
+                    key={qf.key}
+                    href={buildHref({ filter: isActive ? '' : qf.key, page: undefined })}
+                    className={`text-xs px-3 py-1 rounded-full transition-colors border ${
+                      isActive
+                        ? 'bg-amber-400 text-green-900 font-bold border-amber-400'
+                        : 'bg-white/5 text-white/60 border-white/20 hover:bg-white/15 hover:text-white/90'
+                    }`}
+                  >
+                    {qf.label}
+                  </Link>
+                )
+              })}
+            </div>
           </form>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
+
+        {/* Stats Banner */}
+        <div className="mb-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Link
+            href="/narrators"
+            className="bg-white rounded-xl border border-gray-100 hover:border-green-200 px-4 py-3 text-center transition-all hover:shadow-sm"
+          >
+            <div className="text-2xl font-bold text-green-800">{statsTotal.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">إجمالي الرواة</div>
+          </Link>
+          <Link
+            href="/narrators?filter=companions"
+            className={`rounded-xl border px-4 py-3 text-center transition-all hover:shadow-sm ${
+              quickFilter === 'companions'
+                ? 'bg-amber-100 border-amber-400'
+                : 'bg-white border-gray-100 hover:border-amber-300'
+            }`}
+          >
+            <div className="text-2xl font-bold text-amber-700">{statsCompanions.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">الصحابة</div>
+          </Link>
+          <Link
+            href="/narrators?filter=scientists"
+            className={`rounded-xl border px-4 py-3 text-center transition-all hover:shadow-sm ${
+              quickFilter === 'scientists'
+                ? 'bg-blue-100 border-blue-400'
+                : 'bg-white border-gray-100 hover:border-blue-300'
+            }`}
+          >
+            <div className="text-2xl font-bold text-blue-700">{statsScientists.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">علماء ناقدون</div>
+          </Link>
+          <Link
+            href="/narrators?filter=mobham"
+            className={`rounded-xl border px-4 py-3 text-center transition-all hover:shadow-sm ${
+              quickFilter === 'mobham'
+                ? 'bg-gray-200 border-gray-400'
+                : 'bg-white border-gray-100 hover:border-gray-300'
+            }`}
+          >
+            <div className="text-2xl font-bold text-gray-600">{statsMobham.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">مبهمون</div>
+          </Link>
+        </div>
+
         {/* Results info */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
@@ -307,6 +414,11 @@ export default async function NarratorsPage({
               </span>
             )}
             {companionFilter && <span className="text-gray-600 text-sm font-medium text-amber-700">الصحابة</span>}
+            {quickFilter && (
+              <span className="text-gray-600 text-sm font-medium text-green-700">
+                {QUICK_FILTERS.find(f => f.key === quickFilter)?.label}
+              </span>
+            )}
             {activeFilters && (
               <Link href="/narrators" className="text-xs text-gray-400 hover:text-gray-600 underline">إزالة التصفية</Link>
             )}
@@ -332,10 +444,18 @@ export default async function NarratorsPage({
                     {narrator.is_companion && (
                       <span className="shrink-0 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">صحابي</span>
                     )}
+                    {narrator.is_mobham && (
+                      <span className="shrink-0 bg-gray-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">مبهم</span>
+                    )}
                     <span className="text-green-900 font-medium group-hover:text-green-700 transition-colors">
                       {narrator.name}
                     </span>
-                    {gradingBadge(narrator.martaba_ibn_hajar)}
+                    {narrator.martaba_ibn_hajar && (
+                      <span className="text-xs text-gray-500">ابن حجر: {narrator.martaba_ibn_hajar}</span>
+                    )}
+                    {narrator.martaba_zahabi && (
+                      <span className="text-xs text-gray-500">الذهبي: {narrator.martaba_zahabi}</span>
+                    )}
                   </div>
                   <div className="shrink-0 flex items-center gap-3 text-xs text-gray-400">
                     {narrator.tabaqa && (

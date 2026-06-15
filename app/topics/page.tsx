@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import TopicSearch from './TopicSearch'
 
 interface Category {
   id: number
@@ -13,6 +14,12 @@ interface Category {
   item_count: string
   hadith_count: string
 }
+
+// Fixed icon set — enough to cover all 13+ top-level categories without repeating
+const ICONS = [
+  '📖', '🕌', '🌙', '🤲', '📜', '⚖️', '🌿', '📿',
+  '🌟', '🏛️', '🌐', '💎', '🔬', '🕋',
+]
 
 export default async function TopicsPage() {
   const { rows: categories } = await pool.query<Category>(`
@@ -36,16 +43,39 @@ export default async function TopicsPage() {
     ORDER BY sc.left_value
   `)
 
-  // Icons for visual variety — one per category slot
-  const icons = ['📖', '🌟', '🕌', '📿', '🌙', '🤲', '📜', '⚖️', '🌿']
+  // Aggregate totals for header summary
+  const totalLeafTopics = categories.reduce((s, c) => s + parseInt(c.item_count), 0)
+  const totalHadiths    = categories.reduce((s, c) => s + parseInt(c.hadith_count), 0)
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-green-900 mb-2">الفهارس الموضوعية</h1>
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-500 text-sm mb-1">
           تصفح الأحاديث النبوية مرتبةً حسب الموضوع
         </p>
+        {categories.length > 0 && (
+          <p className="text-xs text-gray-400 mb-3">
+            {categories.length.toLocaleString('ar-SA')} قسم رئيسي ·{' '}
+            {totalLeafTopics.toLocaleString('ar-SA')} موضوع ·{' '}
+            {totalHadiths.toLocaleString('ar-SA')} حديث
+          </p>
+        )}
+        <div className="flex gap-3 mb-4 flex-wrap">
+          <TopicSearch />
+          <Link
+            href="/topics/stats"
+            className="text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-xl px-4 py-2 hover:bg-amber-100 transition-colors shrink-0"
+          >
+            إحصاءات الموضوعات →
+          </Link>
+          <Link
+            href="/topics/companions"
+            className="text-sm bg-purple-50 text-purple-800 border border-purple-200 rounded-xl px-4 py-2 hover:bg-purple-100 transition-colors shrink-0"
+          >
+            الصحابة × الموضوعات →
+          </Link>
+        </div>
       </div>
 
       {categories.length === 0 ? (
@@ -56,7 +86,7 @@ export default async function TopicsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((cat, idx) => {
-            const itemCount  = parseInt(cat.item_count)
+            const itemCount   = parseInt(cat.item_count)
             const hadithCount = parseInt(cat.hadith_count)
             return (
               <Link
@@ -66,7 +96,7 @@ export default async function TopicsPage() {
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl mt-0.5 shrink-0" aria-hidden="true">
-                    {icons[idx % icons.length]}
+                    {ICONS[idx % ICONS.length]}
                   </span>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-lg font-bold text-green-900 group-hover:text-green-700 leading-snug">

@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import TopicExport from '@/app/components/TopicExport'
+import HadithNumber from '@/app/components/HadithNumber'
 
 interface SubjectItem {
   id: number
@@ -20,6 +22,9 @@ interface HadithRow {
   page_num: number
   section_text: string | null
   chapter_text: string | null
+  tarqeem_harf: string | null
+  tarqeem_matboa1: string | null
+  grade_hint?: string | null
 }
 
 interface ChildItem {
@@ -28,6 +33,17 @@ interface ChildItem {
   is_leaf: boolean
   left_value: number
   hadith_count: string
+}
+
+interface GradeStat {
+  grade_class: string
+  cnt: number
+}
+
+interface TopCompanion {
+  id: number
+  name: string
+  cnt: number
 }
 
 function stripTags(html: string): string {
@@ -39,12 +55,14 @@ export default async function TopicItemPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; grade?: string; q?: string }>
 }) {
   const { id }   = await params
-  const { page: pageParam } = await searchParams
+  const { page: pageParam, grade: gradeParam, q: qParam } = await searchParams
   const itemId = parseInt(id)
   const page   = Math.max(1, parseInt(pageParam || '1'))
+  const grade  = gradeParam || ''
+  const q      = (qParam || '').trim()
   const limit  = 20
   const offset = (page - 1) * limit
 
@@ -63,6 +81,44 @@ export default async function TopicItemPage({
     [item.parent_id]
   )
   const parent = parentRes.rows[0] || null
+
+  // Grade distribution and top companions — only for leaf-level items
+  const [gradeStatsRes, topCompanionsRes] = await Promise.all([
+    pool.query<GradeStat>(
+      `SELECT hj.grade_class, COUNT(DISTINCT hs.paragraph_main_id)::int AS cnt
+       FROM hadith_subjects hs
+       JOIN (
+         SELECT hadith_id,
+           CASE
+             WHEN say_text ~* 'صحيح' THEN 'صحيح'
+             WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 'حسن'
+             WHEN say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 'ضعيف'
+           END AS grade_class
+         FROM hadith_judgments
+         WHERE say_text ~* 'صحيح|إسناده حسن|حديث حسن|سنده حسن|ضعيف|منكر|متروك|موضوع'
+       ) hj ON hj.hadith_id = hs.paragraph_main_id
+       WHERE hs.subject_id = $1 AND hj.grade_class IS NOT NULL
+       GROUP BY hj.grade_class
+       ORDER BY cnt DESC`,
+      [itemId]
+    ).catch(() => ({ rows: [] })),
+    // Top companions: join through isnad_tree (rawy_id) + isnad_relations
+    // using tabaqa to identify Sahaba (non-empty tabaqa indicates companion generation)
+    pool.query<TopCompanion>(
+      `SELECT n.id, n.name, COUNT(DISTINCT hs.paragraph_main_id)::int AS cnt
+       FROM hadith_subjects hs
+       JOIN isnad_relations ir ON ir.hadith_main_id = hs.paragraph_main_id
+       JOIN isnad_tree it ON it.id = ir.sand_id AND it.rawy_id IS NOT NULL
+       JOIN narrators n ON n.id = it.rawy_id AND n.tabaqa <> ''
+       WHERE hs.subject_id = $1
+       GROUP BY n.id, n.name
+       ORDER BY cnt DESC
+       LIMIT 8`,
+      [itemId]
+    ).catch(() => ({ rows: [] })),
+  ])
+  const gradeStats: GradeStat[] = gradeStatsRes.rows
+  const topCompanions: TopCompanion[] = topCompanionsRes.rows
 
   // Check if has children
   const { rows: children } = await pool.query<ChildItem>(
@@ -92,22 +148,82 @@ export default async function TopicItemPage({
     total = parseInt(countRows[0].count)
     pages = Math.ceil(total / limit)
   } else {
+    // Build grade condition
+    let gradeJoin = ''
+    if (grade === 'sahih') gradeJoin = `AND jg.grade_hint = 'صحيح'`
+    else if (grade === 'hasan') gradeJoin = `AND jg.grade_hint = 'حسن'`
+    else if (grade === 'daif') gradeJoin = `AND jg.grade_hint = 'ضعيف'`
+
+    const textClause = q.length >= 2
+      ? `AND (to_tsvector('simple', normalize_hadith(coalesce(h.tarf,''))) @@ plainto_tsquery('simple', normalize_hadith($4))
+           OR to_tsvector('simple', normalize_hadith(coalesce(h.content,''))) @@ plainto_tsquery('simple', normalize_hadith($4)))`
+      : ''
+
     const { rows } = await pool.query<HadithRow>(
-      `SELECT h.main_id, h.book_id, h.book_name, h.tarf, h.part_num, h.page_num,
-              h.section_text, h.chapter_text
+      `SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf, h.part_num, h.page_num,
+              h.section_text, h.chapter_text, h.tarqeem_harf, h.tarqeem_matboa1, jg.grade_hint
        FROM hadith_subjects hs
        JOIN hadith_toc h ON h.main_id = hs.paragraph_main_id
+       JOIN books b ON b.id = h.book_id
+       LEFT JOIN LATERAL (
+         SELECT CASE
+           WHEN say_text ~* 'صحيح' THEN 'صحيح'
+           WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 'حسن'
+           WHEN say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 'ضعيف'
+           ELSE NULL END as grade_hint
+         FROM hadith_judgments j2
+         WHERE j2.hadith_id = h.main_id
+           AND (j2.say_text ~* 'صحيح|إسناده حسن|حديث حسن|سنده حسن|ضعيف|منكر|متروك')
+         ORDER BY CASE
+           WHEN j2.say_text ~* 'صحيح' THEN 1
+           WHEN j2.say_text ~* 'حسن' THEN 2
+           WHEN j2.say_text ~* 'ضعيف|منكر|متروك' THEN 3
+           ELSE 4 END
+         LIMIT 1
+       ) jg ON true
        WHERE hs.subject_id = $1
+         ${gradeJoin ? `AND jg.grade_hint IS NOT NULL ${gradeJoin}` : ''}
+         ${textClause}
        ORDER BY h.book_id, h.main_id
        LIMIT $2 OFFSET $3`,
-      [itemId, limit, offset]
+      q.length >= 2 ? [itemId, limit, offset, q] : [itemId, limit, offset]
     )
     hadiths = rows
 
-    const { rows: countRows } = await pool.query(
-      `SELECT COUNT(*) FROM hadith_subjects WHERE subject_id = $1`,
-      [itemId]
-    )
+    const hasTextFilter = q.length >= 2
+    const hasGradeFilter = !!grade
+
+    let countQuery: string
+    let countParams: (string | number)[]
+
+    if (hasGradeFilter || hasTextFilter) {
+      const countTextClause = hasTextFilter
+        ? `AND (to_tsvector('simple', normalize_hadith(coalesce(h.tarf,''))) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2}))
+             OR to_tsvector('simple', normalize_hadith(coalesce(h.content,''))) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2})))`
+        : ''
+      countQuery = `SELECT COUNT(*) FROM hadith_subjects hs
+         JOIN hadith_toc h ON h.main_id = hs.paragraph_main_id
+         LEFT JOIN LATERAL (
+           SELECT CASE
+             WHEN say_text ~* 'صحيح' THEN 'صحيح'
+             WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 'حسن'
+             WHEN say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 'ضعيف'
+             ELSE NULL END as grade_hint
+           FROM hadith_judgments j2
+           WHERE j2.hadith_id = h.main_id
+             AND (j2.say_text ~* 'صحيح|إسناده حسن|حديث حسن|سنده حسن|ضعيف|منكر|متروك')
+           LIMIT 1
+         ) jg ON true
+         WHERE hs.subject_id = $1
+           ${hasGradeFilter ? `AND jg.grade_hint IS NOT NULL ${gradeJoin}` : ''}
+           ${countTextClause}`
+      countParams = hasTextFilter ? [itemId, q] : [itemId]
+    } else {
+      countQuery = `SELECT COUNT(*) FROM hadith_subjects WHERE subject_id = $1`
+      countParams = [itemId]
+    }
+
+    const { rows: countRows } = await pool.query(countQuery, countParams)
     total = parseInt(countRows[0].count)
     pages = Math.ceil(total / limit)
   }
@@ -133,12 +249,19 @@ export default async function TopicItemPage({
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-green-900 mb-1">{item.title}</h1>
-        <p className="text-gray-500 text-sm">
-          {hasChildren
-            ? `${total.toLocaleString('ar-SA')} موضوع فرعي`
-            : `${total.toLocaleString('ar-SA')} حديث`}
-        </p>
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-green-900 mb-1">{item.title}</h1>
+            <p className="text-gray-500 text-sm">
+              {hasChildren
+                ? `${total.toLocaleString('ar-SA')} موضوع فرعي`
+                : `${total.toLocaleString('ar-SA')} حديث`}
+            </p>
+          </div>
+          {!hasChildren && total > 0 && (
+            <TopicExport topicId={itemId} topicTitle={item.title} />
+          )}
+        </div>
       </div>
 
       {/* Sub-items (non-leaf node) */}
@@ -177,9 +300,95 @@ export default async function TopicItemPage({
       {/* Hadiths (leaf node) */}
       {!hasChildren && (
         <>
+          {/* Grade distribution summary */}
+          {gradeStats.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                {gradeStats.map(gs => {
+                  const color = gs.grade_class === 'صحيح'
+                    ? 'text-green-700 bg-green-50 border-green-200'
+                    : gs.grade_class === 'حسن'
+                    ? 'text-amber-700 bg-amber-50 border-amber-200'
+                    : gs.grade_class === 'ضعيف'
+                    ? 'text-red-600 bg-red-50 border-red-200'
+                    : 'text-gray-600 bg-gray-50 border-gray-200'
+                  return (
+                    <span key={gs.grade_class} className={`text-xs font-semibold px-3 py-1 rounded-full border ${color}`}>
+                      {gs.grade_class}: {gs.cnt.toLocaleString('ar-EG')}
+                    </span>
+                  )
+                })}
+                <span className="text-xs text-gray-400 mr-auto">من الأحاديث المحكوم عليها</span>
+              </div>
+              {topCompanions.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-400 mb-2">أبرز الصحابة في هذا الموضوع:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {topCompanions.map(c => (
+                      <Link
+                        key={c.id}
+                        href={`/narrator/${c.id}`}
+                        className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full hover:bg-amber-100 transition-colors"
+                      >
+                        {c.name.split('،')[0].trim()} ({c.cnt.toLocaleString('ar-EG')})
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Text search within topic */}
+          <form method="GET" action={`/topics/item/${itemId}`} className="mb-4">
+            {grade && <input type="hidden" name="grade" value={grade} />}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="q"
+                defaultValue={q}
+                placeholder="ابحث في أحاديث هذا الموضوع..."
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-700"
+                dir="rtl"
+              />
+              <button
+                type="submit"
+                className="bg-green-900 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors text-sm font-medium"
+              >
+                بحث
+              </button>
+              {q && (
+                <Link
+                  href={`/topics/item/${itemId}${grade ? `?grade=${grade}` : ''}`}
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  مسح
+                </Link>
+              )}
+            </div>
+          </form>
+
+          {/* Grade filter */}
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            {[
+              { key: '', label: 'الكل', cls: !grade ? 'bg-green-900 text-white border-green-900' : 'bg-white text-gray-700 border-gray-200 hover:border-green-300' },
+              { key: 'sahih', label: 'صحيح فقط', cls: grade === 'sahih' ? 'bg-green-700 text-white border-green-700' : 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100' },
+              { key: 'hasan', label: 'حسن فقط', cls: grade === 'hasan' ? 'bg-amber-600 text-white border-amber-600' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' },
+              { key: 'daif', label: 'ضعيف فقط', cls: grade === 'daif' ? 'bg-red-600 text-white border-red-600' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' },
+            ].map(g => (
+              <Link
+                key={g.key}
+                href={`/topics/item/${itemId}?${g.key ? `grade=${g.key}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${g.cls}`}
+              >
+                {g.label}
+              </Link>
+            ))}
+            <span className="text-xs text-gray-400 mr-auto">{total.toLocaleString('ar-EG')} نتيجة</span>
+          </div>
           {hadiths.length === 0 ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center text-gray-500">
-              لا توجد أحاديث مرتبطة بهذا الموضوع
+              {grade ? 'لا توجد أحاديث بهذه الدرجة في هذا الموضوع' : 'لا توجد أحاديث مرتبطة بهذا الموضوع'}
             </div>
           ) : (
             <div className="grid gap-4">
@@ -189,16 +398,31 @@ export default async function TopicItemPage({
                   href={`/hadith/${h.main_id}`}
                   className="group block bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-green-200 transition-all"
                 >
-                  {/* Book + location */}
+                  {/* Book + location + grade */}
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-green-700 bg-green-50 rounded-full px-3 py-1">
-                      {h.book_name}
-                    </span>
-                    {(h.part_num > 0 || h.page_num > 0) && (
-                      <span className="text-xs text-gray-400">
-                        جزء {h.part_num} — صفحة {h.page_num}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-green-700 bg-green-50 rounded-full px-3 py-1">
+                        {h.book_name}
                       </span>
-                    )}
+                      {h.grade_hint && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          h.grade_hint === 'صحيح' ? 'bg-green-100 text-green-700' :
+                          h.grade_hint === 'حسن' ? 'bg-amber-100 text-amber-700' :
+                          h.grade_hint === 'ضعيف' ? 'bg-red-100 text-red-600' :
+                          'bg-gray-100 text-gray-500'
+                        }`}>
+                          {h.grade_hint}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} />
+                      {(h.part_num > 0 || h.page_num > 0) && (
+                        <span className="text-xs text-gray-400">
+                          ج{h.part_num} ص{h.page_num}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Section / Chapter context */}
@@ -236,7 +460,7 @@ export default async function TopicItemPage({
         <div className="flex items-center justify-center gap-2 mt-8">
           {page > 1 && (
             <Link
-              href={`/topics/item/${itemId}?page=${page - 1}`}
+              href={`/topics/item/${itemId}?page=${page - 1}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-green-700 hover:bg-green-50 transition-colors"
             >
               → السابق
@@ -247,7 +471,7 @@ export default async function TopicItemPage({
           </span>
           {page < pages && (
             <Link
-              href={`/topics/item/${itemId}?page=${page + 1}`}
+              href={`/topics/item/${itemId}?page=${page + 1}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-green-700 hover:bg-green-50 transition-colors"
             >
               ← التالي

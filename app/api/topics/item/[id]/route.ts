@@ -34,7 +34,7 @@ export async function GET(
   // If this item has children (non-leaf), return children instead of hadiths
   const { rows: childrenCheck } = await pool.query(
     `SELECT id, title, is_leaf, left_value,
-            (SELECT COUNT(*) FROM hadith_subjects WHERE subject_id = id) AS hadith_count
+            (SELECT COUNT(*) FROM hadith_subjects WHERE subject_id = si.id) AS hadith_count
      FROM subject_items WHERE parent_id = $1 ORDER BY left_value LIMIT $2 OFFSET $3`,
     [itemId, limit, offset]
   )
@@ -59,10 +59,11 @@ export async function GET(
 
   // Leaf node — return hadiths linked to this subject
   const { rows: hadiths } = await pool.query(
-    `SELECT h.main_id, h.book_id, h.book_name, h.tarf, h.part_num, h.page_num,
+    `SELECT h.main_id, h.book_id, b.title AS book_title, h.tarf, h.part_num, h.page_num,
             h.section_text, h.chapter_text
      FROM hadith_subjects hs
-     JOIN hadith_toc h ON h.main_id = hs.paragraph_main_id
+     JOIN hadith_toc h ON h.main_id = hs.hadith_id
+     JOIN books b ON b.id = h.book_id
      WHERE hs.subject_id = $1
      ORDER BY h.book_id, h.main_id
      LIMIT $2 OFFSET $3`,

@@ -16,7 +16,7 @@ export async function GET(
   try {
     // Base narrator info
     const narratorRes = await pool.query(
-      `SELECT id, name, abb_name, kunia, death_year, death_year_num,
+      `SELECT id, name, abb_name, kunia, death_year_num,
               birth_year, death_city, birth_city, tabaqa, tabaqa_num,
               hadiths_count, martaba_ibn_hajar, martaba_zahabi, is_companion
        FROM narrators WHERE id = $1`,
@@ -61,28 +61,28 @@ export async function GET(
       [narratorId]
     )
 
-    // جرح وتعديل — all scholar criticisms/gradings grouped by scientist
+    // جرح وتعديل — all scholar criticisms/gradings grouped by scientist_name
     const criticismRes = await pool.query(
-      `SELECT scientist_name, say_text, say_sort, scientist_noun_id
+      `SELECT scientist_name, scientist_noun_id, say_text, say_sort, garh_label
        FROM narrator_criticism
        WHERE narrator_id = $1
-       ORDER BY scientist_noun_id, say_sort, id`,
+       ORDER BY scientist_name, say_sort`,
       [narratorId]
     )
 
     // Group criticism by scientist_name
-    const criticismByScientist: Record<string, { scientistNounId: number | null; saySort: number; texts: string[] }> = {}
+    const criticismByScientist: Record<string, { saySort: number; scientist_noun_id: number | null; texts: string[] }> = {}
     for (const row of criticismRes.rows) {
       const name = row.scientist_name || 'غير معروف'
       if (!criticismByScientist[name]) {
-        criticismByScientist[name] = { scientistNounId: row.scientist_noun_id, saySort: row.say_sort, texts: [] }
+        criticismByScientist[name] = { saySort: row.say_sort, scientist_noun_id: row.scientist_noun_id, texts: [] }
       }
       if (row.say_text) criticismByScientist[name].texts.push(row.say_text)
     }
 
     const criticism = Object.entries(criticismByScientist).map(([name, data]) => ({
       scientist_name: name,
-      scientist_noun_id: data.scientistNounId,
+      scientist_noun_id: data.scientist_noun_id,
       texts: data.texts,
     }))
 

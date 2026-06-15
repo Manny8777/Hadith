@@ -11,7 +11,7 @@ export async function GET(
 
   // Return chapter-level TOC entries for the book (not raw leaf hadiths)
   const { rows } = await pool.query(
-    `SELECT main_id, id, parent_id, content, is_leaf, is_paragraph,
+    `SELECT main_id, is_leaf, is_paragraph,
             section_text, chapter_text, part_num, page_num, tarf,
             left_value, right_value, tarqeem_harf, tarqeem_matboa1,
             next_paragraph_id, prev_paragraph_id

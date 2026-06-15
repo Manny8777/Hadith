@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const offset = (page - 1) * LIMIT
 
   const conditions: string[] = [
-    `to_tsvector('simple', coalesce(nb.content, '')) @@ plainto_tsquery('simple', $1)`
+    `to_tsvector('simple', coalesce(nb.content, '')) @@ plainto_tsquery('simple', normalize_hadith($1))`
   ]
   const params: (string | number)[] = [q, LIMIT + 1, offset]
   let pi = 4
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
             ts_headline(
               'simple',
               nb.content,
-              plainto_tsquery('simple', $1),
+              plainto_tsquery('simple', normalize_hadith($1)),
               'MaxWords=60, MinWords=20, ShortWord=2, MaxFragments=2, FragmentDelimiter='' ... '', StartSel=''【'', StopSel=''】''
             ) as excerpt,
             n.name as narrator_name, n.abb_name,

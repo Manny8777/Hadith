@@ -4,6 +4,7 @@ import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import HadithNumSearch from '@/app/components/HadithNumSearch'
+import HadithNumber from '@/app/components/HadithNumber'
 
 function stripTags(html: string): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -187,7 +188,7 @@ export default async function BookPage({
                         {stripTags(h.tarf || h.content).slice(0, 250)}
                       </p>
                       <div className="shrink-0 text-xs text-gray-400 text-left whitespace-nowrap">
-                        {h.tarqeem_harf?.trim() && <div className="text-green-700 font-medium">{h.tarqeem_harf.trim()}</div>}
+                        <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} />
                         {(h.part_num > 0 || h.page_num > 0) && <div>ج{h.part_num} ص{h.page_num}</div>}
                       </div>
                     </div>
@@ -237,7 +238,7 @@ export default async function BookPage({
   }
 
   // ── Book overview: show top-level chapters ──
-  const [topChapRes, sampleRes, statsRes] = await Promise.all([
+  const [topChapRes, sampleRes, statsRes, companionsRes, gradeRes] = await Promise.all([
     // Top-level chapters (direct children of root)
     rootId ? pool.query(
       `SELECT main_id, content, chapter_text, section_text, left_value, right_value,
@@ -266,11 +267,54 @@ export default async function BookPage({
       `SELECT COUNT(*) as total_hadiths FROM hadith_toc WHERE book_id = $1 AND is_leaf = true AND is_paragraph = true`,
       [bookId]
     ),
+    // Top companions in this book (from chain position 1)
+    pool.query(
+      `SELECT n.id, n.name, n.abb_name, COUNT(DISTINCT ht.main_id)::int AS cnt
+       FROM hadith_toc ht
+       JOIN narrators n ON n.id = ht.narrator_id_array[1] AND n.is_companion = true
+       WHERE ht.book_id = $1 AND ht.is_leaf = true
+       GROUP BY n.id, n.name, n.abb_name
+       ORDER BY cnt DESC
+       LIMIT 12`,
+      [bookId]
+    ).catch(() => ({ rows: [] })),
+    // Grade/authenticity breakdown for hadiths in this book
+    pool.query(
+      `SELECT
+         CASE
+           WHEN j.say_text ~* 'صحيح' AND j.say_text !~* 'ضعيف|ليس بصحيح' THEN 'صحيح'
+           WHEN j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND j.say_text !~* 'ضعيف' THEN 'حسن'
+           WHEN j.say_text ~* 'ضعيف|منكر|متروك|موضوع|لا يصح|باطل' THEN 'ضعيف'
+           ELSE 'غير محدد'
+         END AS grade,
+         COUNT(DISTINCT ht.main_id) AS cnt
+       FROM hadith_toc ht
+       LEFT JOIN hadith_judgments j ON j.hadith_id = ht.main_id
+       WHERE ht.book_id = $1 AND ht.is_leaf = true AND ht.is_paragraph = true
+       GROUP BY 1
+       ORDER BY cnt DESC`,
+      [bookId]
+    ).catch(() => ({ rows: [] })),
   ])
 
   const topChapters = topChapRes.rows
   const sampleHadiths = sampleRes.rows
   const totalHadiths = parseInt(statsRes.rows[0]?.total_hadiths || '0')
+  const topCompanions = (companionsRes as { rows: Array<{ id: number; name: string; abb_name: string | null; cnt: number }> }).rows
+  const maxCompanionCnt = topCompanions[0]?.cnt || 1
+
+  // Grade breakdown
+  type GradeRow = { grade: string; cnt: string }
+  const gradeRows = (gradeRes as { rows: GradeRow[] }).rows
+  const gradeCounts = { صحيح: 0, حسن: 0, ضعيف: 0, 'غير محدد': 0 }
+  for (const r of gradeRows) {
+    const g = r.grade as keyof typeof gradeCounts
+    if (g in gradeCounts) gradeCounts[g] = parseInt(r.cnt)
+  }
+  const gradeTotalJudged = gradeCounts['صحيح'] + gradeCounts['حسن'] + gradeCounts['ضعيف'] + gradeCounts['غير محدد']
+  const gradePct = (key: keyof typeof gradeCounts) =>
+    gradeTotalJudged > 0 ? Math.round((gradeCounts[key] / gradeTotalJudged) * 100) : 0
+  const hasGradeData = gradeTotalJudged > 0
 
   return (
     <div dir="rtl" className="min-h-screen bg-amber-50">
@@ -326,7 +370,136 @@ export default async function BookPage({
           >
             علو الإسناد
           </Link>
+          <Link
+            href={`/books/${bookId}/analysis`}
+            className="text-sm bg-purple-50 text-purple-800 border border-purple-200 rounded-xl px-4 py-2 hover:bg-purple-100 transition-colors"
+          >
+            تحليل الكتاب
+          </Link>
+          <Link
+            href={`/books/${bookId}/mashyakha`}
+            className="text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-xl px-4 py-2 hover:bg-amber-100 transition-colors"
+          >
+            المشيخة
+          </Link>
+          <Link
+            href={`/books/${bookId}/isnad-profile`}
+            className="text-sm bg-indigo-50 text-indigo-800 border border-indigo-200 rounded-xl px-4 py-2 hover:bg-indigo-100 transition-colors"
+          >
+            ملف الإسناد
+          </Link>
         </div>
+
+        {/* Top companions in this book */}
+        {topCompanions.length > 0 && (
+          <div className="mb-6 bg-white rounded-2xl border border-amber-100 p-5">
+            <h2 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
+              <span className="w-1 h-4 bg-amber-500 rounded-full inline-block"></span>
+              أبرز الصحابة في أسانيد هذا الكتاب
+            </h2>
+            <div className="space-y-1.5">
+              {topCompanions.slice(0, 8).map(c => (
+                <div key={c.id} className="flex items-center gap-2">
+                  <Link
+                    href={`/narrator/${c.id}`}
+                    className="text-xs text-amber-800 hover:underline shrink-0 w-32 text-right truncate"
+                  >
+                    {c.abb_name || c.name.split('،')[0].trim()}
+                  </Link>
+                  <div className="flex-1 bg-amber-50 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-amber-400 h-2 rounded-full"
+                      style={{ width: `${Math.round((c.cnt / maxCompanionCnt) * 100)}%` }}
+                    />
+                  </div>
+                  <Link
+                    href={`/search?narrator_id=${c.id}&narrator_name=${encodeURIComponent(c.abb_name || c.name)}`}
+                    className="text-xs text-gray-400 hover:text-green-700 shrink-0 w-14 text-left"
+                    title="بحث في أحاديث هذا الصحابي"
+                  >
+                    {c.cnt.toLocaleString('ar-EG')} ←
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Grade / authenticity profile */}
+        {hasGradeData && (
+          <div className="mb-6 bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <span className="w-1 h-4 bg-green-500 rounded-full inline-block"></span>
+              جودة الأسانيد
+            </h2>
+            {/* Stacked bar */}
+            <div className="flex h-4 rounded-full overflow-hidden w-full mb-3">
+              {gradeCounts['صحيح'] > 0 && (
+                <div
+                  className="bg-green-500 h-full transition-all"
+                  style={{ width: `${gradePct('صحيح')}%` }}
+                  title={`صحيح: ${gradeCounts['صحيح'].toLocaleString('ar-EG')}`}
+                />
+              )}
+              {gradeCounts['حسن'] > 0 && (
+                <div
+                  className="bg-amber-400 h-full transition-all"
+                  style={{ width: `${gradePct('حسن')}%` }}
+                  title={`حسن: ${gradeCounts['حسن'].toLocaleString('ar-EG')}`}
+                />
+              )}
+              {gradeCounts['ضعيف'] > 0 && (
+                <div
+                  className="bg-red-400 h-full transition-all"
+                  style={{ width: `${gradePct('ضعيف')}%` }}
+                  title={`ضعيف: ${gradeCounts['ضعيف'].toLocaleString('ar-EG')}`}
+                />
+              )}
+              {gradeCounts['غير محدد'] > 0 && (
+                <div
+                  className="bg-gray-200 h-full flex-1 transition-all"
+                  style={{ width: `${gradePct('غير محدد')}%` }}
+                  title={`غير محدد: ${gradeCounts['غير محدد'].toLocaleString('ar-EG')}`}
+                />
+              )}
+            </div>
+            {/* Legend + counts */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+              {gradeCounts['صحيح'] > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block shrink-0"></span>
+                  <span className="text-gray-600">صحيح</span>
+                  <span className="font-semibold text-green-700">{gradeCounts['صحيح'].toLocaleString('ar-EG')}</span>
+                  <span className="text-gray-400">({gradePct('صحيح')}٪)</span>
+                </div>
+              )}
+              {gradeCounts['حسن'] > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block shrink-0"></span>
+                  <span className="text-gray-600">حسن</span>
+                  <span className="font-semibold text-amber-700">{gradeCounts['حسن'].toLocaleString('ar-EG')}</span>
+                  <span className="text-gray-400">({gradePct('حسن')}٪)</span>
+                </div>
+              )}
+              {gradeCounts['ضعيف'] > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block shrink-0"></span>
+                  <span className="text-gray-600">ضعيف</span>
+                  <span className="font-semibold text-red-700">{gradeCounts['ضعيف'].toLocaleString('ar-EG')}</span>
+                  <span className="text-gray-400">({gradePct('ضعيف')}٪)</span>
+                </div>
+              )}
+              {gradeCounts['غير محدد'] > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-gray-300 inline-block shrink-0"></span>
+                  <span className="text-gray-500">غير محدد</span>
+                  <span className="font-semibold text-gray-500">{gradeCounts['غير محدد'].toLocaleString('ar-EG')}</span>
+                  <span className="text-gray-400">({gradePct('غير محدد')}٪)</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Book summary */}
         {book.summary?.trim() && (
@@ -391,9 +564,7 @@ export default async function BookPage({
                     <p className="text-gray-800 text-sm leading-relaxed line-clamp-2 flex-1">
                       {stripTags(h.tarf || h.content).slice(0, 200)}
                     </p>
-                    {h.tarqeem_harf?.trim() && (
-                      <span className="text-xs text-green-700 font-medium shrink-0">{h.tarqeem_harf.trim()}</span>
-                    )}
+                    <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} />
                   </div>
                 </Link>
               ))}

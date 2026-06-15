@@ -105,8 +105,9 @@ export default async function ComparePage({
   // Find shared hadiths (hadiths where both narrators appear in the same isnad chain)
   let sharedHadiths: Array<{ main_id: number; book_id: number; tarf: string | null; book_name: string }> = []
   let sharedTotal = 0
+  let sampleChain: Array<{ id: number; name: string; abb_name: string | null; martaba_ibn_hajar: string | null; is_companion: boolean }> = []
   if (idA && idB && narratorA && narratorB) {
-    const [sharedRes, sharedCnt] = await Promise.all([
+    const [sharedRes, sharedCnt, sampleChainRes] = await Promise.all([
       pool.query(
         `SELECT DISTINCT ht.main_id, ht.book_id, ht.tarf, b.title as book_name
          FROM isnad_hadiths iha
@@ -126,9 +127,29 @@ export default async function ComparePage({
          WHERE ic.narrator_id_array @> ARRAY[$1::integer, $2::integer]`,
         [idA, idB]
       ),
+      // Sample chain containing both narrators
+      pool.query<{ narrator_id_array: number[] }>(
+        `SELECT narrator_id_array
+         FROM isnad_chains
+         WHERE narrator_id_array @> ARRAY[$1::integer, $2::integer]
+         LIMIT 1`,
+        [idA, idB]
+      ),
     ])
     sharedHadiths = sharedRes.rows
     sharedTotal = parseInt(sharedCnt.rows[0]?.cnt || '0')
+
+    // Resolve narrator IDs in sample chain to names
+    if (sampleChainRes.rows[0]?.narrator_id_array) {
+      const chainIds = sampleChainRes.rows[0].narrator_id_array
+      const narRes = await pool.query<{ id: number; name: string; abb_name: string | null; martaba_ibn_hajar: string | null; is_companion: boolean }>(
+        `SELECT id, name, abb_name, martaba_ibn_hajar, is_companion FROM narrators WHERE id = ANY($1)`,
+        [chainIds]
+      )
+      const narMap: Record<number, typeof narRes.rows[0]> = {}
+      narRes.rows.forEach(n => { narMap[n.id] = n })
+      sampleChain = chainIds.map(nid => narMap[nid] || { id: nid, name: `[${nid}]`, abb_name: null, martaba_ibn_hajar: null, is_companion: false })
+    }
   }
 
   // Check if they have a direct teacher-student relationship
@@ -302,13 +323,13 @@ export default async function ComparePage({
                     </Link>
                   ))}
                 </div>
-                {sharedTotal > 10 && narratorA && narratorB && (
+                {sharedTotal > 0 && narratorA && narratorB && (
                   <div className="mt-4 text-center">
                     <Link
-                      href={`/search?narrator_id=${idA}&narrator_name=${encodeURIComponent(narratorA.abb_name || narratorA.name)}`}
-                      className="text-sm text-green-700 hover:underline"
+                      href={`/narrators/chain-filter?preset=${idA},${idB}`}
+                      className="inline-block text-sm bg-teal-700 text-white px-5 py-2 rounded-lg hover:bg-teal-600 transition-colors"
                     >
-                      عرض جميع أحاديث {narratorA.abb_name || narratorA.name} ←
+                      تتبع الإسناد المشترك ({sharedTotal.toLocaleString('ar-EG')} حديث) ←
                     </Link>
                   </div>
                 )}
@@ -319,6 +340,115 @@ export default async function ComparePage({
                 لا توجد أحاديث يشتركان في سندها في قاعدة البيانات
               </p>
             )}
+          </div>
+        )}
+
+        {/* Temporal / generational analysis */}
+        {narratorA && narratorB && (narratorA.death_year_num || narratorB.death_year_num || narratorA.tabaqa_num || narratorB.tabaqa_num) && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h3 className="text-base font-bold text-green-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
+              التحليل الزمني والطبقي
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {/* Tabaqa comparison */}
+              {(narratorA.tabaqa_num != null || narratorB.tabaqa_num != null) && (
+                <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
+                  <p className="text-xs font-semibold text-amber-700 mb-2">الطبقة</p>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
+                      <span className="text-gray-600">{narratorA.abb_name || narratorA.name}:</span>
+                      <span className="font-medium">{narratorA.tabaqa || `طبقة ${narratorA.tabaqa_num}`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
+                      <span className="text-gray-600">{narratorB.abb_name || narratorB.name}:</span>
+                      <span className="font-medium">{narratorB.tabaqa || `طبقة ${narratorB.tabaqa_num}`}</span>
+                    </div>
+                    {narratorA.tabaqa_num != null && narratorB.tabaqa_num != null && (
+                      <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-amber-100">
+                        {Math.abs(narratorA.tabaqa_num - narratorB.tabaqa_num) === 0
+                          ? 'في نفس الطبقة'
+                          : `فارق ${Math.abs(narratorA.tabaqa_num - narratorB.tabaqa_num)} طبقة`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* Death year comparison */}
+              {(narratorA.death_year_num || narratorB.death_year_num) && (
+                <div className="bg-green-50 rounded-xl border border-green-100 p-4">
+                  <p className="text-xs font-semibold text-green-700 mb-2">سنة الوفاة</p>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
+                      <span className="text-gray-600">{narratorA.abb_name || narratorA.name}:</span>
+                      <span className="font-medium">{narratorA.death_year || (narratorA.death_year_num ? `${narratorA.death_year_num} هـ` : '—')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
+                      <span className="text-gray-600">{narratorB.abb_name || narratorB.name}:</span>
+                      <span className="font-medium">{narratorB.death_year || (narratorB.death_year_num ? `${narratorB.death_year_num} هـ` : '—')}</span>
+                    </div>
+                    {narratorA.death_year_num && narratorB.death_year_num && (
+                      <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-green-100">
+                        فارق زمني: {Math.abs(narratorA.death_year_num - narratorB.death_year_num)} سنة
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Sample shared chain */}
+        {narratorA && narratorB && sampleChain.length > 0 && (
+          <div className="bg-white rounded-2xl border border-teal-100 p-6">
+            <h3 className="text-base font-bold text-teal-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-teal-500 rounded-full inline-block"></span>
+              نموذج مسار الرواية المشترك
+              <span className="text-sm text-gray-400 font-normal">سند يجمع الراويين معاً</span>
+            </h3>
+            <div className="flex flex-wrap items-start gap-1.5 p-4 bg-teal-50 rounded-xl border border-teal-100">
+              {sampleChain.map((n, i) => {
+                const isA = n.id === idA
+                const isB = n.id === idB
+                let colorCls = 'bg-white border-gray-200 text-gray-700'
+                if (isA) colorCls = 'bg-blue-100 border-blue-400 text-blue-900 font-bold ring-2 ring-blue-300'
+                else if (isB) colorCls = 'bg-purple-100 border-purple-400 text-purple-900 font-bold ring-2 ring-purple-300'
+                else if (n.martaba_ibn_hajar) {
+                  if (/ثقة|ثبت|صحابي/.test(n.martaba_ibn_hajar)) colorCls = 'bg-green-50 border-green-200 text-green-800'
+                  else if (/صدوق|مقبول/.test(n.martaba_ibn_hajar)) colorCls = 'bg-amber-50 border-amber-200 text-amber-800'
+                  else if (/ضعيف|منكر|متروك/.test(n.martaba_ibn_hajar)) colorCls = 'bg-red-50 border-red-200 text-red-700'
+                }
+                return (
+                  <span key={i} className="flex items-center gap-1">
+                    <Link href={`/narrator/${n.id}`}
+                      className={`text-xs px-2.5 py-1.5 rounded-lg border transition-all hover:shadow-sm ${colorCls}`}
+                      title={n.martaba_ibn_hajar || n.name}>
+                      {n.is_companion && <span className="text-amber-500 text-xs ml-0.5">ص</span>}
+                      {n.abb_name || n.name}
+                    </Link>
+                    {i < sampleChain.length - 1 && <span className="text-gray-300 text-sm">←</span>}
+                  </span>
+                )
+              })}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded bg-blue-100 border border-blue-400 inline-block"></span>
+                {narratorA?.abb_name || narratorA?.name}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded bg-purple-100 border border-purple-400 inline-block"></span>
+                {narratorB?.abb_name || narratorB?.name}
+              </span>
+              <span className="text-gray-400">
+                {sampleChain.length} رواة في السند · ص = صحابي
+              </span>
+            </div>
           </div>
         )}
       </main>

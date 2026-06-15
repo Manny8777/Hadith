@@ -25,7 +25,7 @@ export async function GET(
       [mainId]
     ),
     pool.query(
-      `SELECT ic.narrator_ids, ic.types
+      `SELECT ic.narrator_id_array
        FROM isnad_hadiths ih
        JOIN isnad_chains ic ON ih.isnad_id = ic.id
        WHERE ih.hadith_id = $1

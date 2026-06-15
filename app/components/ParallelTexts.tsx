@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import HadithNumber from './HadithNumber'
 
 interface ParallelHadith {
   main_id: number
@@ -167,11 +168,7 @@ export default function ParallelTexts({ hadithId }: Props) {
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {(p.tarqeem_harf || p.tarqeem_matboa1) && (
-                          <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-mono">
-                            رقم {p.tarqeem_harf || p.tarqeem_matboa1}
-                          </span>
-                        )}
+                        <HadithNumber harf={p.tarqeem_harf} matboa={p.tarqeem_matboa1} />
                         {(p.part_num > 0 || p.page_num > 0) && (
                           <span>ج{p.part_num}/ص{p.page_num}</span>
                         )}

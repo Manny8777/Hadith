@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -35,8 +35,8 @@ interface ChainRow {
 type ViewMode = 'chain' | 'graph'
 type Phase = 'idle' | 'loading' | 'done' | 'error'
 
-const NW = 128
-const NH = 34
+const NW = 170
+const NH = 50
 
 // ─── ReactFlow full-graph builder ─────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
       const nodeId = `n-${nar.id}`
       if (!nodeMap.has(nodeId)) {
         const raw = (nar.abb_name || nar.name).split('،')[0].trim()
-        const label = raw.split(' ').slice(0, 3).join(' ')
+        const label = raw
         nodeMap.set(nodeId, {
           id: nodeId,
           data: { label: nar.is_companion ? `◆ ${label}` : label, narratorId: nar.id },
@@ -91,7 +91,7 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
             border: `1px solid ${nar.is_companion ? '#f59e0b' : '#d1d5db'}`,
             borderRadius: 6, fontFamily: 'Amiri, serif',
             fontSize: 11, width: NW, padding: '3px 6px',
-            textAlign: 'center', cursor: 'pointer',
+            textAlign: 'center', cursor: 'pointer', whiteSpace: 'normal',
           },
         })
       }
@@ -121,8 +121,8 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
     const bookId = `book-${chain.hadithId}`
     const isCurrentBook = chain.hadithId === currentHadithId
     if (!nodeMap.has(bookId)) {
-      const label = (chain.takhrij_author?.split(' ').slice(0, 2).join(' ') || chain.bookTitle.slice(0, 12))
-        + (chain.takhrij_death ? ` (${chain.takhrij_death})` : '')
+      const label = chain.bookTitle
+        + (chain.takhrij_author ? `\n${chain.takhrij_author}${chain.takhrij_death ? ` (${chain.takhrij_death}هـ)` : ''}` : '')
       nodeMap.set(bookId, {
         id: bookId,
         data: { label, hadithId: chain.hadithId },
@@ -134,12 +134,13 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
           border: '2px solid #b45309', borderRadius: 6,
           fontFamily: 'Amiri, serif', fontSize: 10, width: NW,
           padding: '3px 6px', textAlign: 'center', cursor: 'pointer',
-          fontWeight: 'bold',
+          fontWeight: 'bold', whiteSpace: 'pre-line',
         } : {
           background: '#eff6ff', color: '#1d4ed8',
           border: '1px solid #93c5fd', borderRadius: 6,
           fontFamily: 'Amiri, serif', fontSize: 10, width: NW,
           padding: '3px 6px', textAlign: 'center', cursor: 'pointer',
+          whiteSpace: 'pre-line',
         },
       })
     }
@@ -202,8 +203,7 @@ function LinearChain({
   onToggleExpand: (id: number) => void
 }) {
   const bookLabel = chain.takhrij_author
-    ? chain.takhrij_author.split(' ').slice(0, 3).join(' ') +
-      (chain.takhrij_death ? ` (${chain.takhrij_death}هـ)` : '')
+    ? chain.takhrij_author + (chain.takhrij_death ? ` (${chain.takhrij_death}هـ)` : '')
     : chain.bookTitle
 
   return (
@@ -238,7 +238,7 @@ function LinearChain({
                 }`}
               >
                 {nar.is_companion && <span className="text-amber-500 ml-1 text-xs">◆</span>}
-                <span>{(nar.abb_name || nar.name).split('،')[0].trim().split(' ').slice(0, 4).join(' ')}</span>
+                <span>{(nar.abb_name || nar.name).split('،')[0].trim()}</span>
                 {nar.death_year_num && (
                   <span className="block text-[10px] text-gray-400 font-sans mt-0.5">ت {nar.death_year_num}هـ</span>
                 )}
@@ -268,7 +268,7 @@ function LinearChain({
                   {relatedChains.slice(0, 6).map(rc => (
                     <li key={rc.hadithId}>
                       <a href={`/hadith/${rc.hadithId}`} className="text-blue-700 hover:text-blue-900 hover:underline">
-                        {rc.takhrij_author?.split(' ').slice(0, 3).join(' ') || rc.bookTitle}
+                        {rc.takhrij_author || rc.bookTitle}
                         {rc.takhrij_death
                           ? <span className="text-blue-400"> ({rc.takhrij_death}هـ)</span>
                           : null}
@@ -345,6 +345,8 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function load() {
     setPhase('loading')
     try {
@@ -379,13 +381,7 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
     })
   }
 
-  if (phase === 'idle') return (
-    <button onClick={load}
-      className="text-sm text-teal-700 bg-teal-50 border border-teal-100 px-4 py-2 rounded-lg hover:bg-teal-100 transition-colors">
-      عرض الإسناد
-    </button>
-  )
-  if (phase === 'loading') return <span className="text-xs text-gray-400">جاري تحميل الإسناد...</span>
+  if (phase === 'idle' || phase === 'loading') return <span className="text-xs text-gray-400">جاري تحميل الإسناد...</span>
   if (phase === 'error') return <p className="text-sm text-gray-400">{errorMsg}</p>
 
   const activeChain = currentChains[selectedChainIdx] ?? currentChains[0]

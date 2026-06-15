@@ -3,6 +3,8 @@ import Link from 'next/link'
 import pool from '@/lib/db'
 import NarratorHadiths from '@/app/components/NarratorHadiths'
 import NarratorExport from '@/app/components/NarratorExport'
+import CompareNarratorPicker from '@/app/components/CompareNarratorPicker'
+import NarratorTopics from '@/app/components/NarratorTopics'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,10 +31,16 @@ interface Narrator {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  is_noun: boolean
+  is_scientist: boolean
+  is_has_rwaya: boolean
+  is_mobham: boolean
+  journey_date: string | null
 }
 
 interface Book { id: number; title: string }
-interface NarratorLink { id: number; name: string; martaba_ibn_hajar: string | null; is_companion: boolean }
+interface NarratorLink { id: number; name: string; martaba_ibn_hajar: string | null; martaba_zahabi: string | null; is_companion: boolean }
+interface PeerNarrator { id: number; name: string; martaba_ibn_hajar: string | null; martaba_zahabi: string | null; shared_count: string }
 interface CriticismEntry { text: string; garh_label: string | null }
 interface Criticism { scientist_name: string; scientist_noun_id: number | null; entries: CriticismEntry[] }
 interface Biography { book_name: string; book_id: number; entries: { title: string; content: string }[] }
@@ -54,13 +62,14 @@ export default async function NarratorPage({
   const narratorId = parseInt(id, 10)
   if (isNaN(narratorId)) notFound()
 
-  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes, specialRelRes] = await Promise.all([
+  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes, specialRelRes, chainCountRes, chainDepthRes, peerNarratorsRes, chainPosRes] = await Promise.all([
     pool.query<Narrator>(
       `SELECT id, name, abb_name, esm_shuhra, kunia, laqab, nasab,
               tabaqa, tabaqa_num, birth_year, death_year, death_year_num,
               birth_city, death_city, living_city, journey_city,
               selat_karaba, mazhb, hadiths_count,
-              martaba_ibn_hajar, martaba_zahabi, is_companion
+              martaba_ibn_hajar, martaba_zahabi, is_companion,
+              is_noun, is_scientist, is_has_rwaya, is_mobham, journey_date
        FROM narrators WHERE id = $1`,
       [narratorId]
     ),
@@ -74,7 +83,7 @@ export default async function NarratorPage({
     ),
     // Teachers (شيوخه): first_id=narrator, second_id=sheikh
     pool.query<NarratorLink>(
-      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.is_companion
+      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.is_companion
        FROM narrator_relations nr
        JOIN narrators n ON n.id = nr.second_id
        WHERE nr.first_id = $1 AND nr.is_sheikh = true
@@ -83,7 +92,7 @@ export default async function NarratorPage({
     ),
     // Students (تلاميذه): second_id=narrator is teacher, first_id are students
     pool.query<NarratorLink>(
-      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.is_companion
+      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.is_companion
        FROM narrator_relations nr
        JOIN narrators n ON n.id = nr.first_id
        WHERE nr.second_id = $1 AND nr.is_sheikh = true
@@ -92,10 +101,14 @@ export default async function NarratorPage({
     ),
     // جرح وتعديل — all criticism from all scholars
     pool.query<{ scientist_name: string; scientist_noun_id: number | null; say_text: string; say_sort: number; garh_label: string | null }>(
-      `SELECT scientist_name, scientist_noun_id, say_text, say_sort, garh_label
+      `SELECT COALESCE(scientist_name, 'غير معروف') AS scientist_name,
+              scientist_noun_id,
+              say_text,
+              say_sort,
+              garh_label
        FROM narrator_criticism
        WHERE narrator_id = $1
-       ORDER BY scientist_noun_id, say_sort, id`,
+       ORDER BY scientist_name, say_sort`,
       [narratorId]
     ),
     // ترجمة الراوي — biography from classical books, deduplicated by main_id
@@ -125,9 +138,52 @@ export default async function NarratorPage({
        JOIN narrator_relation_types nrt ON nrt.id = nr.relation_type
        JOIN narrators n ON n.id = CASE WHEN nr.first_id = $1 THEN nr.second_id ELSE nr.first_id END
        WHERE (nr.first_id = $1 OR nr.second_id = $1)
-         AND nr.relation_type IN (2, 3, 5, 8, 14, 15, 16, 17)
+         AND nr.relation_type IN (2, 3, 4, 5, 7, 8, 16, 17, 18)
        ORDER BY nrt.id, n.name
        LIMIT 100`,
+      [narratorId]
+    ).catch(() => ({ rows: [] })),
+    // Chain count via GIN index — how many isnad chains contain this narrator
+    pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM isnad_chains WHERE $1 = ANY(narrator_id_array)`,
+      [narratorId]
+    ).catch(() => ({ rows: [{ count: '0' }] })),
+    // Chain depth distribution — how narrator appears across chain lengths
+    pool.query<{ chain_length: number; cnt: string }>(
+      `SELECT chain_length, COUNT(*)::text as cnt
+       FROM isnad_chains
+       WHERE $1 = ANY(narrator_id_array) AND chain_length IS NOT NULL
+       GROUP BY chain_length
+       ORDER BY chain_length
+       LIMIT 15`,
+      [narratorId]
+    ).catch(() => ({ rows: [] })),
+    // Academic peer narrators — who shares the same teachers (studied in same circles)
+    pool.query<PeerNarrator>(
+      `SELECT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi,
+              COUNT(DISTINCT nr1.second_id)::text as shared_count
+       FROM narrator_relations nr1
+       JOIN narrator_relations nr2
+         ON nr2.second_id = nr1.second_id
+        AND nr2.is_sheikh = true
+        AND nr2.first_id != $1
+       JOIN narrators n ON n.id = nr2.first_id
+       WHERE nr1.first_id = $1 AND nr1.is_sheikh = true
+       GROUP BY n.id, n.name, n.martaba_ibn_hajar
+       ORDER BY COUNT(DISTINCT nr1.second_id) DESC
+       LIMIT 20`,
+      [narratorId]
+    ).catch(() => ({ rows: [] })),
+    // Chain position distribution — at what rank does this narrator appear in chains?
+    pool.query<{ pos: number; cnt: string }>(
+      `SELECT array_position(narrator_id_array, $1::integer) AS pos,
+              COUNT(*)::text AS cnt
+       FROM isnad_chains
+       WHERE $1 = ANY(narrator_id_array)
+         AND array_position(narrator_id_array, $1::integer) IS NOT NULL
+       GROUP BY pos
+       ORDER BY pos
+       LIMIT 20`,
       [narratorId]
     ).catch(() => ({ rows: [] })),
   ])
@@ -135,10 +191,16 @@ export default async function NarratorPage({
   if (narratorRes.rows.length === 0) notFound()
 
   const narrator = narratorRes.rows[0]
+  const chainCount = parseInt(chainCountRes.rows[0]?.count || '0')
   const books = booksRes.rows
   const gradeStats: Array<{ garh_label: string; cnt: number }> = gradeStatsRes.rows
   const teachers = studentsRes.rows
   const students = teachersRes.rows
+  const peerNarrators: PeerNarrator[] = (peerNarratorsRes as { rows: PeerNarrator[] }).rows
+  const chainDepthRows: Array<{ chain_length: number; cnt: string }> = (chainDepthRes as { rows: Array<{ chain_length: number; cnt: string }> }).rows
+  const totalChainDepthCount = chainDepthRows.reduce((s, r) => s + parseInt(r.cnt), 0)
+  const chainPosRows: Array<{ pos: number; cnt: string }> = (chainPosRes as { rows: Array<{ pos: number; cnt: string }> }).rows
+  const totalChainPosCount = chainPosRows.reduce((s, r) => s + parseInt(r.cnt), 0)
 
   // Group special relations by type
   type SpecialRel = { relation_type_text: string; other_id: number; other_name: string; is_sheikh: boolean }
@@ -188,8 +250,29 @@ export default async function NarratorPage({
           </Link>
           <h1 className="text-lg font-bold text-amber-100">موسوعة الحديث الشريف</h1>
           <div className="flex items-center gap-2">
+            <Link href={`/narrators/chain-filter?seed=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              تتبع الإسناد
+            </Link>
             <Link href={`/compare?a=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
               مقارنة
+            </Link>
+            <Link href={`/narrator/${narratorId}/statistics`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              إحصاءات
+            </Link>
+            <Link href={`/narrator/${narratorId}/reliability`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              الموثوقية
+            </Link>
+            <Link href={`/narrator/${narratorId}/teachers-list`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              الشيوخ
+            </Link>
+            <Link href={`/narrator/${narratorId}/students-list`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              التلاميذ
+            </Link>
+            <Link href={`/narrator/${narratorId}/peer-network`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              الشبكة
+            </Link>
+            <Link href={`/scholar/${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+              أحكامه
             </Link>
           </div>
         </div>
@@ -206,37 +289,47 @@ export default async function NarratorPage({
             <h2 className="text-2xl font-bold text-green-900 leading-snug flex-1">{narrator.name}</h2>
           </div>
 
+          {/* Status badges row — is_noun / is_scientist / is_has_rwaya / is_mobham */}
+          {(narrator.is_mobham || narrator.is_scientist || narrator.is_noun || narrator.is_has_rwaya) && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {narrator.is_mobham && (
+                <span className="bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold px-2.5 py-0.5 rounded-full">مبهم</span>
+              )}
+              {narrator.is_scientist && (
+                <span className="bg-blue-100 text-blue-800 border border-blue-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">عالم حديث</span>
+              )}
+              {narrator.is_noun && (
+                <span className="bg-green-100 text-green-800 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">راوٍ</span>
+              )}
+              {narrator.is_has_rwaya && (
+                <span className="bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full">له رواية</span>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-3">
             {narrator.abb_name && narrator.abb_name !== narrator.name ? (
               <p className="text-gray-500 text-sm">الاسم المختصر: {narrator.abb_name}</p>
             ) : <span />}
-            <NarratorExport
-              narrator={narrator}
-              criticism={criticism}
-              biographies={biographies}
-              gradeStats={gradeStats}
-              booksCount={books.length}
-              teachersCount={teachers.length}
-              studentsCount={students.length}
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <CompareNarratorPicker
+                currentNarratorId={narrator.id}
+                currentNarratorName={narrator.abb_name || narrator.name}
+              />
+              <NarratorExport
+                narrator={narrator}
+                criticism={criticism}
+                biographies={biographies}
+                gradeStats={gradeStats}
+                booksCount={books.length}
+                teachersCount={teachers.length}
+                studentsCount={students.length}
+              />
+            </div>
           </div>
           {narrator.esm_shuhra && narrator.esm_shuhra.trim() && (
             <p className="text-gray-500 text-sm mb-3">اشتهر بـ: {narrator.esm_shuhra}</p>
           )}
-
-          {/* Quick Grading Badges */}
-          <div className="flex flex-wrap gap-2 mb-5">
-            {narrator.martaba_ibn_hajar && (
-              <span className={`text-sm font-medium px-3 py-1 rounded-full border ${gradingColor(narrator.martaba_ibn_hajar)}`}>
-                ابن حجر: {narrator.martaba_ibn_hajar}
-              </span>
-            )}
-            {narrator.martaba_zahabi && (
-              <span className={`text-sm font-medium px-3 py-1 rounded-full border ${gradingColor(narrator.martaba_zahabi)}`}>
-                الذهبي: {narrator.martaba_zahabi}
-              </span>
-            )}
-          </div>
 
           {/* Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm border-t border-gray-100 pt-4">
@@ -294,6 +387,12 @@ export default async function NarratorPage({
                 <span className="text-gray-800 font-medium">{narrator.journey_city}</span>
               </div>
             )}
+            {narrator.journey_date && narrator.journey_date.trim() && (
+              <div className="flex gap-2 col-span-2">
+                <span className="text-gray-400 min-w-24">رحل في طلب الحديث</span>
+                <span className="text-gray-800 font-medium">{narrator.journey_date}</span>
+              </div>
+            )}
             {narrator.mazhb && narrator.mazhb.trim() && (
               <div className="flex gap-2">
                 <span className="text-gray-400 min-w-24">المذهب</span>
@@ -312,10 +411,71 @@ export default async function NarratorPage({
                 <span className="text-gray-800 font-medium">{narrator.tabaqa}</span>
               </div>
             )}
+            {narrator.martaba_ibn_hajar && narrator.martaba_ibn_hajar.trim() && (
+              <div className="flex gap-2 col-span-2">
+                <span className="text-gray-400 min-w-24">الرتبة عند ابن حجر</span>
+                <span className="text-gray-800 font-medium">{narrator.martaba_ibn_hajar}</span>
+              </div>
+            )}
+            {narrator.martaba_zahabi && narrator.martaba_zahabi.trim() && (
+              <div className="flex gap-2 col-span-2">
+                <span className="text-gray-400 min-w-24">الرتبة عند الذهبي</span>
+                <span className="text-gray-800 font-medium">{narrator.martaba_zahabi}</span>
+              </div>
+            )}
             {narrator.hadiths_count != null && (
               <div className="flex gap-2">
                 <span className="text-gray-400 min-w-24">عدد الأحاديث</span>
                 <span className="text-green-800 font-bold">{narrator.hadiths_count.toLocaleString('ar-EG')}</span>
+              </div>
+            )}
+            {chainCount > 0 && (
+              <div className="flex gap-2">
+                <span className="text-gray-400 min-w-24">عدد الأسانيد</span>
+                <Link href="/narrators/network" className="text-teal-700 font-bold hover:underline">
+                  {chainCount.toLocaleString('ar-EG')} إسناداً
+                </Link>
+              </div>
+            )}
+            {chainDepthRows.length > 0 && (
+              <div className="flex gap-2 col-span-2">
+                <span className="text-gray-400 min-w-24 shrink-0">توزيع الأسانيد</span>
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {chainDepthRows.map(r => {
+                    const pct = Math.round((parseInt(r.cnt) / totalChainDepthCount) * 100)
+                    const label = r.chain_length === 3 ? 'ثلاثي' :
+                                  r.chain_length === 4 ? 'رباعي' :
+                                  r.chain_length === 5 ? 'خماسي' :
+                                  r.chain_length === 6 ? 'سداسي' :
+                                  r.chain_length === 7 ? 'سباعي' :
+                                  `${r.chain_length} رواة`
+                    return (
+                      <span key={r.chain_length} className="text-xs bg-teal-50 border border-teal-200 text-teal-800 px-2 py-0.5 rounded-full">
+                        {label} <span className="opacity-60">({pct}%)</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {chainPosRows.length > 0 && (
+              <div className="flex gap-2 col-span-2">
+                <span className="text-gray-400 min-w-24 shrink-0">موضعه في السند</span>
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {chainPosRows.map(r => {
+                    const pct = Math.round((parseInt(r.cnt) / totalChainPosCount) * 100)
+                    const label = r.pos === 1 ? 'أول الإسناد' :
+                                  r.pos === 2 ? 'ثاني الإسناد' :
+                                  r.pos === 3 ? 'ثالث الإسناد' :
+                                  r.pos === 4 ? 'رابع الإسناد' :
+                                  `موضع ${r.pos}`
+                    return (
+                      <span key={r.pos} className="text-xs bg-indigo-50 border border-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full">
+                        {label} <span className="opacity-60">({pct}%)</span>
+                      </span>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -385,11 +545,23 @@ export default async function NarratorPage({
         {/* جرح وتعديل Section */}
         {criticism.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-bold text-green-900 mb-3 flex items-center gap-2">
-              <span className="w-1 h-5 bg-red-500 rounded-full inline-block"></span>
-              جرح وتعديل
-              <span className="text-sm text-gray-400 font-normal">({criticism.length} عالم)</span>
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-green-900 flex items-center gap-2">
+                <span className="w-1 h-5 bg-red-500 rounded-full inline-block"></span>
+                جرح وتعديل
+                <span className="text-sm text-gray-400 font-normal">({criticism.length} عالم)</span>
+              </h3>
+              <div className="flex items-center gap-2">
+                <Link href="/narrators/jarh-terms"
+                  className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-colors">
+                  مصطلحات الجرح والتعديل
+                </Link>
+                <Link href={`/narrator/${narratorId}/criticism-history`}
+                  className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors">
+                  التسلسل الزمني للأحكام
+                </Link>
+              </div>
+            </div>
             {/* Grade consensus summary */}
             {gradeStats.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-5">
@@ -475,14 +647,13 @@ export default async function NarratorPage({
                       {t.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
                       {t.name}
                     </Link>
-                    {t.martaba_ibn_hajar && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full border shrink-0 ${gradingColor(t.martaba_ibn_hajar)}`}>
-                        {t.martaba_ibn_hajar}
-                      </span>
-                    )}
                   </li>
                 ))}
               </ul>
+              <Link href={`/narrator/${narratorId}/teachers-list`}
+                className="text-xs text-amber-700 hover:underline block mt-2">
+                عرض كامل مع الإحصاءات ←
+              </Link>
             </div>
           )}
 
@@ -500,16 +671,52 @@ export default async function NarratorPage({
                       {s.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
                       {s.name}
                     </Link>
-                    {s.martaba_ibn_hajar && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full border shrink-0 ${gradingColor(s.martaba_ibn_hajar)}`}>
-                        {s.martaba_ibn_hajar}
-                      </span>
-                    )}
                   </li>
                 ))}
               </ul>
+              <Link href={`/narrator/${narratorId}/students-list`}
+                className="text-xs text-green-700 hover:underline block mt-2">
+                عرض كامل مع الإحصاءات ←
+              </Link>
             </div>
           )}
+        </div>
+
+        {/* Academic peer narrators — who studied in the same circles */}
+        {peerNarrators.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-6">
+            <h3 className="text-lg font-bold text-teal-900 mb-1 flex items-center gap-2">
+              <span className="w-1 h-5 bg-teal-500 rounded-full inline-block"></span>
+              الدائرة العلمية
+              <span className="text-sm text-gray-400 font-normal">من درسوا على نفس الشيوخ</span>
+            </h3>
+            <p className="text-xs text-gray-400 mb-4 mr-3">
+              هؤلاء الرواة تلقوا العلم عن بعض شيوخ {narrator.abb_name || narrator.name} أنفسهم — مما يجعلهم زملاء في الحلقات العلمية
+            </p>
+            <ul className="grid sm:grid-cols-2 gap-2">
+              {peerNarrators.map((peer) => (
+                <li key={peer.id} className="flex items-center gap-2 bg-teal-50 rounded-lg px-3 py-2">
+                  <Link
+                    href={`/narrator/${peer.id}`}
+                    className="text-sm text-teal-900 hover:text-teal-700 hover:underline flex-1 truncate"
+                  >
+                    {peer.name}
+                  </Link>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs text-teal-600 bg-white border border-teal-200 px-1.5 py-0.5 rounded-full">
+                      {peer.shared_count} مشترك
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Topic distribution — lazy loaded */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-base font-bold text-green-900 mb-4">التوزيع الموضوعي للأحاديث</h2>
+          <NarratorTopics narratorId={narratorId} />
         </div>
 
         {/* Hadiths in isnad chain — lazy loaded */}
