@@ -94,6 +94,8 @@ const CATEGORIES: NavCategory[] = [
     links: [
       { href: '/lexicon', label: 'معجم غريب الحديث' },
       { href: '/lexicon/places', label: 'معجم الأماكن والبلدان' },
+      { href: '/quran', label: 'القرآن الكريم', isNew: true },
+      { href: '/sections', label: 'تصنيف الكتب', isNew: true },
     ],
   },
   {
@@ -101,6 +103,7 @@ const CATEGORIES: NavCategory[] = [
     label: 'تطبيقات علوم الحديث',
     links: [
       { href: '/hadith-terms', label: 'تطبيقات المصطلح' },
+      { href: '/controversial', label: 'مشكل الحديث' },
       { href: '/hadiths/timeline', label: 'تواريخ المتون' },
       { href: '/hadiths/amthal', label: 'أمثال الحديث النبوي' },
       { href: '/scholars/hadith-grades', label: 'أقوال أهل العلم في الحكم على الحديث' },

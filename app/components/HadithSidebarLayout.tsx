@@ -111,6 +111,7 @@ export type HadithServiceKey =
   | 'ghareeb' | 'degree' | 'sharh' | 'subjects' | 'tafsser'
   | 'biography' | 'medicine' | 'feqh' | 'asbab' | 'mokhtalaf'
   | 'amthal' | 'motawater'
+  | 'countries' | 'modrag' | 'kerat' | 'proper_name' | 'matn_comparison'
 
 export interface HadithSidebarLayoutProps {
   hadithId: number
@@ -125,6 +126,7 @@ export interface HadithSidebarLayoutProps {
   hadithServices?: Partial<Record<HadithServiceKey, boolean>>
   isnadType?: number | null
   servicesBadgesSlot: ReactNode
+  matngroupSlot?: ReactNode
   takhrijSlot: ReactNode
 }
 
@@ -148,18 +150,23 @@ const SECTIONS = [
 
 // Services rendered as sub-page links in the sidebar
 const SERVICE_LABELS: Record<string, string> = {
-  shawahed:      'الشواهد والمتابعات',
-  ghareeb:       'غريب الحديث',
-  sharh:         'شرح الحديث',
-  tafsser:       'التفسير',
-  biography:     'التراجم',
-  medicine:      'الطب النبوي',
-  feqh:          'الفقه',
-  asbab:         'أسباب الورود',
-  mokhtalaf:     'مختلف الحديث',
-  amthal:        'الأمثال',
-  compound_matn: 'المتن المركب',
-  motawater:     'المتواتر',
+  shawahed:        'الشواهد والمتابعات',
+  ghareeb:         'غريب الحديث',
+  sharh:           'شرح الحديث',
+  tafsser:         'التفسير',
+  biography:       'التراجم',
+  medicine:        'الطب النبوي',
+  feqh:            'الفقه',
+  asbab:           'أسباب الورود',
+  mokhtalaf:       'مختلف الحديث',
+  amthal:          'الأمثال',
+  compound_matn:   'المتن المركب',
+  motawater:       'المتواتر',
+  countries:       'الرواية بالبلدان',
+  modrag:          'المدرج',
+  kerat:           'القراءات',
+  proper_name:     'الأعلام',
+  matn_comparison: 'مقارنة المتون',
 }
 
 const SERVICE_LINKS: Partial<Record<string, string>> = {
@@ -179,12 +186,15 @@ const SERVICE_LINKS: Partial<Record<string, string>> = {
 const SERVICE_SIDEBAR_ORDER = [
   'shawahed', 'sharh', 'feqh', 'tafsser', 'biography',
   'medicine', 'asbab', 'mokhtalaf', 'amthal', 'compound_matn', 'motawater',
+  'countries', 'modrag', 'kerat', 'matn_comparison',
 ]
 
 export default function HadithSidebarLayout({
   hadithId, hadith: h, chains, commonNarrators,
   judgments, subjects, takhrijBooks, takhrijSummary,
   hadithServices, isnadType,
+  servicesBadgesSlot,
+  matngroupSlot,
   takhrijSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
@@ -348,6 +358,9 @@ export default function HadithSidebarLayout({
             </div>
           )
         })()}
+
+        {/* Service badges (ghareeb, matn_comparison, countries, modrag, kerat...) */}
+        {servicesBadgesSlot}
 
         {/* Print reference badge */}
         {h.tarqeem_matboa1 && (
@@ -599,6 +612,13 @@ export default function HadithSidebarLayout({
           <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة" />
           {takhrijSlot}
         </section>
+
+        {/* ── مقارنة المتون (group matn) ── */}
+        {matngroupSlot && (
+          <section id="matn-group" className="mb-6 scroll-mt-14">
+            {matngroupSlot}
+          </section>
+        )}
 
         {/* ── المتن المُجمَّع والاختلافات ── */}
         <section id="variants" className="mb-8 scroll-mt-14">

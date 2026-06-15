@@ -397,6 +397,14 @@ export default async function Home() {
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">مصطلح الحديث — الموسوعة الإحصائية</div>
               <div className="text-xs text-gray-500 mt-1">مصطلحات علوم الحديث مع أعداد حقيقية من قاعدة البيانات — صحيح لذاته، حسن لغيره، مرسل، موضوع...</div>
             </Link>
+            <Link href="/controversial" className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 hover:border-indigo-300 hover:shadow-sm transition-all group">
+              <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">مشكل الحديث</div>
+              <div className="text-xs text-gray-500 mt-1">مسائل مشكل الحديث ومختلفه مصنَّفةً في شجرة موضوعية — العقيدة والعبادات والمعاملات والأخلاق مع مصادر علمية</div>
+            </Link>
+            <Link href="/hadiths/amthal" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+              <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">أمثال الحديث النبوي</div>
+              <div className="text-xs text-gray-500 mt-1">الأمثال الواردة في السنة النبوية — جمل حِكمية وتصويرية استعملها النبي ﷺ لتقريب المعاني وإيضاح الحكم الشرعية</div>
+            </Link>
             <Link href="/hadiths/qudsi" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الأحاديث القدسية</div>
               <div className="text-xs text-gray-500 mt-1">الأحاديث التي فيها "قال الله" أو "يقول ربكم" — مستخرجة بالبحث النصي مع تصنيف الصحابة الرواة لها</div>

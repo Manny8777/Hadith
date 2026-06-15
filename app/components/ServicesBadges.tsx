@@ -3,29 +3,33 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 
 const LABELS: Record<string, string> = {
-  takhreg:      'تخريج',
-  compound_matn:'متن مركب',
-  rwah:         'رواة',
-  asnad:        'أسانيد',
-  shawahed:     'شواهد',
-  ghareeb:      'غريب الحديث',
-  degree:       'الدرجة',
-  sharh:        'شرح',
-  subjects:     'موضوعات',
-  tafsser:      'تفسير',
-  biography:    'تراجم',
-  medicine:     'طب',
-  feqh:         'فقه',
-  asbab:        'أسباب الورود',
-  mokhtalaf:    'مختلف الحديث',
-  amthal:       'أمثال',
-  motawater:    'متواتر',
+  takhreg:        'تخريج',
+  compound_matn:  'متن مركب',
+  rwah:           'رواة',
+  asnad:          'أسانيد',
+  shawahed:       'شواهد',
+  ghareeb:        'غريب الحديث',
+  degree:         'الدرجة',
+  sharh:          'شرح',
+  subjects:       'موضوعات',
+  tafsser:        'تفسير',
+  biography:      'تراجم',
+  medicine:       'طب',
+  feqh:           'فقه',
+  asbab:          'أسباب الورود',
+  mokhtalaf:      'مختلف الحديث',
+  amthal:         'أمثال',
+  motawater:      'متواتر',
+  countries:      'رواية بالبلدان',
+  modrag:         'مدرج',
+  kerat:          'قراءات',
+  matn_comparison:'مقارنة المتون',
 }
 
 // Badge color groups
-const GREEN_KEYS  = new Set(['takhreg', 'rwah', 'asnad'])
-const BLUE_KEYS   = new Set(['sharh', 'subjects', 'biography'])
-const AMBER_KEYS  = new Set(['ghareeb', 'amthal'])
+const GREEN_KEYS  = new Set(['takhreg', 'rwah', 'asnad', 'matn_comparison'])
+const BLUE_KEYS   = new Set(['sharh', 'subjects', 'biography', 'countries'])
+const AMBER_KEYS  = new Set(['ghareeb', 'amthal', 'modrag', 'kerat'])
 const PURPLE_KEYS = new Set(['motawater'])
 
 function badgeClass(key: string): string {

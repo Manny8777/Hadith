@@ -62,7 +62,7 @@ export default async function NarratorPage({
   const narratorId = parseInt(id, 10)
   if (isNaN(narratorId)) notFound()
 
-  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes, specialRelRes, chainCountRes, chainDepthRes, peerNarratorsRes, chainPosRes] = await Promise.all([
+  const [narratorRes, booksRes, studentsRes, teachersRes, criticismRes, biographyRes, gradeStatsRes, specialRelRes, chainCountRes, chainDepthRes, peerNarratorsRes, chainPosRes, nameFormsRes] = await Promise.all([
     pool.query<Narrator>(
       `SELECT id, name, abb_name, esm_shuhra, kunia, laqab, nasab,
               tabaqa, tabaqa_num, birth_year, death_year, death_year_num,
@@ -186,12 +186,21 @@ export default async function NarratorPage({
        LIMIT 20`,
       [narratorId]
     ).catch(() => ({ rows: [] })),
+    pool.query<{ rawy_text: string; frequency: number }>(
+      `SELECT rawy_text, frequency
+       FROM narrator_name_forms
+       WHERE rawy_id = $1
+       ORDER BY frequency DESC
+       LIMIT 12`,
+      [narratorId]
+    ).catch(() => ({ rows: [] })),
   ])
 
   if (narratorRes.rows.length === 0) notFound()
 
   const narrator = narratorRes.rows[0]
   const chainCount = parseInt(chainCountRes.rows[0]?.count || '0')
+  const nameForms = nameFormsRes.rows
   const books = booksRes.rows
   const gradeStats: Array<{ garh_label: string; cnt: number }> = gradeStatsRes.rows
   const teachers = studentsRes.rows
@@ -475,6 +484,21 @@ export default async function NarratorPage({
                       </span>
                     )
                   })}
+                </div>
+              </div>
+            )}
+            {nameForms.length > 0 && (
+              <div className="flex gap-2 col-span-2 border-t border-gray-100 pt-3">
+                <span className="text-gray-400 min-w-24 shrink-0">أشكال الاسم</span>
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {nameForms.map((f, i) => (
+                    <span key={i} className="text-xs bg-green-50 border border-green-200 text-green-800 px-2 py-0.5 rounded-full font-arabic">
+                      {f.rawy_text}
+                      {f.frequency > 1 && (
+                        <span className="opacity-50 mr-1">×{f.frequency}</span>
+                      )}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}

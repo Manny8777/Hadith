@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection from '@/app/components/TakhrijSection'
+import ServicesBadges from '@/app/components/ServicesBadges'
+import MatnGroupSection from '@/app/components/MatnGroupSection'
 
 export default async function HadithPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -15,7 +17,8 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
               hs.takhreg, hs.compound_matn, hs.rwah, hs.asnad, hs.shawahed,
               hs.ghareeb, hs.degree, hs.sharh, hs.subjects, hs.tafsser,
               hs.biography, hs.medicine, hs.feqh, hs.asbab, hs.mokhtalaf,
-              hs.amthal, hs.motawater
+              hs.amthal, hs.motawater,
+              hs.countries, hs.modrag, hs.kerat, hs.proper_name, hs.matn_comparison
        FROM hadith_toc h
        JOIN books b ON h.book_id = b.id
        LEFT JOIN hadith_services hs ON hs.hadith_id = h.main_id
@@ -233,6 +236,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     'ghareeb', 'degree', 'sharh', 'subjects', 'tafsser',
     'biography', 'medicine', 'feqh', 'asbab', 'mokhtalaf',
     'amthal', 'motawater',
+    'countries', 'modrag', 'kerat', 'proper_name', 'matn_comparison',
   ] as const
   type ServiceKey = typeof SERVICE_COLUMNS[number]
   const hadithServices: Partial<Record<ServiceKey, boolean>> = {}
@@ -253,7 +257,8 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       takhrijSummary={takhrijSummary}
       hadithServices={hadithServices}
       isnadType={dominantIsnadType}
-      servicesBadgesSlot={null}
+      servicesBadgesSlot={<ServicesBadges hadithId={mainId} />}
+      matngroupSlot={<MatnGroupSection hadithId={mainId} />}
       takhrijSlot={<TakhrijSection hadithId={mainId} />}
     />
   )
