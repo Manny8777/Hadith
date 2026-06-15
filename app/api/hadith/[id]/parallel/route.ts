@@ -67,7 +67,7 @@ export async function GET(
      WHERE t.group_id = $1
        AND t.hadith_id != $2
      ORDER BY b.tarteeb NULLS LAST, t.book_id, t.hadith_id
-     LIMIT 50`,
+     LIMIT 200`,
     [groupId, hadithId]
   )
 

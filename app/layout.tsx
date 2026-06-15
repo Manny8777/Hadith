@@ -11,13 +11,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body style={{ fontFamily: "'Amiri', serif" }} className="bg-amber-50 text-gray-900 min-h-screen">
+      <head />
+      <body className="bg-amber-50 text-gray-900 min-h-screen">
         <NumberingProvider>
           <NavHeader />
           <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>

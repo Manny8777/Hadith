@@ -1,5 +1,123 @@
 @import "tailwindcss";
 
+/* ── Thmanyah Sans (UI / labels / navigation) ── */
+@font-face {
+  font-family: 'ThmanyahSans';
+  src: url('/fonts/thmanyahsans-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSans';
+  src: url('/fonts/thmanyahsans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSans';
+  src: url('/fonts/thmanyahsans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSans';
+  src: url('/fonts/thmanyahsans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSans';
+  src: url('/fonts/thmanyahsans-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Thmanyah Serif Text (body / hadith matn / narrator names) ── */
+@font-face {
+  font-family: 'ThmanyahSerifText';
+  src: url('/fonts/thmanyahseriftext-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifText';
+  src: url('/fonts/thmanyahseriftext-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifText';
+  src: url('/fonts/thmanyahseriftext-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifText';
+  src: url('/fonts/thmanyahseriftext-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifText';
+  src: url('/fonts/thmanyahseriftext-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Thmanyah Serif Display (headings / section titles) ── */
+@font-face {
+  font-family: 'ThmanyahSerifDisplay';
+  src: url('/fonts/thmanyahserifdisplay-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifDisplay';
+  src: url('/fonts/thmanyahserifdisplay-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifDisplay';
+  src: url('/fonts/thmanyahserifdisplay-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifDisplay';
+  src: url('/fonts/thmanyahserifdisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ThmanyahSerifDisplay';
+  src: url('/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Tailwind v4 theme tokens ── */
+@theme {
+  --font-sans: 'ThmanyahSans', 'Arial', sans-serif;
+  --font-serif: 'ThmanyahSerifText', 'Traditional Arabic', serif;
+  --font-display: 'ThmanyahSerifDisplay', 'Traditional Arabic', serif;
+}
+
 :root {
   --background: #fffbf0;
   --foreground: #1a1a1a;
@@ -8,7 +126,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Amiri', 'Traditional Arabic', serif;
+  font-family: 'ThmanyahSerifText', 'Traditional Arabic', serif;
   line-height: 1.9;
 }
 

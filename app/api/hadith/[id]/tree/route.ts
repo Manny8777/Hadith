@@ -23,14 +23,15 @@ export async function GET(
   // Note: SELECT DISTINCT requires ORDER BY expressions to be in the select list;
   // use a subquery to sort after deduplication.
   const { rows: rawChains } = await pool.query(
-    `SELECT narrator_id_array, hadith_id, book_title, takhrij_author, takhrij_death
+    `SELECT narrator_id_array, hadith_id, book_title, takhrij_author, takhrij_death, hadith_num
      FROM (
        SELECT DISTINCT
          ic.narrator_id_array,
          ht.main_id as hadith_id,
          b.title as book_title,
          b.takhrij_author,
-         b.takhrij_death
+         b.takhrij_death,
+         ht.tarqeem_harf as hadith_num
        FROM takhrij t
        JOIN isnad_hadiths ih ON ih.hadith_id = t.hadith_id
        JOIN isnad_chains ic ON ic.id = ih.isnad_id
@@ -45,7 +46,7 @@ export async function GET(
   ).catch(async () => {
     // Fallback without author/death columns if books schema differs
     return pool.query(
-      `SELECT narrator_id_array, hadith_id, book_title, NULL::text as takhrij_author, NULL::int as takhrij_death
+      `SELECT narrator_id_array, hadith_id, book_title, NULL::text as takhrij_author, NULL::int as takhrij_death, NULL::text as hadith_num
        FROM (
          SELECT DISTINCT
            ic.narrator_id_array,
@@ -76,13 +77,13 @@ export async function GET(
 
   // Step 4: Fetch narrator info in one query
   const { rows: narrators } = await pool.query(
-    `SELECT id, name, abb_name, martaba_ibn_hajar, is_companion, tabaqa, death_year_num
+    `SELECT id, name, abb_name, martaba_ibn_hajar, is_companion, tabaqa, death_year_num, death_year
      FROM narrators WHERE id = ANY($1)`,
     [Array.from(allIds)]
   )
   const narMap: Record<number, {
     id: number; name: string; abb_name: string | null; martaba_ibn_hajar: string | null;
-    is_companion: boolean; tabaqa: string | null; death_year_num: number | null;
+    is_companion: boolean; tabaqa: string | null; death_year_num: number | null; death_year: string | null;
   }> = {}
   narrators.forEach(n => { narMap[n.id] = n })
 
@@ -92,9 +93,10 @@ export async function GET(
     bookTitle: row.book_title,
     takhrij_author: row.takhrij_author,
     takhrij_death: row.takhrij_death,
+    hadith_num: row.hadith_num,
     narrators: (row.narrator_id_array as number[]).map(nid => narMap[nid] || {
       id: nid, name: `[${nid}]`, abb_name: null, martaba_ibn_hajar: null,
-      is_companion: false, tabaqa: null, death_year_num: null,
+      is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
     }),
   }))
 

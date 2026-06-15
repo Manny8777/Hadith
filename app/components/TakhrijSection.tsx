@@ -2,19 +2,39 @@ import pool from '@/lib/db'
 import TakhrijClient from './TakhrijClient'
 import type { TakhrijRow } from './TakhrijClient'
 
+function extractMatn(raw: string): string {
+  const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
+  const parts: string[] = []
+  let m: RegExpExecArray | null
+  while ((m = matnRe.exec(raw)) !== null) parts.push(m[1])
+  const src = parts.length > 0 ? parts.join(' ') : raw
+
+  return src
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"').replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, c: string) => String.fromCharCode(parseInt(c, 10)))
+    .replace(/[0-9٠-٩]+/g, ' ')
+    .replace(/[-–—]/g, ' ')
+    .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
+    .replace(/\s+/g, ' ').trim()
+}
+
 async function fetchTakhrij(hadithId: number): Promise<{
   rows: TakhrijRow[]
   sourceId: number
   currentCompanionId: number | null
   totalBooks: number
   truncated: boolean
+  baseText: string | null
 }> {
   const groupRes = await pool.query(
-    `SELECT group_id FROM takhrij WHERE hadith_id = $1 LIMIT 1`,
+    `SELECT group_id, compound_matn_id FROM takhrij WHERE hadith_id = $1 LIMIT 1`,
     [hadithId]
   )
-  if (!groupRes.rows[0]) return { rows: [], sourceId: hadithId, currentCompanionId: null, totalBooks: 0, truncated: false }
+  if (!groupRes.rows[0]) return { rows: [], sourceId: hadithId, currentCompanionId: null, totalBooks: 0, truncated: false, baseText: null }
   const groupId = groupRes.rows[0].group_id
+  const refCompoundId: number | null = groupRes.rows[0].compound_matn_id ?? null
 
   const currentCompRes = await pool.query(
     `SELECT ic.narrator_id_array[1] as companion_id
@@ -39,10 +59,14 @@ async function fetchTakhrij(hadithId: number): Promise<{
        h.tarqeem_harf,
        h.tarqeem_matboa1,
        jg.grade_hint,
-       comp.companion_id
+       comp.companion_id,
+       mc.description AS matn_description
      FROM takhrij t
      JOIN hadith_toc h ON h.main_id = t.hadith_id
      JOIN books b ON b.id = t.book_id
+     LEFT JOIN matn_comparison mc ON
+       mc.master_compound_id = $3
+       AND mc.slave_hadith_id = t.hadith_id
      LEFT JOIN LATERAL (
        SELECT ic.narrator_id_array[1] as companion_id
        FROM isnad_hadiths ih2 JOIN isnad_chains ic ON ic.id = ih2.isnad_id
@@ -69,7 +93,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
        b.strong ASC NULLS LAST,
        t.hadith_id
      LIMIT 121`,
-    [groupId, hadithId]
+    [groupId, hadithId, refCompoundId]
   )
 
   const allRows = result.rows as Array<typeof result.rows[0] & {
@@ -93,6 +117,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
     tarqeem_harf: r.tarqeem_harf as string | null,
     tarqeem_matboa1: r.tarqeem_matboa1 as string | null,
     grade_hint: r.grade_hint as string | null,
+    matn_description: (r.matn_description as string | null) ?? null,
     kind: !currentCompanionId || !r.companion_id
       ? 'other'
       : r.companion_id === currentCompanionId
@@ -101,10 +126,15 @@ async function fetchTakhrij(hadithId: number): Promise<{
   }))
 
   const totalBooks = new Set(classified.map(r => r.book_id)).size
-  const mutabaatCount = classified.filter(r => r.kind === 'mutabaa').length
-  const shawahidCount = classified.filter(r => r.kind === 'shahid').length
 
-  return { rows: classified, sourceId: hadithId, currentCompanionId, totalBooks, truncated }
+  const baseContentRes = await pool.query(
+    `SELECT content FROM hadith_toc WHERE main_id = $1`,
+    [hadithId]
+  ).catch(() => ({ rows: [] }))
+  const baseRaw: string | null = baseContentRes.rows[0]?.content ?? null
+  const baseText = baseRaw ? extractMatn(baseRaw) : null
+
+  return { rows: classified, sourceId: hadithId, currentCompanionId, totalBooks, truncated, baseText }
 }
 
 export default async function TakhrijSection({
@@ -113,7 +143,7 @@ export default async function TakhrijSection({
   hadithId: number
   currentHadithId?: number
 }) {
-  const { rows, sourceId, totalBooks, truncated } = await fetchTakhrij(hadithId)
+  const { rows, sourceId, totalBooks, truncated, baseText } = await fetchTakhrij(hadithId)
 
   if (rows.length === 0) return (
     <p className="text-sm text-gray-400 py-4">لا يوجد تخريج مسجل لهذا الحديث في قاعدة البيانات</p>
@@ -130,6 +160,7 @@ export default async function TakhrijSection({
       mutabaatCount={mutabaatCount}
       shawahidCount={shawahidCount}
       truncated={truncated}
+      baseText={baseText}
     />
   )
 }

@@ -22,6 +22,7 @@ interface Narrator {
   is_companion: boolean
   tabaqa: string | null
   death_year_num: number | null
+  death_year: string | null
 }
 
 interface ChainRow {
@@ -29,6 +30,7 @@ interface ChainRow {
   bookTitle: string
   takhrij_author: string | null
   takhrij_death: number | null
+  hadith_num: string | null
   narrators: Narrator[]
 }
 
@@ -78,10 +80,11 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
       const nodeId = `n-${nar.id}`
       if (!nodeMap.has(nodeId)) {
         const raw = (nar.abb_name || nar.name).split('،')[0].trim()
-        const label = raw
+        const deathLine = nar.death_year ? `\nت ${nar.death_year}` : (nar.death_year_num ? `\nت ${nar.death_year_num}هـ` : '')
+        const label = (nar.is_companion ? `◆ ${raw}` : raw) + deathLine
         nodeMap.set(nodeId, {
           id: nodeId,
-          data: { label: nar.is_companion ? `◆ ${label}` : label, narratorId: nar.id },
+          data: { label, narratorId: nar.id },
           position: { x: 0, y: 0 },
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
@@ -91,7 +94,7 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
             border: `1px solid ${nar.is_companion ? '#f59e0b' : '#d1d5db'}`,
             borderRadius: 6, fontFamily: 'Amiri, serif',
             fontSize: 11, width: NW, padding: '3px 6px',
-            textAlign: 'center', cursor: 'pointer', whiteSpace: 'normal',
+            textAlign: 'center', cursor: 'pointer', whiteSpace: 'pre-line',
           },
         })
       }
@@ -122,7 +125,7 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
     const isCurrentBook = chain.hadithId === currentHadithId
     if (!nodeMap.has(bookId)) {
       const label = chain.bookTitle
-        + (chain.takhrij_author ? `\n${chain.takhrij_author}${chain.takhrij_death ? ` (${chain.takhrij_death}هـ)` : ''}` : '')
+        + (chain.hadith_num ? `\nح ${chain.hadith_num}` : '')
       nodeMap.set(bookId, {
         id: bookId,
         data: { label, hadithId: chain.hadithId },
@@ -239,8 +242,8 @@ function LinearChain({
               >
                 {nar.is_companion && <span className="text-amber-500 ml-1 text-xs">◆</span>}
                 <span>{(nar.abb_name || nar.name).split('،')[0].trim()}</span>
-                {nar.death_year_num && (
-                  <span className="block text-[10px] text-gray-400 font-sans mt-0.5">ت {nar.death_year_num}هـ</span>
+                {(nar.death_year || nar.death_year_num) && (
+                  <span className="block text-[10px] text-gray-400 font-sans mt-0.5">ت {nar.death_year || `${nar.death_year_num}هـ`}</span>
                 )}
               </button>
 
@@ -313,8 +316,8 @@ function NarratorPanel({ nar, onClose }: { nar: Narrator; onClose: () => void })
         {nar.tabaqa && (
           <p><span className="text-gray-400">الطبقة: </span>{nar.tabaqa}</p>
         )}
-        {nar.death_year_num && (
-          <p><span className="text-gray-400">الوفاة: </span>{nar.death_year_num} هـ</p>
+        {(nar.death_year || nar.death_year_num) && (
+          <p><span className="text-gray-400">الوفاة: </span>{nar.death_year || `${nar.death_year_num} هـ`}</p>
         )}
         {nar.martaba_ibn_hajar && (
           <p><span className="text-gray-400">ابن حجر: </span>{nar.martaba_ibn_hajar}</p>

@@ -5,6 +5,7 @@ interface NarratorPoint {
   name: string
   abb_name: string | null
   death_year_num: number | null
+  death_year: string | null
   is_companion: boolean
   martaba_ibn_hajar: string | null
 }
@@ -79,7 +80,7 @@ export default function ChainTimeline({ narrators }: Props) {
   return (
     <div className="mt-4 mb-2 overflow-x-auto" dir="ltr">
       <div className="text-xs text-gray-500 mb-1 text-right" dir="rtl">
-        الجدول الزمني للسند — تواريخ الوفاة بالهجري
+        الجدول الزمني للسند — تواريخ الوفاة بالهجري (* مرر للتفاصيل)
       </div>
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
@@ -130,8 +131,11 @@ export default function ChainTimeline({ narrators }: Props) {
           const ly = labelY(i)
           const isAbove = ly < TIMELINE_Y
 
+          const hasMultipleDates = !!(n.death_year && (n.death_year.includes('وقيل') || n.death_year.includes(':') || n.death_year.includes('،')))
+
           return (
             <g key={n.id}>
+              {n.death_year && <title>{n.death_year}</title>}
               <line
                 x1={x} y1={isAbove ? ly + rectHeight : ly - 4}
                 x2={x} y2={isAbove ? TIMELINE_Y - 12 : TIMELINE_Y + 12}
@@ -155,7 +159,7 @@ export default function ChainTimeline({ narrators }: Props) {
                 {line2 && <tspan x={x} dy={11}>{line2}</tspan>}
               </text>
               <text x={x} y={line2 ? ly + 34 : ly + 22} textAnchor="middle" fontSize={8} fill={color} opacity={0.8}>
-                {hasDate ? `ت ${year}هـ` : 'غير محدد'}
+                {hasDate ? `ت ${year}هـ${hasMultipleDates ? '*' : ''}` : 'غير محدد'}
               </text>
             </g>
           )
@@ -167,6 +171,9 @@ export default function ChainTimeline({ narrators }: Props) {
           <text x={18} y={10} fontSize={8} fill="#9ca3af">فجوة زمنية كبيرة بين الرواة</text>
         </g>
       </svg>
+      <p className="text-[11px] text-gray-400 text-right mt-1" dir="rtl">
+        * قد يُذكر للراوي أكثر من تاريخ وفاة — المعروض هنا هو التاريخ الأول الوارد. مرّر الفأرة على الراوي لعرض جميع التواريخ.
+      </p>
     </div>
   )
 }

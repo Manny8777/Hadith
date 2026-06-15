@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import ParallelTexts from './ParallelTexts'
 import PrintButton from './PrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
@@ -13,6 +12,7 @@ import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
 import HadithNumber from './HadithNumber'
 import MatnVariants from './MatnVariants'
+import PrevNextNav from './PrevNextNav'
 import type { ReactNode } from 'react'
 
 function decodeEntities(s: string): string {
@@ -51,7 +51,7 @@ function chainDepthLabel(count: number): string {
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <h2 className="text-base font-bold text-green-900 shrink-0">{label}</h2>
+      <h2 className="text-base font-bold text-green-900 shrink-0 font-display">{label}</h2>
       {sub && <span className="text-xs text-gray-400">{sub}</span>}
       <div className="flex-1 h-px bg-green-100" />
     </div>
@@ -67,6 +67,7 @@ export interface NarratorInChain {
   is_companion: boolean
   tabaqa: string | null
   death_year_num: number | null
+  death_year: string | null
 }
 
 export interface Chain {
@@ -99,6 +100,7 @@ export interface HadithInfo {
   page_num: number
   tarqeem_harf: string | null
   tarqeem_matboa1: string | null
+  print1_edition: string | null
   tarf: string | null
   content: string
   prev_paragraph_id: number
@@ -122,8 +124,16 @@ export interface HadithSidebarLayoutProps {
   takhrijBooks: string[]
   takhrijSummary: { mutabaatCount: number; shawahidCount: number }
   hadithServices?: Partial<Record<HadithServiceKey, boolean>>
+  isnadType?: number | null
   servicesBadgesSlot: ReactNode
   takhrijSlot: ReactNode
+}
+
+const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string }> = {
+  1: { label: 'مرفوع',  cls: 'bg-green-100 text-green-800 border-green-300',  desc: 'يُنسب إلى النبي ﷺ' },
+  2: { label: 'موقوف',  cls: 'bg-amber-100 text-amber-800 border-amber-300',  desc: 'ينتهي عند الصحابي' },
+  3: { label: 'مقطوع',  cls: 'bg-orange-100 text-orange-800 border-orange-300', desc: 'ينتهي عند التابعي' },
+  4: { label: 'مرسل',   cls: 'bg-blue-100 text-blue-800 border-blue-300',     desc: 'التابعي يروي عن النبي ﷺ مباشرة' },
 }
 
 // Sections shown in main content and sidebar TOC
@@ -132,7 +142,7 @@ const SECTIONS = [
   { id: 'shajar',  label: 'شجرة الإسناد' },
   { id: 'aqwal',   label: 'أقوال العلماء' },
   { id: 'takhrij', label: 'التخريج' },
-  { id: 'matn',     label: 'مقارنة المتون' },
+  { id: 'takhrij',  label: 'مقارنة المتون' },
   { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
   { id: 'tahlil',  label: 'تحليل الحديث' },
   { id: 'adawat',  label: 'أدوات البحث' },
@@ -176,7 +186,7 @@ const SERVICE_SIDEBAR_ORDER = [
 export default function HadithSidebarLayout({
   hadithId, hadith: h, chains, commonNarrators,
   judgments, subjects, takhrijBooks, takhrijSummary,
-  hadithServices,
+  hadithServices, isnadType,
   takhrijSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
@@ -274,9 +284,80 @@ export default function HadithSidebarLayout({
             <span className="text-gray-300 mr-1">ج{h.part_num} ص{h.page_num}</span>
           )}
           {(h.tarqeem_harf || h.tarqeem_matboa1) && (
-            <span className="text-gray-400 mr-1">رقم <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} /></span>
+            <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} />
           )}
         </div>
+
+        {/* Tarf */}
+        {h.tarf?.trim() && (
+          <p className="text-sm text-gray-500 italic mb-2 text-right font-serif leading-relaxed" dir="rtl">
+            {h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
+          </p>
+        )}
+
+        {/* Consensus grade badge + takhrij count */}
+        {(() => {
+          const gradeCounts: Record<string, number> = {}
+          judgments.forEach(j => { if (j.grade_class) gradeCounts[j.grade_class] = (gradeCounts[j.grade_class] ?? 0) + 1 })
+          const consensusGrade = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+          const gradeBadgeCls = consensusGrade === 'صحيح' ? 'bg-green-600 text-white border-green-700' :
+            consensusGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
+            consensusGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
+            'bg-gray-200 text-gray-500 border-gray-300'
+          const tooltip = Object.entries(gradeCounts).map(([g, n]) => `${g} ×${n}`).join('، ')
+          const takhrijCount = takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount
+          return (
+            <div className="mb-3 flex items-center gap-3 flex-wrap">
+              <span
+                title={tooltip || undefined}
+                className={`inline-flex items-center gap-1 text-sm px-3 py-1 rounded-full border cursor-default ${gradeBadgeCls}`}
+              >
+                <span className="font-normal opacity-80">الحكم:</span>
+                <span className="font-bold">{consensusGrade ?? 'لا يوجد'}</span>
+              </span>
+              {takhrijCount > 0 && (
+                <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
+                  أُخرجه في {takhrijCount} مصدر
+                </a>
+              )}
+            </div>
+          )
+        })()}
+
+        {/* Isnad type badge */}
+        {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
+          const t = ISNAD_TYPE_MAP[isnadType]
+          return (
+            <span
+              title={t.desc}
+              className={`inline-block mb-2 px-2.5 py-0.5 rounded-full border font-semibold text-xs ${t.cls}`}
+            >
+              {t.label}
+            </span>
+          )
+        })()}
+
+        {/* Companion narrator */}
+        {(() => {
+          const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
+          if (!companion) return null
+          return (
+            <div className="text-xs text-gray-500 mb-2 text-right" dir="rtl">
+              رواه{' '}
+              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold">
+                {companion.name}
+              </Link>
+            </div>
+          )
+        })()}
+
+        {/* Print reference badge */}
+        {h.tarqeem_matboa1 && (
+          <div className="text-[11px] text-gray-400 mb-2 text-right" dir="rtl">
+            {h.print1_edition && <span className="font-medium text-gray-500">{h.print1_edition}: </span>}
+            <span>{h.tarqeem_matboa1}</span>
+          </div>
+        )}
 
         {/* Controls bar */}
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
@@ -361,7 +442,13 @@ export default function HadithSidebarLayout({
 
         {/* ── الأسانيد والرواة ── */}
         <section id="isnad" className="mb-8 scroll-mt-14">
-          <SectionHeader label="الأسانيد والرواة" />
+          <SectionHeader label="الأسانيد والرواة" sub={chains.length > 0 ? (() => {
+            const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
+            const lens = chains.map(c => c.narrators.length)
+            const mn = Math.min(...lens), mx = Math.max(...lens)
+            const dl = mn === mx ? (dm[mn] || `${mn} رواة`) : `${dm[mn]||mn}–${dm[mx]||mx}`
+            return `${dl} · ${chains.length} ${chains.length === 1 ? 'سند' : 'أسانيد'} · ${chains[0].narrators.length} رواة`
+          })() : undefined} />
           {chains.length === 0 ? (
             <p className="text-sm text-gray-400 py-4">لا يوجد إسناد مسجل لهذا الحديث</p>
           ) : (
@@ -515,12 +602,6 @@ export default function HadithSidebarLayout({
           {takhrijSlot}
         </section>
 
-        {/* ── مقارنة المتون ── */}
-        <section id="matn" className="mb-8 scroll-mt-14">
-          <SectionHeader label="مقارنة المتون" sub="نصوص الروايات الموازية في سائر المصادر" />
-          <ParallelTexts hadithId={hadithId} />
-        </section>
-
         {/* ── المتن المُجمَّع والاختلافات ── */}
         <section id="variants" className="mb-8 scroll-mt-14">
           <SectionHeader label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات" />
@@ -560,6 +641,11 @@ export default function HadithSidebarLayout({
             ))}
           </div>
         </section>
+
+        <PrevNextNav
+          prevId={h.prev_paragraph_id || null}
+          nextId={h.next_paragraph_id || null}
+        />
 
       </div>
     </div>

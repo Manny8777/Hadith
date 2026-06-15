@@ -11,7 +11,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
 
   const [hadithRes, judgmentsRes, sourcesRes, isnadRes, takhrijBooksRes, subjectsRes, relatedRes, takhrijSummaryRes] = await Promise.all([
     pool.query(
-      `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death,
+      `SELECT h.*, b.title as book_title, b.takhrij_author, b.takhrij_death, b.print1_edition,
               hs.takhreg, hs.compound_matn, hs.rwah, hs.asnad, hs.shawahed,
               hs.ghareeb, hs.degree, hs.sharh, hs.subjects, hs.tafsser,
               hs.biography, hs.medicine, hs.feqh, hs.asbab, hs.mokhtalaf,
@@ -55,7 +55,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       [mainId]
     ),
     pool.query(
-      `SELECT ic.narrator_ids
+      `SELECT ic.narrator_ids, ih.isnad_type
        FROM isnad_hadiths ih
        JOIN isnad_chains ic ON ih.isnad_id = ic.id
        WHERE ih.hadith_id = $1`,
@@ -132,6 +132,16 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
+  // Dominant isnad type (most frequent across chains)
+  const isnadTypeCounts: Record<number, number> = {}
+  for (const row of isnadRes.rows) {
+    const t = row.isnad_type as number | null
+    if (t) isnadTypeCounts[t] = (isnadTypeCounts[t] ?? 0) + 1
+  }
+  const dominantIsnadType: number | null = Object.keys(isnadTypeCounts).length > 0
+    ? Number(Object.entries(isnadTypeCounts).sort((a, b) => b[1] - a[1])[0][0])
+    : null
+
   // Build narrator chains
   const chains: Chain[] = []
   if (isnadRes.rows.length > 0) {
@@ -144,7 +154,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     }
     if (allIds.size > 0) {
       const narRes = await pool.query<NarratorInChain>(
-        `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion, tabaqa, death_year_num
+        `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion, tabaqa, death_year_num, death_year
          FROM narrators WHERE id = ANY($1)`,
         [Array.from(allIds)]
       )
@@ -159,7 +169,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         const narrators = ids.map(nid => narMap[nid] || {
           id: nid, name: `[${nid}]`, abb_name: null,
           martaba_ibn_hajar: null, martaba_zahabi: null,
-          is_companion: false, tabaqa: null, death_year_num: null,
+          is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
         })
         chains.push({ narrators })
       }
@@ -242,6 +252,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       takhrijBooks={takhrijBooks}
       takhrijSummary={takhrijSummary}
       hadithServices={hadithServices}
+      isnadType={dominantIsnadType}
       servicesBadgesSlot={null}
       takhrijSlot={<TakhrijSection hadithId={mainId} />}
     />
