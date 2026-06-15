@@ -655,10 +655,40 @@ function SourceLabelCmp({ data }: { data: { label: string; num: string | null; h
   )
 }
 
+function BackboneLabelCmp({ data }: { data: { label: string; width: number } }) {
+  return (
+    <div style={{
+      background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6,
+      width: data.width, height: BACKBONE_HEIGHT,
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+      justifyContent: 'center', padding: '4px 10px', boxSizing: 'border-box',
+    }}>
+      <div style={{ fontSize: 9, color: '#16a34a', fontWeight: 700, textAlign: 'right', marginBottom: 2 }}>
+        الحديث الحالي
+      </div>
+      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: '#15803d', textAlign: 'right', lineHeight: 1.3 }}>
+        {data.label}
+      </div>
+    </div>
+  )
+}
+
+function HLineCmp({ data }: { data: { width: number } }) {
+  return (
+    <div style={{
+      width: data.width, height: 1,
+      borderBottom: '1px dashed #e5e7eb',
+      pointerEvents: 'none', boxSizing: 'border-box',
+    }} />
+  )
+}
+
 const FLOW_NODE_TYPES = {
   backbone: BackboneNodeCmp,
   div: DivNodeCmp,
   sourceLabel: SourceLabelCmp,
+  backboneLabel: BackboneLabelCmp,
+  hline: HLineCmp,
 }
 
 function calcBackboneWidth(words: string[]): number {
@@ -667,7 +697,10 @@ function calcBackboneWidth(words: string[]): number {
   return Math.max(80, Math.min(charEstimate * 11, 280))
 }
 
-function buildVariantFlow(segments: VariantSegment[]): { nodes: Node[]; edges: Edge[]; numSources: number } {
+function buildVariantFlow(
+  segments: VariantSegment[],
+  sourceBookTitle: string,
+): { nodes: Node[]; edges: Edge[]; numSources: number } {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
@@ -704,14 +737,44 @@ function buildVariantFlow(segments: VariantSegment[]): { nodes: Node[]; edges: E
     xCursor -= H_GAP
   }
 
-  // Source label nodes — one per source, aligned left of the backbone chain
-  for (const src of sourceOrder) {
+  // Full line width (from left edge of labels to right edge of rightmost backbone)
+  const lineWidth = LABEL_WIDTH + H_GAP + totalWidth
+  const lineX = -(LABEL_WIDTH + H_GAP)
+
+  // Backbone row label (current hadith indicator)
+  nodes.push({
+    id: 'backbone-label',
+    type: 'backboneLabel',
+    data: { label: sourceBookTitle, width: LABEL_WIDTH },
+    position: { x: lineX, y: BACKBONE_Y },
+  })
+
+  // Horizontal guide line between backbone row and source rows
+  nodes.push({
+    id: 'hline-top',
+    type: 'hline',
+    data: { width: lineWidth },
+    position: { x: lineX, y: BACKBONE_Y + BACKBONE_HEIGHT + Math.floor(V_GAP / 2) },
+  })
+
+  // Source label nodes + horizontal guide lines — one per source row
+  for (const [idx, src] of sourceOrder.entries()) {
+    const rowY = sourceRowY.get(src.id)!
     nodes.push({
       id: `label-${src.id}`,
       type: 'sourceLabel',
       data: { label: src.bookTitle, num: src.num, hadithId: src.id, width: LABEL_WIDTH },
-      position: { x: -(LABEL_WIDTH + H_GAP), y: sourceRowY.get(src.id)! },
+      position: { x: lineX, y: rowY },
     })
+    // Guide line at bottom of this row (separates rows)
+    if (idx < sourceOrder.length - 1) {
+      nodes.push({
+        id: `hline-${src.id}`,
+        type: 'hline',
+        data: { width: lineWidth },
+        position: { x: lineX, y: rowY + ROW_HEIGHT + Math.floor(ROW_GAP / 2) },
+      })
+    }
   }
 
   // Backbone nodes and per-source divergence nodes
@@ -797,7 +860,8 @@ function buildVariantFlow(segments: VariantSegment[]): { nodes: Node[]; edges: E
         source: bId,
         target: dId,
         sourceHandle: 'bottom',
-        type: 'straight',
+        targetHandle: 'top',
+        type: 'step',
         style: isInsertion
           ? { stroke: '#d97706', strokeWidth: 1, strokeDasharray: '5 3' }
           : { stroke: '#a8a29e', strokeWidth: 1, strokeDasharray: '4 2' },
@@ -823,7 +887,7 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
   const computed = useMemo(() => {
     const segments = buildVariantData(source, others)
     if (segments.length === 0) return { nodes: [], edges: [], empty: true, numSources: 0 }
-    return { ...buildVariantFlow(segments), empty: false }
+    return { ...buildVariantFlow(segments, source.bookTitle), empty: false }
   }, [source, others])
 
   useEffect(() => {
@@ -874,7 +938,6 @@ export default function MatnVariants({
   const [rawParallels, setRawParallels] = useState<RawParallel[]>([])
   const [sourceMatn, setSourceMatn] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showTree, setShowTree] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -954,31 +1017,16 @@ export default function MatnVariants({
         <CompositeMatn items={compositeItems} totalSources={textEntries.length} />
       </div>
 
-      {/* ── شجرة الاختلافات (collapsible) ── */}
+      {/* ── شجرة الاختلافات ── */}
       <div>
-        <button
-          onClick={() => setShowTree(v => !v)}
-          className="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-green-800 transition-colors mb-1"
-        >
-          <span className={`text-gray-400 transition-transform ${showTree ? 'rotate-90' : ''}`}>▶</span>
-          عرض شجرة الاختلافات
-          <span className="text-xs font-normal text-gray-400">
-            ({textEntries.length} رواية)
-          </span>
-        </button>
-
-        {showTree && (
-          textEntries.length >= 2
-            ? (
-              <>
-                <p className="text-xs text-gray-400 mb-3">
-                  شجرة تفرعات النص — العمود الخلفي يمثل المتن الأصلي، والتفرعات تمثل الاختلافات
-                </p>
-                <VariantsFlowChart source={textEntries[0]} others={textEntries.slice(1)} />
-              </>
-            )
-            : <p className="text-xs text-gray-400">لا توجد روايات كافية</p>
-        )}
+        <h3 className="text-sm font-bold text-gray-700 mb-1">
+          شجرة الاختلافات
+          <span className="text-xs font-normal text-gray-400 mr-2">({textEntries.length} رواية)</span>
+        </h3>
+        <p className="text-xs text-gray-400 mb-3">
+          شجرة تفرعات النص — العمود الخلفي يمثل المتن الأصلي، والتفرعات تمثل الاختلافات
+        </p>
+        <VariantsFlowChart source={textEntries[0]} others={textEntries.slice(1)} />
       </div>
 
     </div>
