@@ -113,6 +113,21 @@ export type HadithServiceKey =
   | 'amthal' | 'motawater'
   | 'countries' | 'modrag' | 'kerat' | 'proper_name' | 'matn_comparison'
 
+export interface SharhItem {
+  book_name: string
+  content: string
+  part_num: number
+  page_num: number
+}
+
+export interface NarratorCity {
+  id: number
+  name: string
+  living_city: string | null
+  birth_city: string | null
+  death_year_num: number | null
+}
+
 export interface HadithSidebarLayoutProps {
   hadithId: number
   hadith: HadithInfo
@@ -125,7 +140,8 @@ export interface HadithSidebarLayoutProps {
   takhrijSummary: { mutabaatCount: number; shawahidCount: number }
   hadithServices?: Partial<Record<HadithServiceKey, boolean>>
   isnadType?: number | null
-  servicesBadgesSlot: ReactNode
+  sharhItems?: SharhItem[]
+  narratorCities?: NarratorCity[]
   matngroupSlot?: ReactNode
   takhrijSlot: ReactNode
 }
@@ -136,17 +152,6 @@ const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string 
   3: { label: 'مقطوع',  cls: 'bg-orange-100 text-orange-800 border-orange-300', desc: 'ينتهي عند التابعي' },
   4: { label: 'مرسل',   cls: 'bg-blue-100 text-blue-800 border-blue-300',     desc: 'التابعي يروي عن النبي ﷺ مباشرة' },
 }
-
-// Sections shown in main content and sidebar TOC
-const SECTIONS = [
-  { id: 'isnad',   label: 'الأسانيد والرواة' },
-  { id: 'shajar',  label: 'شجرة الإسناد' },
-  { id: 'aqwal',   label: 'أقوال العلماء' },
-  { id: 'takhrij', label: 'التخريج' },
-  { id: 'takhrij',  label: 'مقارنة المتون' },
-  { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
-  { id: 'adawat',  label: 'أدوات البحث' },
-]
 
 // Services rendered as sub-page links in the sidebar
 const SERVICE_LABELS: Record<string, string> = {
@@ -167,6 +172,7 @@ const SERVICE_LABELS: Record<string, string> = {
   kerat:           'القراءات',
   proper_name:     'الأعلام',
   matn_comparison: 'مقارنة المتون',
+  rwah:            'تخريج الرواة',
 }
 
 const SERVICE_LINKS: Partial<Record<string, string>> = {
@@ -180,24 +186,43 @@ const SERVICE_LINKS: Partial<Record<string, string>> = {
   mokhtalaf:     'commentary?type=12',
   amthal:        'commentary?type=4',
   motawater:     'commentary?type=5',
-  compound_matn: 'commentary?type=10',
+  compound_matn:   'commentary?type=10',
+  rwah:            'commentary?type=9',
+  matn_comparison: 'matn-variants',
+  modrag:          'commentary?type=2',
+  countries:       'narrators-by-region',
 }
 
 const SERVICE_SIDEBAR_ORDER = [
   'shawahed', 'sharh', 'feqh', 'tafsser', 'biography',
   'medicine', 'asbab', 'mokhtalaf', 'amthal', 'compound_matn', 'motawater',
-  'countries', 'modrag', 'kerat', 'matn_comparison',
+  'countries', 'modrag', 'kerat', 'matn_comparison', 'rwah',
 ]
 
 export default function HadithSidebarLayout({
   hadithId, hadith: h, chains, commonNarrators,
   judgments, subjects, takhrijBooks, takhrijSummary,
   hadithServices, isnadType,
-  servicesBadgesSlot,
+  sharhItems = [],
+  narratorCities = [],
   matngroupSlot,
   takhrijSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
+
+  // Sections shown in main content and sidebar TOC — dynamic based on available data
+  const hasGradeData = judgments.some(j => j.grade_class)
+  const SECTIONS = [
+    { id: 'isnad',   label: 'الأسانيد والرواة' },
+    { id: 'shajar',  label: 'شجرة الإسناد' },
+    { id: 'aqwal',   label: 'أقوال العلماء' },
+    ...(hasGradeData ? [{ id: 'daraja', label: 'الدرجة' }] : []),
+    { id: 'takhrij', label: 'التخريج' },
+    ...(sharhItems.length > 0 ? [{ id: 'sharh-inline', label: 'شرح الحديث' }] : []),
+    ...(narratorCities.length > 0 ? [{ id: 'bildan', label: 'الرواية بالبلدان' }] : []),
+    { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
+    { id: 'adawat',  label: 'أدوات البحث' },
+  ]
 
   function applyTashkeel(text: string): string {
     if (showTashkeel) return text
@@ -247,6 +272,12 @@ export default function HadithSidebarLayout({
               {s.label}
             </a>
           ))}
+
+          {hadithServices?.kerat && (
+            <div className="px-3 pt-2 pb-1">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">قراءات</span>
+            </div>
+          )}
 
           {availableServices.length > 0 && (
             <div className="px-3 pt-3 pb-1 mt-1 border-t border-gray-100">
@@ -332,18 +363,25 @@ export default function HadithSidebarLayout({
           )
         })()}
 
-        {/* Isnad type badge */}
-        {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
-          const t = ISNAD_TYPE_MAP[isnadType]
-          return (
-            <span
-              title={t.desc}
-              className={`inline-block mb-2 px-2.5 py-0.5 rounded-full border font-semibold text-xs ${t.cls}`}
-            >
-              {t.label}
+        {/* Isnad type badge + غريب الحديث badge */}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
+            const t = ISNAD_TYPE_MAP[isnadType]
+            return (
+              <span
+                title={t.desc}
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full border font-semibold text-xs ${t.cls}`}
+              >
+                {t.label}
+              </span>
+            )
+          })()}
+          {hadithServices?.ghareeb && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border font-semibold text-xs bg-amber-100 text-amber-800 border-amber-300">
+              غريب الحديث
             </span>
-          )
-        })()}
+          )}
+        </div>
 
         {/* Companion narrator */}
         {(() => {
@@ -358,9 +396,6 @@ export default function HadithSidebarLayout({
             </div>
           )
         })()}
-
-        {/* Service badges (ghareeb, matn_comparison, countries, modrag, kerat...) */}
-        {servicesBadgesSlot}
 
         {/* Print reference badge */}
         {h.tarqeem_matboa1 && (
@@ -437,6 +472,125 @@ export default function HadithSidebarLayout({
               ))}
             </div>
           </div>
+        )}
+
+        {/* ── الدرجة ── inline section */}
+        {hasGradeData && (
+          <section id="daraja" className="mb-5 scroll-mt-14">
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-base font-bold text-green-900 shrink-0 font-display">الدرجة</h2>
+              <div className="flex-1 h-px bg-green-100" />
+              <a href="#aqwal" className="text-xs text-green-700 hover:underline shrink-0">أقوال العلماء ←</a>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              {(() => {
+                const counts: Record<string, number> = {}
+                judgments.forEach(j => { if (j.grade_class) counts[j.grade_class] = (counts[j.grade_class] ?? 0) + 1 })
+                const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+                const domGrade = dominant?.[0] ?? null
+                const domCls = domGrade === 'صحيح' ? 'bg-green-600 text-white border-green-700' :
+                               domGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
+                               domGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
+                               'bg-gray-200 text-gray-600 border-gray-300'
+                return (
+                  <div className="flex flex-wrap items-center gap-3">
+                    {domGrade && (
+                      <span className={`text-sm font-bold px-4 py-1.5 rounded-full border ${domCls}`}>
+                        {domGrade}
+                      </span>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(counts).map(([g, n]) => {
+                        const cls = g === 'صحيح' ? 'bg-green-100 text-green-800 border-green-200' :
+                                    g === 'حسن'  ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                    'bg-red-100 text-red-700 border-red-200'
+                        return (
+                          <span key={g} className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${cls}`}>
+                            {g} ×{n}
+                          </span>
+                        )
+                      })}
+                      {(() => {
+                        const other = judgments.filter(j => !j.grade_class).length
+                        return other > 0 ? (
+                          <span className="text-xs px-2.5 py-0.5 rounded-full border bg-gray-100 text-gray-600 border-gray-200 font-medium">
+                            أخرى ×{other}
+                          </span>
+                        ) : null
+                      })()}
+                    </div>
+                    <span className="text-xs text-gray-400">{judgments.length} قول</span>
+                  </div>
+                )
+              })()}
+            </div>
+          </section>
+        )}
+
+        {/* ── شرح الحديث ── inline section */}
+        {sharhItems.length > 0 && (
+          <section id="sharh-inline" className="mb-5 scroll-mt-14">
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-base font-bold text-green-900 shrink-0 font-display">شرح الحديث</h2>
+              <div className="flex-1 h-px bg-green-100" />
+              <a href={`/hadith/${hadithId}/commentary?type=6`} className="text-xs text-green-700 hover:underline shrink-0">
+                الشرح الكامل ←
+              </a>
+            </div>
+            <div className="space-y-3">
+              {sharhItems.map((item, i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                  {item.book_name && (
+                    <p className="text-[11px] text-gray-400 mb-2 font-medium">
+                      {item.book_name}
+                      {item.part_num > 0 && item.page_num > 0 && ` (${item.part_num}/${item.page_num})`}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4" dir="rtl">
+                    {item.content?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── الرواية بالبلدان ── inline section */}
+        {narratorCities.length > 0 && (
+          <section id="bildan" className="mb-5 scroll-mt-14">
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-base font-bold text-green-900 shrink-0 font-display">الرواية بالبلدان</h2>
+              <div className="flex-1 h-px bg-green-100" />
+              <a href={`/hadith/${hadithId}/narrators-by-region`} className="text-xs text-green-700 hover:underline shrink-0">
+                تفاصيل كاملة ←
+              </a>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              {(() => {
+                const cityMap = new Map<string, NarratorCity[]>()
+                for (const n of narratorCities) {
+                  const raw = (n.living_city || n.birth_city || '').trim()
+                  const city = raw ? raw.split('،')[0].replace(/قال.*?:/g, '').trim() : ''
+                  if (city) {
+                    const bucket = cityMap.get(city) || []
+                    bucket.push(n)
+                    cityMap.set(city, bucket)
+                  }
+                }
+                const cities = Array.from(cityMap.entries()).sort((a, b) => b[1].length - a[1].length)
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {cities.map(([city, narrs]) => (
+                      <div key={city} className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5">
+                        <span className="text-sm font-medium text-green-900">{city}</span>
+                        <span className="text-xs text-gray-400">{narrs.length} راوٍ</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+            </div>
+          </section>
         )}
 
         {/* Mobile: horizontal TOC strip */}

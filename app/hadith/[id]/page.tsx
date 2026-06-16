@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection from '@/app/components/TakhrijSection'
-import ServicesBadges from '@/app/components/ServicesBadges'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
 
 export default async function HadithPage({ params }: { params: Promise<{ id: string }> }) {
@@ -132,6 +131,29 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     }).catch(() => ({ mutabaatCount: 0, shawahidCount: 0 })),
   ])
 
+  // Sharh preview (up to 2 items) and narrator cities for inline body sections
+  const [sharhItemsRes, narratorCitiesRes] = await Promise.all([
+    pool.query<{ book_name: string; content: string; part_num: number; page_num: number }>(
+      `SELECT hsc.book_name, hsc.content, hsc.part_num, hsc.page_num
+       FROM hadith_service_links hsl
+       JOIN hadith_service_content hsc ON hsc.id = hsl.service_content_id
+       WHERE hsl.hadith_id = $1 AND hsl.type_id = 6
+       ORDER BY hsc.id LIMIT 2`,
+      [mainId]
+    ).catch(() => ({ rows: [] as Array<{ book_name: string; content: string; part_num: number; page_num: number }> })),
+    pool.query<{ id: number; name: string; living_city: string | null; birth_city: string | null; death_year_num: number | null }>(
+      `SELECT DISTINCT ON (n.id) n.id, n.name, n.living_city, n.birth_city, n.death_year_num
+       FROM isnad_hadiths ih
+       JOIN isnad_chains ic ON ic.id = ih.isnad_id
+       JOIN narrators n ON n.id = ANY(ic.narrator_id_array)
+       WHERE ih.hadith_id = $1
+         AND (n.living_city IS NOT NULL AND n.living_city != ''
+              OR n.birth_city IS NOT NULL AND n.birth_city != '')
+       ORDER BY n.id, n.death_year_num ASC NULLS LAST LIMIT 30`,
+      [mainId]
+    ).catch(() => ({ rows: [] as Array<{ id: number; name: string; living_city: string | null; birth_city: string | null; death_year_num: number | null }> })),
+  ])
+
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
@@ -257,7 +279,8 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       takhrijSummary={takhrijSummary}
       hadithServices={hadithServices}
       isnadType={dominantIsnadType}
-      servicesBadgesSlot={<ServicesBadges hadithId={mainId} />}
+      sharhItems={sharhItemsRes.rows}
+      narratorCities={narratorCitiesRes.rows}
       matngroupSlot={<MatnGroupSection hadithId={mainId} />}
       takhrijSlot={<TakhrijSection hadithId={mainId} />}
     />
