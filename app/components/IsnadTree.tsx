@@ -238,18 +238,21 @@ function LinearChain({
         النبي ﷺ
       </div>
 
-      {chain.narrators.map((nar) => {
+      {chain.narrators.map((nar, narIdx) => {
         const isSelected = selectedNarratorId === nar.id
         const isExpanded = expandedNarrators.has(nar.id)
         const relatedChains = allChains.filter(
           c => c.hadithId !== hadithId && c.narrators.some(n => n.id === nar.id)
         )
+        // Each entry stores the method the SENDER used to transmit to the next narrator,
+        // so the term above narrator[i] comes from narrator[i-1]'s map entry.
+        const prevId = narIdx > 0 ? chain.narrators[narIdx - 1].id : null
 
         return (
           <div key={nar.id} className="flex flex-col items-center w-full">
             {/* Connector */}
             {(() => {
-              const term = narratorTermMap[nar.id] || ''
+              const term = (prevId != null ? narratorTermMap[prevId] : '') || ''
               return term ? (
                 <div className="flex flex-col items-center py-0.5">
                   <div className="w-px h-2 bg-gray-300 shrink-0" />
