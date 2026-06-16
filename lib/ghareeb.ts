@@ -1,5 +1,39 @@
 /** Shared types and helpers for غريب الحديث (Gharib al-Hadith). */
 
+export interface GhareebTag {
+  word: string
+  refId: number | null
+}
+
+/** Extract غريب-tagged words from matn XML (authoritative source in hadith text). */
+export function parseGhareebTags(xml: string): GhareebTag[] {
+  if (!xml) return []
+
+  const matnStart = xml.search(/<متن[\s>]/)
+  const scope = matnStart >= 0 ? xml.slice(matnStart) : xml
+
+  const tags: GhareebTag[] = []
+  const re = /<غريب[^>]*?(?:ربط="(\d+)")?[^>]*>([\s\S]*?)<\/غريب>/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(scope)) !== null) {
+    const word = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    if (!word) continue
+    const refRaw = m[1]?.trim()
+    const refId = refRaw && /^\d+$/.test(refRaw) ? parseInt(refRaw, 10) : null
+    tags.push({ word, refId })
+  }
+  return tags
+}
+
+export function dedupeGhareebWords(words: GhareebWord[]): GhareebWord[] {
+  const seen = new Set<number>()
+  return words.filter(w => {
+    if (seen.has(w.formId)) return false
+    seen.add(w.formId)
+    return true
+  })
+}
+
 export interface GhareebWord {
   formId: number
   formText: string

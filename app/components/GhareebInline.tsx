@@ -22,18 +22,22 @@ export default function GhareebInline({ hadithId }: { hadithId: number }) {
   }, [hadithId])
 
   const matched = useMemo(() => {
-    if (!matn || words.length === 0) return []
+    if (words.length === 0) return []
+    if (!matn) return words
     const matches = findGhareebMatches(matn, words)
-    const seen = new Set<number>()
-    const result: GhareebWord[] = []
-    for (const m of matches) {
-      const w = words.find(x => x.formId === m.formId)
-      if (w && !seen.has(w.wordId)) {
-        seen.add(w.wordId)
-        result.push(w)
+    if (matches.length > 0) {
+      const seen = new Set<number>()
+      const result: GhareebWord[] = []
+      for (const m of matches) {
+        const w = words.find(x => x.formId === m.formId)
+        if (w && !seen.has(w.wordId)) {
+          seen.add(w.wordId)
+          result.push(w)
+        }
       }
+      return result
     }
-    return result
+    return words
   }, [matn, words])
 
   if (loading) {
