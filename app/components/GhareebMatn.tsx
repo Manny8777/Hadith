@@ -115,6 +115,7 @@ function GhareebPopover({
           )
         })}
       </div>
+      {word.wordId > 0 && (
       <div className="px-4 py-2 bg-gray-800/60 border-t border-gray-700 shrink-0">
         <Link
           href={`/lexicon/${word.wordId}`}
@@ -123,6 +124,7 @@ function GhareebPopover({
           المعجم ←
         </Link>
       </div>
+      )}
     </div>
   )
 }
