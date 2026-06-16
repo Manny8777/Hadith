@@ -11,6 +11,7 @@ import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
 import HadithNumber from './HadithNumber'
 import MatnVariants from './MatnVariants'
+import MatnSimilaritySection from './MatnSimilaritySection'
 import PrevNextNav from './PrevNextNav'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
@@ -593,9 +594,12 @@ export default function HadithSidebarLayout({
 
         {/* ── التخريج ── */}
         <section id="takhrij" className="mb-8 scroll-mt-14">
-          <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة" />
+          <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من النظام القديم" />
           {takhrijSlot}
         </section>
+
+        {/* ── مطابقة المتون (حساب مباشر) ── */}
+        <MatnSimilaritySection hadithId={hadithId} />
 
         {/* ── الخدمات العلمية (inline) ── */}
         {serviceSections.map(cfg => (
