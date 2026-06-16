@@ -169,6 +169,67 @@ export function parseServiceVerbatim(raw: string | null | undefined): string | n
     .trim() || null
 }
 
+/** Extract the scholar's gloss after a <غريب ربط="id"> tag inside service content. */
+export function extractGhareebRefSnippet(
+  xml: string | null | undefined,
+  refId: number
+): string | null {
+  if (!xml || !refId) return null
+
+  const openRe = new RegExp(
+    `<غريب[^>]*ربط="${refId}"[^>]*>([\\s\\S]*?)<\\/غريب>`,
+    'i'
+  )
+  const m = openRe.exec(xml)
+  if (!m) return null
+
+  const word = m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  const afterStart = m.index + m[0].length
+  const tail = xml
+    .slice(afterStart)
+    .replace(/^(\s*<\/[^>]+>\s*)+/, '')
+  const endMatch = tail.match(/<نه\/>|<مسألة>|<متن[\s>]/)
+  const gloss = (endMatch ? tail.slice(0, endMatch.index) : tail)
+    .replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (!word && !gloss) return null
+  return gloss ? `${word} — ${gloss}` : word
+}
+
+export function buildGhareebSourceFromRef(
+  row: {
+    part_text?: string | null
+    tarf?: string | null
+    content?: string | null
+    source_book?: string | null
+    source_ref_id?: number | null
+  },
+  refId: number
+): GhareebSource | null {
+  const snippet = extractGhareebRefSnippet(row.content, refId)
+  const fullVerbatim = parseServiceVerbatim(row.content)
+  const verbatimText = snippet || fullVerbatim
+  if (!verbatimText && !row.source_book) return null
+
+  const definition =
+    snippet ||
+    cleanDefinition(row.part_text) ||
+    cleanDefinition(row.tarf) ||
+    fullVerbatim
+
+  return {
+    definition,
+    verbatimText,
+    sourceBook: row.source_book ?? null,
+    sourceRefId: row.source_ref_id ?? null,
+  }
+}
+
 export function buildGhareebSource(row: {
   part_text?: string | null
   tarf?: string | null

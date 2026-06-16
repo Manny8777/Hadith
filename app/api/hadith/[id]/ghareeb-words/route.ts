@@ -3,6 +3,7 @@ import pool from '@/lib/db'
 import { extractMatnForComparison, splitSanadMatn } from '@/lib/hadithText'
 import {
   buildGhareebSource,
+  buildGhareebSourceFromRef,
   buildGhareebWord,
   dedupeGhareebWords,
   parseGhareebTags,
@@ -51,14 +52,23 @@ async function resolveLexiconForm(word: string): Promise<LexiconRow | null> {
      WHERE li.lexicon_id = 1
        AND li.is_leaf = true
        AND normalize_hadith(li.text) = normalize_hadith($1)
-     ORDER BY length(li.text) DESC
+     ORDER BY
+       (SELECT COUNT(*)::int
+        FROM lexicon_hadith lh
+        WHERE lh.lexicon_item_id IN (li.id, word.id)) DESC,
+       CASE
+         WHEN li.text LIKE 'ال%' AND normalize_hadith($1) LIKE '%' || normalize_hadith('ال') || '%' THEN 0
+         WHEN li.text NOT LIKE 'أل%' AND li.text NOT LIKE 'ال%' THEN 1
+         ELSE 2
+       END,
+       length(li.text) ASC
      LIMIT 1`,
     [word]
   )
   return res.rows[0] ?? null
 }
 
-async function fetchServiceContent(refId: number): Promise<GhareebSource | null> {
+async function fetchSourcesByGhareebRef(refId: number): Promise<GhareebSource[]> {
   const res = await pool.query<ContentRow>(
     `SELECT
        part_text,
@@ -67,10 +77,22 @@ async function fetchServiceContent(refId: number): Promise<GhareebSource | null>
        book_name AS source_book,
        id::bigint AS source_ref_id
      FROM hadith_service_content
-     WHERE id = $1`,
+     WHERE content LIKE '%ربط="' || $1::text || '"%'
+     ORDER BY
+       CASE WHEN book_name ILIKE '%نهاية%' THEN 0
+            WHEN book_name ILIKE '%غريب%' THEN 1
+            ELSE 2 END,
+       id
+     LIMIT 5`,
     [refId]
   )
-  return buildGhareebSource(res.rows[0] ?? {})
+
+  const sources: GhareebSource[] = []
+  for (const row of res.rows) {
+    const src = buildGhareebSourceFromRef(row, refId)
+    if (src) sources.push(src)
+  }
+  return sources
 }
 
 async function fetchDefinitions(
@@ -82,8 +104,8 @@ async function fetchDefinitions(
   const sources: GhareebSource[] = []
 
   if (tagRefId) {
-    const direct = await fetchServiceContent(tagRefId)
-    if (direct) sources.push(direct)
+    const fromRef = await fetchSourcesByGhareebRef(tagRefId)
+    sources.push(...fromRef)
   }
 
   const fromLinks = await pool.query<ContentRow>(
