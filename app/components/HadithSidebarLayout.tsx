@@ -27,18 +27,41 @@ function decodeEntities(s: string): string {
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)))
 }
 
-function cleanHadithContent(xml: string): string {
+function stripXmlToVerbatim(xml: string): string {
   return decodeEntities(
     (xml || '')
       .replace(/<سند_مخفي[\s\S]*?<\/سند_مخفي>/g, '')
-      .replace(/<رقم_حديث[^>]*>[^<]*<\/رقم_حديث>/g, '')
-      .replace(/<رقم_الفقرة[^>]*\/>/g, '')
-      .replace(/<نه\/>/g, '')
-      .replace(/<[^>]+>/g, ' ')
+      .replace(/<رقم_حديث[^>]*>[\s\S]*?<\/رقم_حديث>/g, '')
+      .replace(/<رقم_الفقرة[^>]*\/?>/g, '')
+      .replace(/<الصفحات[^>]*\/?>/g, '')
+      .replace(/<نه\/>/g, ' ')
+      .replace(/<[^>]+>/g, '')
   )
     .replace(/^\s*[-–—]\s*/, '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function splitSanadMatn(xml: string): { sanad: string; matn: string } {
+  const raw = xml || ''
+  const matnStart = raw.search(/<متن[\s>]/)
+  if (matnStart === -1) {
+    return { sanad: '', matn: stripXmlToVerbatim(raw) }
+  }
+
+  const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
+  const matnParts: string[] = []
+  let match: RegExpExecArray | null
+  while ((match = matnRe.exec(raw)) !== null) matnParts.push(match[1])
+
+  return {
+    sanad: stripXmlToVerbatim(raw.slice(0, matnStart)),
+    matn: stripXmlToVerbatim(matnParts.join(' ')),
+  }
+}
+
+function cleanHadithContent(xml: string): string {
+  return stripXmlToVerbatim(xml)
 }
 
 function chainDepthLabel(count: number): string {
@@ -373,10 +396,31 @@ export default function HadithSidebarLayout({
           </div>
         </div>
 
-        {/* Hadith text */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4 text-lg leading-loose">
-          {applyTashkeel(cleanHadithContent(h.content))}
-        </div>
+        {/* Hadith text — sanad then matn */}
+        {(() => {
+          const { sanad, matn } = splitSanadMatn(h.content)
+          const matnText = matn || cleanHadithContent(h.content)
+          return (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+              {sanad && (
+                <div className="px-6 pt-5 pb-4 border-b border-gray-100 bg-gray-50/60">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">السند</p>
+                  <p className="text-base leading-loose text-gray-600 font-serif" dir="rtl">
+                    {applyTashkeel(sanad)}
+                  </p>
+                </div>
+              )}
+              <div className={`px-6 ${sanad ? 'py-5' : 'p-6'}`}>
+                {sanad && (
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">المتن</p>
+                )}
+                <p className="text-lg leading-loose text-gray-900 font-serif" dir="rtl">
+                  {applyTashkeel(matnText)}
+                </p>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Subject tags */}
         {subjects.length > 0 && (
