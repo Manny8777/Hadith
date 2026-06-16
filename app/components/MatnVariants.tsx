@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
+import { extractMatnForComparison, stripXmlToVerbatim } from '@/lib/hadithText'
 import ReactFlow, {
   Background,
   Controls,
@@ -45,20 +46,24 @@ type DisplayItem =
 
 // ── Text utilities ─────────────────────────────────────────────────────────────
 
-function extractMatn(xml: string): string {
-  const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
-  const parts: string[] = []
-  let m: RegExpExecArray | null
-  while ((m = matnRe.exec(xml)) !== null) parts.push(m[1])
-  const src = parts.length > 0 ? parts.join(' ') : xml
-  return src
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (_, c: string) => String.fromCharCode(parseInt(c, 10)))
-    .replace(/[0-9٠-٩]+/g, ' ')
-    .replace(/[-–—]/g, ' ')
-    .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
-    .replace(/\s+/g, ' ').trim()
+function resolveMatnText(content: string | null, tarf: string | null): string {
+  if (content) {
+    const fromContent = extractMatnForComparison(content)
+    if (fromContent) return fromContent
+  }
+  if (tarf) {
+    const fromTarf = extractMatnForComparison(tarf)
+    if (fromTarf) return fromTarf
+    // tarf is the matn opening — no sanad
+    const plain = stripXmlToVerbatim(tarf)
+    return plain
+      .replace(/[0-9٠-٩]+/g, ' ')
+      .replace(/[-–—]/g, ' ')
+      .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+  return ''
 }
 
 function normWord(w: string): string {
@@ -958,7 +963,7 @@ export default function MatnVariants({
 
   // Build TextEntry list for composite and tree
   const textEntries = useMemo(() => {
-    const sourceText = sourceMatn ?? (currentTarf ? extractMatn(currentTarf) : '')
+    const sourceText = sourceMatn ?? resolveMatnText(null, currentTarf)
 
     const entries: TextEntry[] = []
     if (sourceText.trim().length > 3) {
@@ -972,7 +977,7 @@ export default function MatnVariants({
     }
 
     for (const p of rawParallels) {
-      const matn = p.content ? extractMatn(p.content) : (p.tarf ? extractMatn(p.tarf) : '')
+      const matn = resolveMatnText(p.content, p.tarf)
       if (matn.trim().length > 3) {
         entries.push({
           id: p.main_id,

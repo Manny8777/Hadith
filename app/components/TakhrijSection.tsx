@@ -1,24 +1,7 @@
 import pool from '@/lib/db'
+import { extractMatnForComparison } from '@/lib/hadithText'
 import TakhrijClient from './TakhrijClient'
 import type { TakhrijRow } from './TakhrijClient'
-
-function extractMatn(raw: string): string {
-  const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
-  const parts: string[] = []
-  let m: RegExpExecArray | null
-  while ((m = matnRe.exec(raw)) !== null) parts.push(m[1])
-  const src = parts.length > 0 ? parts.join(' ') : raw
-
-  return src
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&quot;/g, '"').replace(/&amp;/g, '&')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (_, c: string) => String.fromCharCode(parseInt(c, 10)))
-    .replace(/[0-9٠-٩]+/g, ' ')
-    .replace(/[-–—]/g, ' ')
-    .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
-    .replace(/\s+/g, ' ').trim()
-}
 
 async function fetchTakhrij(hadithId: number): Promise<{
   rows: TakhrijRow[]
@@ -132,7 +115,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
     [hadithId]
   ).catch(() => ({ rows: [] }))
   const baseRaw: string | null = baseContentRes.rows[0]?.content ?? null
-  const baseText = baseRaw ? extractMatn(baseRaw) : null
+  const baseText = baseRaw ? extractMatnForComparison(baseRaw) : null
 
   return { rows: classified, sourceId: hadithId, currentCompanionId, totalBooks, truncated, baseText }
 }

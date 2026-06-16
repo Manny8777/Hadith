@@ -14,51 +14,8 @@ import MatnVariants from './MatnVariants'
 import PrevNextNav from './PrevNextNav'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
+import { splitSanadMatn, stripXmlToVerbatim } from '@/lib/hadithText'
 import type { ReactNode } from 'react'
-
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)))
-}
-
-function stripXmlToVerbatim(xml: string): string {
-  return decodeEntities(
-    (xml || '')
-      .replace(/<سند_مخفي[\s\S]*?<\/سند_مخفي>/g, '')
-      .replace(/<رقم_حديث[^>]*>[\s\S]*?<\/رقم_حديث>/g, '')
-      .replace(/<رقم_الفقرة[^>]*\/?>/g, '')
-      .replace(/<الصفحات[^>]*\/?>/g, '')
-      .replace(/<نه\/>/g, ' ')
-      .replace(/<[^>]+>/g, '')
-  )
-    .replace(/^\s*[-–—]\s*/, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function splitSanadMatn(xml: string): { sanad: string; matn: string } {
-  const raw = xml || ''
-  const matnStart = raw.search(/<متن[\s>]/)
-  if (matnStart === -1) {
-    return { sanad: '', matn: stripXmlToVerbatim(raw) }
-  }
-
-  const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
-  const matnParts: string[] = []
-  let match: RegExpExecArray | null
-  while ((match = matnRe.exec(raw)) !== null) matnParts.push(match[1])
-
-  return {
-    sanad: stripXmlToVerbatim(raw.slice(0, matnStart)),
-    matn: stripXmlToVerbatim(matnParts.join(' ')),
-  }
-}
 
 function cleanHadithContent(xml: string): string {
   return stripXmlToVerbatim(xml)
