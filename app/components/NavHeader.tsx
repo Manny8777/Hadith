@@ -245,7 +245,8 @@ export default function NavHeader() {
               href="https://wa.me/61426047327"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold text-green-800 hover:text-green-900 underline underline-offset-2"
+              dir="ltr"
+              className="inline-block font-bold text-green-800 hover:text-green-900 underline underline-offset-2 [unicode-bidi:isolate]"
             >
               +61 426 047 327
             </a>
