@@ -284,6 +284,7 @@ export default function NavHeader() {
           ))}
         </div>
 
+        {/* TODO: re-enable when per-user login/collection is implemented
         <a
           href="/saved"
           className="text-amber-300 hover:text-amber-200 transition-colors px-1.5 sm:px-2 py-1.5 text-sm shrink-0 whitespace-nowrap"
@@ -292,6 +293,7 @@ export default function NavHeader() {
           <span className="sm:hidden">★</span>
           <span className="hidden sm:inline">★ مجموعتي</span>
         </a>
+        */}
         <NumberingToggle />
       </div>
     </nav>

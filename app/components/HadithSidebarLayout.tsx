@@ -6,7 +6,7 @@ import PrintButton from './PrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
 import ChainTimeline from './ChainTimeline'
-import HadithNote from './HadithNote'
+// import HadithNote from './HadithNote' // TODO: re-enable with per-user login
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
 import HadithNumber from './HadithNumber'
@@ -361,7 +361,9 @@ export default function HadithSidebarLayout({
                 grade_class: j.grade_class,
               }))}
             />
+            {/* TODO: re-enable when per-user login/notes are implemented
             <HadithNote hadithId={hadithId} />
+            */}
           </div>
         </div>
 
