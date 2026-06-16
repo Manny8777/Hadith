@@ -95,6 +95,7 @@ const DESC_SORT_ORDER = [
 
 type ViewMode = 'ijmali' | 'mutawassit' | 'tafsili'
 type SortBy = 'sihha' | 'shuhura' | 'wafayat'
+type BookFilter = 'all' | number
 
 export interface TakhrijRow {
   main_id: number
@@ -134,6 +135,27 @@ function partPage(row: TakhrijRow) {
   return parts.join(' ')
 }
 
+function citationLocation(row: TakhrijRow): string {
+  const locParts: string[] = []
+  if (row.part_num > 0 || row.page_num > 0) {
+    const part = row.part_num > 0 ? String(row.part_num) : '-'
+    const page = row.page_num > 0 ? String(row.page_num) : '-'
+    locParts.push(`(${part} / ${page})`)
+  }
+
+  const num = numText(row)
+  if (num) locParts.push(`برقم: (${num})`)
+
+  return locParts.join(' ')
+}
+
+function bookCitationTitle(row: TakhrijRow): string {
+  const title = row.book_title || `كتاب ${row.book_id}`
+  return row.book_takhrij_author
+    ? `${row.book_takhrij_author} في "${title}"`
+    : `"${title}"`
+}
+
 /** Display a hadith number as plain text (for copy output) */
 function numText(row: TakhrijRow): string {
   return row.tarqeem_matboa1 || row.tarqeem_harf || ''
@@ -157,16 +179,23 @@ const GRADE_BADGE: Record<string, string> = {
 function sortRows(rows: TakhrijRow[], sortBy: SortBy): TakhrijRow[] {
   return [...rows].sort((a, b) => {
     if (sortBy === 'sihha') {
-      return (a.book_strong ?? 9999) - (b.book_strong ?? 9999)
+      const byStrong = (a.book_strong ?? 9999) - (b.book_strong ?? 9999)
+      if (byStrong !== 0) return byStrong
     }
     if (sortBy === 'shuhura') {
-      return (a.book_fame ?? 9999) - (b.book_fame ?? 9999)
+      const byFame = (a.book_fame ?? 9999) - (b.book_fame ?? 9999)
+      if (byFame !== 0) return byFame
     }
-    // wafayat
-    const da = a.book_takhrij_death ?? 9999
-    const db = b.book_takhrij_death ?? 9999
-    if (da !== db) return da - db
-    return (a.book_id ?? 0) - (b.book_id ?? 0)
+
+    if (sortBy === 'wafayat') {
+      const da = a.book_takhrij_death ?? 9999
+      const db = b.book_takhrij_death ?? 9999
+      if (da !== db) return da - db
+    }
+
+    const byBook = (a.book_id ?? 0) - (b.book_id ?? 0)
+    if (byBook !== 0) return byBook
+    return a.main_id - b.main_id
   })
 }
 
@@ -176,43 +205,29 @@ function sortRows(rows: TakhrijRow[], sortBy: SortBy): TakhrijRow[] {
  * Build Arabic prose citation text, grouped by book.
  * e.g. "أخرجه البخاري برقم (1543)، ومسلم برقم (1281، 1282)، والبزار برقم (2142) بمعناه مختصرا."
  */
-function buildCopyText(rows: TakhrijRow[], sourceId: number): string {
+function buildCopyText(rows: TakhrijRow[]): string {
+  if (rows.length === 0) return ''
+
   // Preserve order; group consecutive same-book entries together keeping sort order
   const bookOrder: number[] = []
-  const bookMap = new Map<number, { title: string; entries: TakhrijRow[] }>()
+  const bookMap = new Map<number, { row: TakhrijRow; entries: TakhrijRow[] }>()
   for (const row of rows) {
     if (!bookMap.has(row.book_id)) {
       bookOrder.push(row.book_id)
-      bookMap.set(row.book_id, { title: row.book_title || `كتاب ${row.book_id}`, entries: [] })
+      bookMap.set(row.book_id, { row, entries: [] })
     }
     bookMap.get(row.book_id)!.entries.push(row)
   }
 
   const parts: string[] = []
   for (let bi = 0; bi < bookOrder.length; bi++) {
-    const { title, entries } = bookMap.get(bookOrder[bi])!
-    const nums = entries.map(r => numText(r)).filter(Boolean)
-    const connector = bi === 0 ? '' : bi === 1 ? 'و' : 'و'
-    // Use Arabic "و" prefix — first book gets "أخرجه", rest get "و" + book name
-    let part = bi === 0 ? `أخرجه ${title}` : `${connector}${title}`
-    if (nums.length > 0) {
-      part += ` برقم (${nums.join('، ')})`
-    }
-    // Find the dominant description for this book (excluding source hadith)
-    const descs = entries
-      .filter(r => r.main_id !== sourceId && r.matn_description)
-      .map(r => r.matn_description!.replace(/\.$/, '').trim())
-    if (descs.length > 0) {
-      // Most common description
-      const freq = new Map<string, number>()
-      for (const d of descs) freq.set(d, (freq.get(d) ?? 0) + 1)
-      const dominant = [...freq.entries()].sort((a, b) => b[1] - a[1])[0][0]
-      part += ` ${dominant}`
-    }
+    const { row, entries } = bookMap.get(bookOrder[bi])!
+    const locations = entries.map(citationLocation).filter(Boolean)
+    const part = `${bookCitationTitle(row)}${locations.length ? ` ${locations.join(' ، ')}` : ''}`
     parts.push(part)
   }
 
-  return parts.join('، ') + '.'
+  return `أخرجه ${parts.join(' و')}.`
 }
 
 // ── Small reusable CopyButton ─────────────────────────────────────────────────
@@ -250,70 +265,21 @@ function CopyButton({ getText, label = 'نسخ', className = '' }: {
 
 // ── إجمالي view ──────────────────────────────────────────────────────────────
 
-function IjmaliView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number }) {
-  // Deduplicate by book, preserving sorted order
-  const bookOrder: number[] = []
-  const bookMap = new Map<number, { row: TakhrijRow; count: number; hasSource: boolean }>()
-  for (const row of rows) {
-    if (bookMap.has(row.book_id)) {
-      bookMap.get(row.book_id)!.count++
-      if (row.main_id === sourceId) bookMap.get(row.book_id)!.hasSource = true
-    } else {
-      bookOrder.push(row.book_id)
-      bookMap.set(row.book_id, { row, count: 1, hasSource: row.main_id === sourceId })
-    }
-  }
-  const books = bookOrder.map(id => ({ id, ...bookMap.get(id)! }))
+function IjmaliView({ rows }: { rows: TakhrijRow[] }) {
+  const getCopyText = useCallback(() => buildCopyText(rows), [rows])
 
-  const getCopyText = useCallback(() => {
-    const names = books.map(b => b.row.book_title || `كتاب ${b.id}`)
-    const joined = names.length <= 1
-      ? names[0] ?? ''
-      : names.slice(0, -1).join('، و') + '، و' + names[names.length - 1]
-    return `أخرجه ${joined}  [${books.length} كتاب]`
-  }, [books])
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-400 py-4">لا توجد روايات مطابقة لهذه المرشحات</p>
+  }
 
   return (
-    <div>
-      {/* Copy button top-right */}
+    <div dir="rtl">
       <div className="flex justify-end mb-3">
-        <CopyButton getText={getCopyText} label="نسخ أسماء الكتب" />
+        <CopyButton getText={getCopyText} label="نسخ التخريج" />
       </div>
-
-      <div className="space-y-1" dir="rtl">
-        {books.map(({ id, row, count, hasSource }, i) => (
-          <div key={id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0 text-sm">
-            <span className="text-gray-300 shrink-0 w-5 text-xs text-center">{i + 1}</span>
-            <div className="flex-1 flex items-center flex-wrap gap-x-2 gap-y-0.5">
-              <Link
-                href={`/books/${id}`}
-                className="text-green-800 hover:text-green-600 hover:underline font-semibold"
-              >
-                {row.book_title || `كتاب ${id}`}
-              </Link>
-              {row.book_takhrij_author && (
-                <span className="text-gray-500 text-xs">{row.book_takhrij_author}</span>
-              )}
-              {row.book_takhrij_death && (
-                <span className="text-gray-400 text-xs">(ت {row.book_takhrij_death}هـ)</span>
-              )}
-              <span className="text-gray-400 text-xs">
-                — {count === 1 ? 'رواية واحدة' : `${count} روايات`}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {hasSource && (
-                <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">المصدر</span>
-              )}
-              {row.kind !== 'other' && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${KIND_BADGE[row.kind]}`}>
-                  {KIND_LABEL[row.kind]}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <p className="text-sm leading-9 text-gray-800 bg-white border border-gray-100 rounded-xl p-4">
+        {buildCopyText(rows)}
+      </p>
     </div>
   )
 }
@@ -337,7 +303,7 @@ function MutawassitView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: numb
     bookMap.get(row.book_id)!.entries.push(row)
   }
 
-  const getCopyText = useCallback(() => buildCopyText(rows, sourceId), [rows, sourceId])
+  const getCopyText = useCallback(() => buildCopyText(rows), [rows])
 
   return (
     <div dir="rtl">
@@ -358,11 +324,7 @@ function MutawassitView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: numb
           const sharedDesc = uniqueDescs.length === 1 ? uniqueDescs[0] : null
 
           return (
-            <div
-              key={bookId}
-              className="group leading-loose text-sm"
-              dir="rtl"
-            >
+            <div key={bookId} className="rounded-xl border border-gray-100 bg-white p-3 leading-loose text-sm" dir="rtl">
               {/* Book name as heading inline with entries */}
               <span className="inline">
                 <Link
@@ -401,7 +363,7 @@ function MutawassitView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: numb
                             }`}
                           title={isCurrent ? 'المصدر الحالي' : undefined}
                         >
-                          ({row.tarqeem_matboa1 || row.tarqeem_harf})
+                          {citationLocation(row) || `رواية ${ei + 1}`}
                         </Link>
                       ) : (
                         <Link
@@ -443,7 +405,7 @@ function MutawassitView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: numb
 // Each hadith is its own block. Book name + number clickable. Tarf shown below.
 
 function TafsiliView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number }) {
-  const getCopyText = useCallback(() => buildCopyText(rows, sourceId), [rows, sourceId])
+  const getCopyText = useCallback(() => buildCopyText(rows), [rows])
 
   return (
     <div dir="rtl">
@@ -452,7 +414,7 @@ function TafsiliView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number 
         <CopyButton getText={getCopyText} label="نسخ التخريج" />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {rows.map((row, i) => {
           const isCurrent = row.main_id === sourceId
           const pp = partPage(row)
@@ -462,8 +424,8 @@ function TafsiliView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number 
           return (
             <div
               key={`${row.main_id}-${i}`}
-              className={`relative pr-4 border-r-2 transition-colors
-                ${isCurrent ? 'border-amber-400' : 'border-gray-200 hover:border-green-300'}`}
+              className={`relative rounded-xl border bg-white p-3 transition-colors
+                ${isCurrent ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 hover:border-green-200'}`}
               dir="rtl"
             >
               {/* Main citation line */}
@@ -501,7 +463,7 @@ function TafsiliView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number 
 
                   {/* Volume / page */}
                   {pp && (
-                    <span className="text-gray-400 text-xs mr-1">{pp}</span>
+                    <span className="text-gray-400 text-xs mr-1">({pp})</span>
                   )}
 
                   {/* Badges row */}
@@ -743,16 +705,39 @@ export default function TakhrijClient({
   truncated: boolean
   baseText: string | null
 }) {
-  const [viewMode, setViewMode] = useState<ViewMode>('tafsili')
+  const [viewMode, setViewMode] = useState<ViewMode>('ijmali')
   const [sortBy, setSortBy] = useState<SortBy>('sihha')
   const [maxLevel, setMaxLevel] = useState<number>(5)
+  const [selectedBookId, setSelectedBookId] = useState<BookFilter>('all')
 
   const sorted = useMemo(() => sortRows(rows, sortBy), [rows, sortBy])
 
-  // Apply match-precision filter; source hadith always shown
+  const bookOptions = useMemo(() => {
+    const bookOrder: number[] = []
+    const map = new Map<number, { id: number; title: string; count: number }>()
+    for (const row of sorted) {
+      if (!map.has(row.book_id)) {
+        bookOrder.push(row.book_id)
+        map.set(row.book_id, {
+          id: row.book_id,
+          title: row.book_title || `كتاب ${row.book_id}`,
+          count: 0,
+        })
+      }
+      map.get(row.book_id)!.count++
+    }
+    return bookOrder.map(id => map.get(id)!)
+  }, [sorted])
+
+  const bookFiltered = useMemo(
+    () => selectedBookId === 'all' ? sorted : sorted.filter(r => r.book_id === selectedBookId),
+    [sorted, selectedBookId]
+  )
+
+  // Apply match-precision filter inside the selected book; source hadith is kept when visible.
   const filtered = useMemo(
-    () => sorted.filter(r => r.main_id === sourceId || getMatchLevel(r.matn_description) <= maxLevel),
-    [sorted, sourceId, maxLevel]
+    () => bookFiltered.filter(r => r.main_id === sourceId || getMatchLevel(r.matn_description) <= maxLevel),
+    [bookFiltered, sourceId, maxLevel]
   )
 
   const visibleBooks = useMemo(() => new Set(filtered.map(r => r.book_id)).size, [filtered])
@@ -798,6 +783,23 @@ export default function TakhrijClient({
           ))}
         </div>
 
+        {/* Book filter */}
+        <label className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-400 shrink-0">الكتب:</span>
+          <select
+            value={selectedBookId}
+            onChange={e => setSelectedBookId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-green-300 focus:border-green-500"
+          >
+            <option value="all">الكل</option>
+            {bookOptions.map(book => (
+              <option key={book.id} value={book.id}>
+                {book.title} ({book.count})
+              </option>
+            ))}
+          </select>
+        </label>
+
         {/* Sort */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-gray-400 shrink-0">ترتيب:</span>
@@ -818,6 +820,8 @@ export default function TakhrijClient({
           <span className="text-xs text-gray-400 shrink-0">دقة التطابق:</span>
           <div className="relative flex-1">
             <input
+              aria-label="دقة التطابق"
+              title="دقة التطابق"
               type="range"
               min={1}
               max={5}
@@ -825,7 +829,7 @@ export default function TakhrijClient({
               value={maxLevel}
               onChange={e => setMaxLevel(Number(e.target.value))}
               className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-teal-600"
-              style={{ direction: 'ltr' }}
+              dir="ltr"
             />
             {/* Tick marks */}
             <div className="flex justify-between px-0.5 mt-1" aria-hidden>
@@ -841,7 +845,7 @@ export default function TakhrijClient({
       </div>
 
       {/* Content */}
-      {viewMode === 'ijmali'     && <IjmaliView     rows={filtered} sourceId={sourceId} />}
+      {viewMode === 'ijmali'     && <IjmaliView     rows={filtered} />}
       {viewMode === 'mutawassit' && <MutawassitView  rows={filtered} sourceId={sourceId} />}
       {viewMode === 'tafsili'    && <TafsiliView     rows={filtered} sourceId={sourceId} />}
 
