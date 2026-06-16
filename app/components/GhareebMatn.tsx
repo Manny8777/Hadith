@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { findGhareebMatches, stripTashkeel, type GhareebWord } from '@/lib/ghareeb'
 
@@ -23,6 +23,15 @@ function GhareebPopover({
   onEnter: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [style, setStyle] = useState<{
+    top: number
+    left: number
+    transform: string
+  }>({
+    top: anchorRect.top + anchorRect.height / 2,
+    left: anchorRect.left - 10,
+    transform: 'translate(-100%, -50%)',
+  })
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -32,11 +41,28 @@ function GhareebPopover({
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [onClose])
 
-  const top = anchorRect.bottom + 8
-  const left = Math.min(
-    Math.max(anchorRect.left + anchorRect.width / 2, 160),
-    typeof window !== 'undefined' ? window.innerWidth - 160 : 160
-  )
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const pad = 12
+    const gap = 10
+    const { width: w, height: h } = el.getBoundingClientRect()
+
+    let top = anchorRect.top + anchorRect.height / 2 - h / 2
+    top = Math.max(pad, Math.min(top, window.innerHeight - h - pad))
+
+    // Default: open to the left of the word (RTL matn — uses left margin)
+    let left = anchorRect.left - gap
+    let transform = 'translate(-100%, 0)'
+
+    if (left - w < pad) {
+      left = anchorRect.right + gap
+      transform = 'translate(0, 0)'
+    }
+
+    setStyle({ top, left, transform })
+  }, [anchorRect, word])
 
   const sources = word.sources?.length ? word.sources : [{
     definition: word.definition,
@@ -49,13 +75,13 @@ function GhareebPopover({
     <div
       ref={ref}
       dir="rtl"
-      className="fixed z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden"
-      style={{ top, left }}
+      className="fixed z-50 w-[min(28rem,calc(100vw-2rem))] max-h-[calc(100vh-1.5rem)] rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden flex flex-col"
+      style={{ top: style.top, left: style.left, transform: style.transform }}
       role="tooltip"
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
     >
-      <div className="px-4 pt-3 pb-2 border-b border-gray-700/80">
+      <div className="px-4 pt-3 pb-2 border-b border-gray-700/80 shrink-0">
         <span className="text-[10px] font-bold tracking-wider text-orange-300 uppercase">
           غريب
         </span>
@@ -64,7 +90,7 @@ function GhareebPopover({
           <p className="text-xs text-gray-400 mt-0.5">صيغة: {word.formText}</p>
         )}
       </div>
-      <div className="max-h-72 overflow-y-auto divide-y divide-gray-700/60">
+      <div className="overflow-y-auto divide-y divide-gray-700/60 min-h-0">
         {sources.map((src, i) => {
           const text = src.verbatimText || src.definition
           return (
@@ -89,7 +115,7 @@ function GhareebPopover({
           )
         })}
       </div>
-      <div className="px-4 py-2 bg-gray-800/60 border-t border-gray-700">
+      <div className="px-4 py-2 bg-gray-800/60 border-t border-gray-700 shrink-0">
         <Link
           href={`/lexicon/${word.wordId}`}
           className="text-xs text-orange-300 hover:text-orange-200 hover:underline"

@@ -1,4 +1,3 @@
-import GhareebInline from './GhareebInline'
 import CommentaryInline from './CommentaryInline'
 import WitnessesInline from './WitnessesInline'
 import NarratorsByRegionInline from './NarratorsByRegionInline'
@@ -17,7 +16,6 @@ export type ServiceSectionKind =
   | 'witnesses'
   | 'countries'
   | 'matn_comparison'
-  | 'ghareeb'
   | 'kerat'
 
 export interface ServiceSectionConfig {
@@ -44,7 +42,6 @@ export const INLINE_SERVICE_CONFIGS: ServiceSectionConfig[] = [
   { key: 'kerat', id: 'svc-kerat', label: 'القراءات', kind: 'kerat' },
   { key: 'matn_comparison', id: 'svc-matn-comparison', label: 'مقارنة المتون', kind: 'matn_comparison' },
   { key: 'rwah', id: 'svc-rwah', label: 'تخريج الرواة', kind: 'commentary', commentaryType: 9 },
-  { key: 'ghareeb', id: 'svc-ghareeb', label: 'غريب الحديث', kind: 'ghareeb' },
 ]
 
 export function activeServiceSections(
@@ -71,8 +68,6 @@ export default function HadithServiceSection({
       return <MatnComparisonInline hadithId={hadithId} />
     case 'kerat':
       return <QuranRefsInline hadithId={hadithId} />
-    case 'ghareeb':
-      return <GhareebInline hadithId={hadithId} />
     default:
       return null
   }
