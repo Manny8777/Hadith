@@ -26,6 +26,8 @@ interface SearchParams {
   death_min?: string
   death_max?: string
   filter?: string
+  is_rawy?: string
+  is_for_work?: string
 }
 
 const GRADE_FILTERS = [
@@ -53,6 +55,8 @@ const QUICK_FILTERS = [
   { key: 'scientists', label: 'العلماء الناقدون', color: 'blue' },
   { key: 'mobham', label: 'المبهمون', color: 'gray' },
   { key: 'unrated', label: 'بدون تقييم', color: 'rose' },
+  { key: 'rawy', label: 'رواة فقط', color: 'teal' },
+  { key: 'for_work', label: 'مُعتمد للعمل', color: 'emerald' },
 ] as const
 
 export default async function NarratorsPage({
@@ -69,7 +73,7 @@ export default async function NarratorsPage({
   const page = Math.max(1, parseInt(sp.page ?? '1', 10))
   const deathMin = sp.death_min ? parseInt(sp.death_min, 10) : null
   const deathMax = sp.death_max ? parseInt(sp.death_max, 10) : null
-  const quickFilter = sp.filter ?? ''   // companions | scientists | mobham | unrated
+  const quickFilter = sp.filter ?? ''   // companions | scientists | mobham | unrated | rawy | for_work
   const limit = 40
   const offset = (page - 1) * limit
 
@@ -115,6 +119,10 @@ export default async function NarratorsPage({
     conditions.push(`is_mobham = true`)
   } else if (quickFilter === 'unrated') {
     conditions.push(`martaba_ibn_hajar IS NULL AND martaba_zahabi IS NULL`)
+  } else if (quickFilter === 'rawy') {
+    conditions.push(`is_rawy = true`)
+  } else if (quickFilter === 'for_work') {
+    conditions.push(`is_for_work = true`)
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
@@ -132,6 +140,8 @@ export default async function NarratorsPage({
   let statsCompanions = 0
   let statsScientists = 0
   let statsMobham = 0
+  let statsRawis = 0
+  let statsForWork = 0
 
   try {
     const [countRes, dataRes, statsRes] = await Promise.all([
@@ -144,12 +154,14 @@ export default async function NarratorsPage({
          LIMIT $${pi} OFFSET $${pi + 1}`,
         [...queryParams, limit, offset]
       ),
-      pool.query<{ total: string; companions: string; scientists: string; mobham: string }>(`
+      pool.query<{ total: string; companions: string; scientists: string; mobham: string; rawis: string; for_works: string }>(`
         SELECT
           COUNT(*)                                    AS total,
           COUNT(*) FILTER (WHERE is_companion = true) AS companions,
           COUNT(*) FILTER (WHERE is_scientist = true) AS scientists,
-          COUNT(*) FILTER (WHERE is_mobham = true)    AS mobham
+          COUNT(*) FILTER (WHERE is_mobham = true)    AS mobham,
+          COUNT(*) FILTER (WHERE is_rawy = true)      AS rawis,
+          COUNT(*) FILTER (WHERE is_for_work = true)  AS for_works
         FROM narrators
       `),
     ])
@@ -159,6 +171,8 @@ export default async function NarratorsPage({
     statsCompanions = parseInt(statsRes.rows[0].companions, 10)
     statsScientists = parseInt(statsRes.rows[0].scientists, 10)
     statsMobham     = parseInt(statsRes.rows[0].mobham, 10)
+    statsRawis      = parseInt(statsRes.rows[0].rawis, 10)
+    statsForWork    = parseInt(statsRes.rows[0].for_works, 10)
   } catch (err) {
     console.error('Narrators page error:', err)
   }
@@ -359,7 +373,7 @@ export default async function NarratorsPage({
       <main className="max-w-5xl mx-auto px-4 py-6">
 
         {/* Stats Banner */}
-        <div className="mb-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="mb-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Link
             href="/narrators"
             className="bg-white rounded-xl border border-gray-100 hover:border-green-200 px-4 py-3 text-center transition-all hover:shadow-sm"
@@ -399,6 +413,28 @@ export default async function NarratorsPage({
           >
             <div className="text-2xl font-bold text-gray-600">{statsMobham.toLocaleString('ar-EG')}</div>
             <div className="text-xs text-gray-500 mt-0.5">مبهمون</div>
+          </Link>
+          <Link
+            href="/narrators?filter=rawy"
+            className={`rounded-xl border px-4 py-3 text-center transition-all hover:shadow-sm ${
+              quickFilter === 'rawy'
+                ? 'bg-teal-100 border-teal-400'
+                : 'bg-white border-gray-100 hover:border-teal-300'
+            }`}
+          >
+            <div className="text-2xl font-bold text-teal-700">{statsRawis.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">رواة فقط</div>
+          </Link>
+          <Link
+            href="/narrators?filter=for_work"
+            className={`rounded-xl border px-4 py-3 text-center transition-all hover:shadow-sm ${
+              quickFilter === 'for_work'
+                ? 'bg-emerald-100 border-emerald-400'
+                : 'bg-white border-gray-100 hover:border-emerald-300'
+            }`}
+          >
+            <div className="text-2xl font-bold text-emerald-700">{statsForWork.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">مُعتمد للعمل</div>
           </Link>
         </div>
 
