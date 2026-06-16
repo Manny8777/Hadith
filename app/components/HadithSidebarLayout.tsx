@@ -13,6 +13,7 @@ import HadithNumber from './HadithNumber'
 import MatnVariants from './MatnVariants'
 import MatnSimilaritySection from './MatnSimilaritySection'
 import PrevNextNav from './PrevNextNav'
+import GhareebMatn from './GhareebMatn'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
 import { splitSanadMatn, stripXmlToVerbatim } from '@/lib/hadithText'
@@ -372,9 +373,18 @@ export default function HadithSidebarLayout({
                 {sanad && (
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">المتن</p>
                 )}
-                <p className="text-lg leading-loose text-gray-900 font-serif" dir="rtl">
-                  {applyTashkeel(matnText)}
-                </p>
+                {hadithServices?.ghareeb ? (
+                  <GhareebMatn
+                    hadithId={hadithId}
+                    matn={matnText}
+                    showTashkeel={showTashkeel}
+                    className="text-lg leading-loose text-gray-900 font-serif"
+                  />
+                ) : (
+                  <p className="text-lg leading-loose text-gray-900 font-serif" dir="rtl">
+                    {applyTashkeel(matnText)}
+                  </p>
+                )}
               </div>
             </div>
           )

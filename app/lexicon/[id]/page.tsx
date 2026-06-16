@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import LexiconHadithList from '../LexiconHadithList'
+import { LEXICON_SCOPE_CTE } from '@/lib/ghareeb'
 
 interface LexiconItem {
   id: number
@@ -54,7 +56,7 @@ export default async function LexiconItemPage({
   const itemId = parseInt(id)
   if (isNaN(itemId)) notFound()
 
-  const [itemRes, childrenRes] = await Promise.all([
+  const [itemRes, childrenRes, hadithCountRes] = await Promise.all([
     pool.query<LexiconItem>(
       `SELECT li.*,
               parent.text         AS parent_text,
@@ -75,6 +77,23 @@ export default async function LexiconItemPage({
        WHERE li.parent_id = $1
        GROUP BY li.id, li.text, li.is_leaf
        ORDER BY li.left_value`,
+      [itemId]
+    ),
+    pool.query<{ total: number }>(
+      `WITH ${LEXICON_SCOPE_CTE},
+       refs AS (
+         SELECT lh.hadith_id
+         FROM lexicon_hadith lh
+         JOIN lexicon_scope ls ON ls.id = lh.lexicon_item_id
+         UNION
+         SELECT hsl.hadith_id
+         FROM lexicon_hadith lh
+         JOIN lexicon_scope ls ON ls.id = lh.lexicon_item_id
+         JOIN hadith_service_links hsl ON hsl.service_content_id = lh.hadith_id
+       )
+       SELECT COUNT(DISTINCT h.main_id)::int AS total
+       FROM refs
+       JOIN hadith_toc h ON h.main_id = refs.hadith_id`,
       [itemId]
     ),
   ])
@@ -100,6 +119,7 @@ export default async function LexiconItemPage({
 
   const children = childrenRes.rows
   const refs     = contentRes.rows
+  const hadithCount = hadithCountRes.rows[0]?.total ?? 0
   const rootHref  = lexiconRootHref(item.lexicon_id)
   const rootLabel = lexiconRootLabel(item.lexicon_id)
 
@@ -138,10 +158,12 @@ export default async function LexiconItemPage({
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-green-900 mb-1">{item.text}</h1>
-        {(refs.length > 0 || children.length > 0) && (
+        {(refs.length > 0 || children.length > 0 || hadithCount > 0) && (
           <p className="text-sm text-gray-500">
+            {hadithCount > 0 ? `${hadithCount.toLocaleString('ar-EG')} حديث` : ''}
+            {hadithCount > 0 && refs.length > 0 ? ' · ' : ''}
             {refs.length > 0 ? `${refs.length} نص علمي` : ''}
-            {refs.length > 0 && children.length > 0 ? ' · ' : ''}
+            {(hadithCount > 0 || refs.length > 0) && children.length > 0 ? ' · ' : ''}
             {children.length > 0 ? `${children.length} صيغة` : ''}
           </p>
         )}
@@ -168,6 +190,16 @@ export default async function LexiconItemPage({
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Hadiths containing this word */}
+      {hadithCount > 0 && (
+        <section className="mb-8">
+          <h2 className="text-base font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">
+            أحاديث ورد فيها هذا اللفظ ({hadithCount.toLocaleString('ar-EG')})
+          </h2>
+          <LexiconHadithList itemId={itemId} />
         </section>
       )}
 
@@ -204,11 +236,11 @@ export default async function LexiconItemPage({
             ))}
           </div>
         </section>
-      ) : (
+      ) : hadithCount === 0 ? (
         <div className="bg-gray-50 rounded-xl border border-gray-100 p-8 text-center text-gray-400 text-sm">
           لا توجد نصوص مرتبطة بهذا المدخل
         </div>
-      )}
+      ) : null}
 
       <div className="mt-8 pt-4 border-t border-gray-100">
         <Link href={rootHref} className="text-sm text-green-700 hover:underline">

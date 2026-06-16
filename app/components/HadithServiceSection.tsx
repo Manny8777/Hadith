@@ -1,3 +1,4 @@
+import GhareebInline from './GhareebInline'
 import CommentaryInline from './CommentaryInline'
 import WitnessesInline from './WitnessesInline'
 import NarratorsByRegionInline from './NarratorsByRegionInline'
@@ -71,17 +72,7 @@ export default function HadithServiceSection({
     case 'kerat':
       return <QuranRefsInline hadithId={hadithId} />
     case 'ghareeb':
-      return (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 leading-relaxed">
-          <p className="mb-2">
-            هذا الحديث مصنَّف ضمن <strong>غريب الحديث</strong> — أي أنه يتضمّن ألفاظاً غريبة أو نادرة
-            تحتاج إلى شرح.
-          </p>
-          <a href="/lexicon" className="text-xs text-amber-800 hover:underline font-medium">
-            تصفّح معجم غريب الحديث ←
-          </a>
-        </div>
-      )
+      return <GhareebInline hadithId={hadithId} />
     default:
       return null
   }
