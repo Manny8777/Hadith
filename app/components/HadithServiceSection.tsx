@@ -37,7 +37,6 @@ export const INLINE_SERVICE_CONFIGS: ServiceSectionConfig[] = [
   { key: 'asbab', id: 'svc-asbab', label: 'أسباب الورود', kind: 'commentary', commentaryType: 7 },
   { key: 'mokhtalaf', id: 'svc-mokhtalaf', label: 'مختلف الحديث', kind: 'commentary', commentaryType: 12 },
   { key: 'amthal', id: 'svc-amthal', label: 'الأمثال', kind: 'commentary', commentaryType: 4 },
-  { key: 'compound_matn', id: 'svc-compound-matn', label: 'المتن المركب', kind: 'commentary', commentaryType: 10 },
   { key: 'motawater', id: 'svc-motawater', label: 'المتواتر', kind: 'commentary', commentaryType: 5 },
   { key: 'countries', id: 'svc-countries', label: 'الرواية بالبلدان', kind: 'countries' },
   { key: 'modrag', id: 'svc-modrag', label: 'المدرج', kind: 'commentary', commentaryType: 2 },
