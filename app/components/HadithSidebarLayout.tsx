@@ -85,6 +85,7 @@ export interface HadithInfo {
   page_num: number
   tarqeem_harf: string | null
   tarqeem_matboa1: string | null
+  tarqeem_matboa2?: number | null
   print1_edition: string | null
   tarf: string | null
   content: string
@@ -104,6 +105,7 @@ export interface HadithSidebarLayoutProps {
   relatedHadiths: Array<{ main_id: number; tarf: string | null; book_title: string }>
   takhrijBooks: string[]
   takhrijSummary: { mutabaatCount: number; shawahidCount: number }
+  booksTakhrij?: Array<{ id: number; title: string }>
   hadithServices?: Partial<Record<HadithServiceKey, boolean>>
   isnadType?: number | null
   matngroupSlot?: ReactNode
@@ -120,6 +122,7 @@ const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string 
 export default function HadithSidebarLayout({
   hadithId, hadith: h, chains, commonNarrators,
   judgments, subjects, takhrijBooks, takhrijSummary,
+  booksTakhrij,
   hadithServices, isnadType,
   matngroupSlot,
   takhrijSlot,
@@ -215,8 +218,8 @@ export default function HadithSidebarLayout({
           {(h.part_num > 0 || h.page_num > 0) && (
             <span className="text-gray-300 mr-1">ج{h.part_num} ص{h.page_num}</span>
           )}
-          {(h.tarqeem_harf || h.tarqeem_matboa1) && (
-            <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} />
+          {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && (
+            <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} />
           )}
         </div>
 
@@ -403,6 +406,24 @@ export default function HadithSidebarLayout({
                 <Link key={s.id} href={`/topics/item/${s.id}`}
                   className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full hover:bg-amber-100 hover:border-amber-300 transition-colors">
                   {s.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Books takhrij cross-references */}
+        {booksTakhrij && booksTakhrij.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">الكتب التي خرّجته</span>
+              <div className="flex-1 h-px bg-gray-100" />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {booksTakhrij.map(b => (
+                <Link key={b.id} href={`/books/${b.id}`}
+                  className="text-xs bg-green-50 text-green-800 border border-green-200 px-2.5 py-1 rounded-full hover:bg-green-100 hover:border-green-300 transition-colors">
+                  {b.title}
                 </Link>
               ))}
             </div>
