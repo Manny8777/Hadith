@@ -5,6 +5,11 @@ import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
+import {
+  parseSanadNarratorSegments,
+  sanadSegmentsHaveNarrators,
+  type SanadNarratorPreview,
+} from '@/lib/sanadNarrators'
 
 export default async function HadithPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -275,12 +280,33 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     if (h[col] === true) hadithServices[col] = true
   }
 
+  const sanadSegments = parseSanadNarratorSegments(h.content as string)
+  const sanadNarratorIds = [
+    ...new Set(
+      sanadSegments
+        .filter(s => s.kind === 'narrator' && s.narratorId)
+        .map(s => s.narratorId!)
+    ),
+  ]
+  let sanadNarrators: Record<number, SanadNarratorPreview> = {}
+  if (sanadNarratorIds.length > 0) {
+    const sanadNarRes = await pool.query<SanadNarratorPreview>(
+      `SELECT id, name, abb_name, kunia, tabaqa, death_year, death_year_num,
+              martaba_ibn_hajar, martaba_zahabi, is_companion
+       FROM narrators WHERE id = ANY($1::int[])`,
+      [sanadNarratorIds]
+    )
+    for (const n of sanadNarRes.rows) sanadNarrators[n.id] = n
+  }
+
   return (
     <HadithSidebarLayout
       hadithId={mainId}
       hadith={h}
       chains={chains}
       commonNarrators={commonNarrators}
+      sanadSegments={sanadSegmentsHaveNarrators(sanadSegments) ? sanadSegments : undefined}
+      sanadNarrators={sanadNarrators}
       judgments={judgments}
       subjects={subjects}
       relatedHadiths={relatedHadiths}

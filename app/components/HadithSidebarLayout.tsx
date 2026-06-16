@@ -14,10 +14,12 @@ import MatnVariants from './MatnVariants'
 import MatnSimilaritySection from './MatnSimilaritySection'
 import PrevNextNav from './PrevNextNav'
 import GhareebMatn from './GhareebMatn'
+import SanadNarrators from './SanadNarrators'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
 import { stripTashkeel } from '@/lib/ghareeb'
 import { splitSanadMatn, stripXmlToVerbatim } from '@/lib/hadithText'
+import type { SanadNarratorPreview, SanadSegment } from '@/lib/sanadNarrators'
 import type { ReactNode } from 'react'
 
 function cleanHadithContent(xml: string): string {
@@ -108,6 +110,8 @@ export interface HadithSidebarLayoutProps {
   booksTakhrij?: Array<{ id: number; title: string }>
   hadithServices?: Partial<Record<HadithServiceKey, boolean>>
   isnadType?: number | null
+  sanadSegments?: SanadSegment[]
+  sanadNarrators?: Record<number, SanadNarratorPreview>
   matngroupSlot?: ReactNode
   takhrijSlot: ReactNode
 }
@@ -124,6 +128,8 @@ export default function HadithSidebarLayout({
   judgments, subjects, takhrijBooks, takhrijSummary,
   booksTakhrij,
   hadithServices, isnadType,
+  sanadSegments,
+  sanadNarrators = {},
   matngroupSlot,
   takhrijSlot,
 }: HadithSidebarLayoutProps) {
@@ -368,9 +374,18 @@ export default function HadithSidebarLayout({
               {sanad && (
                 <div className="px-6 pt-5 pb-4 border-b border-gray-100 bg-gray-50/60">
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">السند</p>
-                  <p className="text-base leading-loose text-gray-600 font-serif" dir="rtl">
-                    {applyTashkeel(sanad)}
-                  </p>
+                  {sanadSegments && sanadSegments.length > 0 ? (
+                    <SanadNarrators
+                      segments={sanadSegments}
+                      narrators={sanadNarrators}
+                      showTashkeel={showTashkeel}
+                      className="text-base leading-loose text-gray-600 font-serif"
+                    />
+                  ) : (
+                    <p className="text-base leading-loose text-gray-600 font-serif" dir="rtl">
+                      {applyTashkeel(sanad)}
+                    </p>
+                  )}
                 </div>
               )}
               <div className={`px-6 ${sanad ? 'py-5' : 'p-6'}`}>
