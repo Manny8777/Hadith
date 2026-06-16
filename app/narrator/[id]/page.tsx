@@ -36,6 +36,7 @@ interface Narrator {
   is_has_rwaya: boolean
   is_mobham: boolean
   journey_date: string | null
+  user_comments: string | null
 }
 
 interface Book { id: number; title: string }
@@ -69,7 +70,8 @@ export default async function NarratorPage({
               birth_city, death_city, living_city, journey_city,
               selat_karaba, mazhb, hadiths_count,
               martaba_ibn_hajar, martaba_zahabi, is_companion,
-              is_noun, is_scientist, is_has_rwaya, is_mobham, journey_date
+              is_noun, is_scientist, is_has_rwaya, is_mobham, journey_date,
+              user_comments
        FROM narrators WHERE id = $1`,
       [narratorId]
     ),
@@ -532,6 +534,19 @@ export default async function NarratorPage({
                   </div>
                 </details>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ملاحظات المحرر — editor notes */}
+        {narrator.user_comments && narrator.user_comments.trim() && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
+              ملاحظات المحرر
+            </h3>
+            <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
+              <p className="text-sm text-gray-800 leading-loose whitespace-pre-line font-arabic">{narrator.user_comments}</p>
             </div>
           </div>
         )}
