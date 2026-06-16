@@ -1,10 +1,10 @@
 export default function SiteNotice() {
   return (
     <div
-      className="bg-amber-100 border-b border-amber-300 text-amber-950 text-sm leading-relaxed px-4 py-2.5"
+      className="bg-amber-50 border-b border-amber-200 text-amber-950 text-sm leading-relaxed px-4 py-2 font-sans"
       dir="rtl"
     >
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-6 lg:px-7">
         <p className="font-semibold">
           <span className="text-amber-800">تنبيه:</span>{' '}
           الموقع لا يزال قيد التطوير وغير جاهز للاستخدام بعد.

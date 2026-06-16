@@ -7,12 +7,12 @@ interface Props {
 
 export default function PrevNextNav({ prevId, nextId }: Props) {
   return (
-    <div dir="rtl" className="flex justify-between border-t border-gray-100 pt-3 mt-2">
+    <div dir="rtl" className="flex justify-between border-t border-gray-200 pt-3 mt-2 font-sans">
       <div>
         {prevId !== null && (
           <Link
             href={`/hadith/${prevId}`}
-            className="text-xs text-gray-500 hover:text-green-700 hover:underline"
+            className="text-xs text-gray-500 hover:text-green-800 hover:underline"
           >
             السابق →
           </Link>
@@ -22,7 +22,7 @@ export default function PrevNextNav({ prevId, nextId }: Props) {
         {nextId !== null && (
           <Link
             href={`/hadith/${nextId}`}
-            className="text-xs text-gray-500 hover:text-green-700 hover:underline"
+            className="text-xs text-gray-500 hover:text-green-800 hover:underline"
           >
             ← التالي
           </Link>

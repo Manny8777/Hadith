@@ -51,7 +51,7 @@ export default async function BooksPage() {
   return (
     <div dir="rtl">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-green-900">كتب المتون الحديثية</h1>
+        <h1 className="text-2xl font-bold text-green-900 font-display">كتب المتون الحديثية</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <Link href="/books/service-books" className="text-xs bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1.5 rounded-full hover:bg-purple-200 transition-colors font-medium">الكتب الخدمية</Link>
           <Link href="/books/stats" className="text-xs bg-green-100 text-green-800 border border-green-200 px-3 py-1.5 rounded-full hover:bg-green-200 transition-colors font-medium">إحصاءات الدرجات</Link>
@@ -60,8 +60,8 @@ export default async function BooksPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-sm" dir="rtl">
+      <div className="ui-card overflow-x-auto">
+        <table className="w-full text-[15px] min-w-[640px]" dir="rtl">
           <thead>
             <tr className="bg-green-50 border-b border-green-100 text-green-900 text-xs">
               <th className="px-3 py-2.5 text-center font-semibold w-12">م ({books.length})</th>

@@ -270,7 +270,7 @@ function CopyButton({ getText, label = 'نسخ', className = '' }: {
         } ${className}`}
       title="نسخ نص التخريج"
     >
-      {copied ? '✓ تم النسخ' : `📋 ${label}`}
+      {copied ? '✓ تم النسخ' : label}
     </button>
   )
 }
@@ -283,18 +283,20 @@ function ViewModeControls({
   onChange: (mode: ViewMode) => void
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-xs text-gray-400 shrink-0">العرض:</span>
-      {([ ['ijmali', 'إجمالي'], ['mutawassit', 'متوسط'], ['tafsili', 'تفصيلي'] ] as [ViewMode, string][]).map(([mode, label]) => (
-        <button key={mode} onClick={() => onChange(mode)}
-          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-            viewMode === mode
-              ? 'bg-green-700 text-white border-green-700'
-              : 'border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-700'
-          }`}>
-          {label}
-        </button>
-      ))}
+    <div className="ui-control-group">
+      <span className="ui-label">العرض:</span>
+      <div className="ui-segmented ui-segmented-fill min-w-0 flex-1 sm:flex-initial">
+        {([ ['ijmali', 'إجمالي'], ['mutawassit', 'متوسط'], ['tafsili', 'تفصيلي'] ] as [ViewMode, string][]).map(([mode, label]) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => onChange(mode)}
+            className={`ui-segmented-item ${viewMode === mode ? 'ui-segmented-item-active' : ''}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -331,7 +333,7 @@ function CitationTextView({
       <div className="flex justify-end mb-3">
         <CopyButton getText={getCopyText} label="نسخ التخريج" />
       </div>
-      <p className="text-sm leading-9 text-gray-800 bg-white border border-gray-100 rounded-xl p-4">
+      <p className="ui-prose-block">
         <span>أخرجه </span>
         {bookOrder.map((bookId, bookIndex) => {
           const { row, entries } = bookMap.get(bookId)!
@@ -341,7 +343,7 @@ function CitationTextView({
               {row.book_takhrij_author && <span>{row.book_takhrij_author} في </span>}
                 <Link
                   href={`/books/${bookId}`}
-                  className="font-semibold text-green-800 hover:text-green-600 hover:underline"
+                  className="ui-link font-semibold"
                 >
                   &quot;{row.book_title || `كتاب ${bookId}`}&quot;
                 </Link>
@@ -361,7 +363,7 @@ function CitationTextView({
                           <span>(</span>
                           <Link
                             href={`/hadith/${row.main_id}`}
-                            className={row.main_id === sourceId ? 'text-amber-700 font-medium hover:underline' : 'text-green-700 hover:underline'}
+                            className={row.main_id === sourceId ? 'ui-link-current' : 'ui-link'}
                             title={row.main_id === sourceId ? 'المصدر الحالي' : undefined}
                           >
                             {num}
@@ -371,7 +373,7 @@ function CitationTextView({
                       ) : (
                         <Link
                           href={`/hadith/${row.main_id}`}
-                          className="text-green-700 hover:underline"
+                          className="ui-link"
                         >
                           رواية
                         </Link>
@@ -428,7 +430,7 @@ function OtherSourcesView({ sources, viewMode }: { sources: OtherTakhrijSource[]
       <div className="flex justify-end mb-3">
         <CopyButton getText={getCopyText} label="نسخ التخريج" />
       </div>
-      <p className="text-sm leading-9 text-gray-800 bg-white border border-gray-100 rounded-xl p-4">
+      <p className="ui-prose-block">
         <span>ذُكر في </span>
         {sources.map((source, index) => {
         const location = source.part_num > 0 || source.page_num > 0
@@ -438,7 +440,7 @@ function OtherSourcesView({ sources, viewMode }: { sources: OtherTakhrijSource[]
         return (
           <span key={`${source.id}-${index}`}>
             {index > 0 && <span> و</span>}
-            <Link href={source.href} className="font-semibold text-green-800 hover:text-green-600 hover:underline">
+            <Link href={source.href} className="ui-link font-semibold">
               &quot;{source.book_title}&quot;
             </Link>
             {location && <span> {location}</span>}
@@ -503,23 +505,23 @@ function MatnComparisonSection({
   if (groups.length === 0) return null
 
   return (
-    <div className="mt-5 border border-teal-200 rounded-xl overflow-hidden" dir="rtl">
+    <div className="mt-5 border border-green-200 rounded-xl overflow-hidden" dir="rtl">
       {/* Header / toggle */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-teal-50 hover:bg-teal-100 transition-colors text-right"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-green-50 hover:bg-green-100/80 transition-colors text-right"
       >
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-teal-800 text-sm">مقارنة المتون</span>
-          <span className="text-xs text-teal-600">— وصف التطابق والاختلاف بين الروايات</span>
+          <span className="font-semibold text-green-900 text-sm font-sans">مقارنة المتون</span>
+          <span className="text-xs text-green-700 font-sans">— وصف التطابق والاختلاف بين الروايات</span>
           {!open && groups.map(([key, { label, rows: gr }]) => (
             <span key={key}
-              className="text-[11px] bg-white text-teal-700 border border-teal-300 px-2 py-0.5 rounded-full font-medium">
+              className="text-[11px] bg-white text-green-800 border border-green-200 px-2 py-0.5 rounded-full font-medium font-sans">
               {label} ({gr.length})
             </span>
           ))}
         </div>
-        <span className="text-teal-500 text-xs shrink-0">{open ? '▲' : '▼'}</span>
+        <span className="text-green-600 text-xs shrink-0">{open ? '▲' : '▼'}</span>
       </button>
 
       {/* Body */}
@@ -533,7 +535,7 @@ function MatnComparisonSection({
               >
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-800 text-sm">{label}</span>
-                  <span className="text-[11px] bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] bg-green-50 text-green-800 border border-green-200 px-2 py-0.5 rounded-full font-sans">
                     {gr.length === 1 ? 'رواية واحدة' : `${gr.length} روايات`}
                   </span>
                 </div>
@@ -698,26 +700,26 @@ export default function TakhrijClient({
   return (
     <div dir="rtl">
       {/* Summary bar */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap text-xs">
-        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <span className="ui-chip">
           {filtered.length} رواية في {visibleBooks} كتاب
           {filtered.length !== rows.length && (
-            <span className="text-gray-400 mr-1">(من {rows.length})</span>
+            <span className="text-gray-500 mr-1">(من {rows.length})</span>
           )}
         </span>
         {visibleMutabaat > 0 && (
-          <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
+          <span className="ui-chip-info">
             {visibleMutabaat} متابعة
           </span>
         )}
         {visibleShawahid > 0 && (
-          <span className="bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full font-medium">
+          <span className="ui-chip-violet">
             {visibleShawahid} شاهد
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="ui-segmented ui-segmented-fill mb-4 w-full sm:w-auto">
         {([
           ['matn', 'كتب المتون', visibleBooks || totalBooks],
           ['other', 'كتب أخرى', otherSources.length],
@@ -726,11 +728,7 @@ export default function TakhrijClient({
             key={group}
             type="button"
             onClick={() => setSourceGroup(group)}
-            className={`rounded-xl border px-3 py-2 text-sm transition-colors ${
-              sourceGroup === group
-                ? 'border-green-700 bg-green-700 text-white'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:text-green-800'
-            }`}
+            className={`ui-segmented-item text-sm px-3 sm:px-4 py-2 ${sourceGroup === group ? 'ui-segmented-item-active' : ''}`}
           >
             <span>{label}</span>
             <span className="mr-2 font-semibold">{count}</span>
@@ -740,7 +738,7 @@ export default function TakhrijClient({
 
       {sourceGroup === 'other' ? (
         <>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
+          <div className="ui-controls-row mb-4">
             <ViewModeControls viewMode={viewMode} onChange={setViewMode} />
           </div>
           <OtherSourcesView sources={otherSources} viewMode={viewMode} />
@@ -748,22 +746,22 @@ export default function TakhrijClient({
       ) : (
         <>
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
+      <div className="ui-controls-row mb-4">
         {/* View mode */}
         <ViewModeControls viewMode={viewMode} onChange={setViewMode} />
 
         {/* Book filter */}
-        <div className="relative flex items-center gap-1.5">
-          <span className="text-xs text-gray-400 shrink-0">الكتب:</span>
+        <div className="ui-control-group">
+          <span className="ui-label">الكتب:</span>
           <button
             type="button"
             onClick={() => setBooksOpen(open => !open)}
-            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-green-300"
+            className="ui-filter-trigger flex-1 sm:flex-initial min-w-0 truncate text-right"
           >
             {allBooksSelected ? 'الكل' : `${selectedBookCount} من ${bookOptions.length}`} ▼
           </button>
           {booksOpen && (
-            <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+            <div className="ui-filter-panel sm:w-72">
               <div className="max-h-72 overflow-auto space-y-1">
                 <label className="flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 text-gray-700 cursor-pointer hover:bg-green-50">
                   <input
@@ -812,12 +810,12 @@ export default function TakhrijClient({
         </div>
 
         {/* Sort */}
-        <label className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-400 shrink-0">ترتيب:</span>
+        <label className="ui-control-group">
+          <span className="ui-label">ترتيب:</span>
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortBy)}
-            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-amber-300 focus:border-amber-500"
+            className="ui-filter-trigger flex-1 sm:flex-initial min-w-0"
           >
             <option value="sihha">أصحية الكتب</option>
             <option value="shuhura">الشهرة</option>
@@ -826,19 +824,19 @@ export default function TakhrijClient({
         </label>
 
         {/* Match accuracy filter */}
-        <div className="relative flex items-center gap-1.5">
-          <span className="text-xs text-gray-400 shrink-0">دقة التطابق:</span>
+        <div className="ui-control-group">
+          <span className="ui-label">دقة التطابق:</span>
           <button
             type="button"
             onClick={() => setAccuracyOpen(open => !open)}
-            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-teal-300"
+            className="ui-filter-trigger flex-1 sm:flex-initial min-w-0 truncate text-right"
           >
             {allLevelsSelected ? 'الكل' : `${selectedLevelCount} من ${LEVEL_OPTIONS.length}`} ▼
           </button>
           {accuracyOpen && (
-            <div className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+            <div className="ui-filter-panel sm:w-52">
               <div className="max-h-72 overflow-auto space-y-1">
-                <label className="flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 text-gray-700 cursor-pointer hover:bg-teal-50">
+                <label className="flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 text-gray-700 cursor-pointer hover:bg-green-50 font-sans">
                   <input
                     type="checkbox"
                     checked={allLevelsSelected}
@@ -848,7 +846,7 @@ export default function TakhrijClient({
                         : new Set()
                       )
                     }}
-                    className="accent-teal-700"
+                    className="accent-green-800"
                   />
                   <span className="font-medium">الكل</span>
                 </label>
@@ -858,8 +856,8 @@ export default function TakhrijClient({
                   return (
                     <label
                       key={level}
-                      className={`flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 cursor-pointer transition-colors ${
-                        checked ? 'text-teal-800 hover:bg-teal-50' : 'text-gray-400 hover:bg-gray-50'
+                      className={`flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 cursor-pointer transition-colors font-sans ${
+                        checked ? 'text-green-800 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-50'
                       }`}
                     >
                       <input
@@ -873,7 +871,7 @@ export default function TakhrijClient({
                             return next
                           })
                         }}
-                        className="accent-teal-700"
+                        className="accent-green-800"
                       />
                       <span>{LEVEL_LABELS[level]}</span>
                     </label>

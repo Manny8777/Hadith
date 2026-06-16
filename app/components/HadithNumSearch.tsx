@@ -40,13 +40,13 @@ export default function HadithNumSearch({ bookId }: { bookId: number }) {
         value={num}
         onChange={e => { setNum(e.target.value); setError('') }}
         placeholder="رقم الحديث..."
-        className="w-32 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-amber-300 transition-colors"
+        className="w-32 bg-white/10 border border-white/25 text-white placeholder-white/50 rounded-lg px-3 py-1.5 text-sm font-sans focus:outline-none focus:border-amber-300/80 transition-colors"
         dir="ltr"
       />
       <button
         type="submit"
         disabled={loading || !num.trim()}
-        className="text-sm text-amber-300 hover:text-amber-100 border border-amber-400/30 hover:border-amber-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+        className="text-sm font-sans text-amber-200 hover:text-white border border-white/25 hover:border-amber-300/60 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
       >
         {loading ? '...' : 'انتقال'}
       </button>

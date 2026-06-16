@@ -118,7 +118,7 @@ export default async function BookPage({
 
     return (
       <div dir="rtl" className="min-h-screen bg-amber-50">
-        <header className="bg-green-900 text-white shadow-lg">
+        <header className="bg-green-800 text-white shadow-sm">
           <div className="max-w-5xl mx-auto px-4 py-4">
             <div className="flex items-center gap-2 text-sm flex-wrap">
               <Link href="/books" className="text-amber-300 hover:text-amber-100">الكتب</Link>
@@ -363,7 +363,7 @@ export default async function BookPage({
 
   return (
     <div dir="rtl" className="min-h-screen bg-amber-50">
-      <header className="bg-green-900 text-white shadow-lg">
+      <header className="bg-green-800 text-white shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-5">
           <div className="flex items-center gap-2 text-sm mb-3">
             <Link href="/books" className="text-amber-300 hover:text-amber-100">← الكتب</Link>

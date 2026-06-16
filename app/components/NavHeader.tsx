@@ -229,26 +229,28 @@ export default function NavHeader() {
   }
 
   return (
-    <nav ref={navRef} className="bg-green-900 text-white" dir="rtl">
-      <div className="flex items-center gap-1 px-4 py-2">
+    <nav ref={navRef} className="relative z-30 bg-green-800 text-white font-sans border-b border-green-900/25" dir="rtl">
+      <div className="max-w-7xl mx-auto flex items-center gap-1 px-3 sm:px-6 lg:px-7 py-2 sm:py-2.5 min-w-0">
         <a
           href="/"
-          className="text-base font-bold hover:text-amber-200 transition-colors ml-3 shrink-0 whitespace-nowrap"
+          className="text-sm sm:text-base font-bold hover:text-amber-200 transition-colors ml-2 sm:ml-3 shrink-0 whitespace-nowrap font-display"
         >
-          جامع خادم الحرمين
+          <span className="sm:hidden">الجامع</span>
+          <span className="hidden sm:inline">جامع خادم الحرمين</span>
         </a>
 
-        <div className="w-px h-5 bg-white/20 mx-1 shrink-0" />
+        <div className="hidden sm:block w-px h-5 bg-white/20 mx-1 shrink-0" />
 
-        <div className="flex items-center gap-0.5 flex-1 flex-wrap">
+        <div className="flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
           {CATEGORIES.map(cat => (
-            <div key={cat.id} className="relative">
+            <div key={cat.id} className="relative shrink-0">
               <button
+                type="button"
                 onClick={() => toggle(cat.id)}
-                className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1 text-sm font-sans px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/85 hover:text-white hover:bg-white/10'
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {cat.label}
@@ -257,10 +259,9 @@ export default function NavHeader() {
 
               {open === cat.id && (
                 <div
-                  className="absolute top-full right-0 mt-1.5 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-100 p-3 z-50 overflow-y-auto"
-                  style={{ minWidth: '480px', maxWidth: '640px', maxHeight: '80vh' }}
+                  className="absolute top-full right-0 mt-1.5 bg-white text-gray-800 rounded-xl shadow-lg border border-gray-200 p-3 z-[100] overflow-y-auto font-sans w-[min(100vw-1.5rem,640px)] max-h-[80vh]"
                 >
-                  <div className="grid grid-cols-3 gap-x-2 gap-y-0.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-0.5">
                     {cat.links.map(link => (
                       <a
                         key={link.href}
@@ -285,9 +286,11 @@ export default function NavHeader() {
 
         <a
           href="/saved"
-          className="text-amber-300 hover:text-amber-200 transition-colors px-2 py-1.5 text-sm shrink-0 whitespace-nowrap"
+          className="text-amber-300 hover:text-amber-200 transition-colors px-1.5 sm:px-2 py-1.5 text-sm shrink-0 whitespace-nowrap"
+          title="مجموعتي"
         >
-          ★ مجموعتي
+          <span className="sm:hidden">★</span>
+          <span className="hidden sm:inline">★ مجموعتي</span>
         </a>
         <NumberingToggle />
       </div>

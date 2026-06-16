@@ -28,35 +28,37 @@ export default async function Home() {
   } catch {}
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-b from-green-50 to-amber-50">
+    <div dir="rtl" className="min-h-screen -mx-4 -mt-8">
       {/* Hero */}
-      <div className="max-w-4xl mx-auto px-4 pt-16 pb-10 text-center">
-        <div className="inline-block bg-green-900 text-amber-200 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide">
+      <div className="border-b border-gray-100">
+      <div className="max-w-4xl mx-auto px-4 pt-14 pb-10 text-center">
+        <div className="inline-block bg-green-800 text-amber-100 text-xs font-sans font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide">
           برنامج خادم الحرمين الشريفين
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-green-900 mb-4 leading-tight">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight font-display">
           موسوعة الحديث النبوي الشريف
         </h1>
-        <p className="text-gray-600 text-lg mb-10 max-w-xl mx-auto">
+        <p className="text-gray-700 text-lg mb-10 max-w-xl mx-auto font-sans">
           قاعدة بيانات متكاملة لباحثي الحديث في مراحل الماجستير والدكتوراه
         </p>
 
         <HomeSearch />
 
         {/* Quick examples */}
-        <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-gray-500">
+        <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-gray-500 font-sans">
           <span>جرب:</span>
           {['إنما الأعمال بالنيات', 'من كذب علي', 'الطهور شطر الإيمان'].map(ex => (
             <Link key={ex} href={`/search?q=${encodeURIComponent(ex)}`}
-              className="text-green-700 hover:underline">
+              className="text-green-800 hover:underline">
               {ex}
             </Link>
           ))}
         </div>
       </div>
+      </div>
 
       {/* Stats banner */}
-      <div className="bg-green-900 text-white py-6">
+      <div className="bg-green-800 text-white py-6">
         <div className="max-w-4xl mx-auto px-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
           {[
             { num: hadiths.toLocaleString('ar-EG'), label: 'حديث' },
@@ -67,8 +69,8 @@ export default async function Home() {
             { num: criticism.toLocaleString('ar-EG'), label: 'راوٍ مجروح/معدَّل' },
           ].map((s, i) => (
             <div key={i}>
-              <div className="text-2xl font-bold text-amber-300">{s.num}</div>
-              <div className="text-xs text-green-200 mt-0.5">{s.label}</div>
+              <div className="text-2xl font-bold text-amber-300 font-display">{s.num}</div>
+              <div className="text-xs text-green-200/90 mt-0.5 font-sans">{s.label}</div>
             </div>
           ))}
         </div>
@@ -77,32 +79,32 @@ export default async function Home() {
       {/* Main Nav Cards */}
       <div className="max-w-4xl mx-auto px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
-          <Link href="/books" className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-green-300 transition-all group">
+          <Link href="/books" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
             <div className="text-3xl mb-3">📚</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700">تصفح الكتب</div>
-            <div className="text-sm text-gray-500 mt-1">{books} كتاباً من أمهات المصادر</div>
+            <div className="font-bold text-green-900 group-hover:text-green-700 font-display">تصفح الكتب</div>
+            <div className="text-[15px] text-gray-500 mt-1 font-sans">{books} كتاباً من أمهات المصادر</div>
           </Link>
-          <Link href="/narrators" className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-green-300 transition-all group">
+          <Link href="/narrators" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
             <div className="text-3xl mb-3">👤</div>
             <div className="font-bold text-green-900 group-hover:text-green-700">علم الرجال</div>
             <div className="text-sm text-gray-500 mt-1">{narrators.toLocaleString('ar-EG')} راوٍ مع ترجمة وجرح وتعديل</div>
           </Link>
-          <Link href="/search" className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-green-300 transition-all group">
+          <Link href="/search" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
             <div className="text-3xl mb-3">🔍</div>
             <div className="font-bold text-green-900 group-hover:text-green-700">البحث المتقدم</div>
             <div className="text-sm text-gray-500 mt-1">بحث نصي مع تصفية بالكتاب</div>
           </Link>
-          <Link href="/topics" className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-green-300 transition-all group">
+          <Link href="/topics" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
             <div className="text-3xl mb-3">🗂</div>
             <div className="font-bold text-green-900 group-hover:text-green-700">الفهارس الموضوعية</div>
             <div className="text-sm text-gray-500 mt-1">{topics.toLocaleString('ar-EG')} موضوع مصنَّف</div>
           </Link>
-          <Link href="/lexicon" className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-green-300 transition-all group">
+          <Link href="/lexicon" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
             <div className="text-3xl mb-3">📖</div>
             <div className="font-bold text-green-900 group-hover:text-green-700">غريب الحديث</div>
             <div className="text-sm text-gray-500 mt-1">{lexicon.toLocaleString('ar-EG')} لفظة معتمدة</div>
           </Link>
-          <Link href="/narrators?sort=hadiths" className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-green-300 transition-all group">
+          <Link href="/narrators?sort=hadiths" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
             <div className="text-3xl mb-3">📊</div>
             <div className="font-bold text-green-900 group-hover:text-green-700">أكثر الرواة حديثاً</div>
             <div className="text-sm text-gray-500 mt-1">مرتب حسب عدد الأحاديث</div>
@@ -110,8 +112,8 @@ export default async function Home() {
         </div>
 
         {/* الكتب الستة quick links */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-          <h2 className="text-base font-bold text-green-900 mb-4">الكتب الستة والمسانيد الكبرى</h2>
+        <div className="ui-card rounded-2xl p-6 mb-4">
+          <h2 className="text-base font-bold text-green-900 mb-4 font-display">الكتب الستة والمسانيد الكبرى</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
               { id: 1, name: 'صحيح البخاري', count: '٧٤١٠', color: 'border-green-200 hover:border-green-400 text-green-800' },

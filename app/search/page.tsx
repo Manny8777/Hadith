@@ -147,7 +147,7 @@ function SearchInner() {
 
   return (
     <div dir="rtl">
-      <h1 className="text-3xl font-bold text-green-900 mb-6">البحث في الأحاديث</h1>
+      <h1 className="text-3xl font-bold text-green-900 mb-6 font-display">البحث في الأحاديث</h1>
 
       {/* Narrator mode banner */}
       {isNarratorMode && narratorNameParam && (
@@ -396,7 +396,7 @@ function SearchInner() {
           <Link
             key={r.main_id}
             href={`/hadith/${r.main_id}`}
-            className="block bg-white rounded-lg border border-gray-100 px-5 py-4 hover:shadow-md hover:border-green-200 transition-all"
+            className="block ui-card px-5 py-4 hover:border-green-300 transition-all"
           >
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-xs text-green-700 font-semibold">{r.book_name}</span>

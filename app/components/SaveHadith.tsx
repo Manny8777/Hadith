@@ -46,10 +46,10 @@ export default function SaveHadith({ hadithId }: Props) {
   return (
     <button
       onClick={toggle}
-      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+      className={`text-xs font-sans px-3 py-1.5 rounded-lg border transition-colors ${
         saved
-          ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
-          : 'bg-white text-gray-600 border-gray-200 hover:border-amber-300 hover:text-amber-700'
+          ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+          : 'bg-white text-gray-600 border-gray-200 hover:border-green-300 hover:text-green-800'
       }`}
       title={saved ? 'إزالة من المجموعة البحثية' : 'حفظ في المجموعة البحثية'}
     >

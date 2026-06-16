@@ -36,10 +36,10 @@ function chainDepthLabel(count: number): string {
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <h2 className="text-base font-bold text-green-900 shrink-0 font-display">{label}</h2>
-      {sub && <span className="text-xs text-gray-400">{sub}</span>}
-      <div className="flex-1 h-px bg-green-100" />
+    <div className="ui-section-head">
+      <h2 className="ui-section-head-title">{label}</h2>
+      {sub && <span className="ui-section-head-sub">{sub}</span>}
+      <div className="ui-section-head-rule" />
     </div>
   )
 }
@@ -176,10 +176,10 @@ export default function HadithSidebarLayout({
   const tocLinkClass = "w-full text-right px-3 py-2.5 flex items-center gap-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-green-800 border-l-[3px] border-transparent hover:border-green-300 transition-all"
 
   return (
-    <div className="flex -mx-4 gap-0">
+    <div className="flex flex-col sm:flex-row -mx-3 sm:-mx-4 gap-0 min-w-0">
 
       {/* ── RIGHT SIDEBAR (TOC) ── */}
-      <aside className="w-52 shrink-0 self-start sticky top-12 hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ minHeight: 'calc(100vh - 48px)' }}>
+      <aside className="w-52 shrink-0 self-start sticky top-36 hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ minHeight: 'calc(100vh - 9rem)' }}>
         <div className="px-3 pt-3 pb-2 border-b border-gray-100">
           <p className="text-[11px] font-bold text-gray-400 tracking-wider uppercase">المحتوى</p>
         </div>
@@ -211,11 +211,11 @@ export default function HadithSidebarLayout({
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 min-w-0 px-4 pt-2 pb-8">
+      <div className="flex-1 min-w-0 px-3 sm:px-4 pt-2 pb-8">
         <TrackHadithView hadithId={hadithId} hadithTitle={h.book_title + (h.tarqeem_harf ? ` رقم ${h.tarqeem_harf}` : '')} />
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2 flex-wrap">
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-2 flex-wrap font-sans">
           <Link href={`/books/${h.book_id}`} className="text-green-700 hover:underline font-medium">
             {h.book_title}
           </Link>
@@ -370,37 +370,37 @@ export default function HadithSidebarLayout({
           const { sanad, matn } = splitSanadMatn(h.content)
           const matnText = matn || cleanHadithContent(h.content)
           return (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+            <div className="ui-card mb-4 overflow-hidden">
               {sanad && (
-                <div className="px-6 pt-5 pb-4 border-b border-gray-100 bg-gray-50/60">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">السند</p>
+                <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-gray-200 bg-gray-50/80">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">السند</p>
                   {sanadSegments && sanadSegments.length > 0 ? (
                     <SanadNarrators
                       segments={sanadSegments}
                       narrators={sanadNarrators}
                       showTashkeel={showTashkeel}
-                      className="text-base leading-loose text-gray-600 font-serif"
+                      className="text-sm sm:text-base leading-loose text-gray-800 font-serif"
                     />
                   ) : (
-                    <p className="text-base leading-loose text-gray-600 font-serif" dir="rtl">
+                    <p className="text-sm sm:text-base leading-loose text-gray-800 font-serif" dir="rtl">
                       {applyTashkeel(sanad)}
                     </p>
                   )}
                 </div>
               )}
-              <div className={`px-6 ${sanad ? 'py-5' : 'p-6'}`}>
+              <div className={`px-4 sm:px-6 ${sanad ? 'py-4 sm:py-5' : 'p-4 sm:p-6'}`}>
                 {sanad && (
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">المتن</p>
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">المتن</p>
                 )}
                 {hadithServices?.ghareeb ? (
                   <GhareebMatn
                     hadithId={hadithId}
                     matn={matnText}
                     showTashkeel={showTashkeel}
-                    className="text-lg leading-loose text-gray-900 font-serif"
+                    className="text-lg sm:text-xl leading-[2.1] text-gray-900 font-serif"
                   />
                 ) : (
-                  <p className="text-lg leading-loose text-gray-900 font-serif" dir="rtl">
+                  <p className="text-base sm:text-lg leading-loose text-gray-900 font-serif" dir="rtl">
                     {applyTashkeel(matnText)}
                   </p>
                 )}
@@ -446,8 +446,8 @@ export default function HadithSidebarLayout({
         )}
 
         {/* Mobile: horizontal TOC strip */}
-        <div className="sm:hidden mb-5 overflow-x-auto">
-          <div className="flex gap-1.5 pb-1 min-w-max">
+        <div className="sm:hidden mb-5 -mx-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-1.5 pb-1 px-1 min-w-max">
             {SECTIONS.map(s => (
               <a key={s.id} href={`#${s.id}`}
                 className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-green-300 shrink-0 transition-colors">
@@ -458,7 +458,7 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
-        <section id="isnad" className="mb-8 scroll-mt-14">
+        <section id="isnad" className="mb-8 scroll-mt-36">
           <SectionHeader label="الأسانيد والرواة" sub={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)
@@ -519,14 +519,14 @@ export default function HadithSidebarLayout({
         </section>
 
         {/* ── شجرة الإسناد ── */}
-        <section id="shajar" className="mb-8 scroll-mt-14">
+        <section id="shajar" className="mb-8 scroll-mt-36">
           <SectionHeader label="شجرة الإسناد" sub="رسم تشجيري لمسارات رواية الحديث عبر جميع كتب التخريج" />
           <IsnadTree hadithId={hadithId} />
         </section>
 
         {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
-          <section id="aqwal" className="mb-8 scroll-mt-14">
+          <section id="aqwal" className="mb-8 scroll-mt-36">
             <SectionHeader label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`} />
 
             {(() => {
@@ -640,7 +640,7 @@ export default function HadithSidebarLayout({
         )}
 
         {/* ── التخريج ── */}
-        <section id="takhrij" className="mb-8 scroll-mt-14">
+        <section id="takhrij" className="mb-8 scroll-mt-36">
           <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع" />
           {takhrijSlot}
         </section>
@@ -650,7 +650,7 @@ export default function HadithSidebarLayout({
 
         {/* ── الخدمات العلمية (inline) ── */}
         {serviceSections.map(cfg => (
-          <section key={cfg.id} id={cfg.id} className="mb-8 scroll-mt-14">
+          <section key={cfg.id} id={cfg.id} className="mb-8 scroll-mt-36">
             <SectionHeader label={cfg.label} />
             <HadithServiceSection hadithId={hadithId} config={cfg} />
           </section>
@@ -658,13 +658,13 @@ export default function HadithSidebarLayout({
 
         {/* ── مقارنة المتون (group matn) ── */}
         {matngroupSlot && (
-          <section id="matn-group" className="mb-6 scroll-mt-14">
+          <section id="matn-group" className="mb-6 scroll-mt-36">
             {matngroupSlot}
           </section>
         )}
 
         {/* ── المتن المُجمَّع والاختلافات ── */}
-        <section id="variants" className="mb-8 scroll-mt-14">
+        <section id="variants" className="mb-8 scroll-mt-36">
           <SectionHeader label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات" />
           <MatnVariants
             hadithId={hadithId}
@@ -675,7 +675,7 @@ export default function HadithSidebarLayout({
         </section>
 
         {/* ── أدوات البحث ── */}
-        <section id="adawat" className="mb-8 scroll-mt-14">
+        <section id="adawat" className="mb-8 scroll-mt-36">
           <SectionHeader label="أدوات البحث" />
           <div className="grid sm:grid-cols-2 gap-3">
             {[
@@ -689,7 +689,7 @@ export default function HadithSidebarLayout({
               { href: `/hadith/${hadithId}/chain-weakness`,       label: 'الحلقات الضعيفة',        desc: 'مواطن الضعف في السند' },
             ].map(item => (
               <a key={item.href} href={item.href}
-                className="flex flex-col gap-0.5 bg-white border border-gray-100 rounded-lg p-3 hover:border-green-200 hover:shadow-sm transition-all">
+                className="flex flex-col gap-0.5 ui-card p-3 hover:border-green-300 transition-all">
                 <span className="text-sm font-medium text-green-900">{item.label}</span>
                 <span className="text-xs text-gray-400">{item.desc}</span>
               </a>

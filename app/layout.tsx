@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import './globals.css'
 import NavHeader from './components/NavHeader'
+import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSubHeader'
 import SiteNotice from './components/SiteNotice'
 import { NumberingProvider } from '@/lib/numberingContext'
 
@@ -13,15 +15,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl">
       <head />
-      <body className="bg-amber-50 text-gray-900 min-h-screen">
+      <body className="bg-paper text-ink min-h-screen font-serif">
         <NumberingProvider>
-          <header className="sticky top-0 z-50 shadow-md">
+          <header className="sticky top-0 z-50 shadow-sm">
             <SiteNotice />
             <NavHeader />
+            <Suspense fallback={<SearchSubHeaderFallback />}>
+              <SearchSubHeader />
+            </Suspense>
           </header>
-          <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+          <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-7 py-5 sm:py-8">{children}</main>
         </NumberingProvider>
-        <footer className="text-center text-xs text-gray-400 py-6 border-t border-gray-200 mt-12">
+        <footer className="text-center text-xs text-gray-500 font-sans py-6 border-t border-gray-200 mt-12">
           برنامج خادم الحرمين الشريفين – موسوعة الحديث النبوي الشريف
         </footer>
       </body>

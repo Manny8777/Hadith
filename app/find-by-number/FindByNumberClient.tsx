@@ -50,7 +50,7 @@ export default function FindByNumberClient({ books }: { books: Book[] }) {
 
   return (
     <div>
-      <form onSubmit={handleSearch} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+      <form onSubmit={handleSearch} className="ui-card rounded-2xl p-6 mb-6 font-sans">
         <div className="grid sm:grid-cols-3 gap-4 items-end">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">اختر الكتاب</label>
