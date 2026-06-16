@@ -9,6 +9,25 @@ function normDescKey(desc: string): string {
   return desc.replace(/\.$/, '').replace(/[ًٌٍَُِّْ]/g, '').trim()
 }
 
+// Match precision level derived from description prefix (1 = most precise)
+function getMatchLevel(desc: string | null): number {
+  if (!desc) return 5
+  const d = desc.replace(/\.$/, '').trim()
+  if (d.startsWith('بلفظه')) return 1
+  if (d.startsWith('بمثله')) return 2
+  if (d.startsWith('بنحوه')) return 3
+  if (d.startsWith('بمعناه')) return 4
+  return 5
+}
+
+const LEVEL_LABELS: Record<number, string> = {
+  1: 'بلفظه فقط',
+  2: 'بلفظه + بمثله',
+  3: 'حتى بنحوه',
+  4: 'حتى بمعناه',
+  5: 'الكل',
+}
+
 // ── Word diff ─────────────────────────────────────────────────────────────────
 
 type DiffChunk = { type: 'equal' | 'add' | 'del'; text: string }
@@ -726,30 +745,44 @@ export default function TakhrijClient({
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>('tafsili')
   const [sortBy, setSortBy] = useState<SortBy>('sihha')
+  const [maxLevel, setMaxLevel] = useState<number>(5)
 
   const sorted = useMemo(() => sortRows(rows, sortBy), [rows, sortBy])
+
+  // Apply match-precision filter; source hadith always shown
+  const filtered = useMemo(
+    () => sorted.filter(r => r.main_id === sourceId || getMatchLevel(r.matn_description) <= maxLevel),
+    [sorted, sourceId, maxLevel]
+  )
+
+  const visibleBooks = useMemo(() => new Set(filtered.map(r => r.book_id)).size, [filtered])
+  const visibleMutabaat = filtered.filter(r => r.kind === 'mutabaa').length
+  const visibleShawahid = filtered.filter(r => r.kind === 'shahid').length
 
   return (
     <div dir="rtl">
       {/* Summary bar */}
       <div className="flex items-center gap-2 mb-4 flex-wrap text-xs">
         <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
-          {rows.length} رواية في {totalBooks} كتاب
+          {filtered.length} رواية في {visibleBooks} كتاب
+          {filtered.length !== rows.length && (
+            <span className="text-gray-400 mr-1">(من {rows.length})</span>
+          )}
         </span>
-        {mutabaatCount > 0 && (
+        {visibleMutabaat > 0 && (
           <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-            {mutabaatCount} متابعة
+            {visibleMutabaat} متابعة
           </span>
         )}
-        {shawahidCount > 0 && (
+        {visibleShawahid > 0 && (
           <span className="bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full font-medium">
-            {shawahidCount} شاهد
+            {visibleShawahid} شاهد
           </span>
         )}
       </div>
 
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
         {/* View mode */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-gray-400 shrink-0">العرض:</span>
@@ -779,12 +812,38 @@ export default function TakhrijClient({
             </button>
           ))}
         </div>
+
+        {/* Match accuracy slider */}
+        <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+          <span className="text-xs text-gray-400 shrink-0">دقة التطابق:</span>
+          <div className="relative flex-1">
+            <input
+              type="range"
+              min={1}
+              max={5}
+              step={1}
+              value={maxLevel}
+              onChange={e => setMaxLevel(Number(e.target.value))}
+              className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-teal-600"
+              style={{ direction: 'ltr' }}
+            />
+            {/* Tick marks */}
+            <div className="flex justify-between px-0.5 mt-1" aria-hidden>
+              {[1,2,3,4,5].map(v => (
+                <span key={v} className={`text-[9px] transition-colors ${v === maxLevel ? 'text-teal-600 font-semibold' : 'text-gray-300'}`}>|</span>
+              ))}
+            </div>
+          </div>
+          <span className="text-xs text-teal-700 font-medium shrink-0 min-w-[90px] text-right">
+            {LEVEL_LABELS[maxLevel]}
+          </span>
+        </div>
       </div>
 
       {/* Content */}
-      {viewMode === 'ijmali'     && <IjmaliView     rows={sorted} sourceId={sourceId} />}
-      {viewMode === 'mutawassit' && <MutawassitView  rows={sorted} sourceId={sourceId} />}
-      {viewMode === 'tafsili'    && <TafsiliView     rows={sorted} sourceId={sourceId} />}
+      {viewMode === 'ijmali'     && <IjmaliView     rows={filtered} sourceId={sourceId} />}
+      {viewMode === 'mutawassit' && <MutawassitView  rows={filtered} sourceId={sourceId} />}
+      {viewMode === 'tafsili'    && <TafsiliView     rows={filtered} sourceId={sourceId} />}
 
       {truncated && (
         <p className="text-xs text-gray-400 mt-2 text-center">
@@ -793,7 +852,7 @@ export default function TakhrijClient({
         </p>
       )}
 
-      <MatnComparisonSection rows={rows} sourceId={sourceId} baseText={baseText} />
+      <MatnComparisonSection rows={filtered} sourceId={sourceId} baseText={baseText} />
     </div>
   )
 }
