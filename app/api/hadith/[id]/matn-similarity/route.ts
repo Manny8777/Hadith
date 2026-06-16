@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import { extractMatnForComparison } from '@/lib/hadithText'
+import { extractMatnForComparison, splitSanadMatn } from '@/lib/hadithText'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,17 +78,20 @@ export async function GET(
   const baseWords = normalizeArabic(baseMatn).split(/\s+/).filter(Boolean).length
 
   const results = parallelRes.rows.map(row => {
-    const compMatn = row.content ? extractMatnForComparison(row.content as string) : ''
+    const content = (row.content as string) || ''
+    const compMatn = content ? extractMatnForComparison(content) : ''
     const score = compMatn ? wordDice(baseMatn, compMatn) : 0
+    const { matn: matnDisplay } = splitSanadMatn(content)
     return {
-      hadith_id:  Number(row.hadith_id),
-      book_title: (row.book_title  as string | null) ?? null,
-      book_death: row.takhrij_death != null ? Number(row.takhrij_death) : null,
-      num_harf:   (row.tarqeem_harf   as string | null) ?? null,
-      num_matboa: (row.tarqeem_matboa1 as string | null) ?? null,
-      old_label:  row.old_label ? (row.old_label as string).replace(/\.$/, '').trim() : null,
-      score:      Math.round(score * 100),
-      is_source:  Number(row.hadith_id) === hadithId,
+      hadith_id:    Number(row.hadith_id),
+      book_title:   (row.book_title as string | null) ?? null,
+      book_death:   row.takhrij_death != null ? Number(row.takhrij_death) : null,
+      num_harf:     (row.tarqeem_harf    as string | null) ?? null,
+      num_matboa:   (row.tarqeem_matboa1 as string | null) ?? null,
+      old_label:    row.old_label ? (row.old_label as string).replace(/\.$/, '').trim() : null,
+      matn_display: matnDisplay || null,
+      score:        Math.round(score * 100),
+      is_source:    Number(row.hadith_id) === hadithId,
     }
   }).sort((a, b) => b.score - a.score)
 
