@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import HadithNumber from './HadithNumber'
 
 // Strip diacritics for grouping key so "مختصراً" and "مختصرا" cluster together
 function normDescKey(desc: string): string {
@@ -95,7 +94,7 @@ const DESC_SORT_ORDER = [
 
 type ViewMode = 'ijmali' | 'mutawassit' | 'tafsili'
 type SortBy = 'sihha' | 'shuhura' | 'wafayat'
-type BookFilter = 'all' | number
+type SourceGroup = 'matn' | 'other'
 
 export interface TakhrijRow {
   main_id: number
@@ -106,6 +105,8 @@ export interface TakhrijRow {
   book_takhrij_author: string | null
   book_takhrij_death: number | null
   tarf: string | null
+  section_text: string | null
+  chapter_text: string | null
   part_num: number
   page_num: number
   tarqeem_harf: string | null
@@ -115,24 +116,16 @@ export interface TakhrijRow {
   kind: 'mutabaa' | 'shahid' | 'other'
 }
 
-function stripTags(html: string): string {
-  return (html || '')
-    .replace(/<رقم_حديث[^>]*>[^<]*<\/رقم_حديث>/g, '')
-    .replace(/<رقم_الفقرة[^>]*\/>/g, '')
-    .replace(/<نه\/>/g, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (_, c: string) => String.fromCharCode(parseInt(c, 10)))
-    .replace(/^\s*[-–—]\s*/, '').replace(/\s+/g, ' ').trim()
-}
-
-function partPage(row: TakhrijRow) {
-  if (!row.part_num && !row.page_num) return null
-  const parts = []
-  if (row.part_num > 0) parts.push(`ج${row.part_num}`)
-  if (row.page_num > 0) parts.push(`ص${row.page_num}`)
-  return parts.join(' ')
+export interface OtherTakhrijSource {
+  id: number
+  href: string
+  book_id: number | null
+  book_title: string
+  section_text: string | null
+  chapter_text: string | null
+  part_num: number
+  page_num: number
+  tarf: string | null
 }
 
 function citationLocation(row: TakhrijRow): string {
@@ -156,24 +149,25 @@ function bookCitationTitle(row: TakhrijRow): string {
     : `"${title}"`
 }
 
-/** Display a hadith number as plain text (for copy output) */
+function chapterPath(row: TakhrijRow): string | null {
+  const parts = [row.section_text, row.chapter_text]
+    .map(part => part?.replace(/\s+/g, ' ').trim())
+    .filter((part): part is string => !!part)
+
+  return [...new Set(parts)].join(' ، ') || null
+}
+
+function sourcePath(source: OtherTakhrijSource): string | null {
+  const parts = [source.section_text, source.chapter_text]
+    .map(part => part?.replace(/\s+/g, ' ').trim())
+    .filter((part): part is string => !!part)
+
+  return [...new Set(parts)].join(' ، ') || null
+}
+
+/** Display the takhrij citation number independent of the global numbering switch. */
 function numText(row: TakhrijRow): string {
-  return row.tarqeem_matboa1 || row.tarqeem_harf || ''
-}
-
-const KIND_BADGE: Record<string, string> = {
-  mutabaa: 'bg-blue-100 text-blue-700',
-  shahid: 'bg-violet-100 text-violet-700',
-}
-const KIND_LABEL: Record<string, string> = {
-  mutabaa: 'متابعة',
-  shahid: 'شاهد',
-}
-
-const GRADE_BADGE: Record<string, string> = {
-  صحيح: 'bg-green-100 text-green-700',
-  حسن: 'bg-amber-100 text-amber-700',
-  ضعيف: 'bg-red-100 text-red-600',
+  return row.tarqeem_harf || ''
 }
 
 function sortRows(rows: TakhrijRow[], sortBy: SortBy): TakhrijRow[] {
@@ -205,7 +199,21 @@ function sortRows(rows: TakhrijRow[], sortBy: SortBy): TakhrijRow[] {
  * Build Arabic prose citation text, grouped by book.
  * e.g. "أخرجه البخاري برقم (1543)، ومسلم برقم (1281، 1282)، والبزار برقم (2142) بمعناه مختصرا."
  */
-function buildCopyText(rows: TakhrijRow[]): string {
+function citationExtra(row: TakhrijRow, viewMode: ViewMode, sourceId: number): string {
+  if (viewMode === 'ijmali') return ''
+
+  const extras: string[] = []
+  const path = chapterPath(row)
+  if (path) extras.push(`(${path})`)
+
+  if (viewMode === 'tafsili' && row.main_id !== sourceId && row.matn_description) {
+    extras.push(`(${row.matn_description.replace(/\.$/, '').trim()}.)`)
+  }
+
+  return extras.length > 0 ? ` ${extras.join(' ')}` : ''
+}
+
+function buildCopyText(rows: TakhrijRow[], viewMode: ViewMode, sourceId: number): string {
   if (rows.length === 0) return ''
 
   // Preserve order; group consecutive same-book entries together keeping sort order
@@ -222,7 +230,9 @@ function buildCopyText(rows: TakhrijRow[]): string {
   const parts: string[] = []
   for (let bi = 0; bi < bookOrder.length; bi++) {
     const { row, entries } = bookMap.get(bookOrder[bi])!
-    const locations = entries.map(citationLocation).filter(Boolean)
+    const locations = entries
+      .map(entry => `${citationLocation(entry)}${citationExtra(entry, viewMode, sourceId)}`.trim())
+      .filter(Boolean)
     const part = `${bookCitationTitle(row)}${locations.length ? ` ${locations.join(' ، ')}` : ''}`
     parts.push(part)
   }
@@ -263,13 +273,55 @@ function CopyButton({ getText, label = 'نسخ', className = '' }: {
   )
 }
 
+function ViewModeControls({
+  viewMode,
+  onChange,
+}: {
+  viewMode: ViewMode
+  onChange: (mode: ViewMode) => void
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-gray-400 shrink-0">العرض:</span>
+      {([ ['ijmali', 'إجمالي'], ['mutawassit', 'متوسط'], ['tafsili', 'تفصيلي'] ] as [ViewMode, string][]).map(([mode, label]) => (
+        <button key={mode} onClick={() => onChange(mode)}
+          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+            viewMode === mode
+              ? 'bg-green-700 text-white border-green-700'
+              : 'border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-700'
+          }`}>
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ── إجمالي view ──────────────────────────────────────────────────────────────
 
-function IjmaliView({ rows }: { rows: TakhrijRow[] }) {
-  const getCopyText = useCallback(() => buildCopyText(rows), [rows])
+function CitationTextView({
+  rows,
+  sourceId,
+  viewMode,
+}: {
+  rows: TakhrijRow[]
+  sourceId: number
+  viewMode: ViewMode
+}) {
+  const getCopyText = useCallback(() => buildCopyText(rows, viewMode, sourceId), [rows, viewMode, sourceId])
 
   if (rows.length === 0) {
     return <p className="text-sm text-gray-400 py-4">لا توجد روايات مطابقة لهذه المرشحات</p>
+  }
+
+  const bookOrder: number[] = []
+  const bookMap = new Map<number, { row: TakhrijRow; entries: TakhrijRow[] }>()
+  for (const row of rows) {
+    if (!bookMap.has(row.book_id)) {
+      bookOrder.push(row.book_id)
+      bookMap.set(row.book_id, { row, entries: [] })
+    }
+    bookMap.get(row.book_id)!.entries.push(row)
   }
 
   return (
@@ -278,235 +330,121 @@ function IjmaliView({ rows }: { rows: TakhrijRow[] }) {
         <CopyButton getText={getCopyText} label="نسخ التخريج" />
       </div>
       <p className="text-sm leading-9 text-gray-800 bg-white border border-gray-100 rounded-xl p-4">
-        {buildCopyText(rows)}
+        <span>أخرجه </span>
+        {bookOrder.map((bookId, bookIndex) => {
+          const { row, entries } = bookMap.get(bookId)!
+          return (
+            <span key={bookId}>
+              {bookIndex > 0 && <span> و</span>}
+              {row.book_takhrij_author && <span>{row.book_takhrij_author} في </span>}
+                <Link
+                  href={`/books/${bookId}`}
+                  className="font-semibold text-green-800 hover:text-green-600 hover:underline"
+                >
+                  &quot;{row.book_title || `كتاب ${bookId}`}&quot;
+                </Link>
+                {entries.map((row, ei) => {
+                  const num = numText(row)
+                  const pp = row.part_num > 0 || row.page_num > 0
+                    ? `(${row.part_num > 0 ? row.part_num : '-'} / ${row.page_num > 0 ? row.page_num : '-'})`
+                    : null
+
+                  return (
+                    <span key={`${row.main_id}-${ei}`}>
+                      <span>{ei > 0 ? ' ، ' : ' '}</span>
+                      {pp && <span>{pp} </span>}
+                      {num ? (
+                        <>
+                          <span>برقم: </span>
+                          <span>(</span>
+                          <Link
+                            href={`/hadith/${row.main_id}`}
+                            className={row.main_id === sourceId ? 'text-amber-700 font-medium hover:underline' : 'text-green-700 hover:underline'}
+                            title={row.main_id === sourceId ? 'المصدر الحالي' : undefined}
+                          >
+                            {num}
+                          </Link>
+                          <span>)</span>
+                        </>
+                      ) : (
+                        <Link
+                          href={`/hadith/${row.main_id}`}
+                          className="text-green-700 hover:underline"
+                        >
+                          رواية
+                        </Link>
+                      )}
+                      {citationExtra(row, viewMode, sourceId)}
+                    </span>
+                  )
+                })}
+            </span>
+          )
+        })}
       </p>
     </div>
   )
 }
 
-// ── متوسط view ────────────────────────────────────────────────────────────────
-// Grouped by book as flowing prose. Each book is one block with inline hadith links.
+function otherSourceExtra(source: OtherTakhrijSource, viewMode: ViewMode): string {
+  if (viewMode === 'ijmali') return ''
 
-function MutawassitView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number }) {
-  // Group by book, preserving sort order
-  const bookOrder: number[] = []
-  const bookMap = new Map<number, { title: string; death: number | null; entries: TakhrijRow[] }>()
-  for (const row of rows) {
-    if (!bookMap.has(row.book_id)) {
-      bookOrder.push(row.book_id)
-      bookMap.set(row.book_id, {
-        title: row.book_title || `كتاب ${row.book_id}`,
-        death: row.book_takhrij_death,
-        entries: [],
-      })
-    }
-    bookMap.get(row.book_id)!.entries.push(row)
+  const extras: string[] = []
+  const path = sourcePath(source)
+  if (path) extras.push(`(${path})`)
+
+  if (viewMode === 'tafsili' && source.tarf) {
+    extras.push(`(${source.tarf.replace(/\s+/g, ' ').trim()})`)
   }
 
-  const getCopyText = useCallback(() => buildCopyText(rows), [rows])
+  return extras.length > 0 ? ` ${extras.join(' ')}` : ''
+}
+
+function buildOtherSourcesText(sources: OtherTakhrijSource[], viewMode: ViewMode): string {
+  if (sources.length === 0) return ''
+
+  const parts = sources.map(source => {
+    const location = source.part_num > 0 || source.page_num > 0
+      ? `(${source.part_num > 0 ? source.part_num : '-'} / ${source.page_num > 0 ? source.page_num : '-'})`
+      : ''
+
+    return `"${source.book_title}"${location ? ` ${location}` : ''}${otherSourceExtra(source, viewMode)}`
+  })
+
+  return `ذُكر في ${parts.join(' و')}.`
+}
+
+function OtherSourcesView({ sources, viewMode }: { sources: OtherTakhrijSource[]; viewMode: ViewMode }) {
+  const getCopyText = useCallback(() => buildOtherSourcesText(sources, viewMode), [sources, viewMode])
+
+  if (sources.length === 0) {
+    return <p className="text-sm text-gray-400 py-4">لا توجد كتب أخرى مسجلة لهذا الحديث</p>
+  }
 
   return (
     <div dir="rtl">
       <div className="flex justify-end mb-3">
         <CopyButton getText={getCopyText} label="نسخ التخريج" />
       </div>
+      <p className="text-sm leading-9 text-gray-800 bg-white border border-gray-100 rounded-xl p-4">
+        <span>ذُكر في </span>
+        {sources.map((source, index) => {
+        const location = source.part_num > 0 || source.page_num > 0
+          ? `(${source.part_num > 0 ? source.part_num : '-'} / ${source.page_num > 0 ? source.page_num : '-'})`
+          : null
 
-      <div className="space-y-3">
-        {bookOrder.map((bookId) => {
-          const { title, death, entries } = bookMap.get(bookId)!
-          const hasSource = entries.some(r => r.main_id === sourceId)
-
-          // Check if all non-source entries share the same description
-          const descs = entries
-            .filter(r => r.main_id !== sourceId && r.matn_description)
-            .map(r => r.matn_description!.replace(/\.$/, '').trim())
-          const uniqueDescs = [...new Set(descs)]
-          const sharedDesc = uniqueDescs.length === 1 ? uniqueDescs[0] : null
-
-          return (
-            <div key={bookId} className="rounded-xl border border-gray-100 bg-white p-3 leading-loose text-sm" dir="rtl">
-              {/* Book name as heading inline with entries */}
-              <span className="inline">
-                <Link
-                  href={`/books/${bookId}`}
-                  className="font-semibold text-green-800 hover:text-green-600 hover:underline"
-                >
-                  {title}
-                </Link>
-                {death && (
-                  <span className="text-gray-400 text-xs mr-1">(ت {death}هـ)</span>
-                )}
-                {hasSource && (
-                  <span className="mr-1.5 text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full align-middle">المصدر</span>
-                )}
-                <span className="text-gray-400 mx-1.5">:</span>
-
-                {/* Inline hadith number links */}
-                {entries.map((row, ei) => {
-                  const isCurrent = row.main_id === sourceId
-                  const hasNum = !!(row.tarqeem_harf || row.tarqeem_matboa1)
-                  // Per-entry description only if descriptions differ across entries
-                  const entryDesc = !sharedDesc && !isCurrent && row.matn_description
-                    ? row.matn_description.replace(/\.$/, '').trim()
-                    : null
-
-                  return (
-                    <span key={`${row.main_id}-${ei}`} className="inline">
-                      {ei > 0 && <span className="text-gray-400 mx-0.5">،</span>}
-                      {hasNum ? (
-                        <Link
-                          href={`/hadith/${row.main_id}`}
-                          className={`rounded px-0.5 transition-colors
-                            ${isCurrent
-                              ? 'text-amber-700 hover:text-amber-600 font-medium'
-                              : 'text-green-700 hover:text-green-500 hover:underline'
-                            }`}
-                          title={isCurrent ? 'المصدر الحالي' : undefined}
-                        >
-                          {citationLocation(row) || `رواية ${ei + 1}`}
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/hadith/${row.main_id}`}
-                          className="text-green-700 hover:underline text-xs"
-                        >
-                          [رواية]
-                        </Link>
-                      )}
-                      {/* Per-entry description badge when descriptions differ */}
-                      {entryDesc && (
-                        <span className="mr-0.5 text-[10px] text-teal-600 italic">{entryDesc}</span>
-                      )}
-                    </span>
-                  )
-                })}
-
-                {/* Shared description for all entries in this book */}
-                {sharedDesc && (
-                  <span className="mr-1 text-xs text-teal-700 italic">{sharedDesc}</span>
-                )}
-
-                {/* Kind badges */}
-                {entries[0].kind !== 'other' && (
-                  <span className={`mr-1.5 text-[10px] px-1.5 py-0.5 rounded-full align-middle ${KIND_BADGE[entries[0].kind]}`}>
-                    {KIND_LABEL[entries[0].kind]}
-                  </span>
-                )}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ── تفصيلي view ───────────────────────────────────────────────────────────────
-// Each hadith is its own block. Book name + number clickable. Tarf shown below.
-
-function TafsiliView({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number }) {
-  const getCopyText = useCallback(() => buildCopyText(rows), [rows])
-
-  return (
-    <div dir="rtl">
-      {/* Copy button */}
-      <div className="flex justify-end mb-4">
-        <CopyButton getText={getCopyText} label="نسخ التخريج" />
-      </div>
-
-      <div className="space-y-3">
-        {rows.map((row, i) => {
-          const isCurrent = row.main_id === sourceId
-          const pp = partPage(row)
-          const tarf = row.tarf ? stripTags(row.tarf).slice(0, 140) : null
-          const isLong = row.tarf ? stripTags(row.tarf).length > 140 : false
-
-          return (
-            <div
-              key={`${row.main_id}-${i}`}
-              className={`relative rounded-xl border bg-white p-3 transition-colors
-                ${isCurrent ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 hover:border-green-200'}`}
-              dir="rtl"
-            >
-              {/* Main citation line */}
-              <div className="flex items-start gap-2 flex-wrap leading-relaxed text-sm">
-                {/* Ordinal */}
-                <span className="text-gray-300 text-xs shrink-0 mt-0.5 w-5 text-center">{i + 1}</span>
-
-                <div className="flex-1 min-w-0">
-                  {/* Book name — clickable link */}
-                  <Link
-                    href={`/books/${row.book_id}`}
-                    className="font-semibold text-green-800 hover:text-green-600 hover:underline"
-                  >
-                    {row.book_title || `كتاب ${row.book_id}`}
-                  </Link>
-
-                  {/* Death year */}
-                  {row.book_takhrij_death && (
-                    <span className="text-gray-400 text-xs mr-1">(ت {row.book_takhrij_death}هـ)</span>
-                  )}
-
-                  {/* Hadith number — clickable link */}
-                  {(row.tarqeem_harf || row.tarqeem_matboa1) && (
-                    <span className="text-gray-400 mx-1">—</span>
-                  )}
-                  {(row.tarqeem_harf || row.tarqeem_matboa1) && (
-                    <Link
-                      href={`/hadith/${row.main_id}`}
-                      className={`font-medium hover:underline
-                        ${isCurrent ? 'text-amber-700 hover:text-amber-600' : 'text-green-700 hover:text-green-500'}`}
-                    >
-                      (<HadithNumber harf={row.tarqeem_harf} matboa={row.tarqeem_matboa1} />)
-                    </Link>
-                  )}
-
-                  {/* Volume / page */}
-                  {pp && (
-                    <span className="text-gray-400 text-xs mr-1">({pp})</span>
-                  )}
-
-                  {/* Badges row */}
-                  <span className="inline-flex flex-wrap gap-1 mr-1.5 align-middle">
-                    {isCurrent && (
-                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">المصدر الحالي</span>
-                    )}
-                    {row.kind !== 'other' && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${KIND_BADGE[row.kind]}`}>
-                        {KIND_LABEL[row.kind]}
-                      </span>
-                    )}
-                    {row.grade_hint && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${GRADE_BADGE[row.grade_hint] ?? 'bg-gray-100 text-gray-500'}`}>
-                        {row.grade_hint}
-                      </span>
-                    )}
-                    {!isCurrent && row.matn_description && (
-                      <span
-                        className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-1.5 py-0.5 rounded-full"
-                        title="وصف التطابق / الاختلاف بين المتون"
-                      >
-                        {row.matn_description.replace(/\.$/, '')}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tarf — opening phrase as a subtle subtitle */}
-              {tarf && (
-                <Link
-                  href={`/hadith/${row.main_id}`}
-                  className="block text-gray-400 text-xs mt-1 pr-7 leading-relaxed hover:text-green-600 transition-colors"
-                  dir="rtl"
-                >
-                  &ldquo;{tarf}{isLong ? '…' : ''}&rdquo;
-                </Link>
-              )}
-            </div>
-          )
-        })}
-      </div>
+        return (
+          <span key={`${source.id}-${index}`}>
+            {index > 0 && <span> و</span>}
+            <Link href={source.href} className="font-semibold text-green-800 hover:text-green-600 hover:underline">
+              &quot;{source.book_title}&quot;
+            </Link>
+            {location && <span> {location}</span>}
+            {otherSourceExtra(source, viewMode)}
+          </span>
+        )
+      })}
+      </p>
     </div>
   )
 }
@@ -620,10 +558,10 @@ function MatnComparisonSection({
                                 {row.book_takhrij_death && (
                                   <span className="text-gray-400"> (ت {row.book_takhrij_death}هـ)</span>
                                 )}
-                                {(row.tarqeem_harf || row.tarqeem_matboa1) && (
+                                {numText(row) && (
                                   <span className="text-gray-500 text-xs"> — برقم{' '}
                                     <Link href={`/hadith/${row.main_id}`} className="text-green-700 hover:underline">
-                                      <HadithNumber harf={row.tarqeem_harf} matboa={row.tarqeem_matboa1} />
+                                      {numText(row)}
                                     </Link>
                                   </span>
                                 )}
@@ -657,7 +595,7 @@ function MatnComparisonSection({
                                     </div>
                                     <div className="p-3">
                                       <p className="text-[10px] text-gray-400 mb-1 text-right">
-                                        {row.book_title} — <HadithNumber harf={row.tarqeem_harf} matboa={row.tarqeem_matboa1} />
+                                        {row.book_title} — {numText(row)}
                                       </p>
                                       <DiffText chunks={diffResult.compChunks} side="comp" />
                                     </div>
@@ -690,6 +628,7 @@ function MatnComparisonSection({
 
 export default function TakhrijClient({
   rows,
+  otherSources,
   sourceId,
   totalBooks,
   mutabaatCount,
@@ -698,6 +637,7 @@ export default function TakhrijClient({
   baseText,
 }: {
   rows: TakhrijRow[]
+  otherSources: OtherTakhrijSource[]
   sourceId: number
   totalBooks: number
   mutabaatCount: number
@@ -705,10 +645,13 @@ export default function TakhrijClient({
   truncated: boolean
   baseText: string | null
 }) {
+  const [sourceGroup, setSourceGroup] = useState<SourceGroup>('matn')
   const [viewMode, setViewMode] = useState<ViewMode>('ijmali')
   const [sortBy, setSortBy] = useState<SortBy>('sihha')
   const [maxLevel, setMaxLevel] = useState<number>(5)
-  const [selectedBookId, setSelectedBookId] = useState<BookFilter>('all')
+  const [excludedBookIds, setExcludedBookIds] = useState<Set<number>>(() => new Set())
+  const [booksOpen, setBooksOpen] = useState(false)
+  const [accuracyOpen, setAccuracyOpen] = useState(false)
 
   const sorted = useMemo(() => sortRows(rows, sortBy), [rows, sortBy])
 
@@ -729,9 +672,12 @@ export default function TakhrijClient({
     return bookOrder.map(id => map.get(id)!)
   }, [sorted])
 
+  const selectedBookCount = bookOptions.filter(book => !excludedBookIds.has(book.id)).length
+  const allBooksSelected = bookOptions.length > 0 && selectedBookCount === bookOptions.length
+
   const bookFiltered = useMemo(
-    () => selectedBookId === 'all' ? sorted : sorted.filter(r => r.book_id === selectedBookId),
-    [sorted, selectedBookId]
+    () => sorted.filter(r => !excludedBookIds.has(r.book_id)),
+    [sorted, excludedBookIds]
   )
 
   // Apply match-precision filter inside the selected book; source hadith is kept when visible.
@@ -746,6 +692,36 @@ export default function TakhrijClient({
 
   return (
     <div dir="rtl">
+      <div className="flex items-center gap-2 mb-4">
+        {([
+          ['matn', 'كتب المتون', visibleBooks || totalBooks],
+          ['other', 'كتب أخرى', otherSources.length],
+        ] as [SourceGroup, string, number][]).map(([group, label, count]) => (
+          <button
+            key={group}
+            type="button"
+            onClick={() => setSourceGroup(group)}
+            className={`rounded-xl border px-3 py-2 text-sm transition-colors ${
+              sourceGroup === group
+                ? 'border-green-700 bg-green-700 text-white'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:text-green-800'
+            }`}
+          >
+            <span>{label}</span>
+            <span className="mr-2 font-semibold">{count}</span>
+          </button>
+        ))}
+      </div>
+
+      {sourceGroup === 'other' ? (
+        <>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
+            <ViewModeControls viewMode={viewMode} onChange={setViewMode} />
+          </div>
+          <OtherSourcesView sources={otherSources} viewMode={viewMode} />
+        </>
+      ) : (
+        <>
       {/* Summary bar */}
       <div className="flex items-center gap-2 mb-4 flex-wrap text-xs">
         <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
@@ -769,85 +745,122 @@ export default function TakhrijClient({
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
         {/* View mode */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-400 shrink-0">العرض:</span>
-          {([ ['ijmali', 'إجمالي'], ['mutawassit', 'متوسط'], ['tafsili', 'تفصيلي'] ] as [ViewMode, string][]).map(([mode, label]) => (
-            <button key={mode} onClick={() => setViewMode(mode)}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                viewMode === mode
-                  ? 'bg-green-700 text-white border-green-700'
-                  : 'border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-700'
-              }`}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <ViewModeControls viewMode={viewMode} onChange={setViewMode} />
 
         {/* Book filter */}
-        <label className="flex items-center gap-1.5">
+        <div className="relative flex items-center gap-1.5">
           <span className="text-xs text-gray-400 shrink-0">الكتب:</span>
-          <select
-            value={selectedBookId}
-            onChange={e => setSelectedBookId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-green-300 focus:border-green-500"
+          <button
+            type="button"
+            onClick={() => setBooksOpen(open => !open)}
+            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-green-300"
           >
-            <option value="all">الكل</option>
-            {bookOptions.map(book => (
-              <option key={book.id} value={book.id}>
-                {book.title} ({book.count})
-              </option>
-            ))}
+            {allBooksSelected ? 'الكل' : `${selectedBookCount} من ${bookOptions.length}`} ▼
+          </button>
+          {booksOpen && (
+            <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+              <div className="max-h-72 overflow-auto space-y-1">
+                <label className="flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 text-gray-700 cursor-pointer hover:bg-green-50">
+                  <input
+                    type="checkbox"
+                    checked={allBooksSelected}
+                    onChange={() => {
+                      setExcludedBookIds(allBooksSelected
+                        ? new Set(bookOptions.map(book => book.id))
+                        : new Set()
+                      )
+                    }}
+                    className="accent-green-700"
+                  />
+                  <span className="font-medium">الكل</span>
+                </label>
+                <div className="h-px bg-gray-100" />
+                {bookOptions.map(book => {
+                  const checked = !excludedBookIds.has(book.id)
+                  return (
+                    <label
+                      key={book.id}
+                      className={`flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 cursor-pointer transition-colors ${
+                        checked ? 'text-green-800 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setExcludedBookIds(prev => {
+                            const next = new Set(prev)
+                            if (next.has(book.id)) next.delete(book.id)
+                            else next.add(book.id)
+                            return next
+                          })
+                        }}
+                        className="accent-green-700"
+                      />
+                      <span>{book.title} ({book.count})</span>
+                    </label>
+                  )
+                })}
+              </div>
+          </div>
+          )}
+        </div>
+
+        {/* Sort */}
+        <label className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-400 shrink-0">ترتيب:</span>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as SortBy)}
+            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-amber-300 focus:border-amber-500"
+          >
+            <option value="sihha">أصحية الكتب</option>
+            <option value="shuhura">الشهرة</option>
+            <option value="wafayat">وفيات المصنفين</option>
           </select>
         </label>
 
-        {/* Sort */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-400 shrink-0">ترتيب:</span>
-          {([ ['sihha', 'أصحية الكتب'], ['shuhura', 'الشهرة'], ['wafayat', 'وفيات المصنفين'] ] as [SortBy, string][]).map(([sort, label]) => (
-            <button key={sort} onClick={() => setSortBy(sort)}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                sortBy === sort
-                  ? 'bg-amber-600 text-white border-amber-600'
-                  : 'border-gray-200 text-gray-500 hover:border-amber-300 hover:text-amber-700'
-              }`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Match accuracy slider */}
-        <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+        {/* Match accuracy filter */}
+        <div className="relative flex items-center gap-1.5">
           <span className="text-xs text-gray-400 shrink-0">دقة التطابق:</span>
-          <div className="relative flex-1">
-            <input
-              aria-label="دقة التطابق"
-              title="دقة التطابق"
-              type="range"
-              min={1}
-              max={5}
-              step={1}
-              value={maxLevel}
-              onChange={e => setMaxLevel(Number(e.target.value))}
-              className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-teal-600"
-              dir="ltr"
-            />
-            {/* Tick marks */}
-            <div className="flex justify-between px-0.5 mt-1" aria-hidden>
-              {[1,2,3,4,5].map(v => (
-                <span key={v} className={`text-[9px] transition-colors ${v === maxLevel ? 'text-teal-600 font-semibold' : 'text-gray-300'}`}>|</span>
-              ))}
+          <button
+            type="button"
+            onClick={() => setAccuracyOpen(open => !open)}
+            className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-teal-300"
+          >
+            {LEVEL_LABELS[maxLevel]} ▼
+          </button>
+          {accuracyOpen && (
+            <div className="absolute right-0 top-full z-20 mt-2 w-44 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+              <div className="space-y-1">
+                {([1, 2, 3, 4, 5] as const).map(level => (
+                  <label
+                    key={level}
+                    className={`flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 cursor-pointer transition-colors ${
+                      maxLevel === level ? 'bg-teal-50 text-teal-800' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="takhrij-match-level"
+                      checked={maxLevel === level}
+                      onChange={() => {
+                        setMaxLevel(level)
+                        setAccuracyOpen(false)
+                      }}
+                      className="accent-teal-700"
+                    />
+                    <span>{LEVEL_LABELS[level]}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
-          <span className="text-xs text-teal-700 font-medium shrink-0 min-w-[90px] text-right">
-            {LEVEL_LABELS[maxLevel]}
-          </span>
+          )}
         </div>
       </div>
 
       {/* Content */}
-      {viewMode === 'ijmali'     && <IjmaliView     rows={filtered} />}
-      {viewMode === 'mutawassit' && <MutawassitView  rows={filtered} sourceId={sourceId} />}
-      {viewMode === 'tafsili'    && <TafsiliView     rows={filtered} sourceId={sourceId} />}
+      <CitationTextView rows={filtered} sourceId={sourceId} viewMode={viewMode} />
 
       {truncated && (
         <p className="text-xs text-gray-400 mt-2 text-center">
@@ -857,6 +870,8 @@ export default function TakhrijClient({
       )}
 
       <MatnComparisonSection rows={filtered} sourceId={sourceId} baseText={baseText} />
+        </>
+      )}
     </div>
   )
 }

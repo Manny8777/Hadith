@@ -1,10 +1,11 @@
 import pool from '@/lib/db'
 import { extractMatnForComparison } from '@/lib/hadithText'
 import TakhrijClient from './TakhrijClient'
-import type { TakhrijRow } from './TakhrijClient'
+import type { OtherTakhrijSource, TakhrijRow } from './TakhrijClient'
 
 async function fetchTakhrij(hadithId: number): Promise<{
   rows: TakhrijRow[]
+  otherSources: OtherTakhrijSource[]
   sourceId: number
   currentCompanionId: number | null
   totalBooks: number
@@ -15,7 +16,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
     `SELECT group_id, compound_matn_id FROM takhrij WHERE hadith_id = $1 LIMIT 1`,
     [hadithId]
   )
-  if (!groupRes.rows[0]) return { rows: [], sourceId: hadithId, currentCompanionId: null, totalBooks: 0, truncated: false, baseText: null }
+  if (!groupRes.rows[0]) return { rows: [], otherSources: [], sourceId: hadithId, currentCompanionId: null, totalBooks: 0, truncated: false, baseText: null }
   const groupId = groupRes.rows[0].group_id
   const refCompoundId: number | null = groupRes.rows[0].compound_matn_id ?? null
 
@@ -37,6 +38,8 @@ async function fetchTakhrij(hadithId: number): Promise<{
        b.takhrij_author     AS book_takhrij_author,
        b.takhrij_death      AS book_takhrij_death,
        h.tarf,
+       h.section_text,
+       h.chapter_text,
        h.part_num,
        h.page_num,
        h.tarqeem_harf,
@@ -95,6 +98,8 @@ async function fetchTakhrij(hadithId: number): Promise<{
     book_takhrij_author: r.book_takhrij_author as string | null,
     book_takhrij_death: r.book_takhrij_death != null ? Number(r.book_takhrij_death) : null,
     tarf: r.tarf as string | null,
+    section_text: r.section_text as string | null,
+    chapter_text: r.chapter_text as string | null,
     part_num: Number(r.part_num) || 0,
     page_num: Number(r.page_num) || 0,
     tarqeem_harf: r.tarqeem_harf as string | null,
@@ -117,7 +122,39 @@ async function fetchTakhrij(hadithId: number): Promise<{
   const baseRaw: string | null = baseContentRes.rows[0]?.content ?? null
   const baseText = baseRaw ? extractMatnForComparison(baseRaw) : null
 
-  return { rows: classified, sourceId: hadithId, currentCompanionId, totalBooks, truncated, baseText }
+  const otherSourcesRes = await pool.query(
+    `SELECT DISTINCT ON (hsc.book_id)
+       hsc.id,
+       hsc.book_id,
+       COALESCE(b.title, hsc.book_name, 'مصدر') AS book_title,
+       hsc.section_text,
+       hsc.part_text AS chapter_text,
+       hsc.part_num,
+       hsc.page_num,
+       hsc.tarf
+     FROM hadith_service_links hsl
+     JOIN hadith_service_content hsc ON hsc.id = hsl.service_content_id
+     LEFT JOIN books b ON b.id = hsc.book_id
+     WHERE hsl.hadith_id = $1
+       AND hsl.type_id = 8
+     ORDER BY hsc.book_id, hsc.id
+     LIMIT 50`,
+    [hadithId]
+  ).catch(() => ({ rows: [] }))
+
+  const otherSources: OtherTakhrijSource[] = otherSourcesRes.rows.map(r => ({
+    id: Number(r.id),
+    href: `/service-content/${Number(r.id)}`,
+    book_id: r.book_id != null ? Number(r.book_id) : null,
+    book_title: String(r.book_title || 'مصدر'),
+    section_text: r.section_text as string | null,
+    chapter_text: r.chapter_text as string | null,
+    part_num: Number(r.part_num) || 0,
+    page_num: Number(r.page_num) || 0,
+    tarf: r.tarf as string | null,
+  }))
+
+  return { rows: classified, otherSources, sourceId: hadithId, currentCompanionId, totalBooks, truncated, baseText }
 }
 
 export default async function TakhrijSection({
@@ -126,7 +163,7 @@ export default async function TakhrijSection({
   hadithId: number
   currentHadithId?: number
 }) {
-  const { rows, sourceId, totalBooks, truncated, baseText } = await fetchTakhrij(hadithId)
+  const { rows, otherSources, sourceId, totalBooks, truncated, baseText } = await fetchTakhrij(hadithId)
 
   if (rows.length === 0) return (
     <p className="text-sm text-gray-400 py-4">لا يوجد تخريج مسجل لهذا الحديث في قاعدة البيانات</p>
@@ -138,6 +175,7 @@ export default async function TakhrijSection({
   return (
     <TakhrijClient
       rows={rows}
+      otherSources={otherSources}
       sourceId={sourceId}
       totalBooks={totalBooks}
       mutabaatCount={mutabaatCount}
