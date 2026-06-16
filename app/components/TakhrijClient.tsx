@@ -558,7 +558,7 @@ function MatnComparisonSection({
   sourceId: number
   baseText: string | null
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [diffId, setDiffId] = useState<number | null>(null)
   const [diffLoading, setDiffLoading] = useState(false)
