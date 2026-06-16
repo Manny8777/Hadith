@@ -229,32 +229,7 @@ export default function NavHeader() {
   }
 
   return (
-    <>
-      <div
-        className="bg-amber-50 border-b border-amber-200 text-amber-950 text-sm leading-relaxed px-4 py-2.5"
-        dir="rtl"
-      >
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <p className="font-semibold">
-            <span className="text-amber-700">تنبيه:</span>{' '}
-            الموقع لا يزال قيد التطوير وغير جاهز للاستخدام بعد.
-          </p>
-          <p className="text-amber-900">
-            إن رغبت في المساهمة في هذا المشروع، تواصل معي عبر واتساب:{' '}
-            <a
-              href="https://wa.me/61426047327"
-              target="_blank"
-              rel="noopener noreferrer"
-              dir="ltr"
-              className="inline-block font-bold text-green-800 hover:text-green-900 underline underline-offset-2 [unicode-bidi:isolate]"
-            >
-              +61 426 047 327
-            </a>
-          </p>
-        </div>
-      </div>
-
-      <nav ref={navRef} className="bg-green-900 text-white shadow-md sticky top-0 z-50" dir="rtl">
+    <nav ref={navRef} className="bg-green-900 text-white" dir="rtl">
       <div className="flex items-center gap-1 px-4 py-2">
         <a
           href="/"
@@ -317,6 +292,5 @@ export default function NavHeader() {
         <NumberingToggle />
       </div>
     </nav>
-    </>
   )
 }
