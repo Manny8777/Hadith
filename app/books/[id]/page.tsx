@@ -303,6 +303,51 @@ export default async function BookPage({
   const topCompanions = (companionsRes as { rows: Array<{ id: number; name: string; abb_name: string | null; cnt: number }> }).rows
   const maxCompanionCnt = topCompanions[0]?.cnt || 1
 
+  // Detect service books: no hadith_toc entries but has hadith_service_content
+  type ServiceTypeRow = { type_id: number | null; cnt: number }
+  type ServiceSampleRow = { id: number; content: string; book_name: string | null; part_num: number; page_num: number }
+  let serviceContentData: {
+    cnt: number
+    typeBreakdown: ServiceTypeRow[]
+    samples: ServiceSampleRow[]
+  } | null = null
+
+  if (totalHadiths === 0) {
+    const [scCountRes, scTypesRes, scSamplesRes] = await Promise.all([
+      pool.query<{ cnt: number }>(
+        `SELECT COUNT(*)::int as cnt FROM hadith_service_content WHERE book_id = $1`,
+        [bookId]
+      ).catch(() => ({ rows: [{ cnt: 0 }] })),
+      pool.query<ServiceTypeRow>(
+        `SELECT hsl.type_id, COUNT(DISTINCT hsc.id)::int as cnt
+         FROM hadith_service_content hsc
+         JOIN hadith_service_links hsl ON hsl.service_content_id = hsc.id
+         WHERE hsc.book_id = $1
+         GROUP BY hsl.type_id ORDER BY cnt DESC LIMIT 10`,
+        [bookId]
+      ).catch(() => ({ rows: [] as ServiceTypeRow[] })),
+      pool.query<ServiceSampleRow>(
+        `SELECT id, content, book_name, part_num, page_num
+         FROM hadith_service_content WHERE book_id = $1 ORDER BY id LIMIT 5`,
+        [bookId]
+      ).catch(() => ({ rows: [] as ServiceSampleRow[] })),
+    ])
+    const cnt = scCountRes.rows[0]?.cnt ?? 0
+    if (cnt > 0) {
+      serviceContentData = {
+        cnt,
+        typeBreakdown: scTypesRes.rows,
+        samples: scSamplesRes.rows,
+      }
+    }
+  }
+
+  const SERVICE_TYPE_NAMES: Record<number, string> = {
+    1: 'الفقه', 2: 'المدرج', 3: 'الطب النبوي', 4: 'الأمثال',
+    5: 'المتواتر', 6: 'شروح الحديث', 7: 'أسباب الورود', 9: 'تخريج الرواة',
+    10: 'المتن المركب', 12: 'مختلف الحديث', 14: 'التفسير', 15: 'التراجم',
+  }
+
   // Grade breakdown
   type GradeRow = { grade: string; cnt: string }
   const gradeRows = (gradeRes as { rows: GradeRow[] }).rows
@@ -335,7 +380,10 @@ export default async function BookPage({
             </p>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-amber-200/60">
-            <span>{totalHadiths.toLocaleString('ar-EG')} حديث</span>
+            {serviceContentData
+              ? <span>{serviceContentData.cnt.toLocaleString('ar-EG')} محتوى خدمي</span>
+              : <span>{totalHadiths.toLocaleString('ar-EG')} حديث</span>
+            }
             {topChapters.length > 0 && <span>{topChapters.length} باب</span>}
             <Link href={`/books/${bookId}/narrators`} className="text-amber-300 hover:text-amber-100 transition-colors">
               رواة الكتاب ←
@@ -572,8 +620,65 @@ export default async function BookPage({
           </div>
         )}
 
-        {topChapters.length === 0 && sampleHadiths.length === 0 && (
+        {topChapters.length === 0 && sampleHadiths.length === 0 && !serviceContentData && (
           <p className="text-gray-400 text-center py-16">لا توجد بيانات لهذا الكتاب</p>
+        )}
+
+        {/* Service book content */}
+        {serviceContentData && (
+          <div>
+            <div className="mb-5 bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 leading-relaxed">
+              <strong>كتاب خدمي — </strong>
+              لا يحتوي هذا الكتاب على مسند أحاديث مستقل؛ بل يُوظَّف كمرجع خدمي مرتبط بالأحاديث في كتب أخرى.
+              يتوفر له <strong>{serviceContentData.cnt.toLocaleString('ar-EG')}</strong> محتوى في قاعدة البيانات.
+            </div>
+
+            {/* Type breakdown */}
+            {serviceContentData.typeBreakdown.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-base font-bold text-green-900 mb-3 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-green-500 rounded-full inline-block" />
+                  توزيع المحتوى
+                </h2>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {serviceContentData.typeBreakdown.map(t => (
+                    <div key={t.type_id ?? 'null'} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center justify-between">
+                      <span className="text-sm text-green-900 font-medium">
+                        {t.type_id != null ? (SERVICE_TYPE_NAMES[t.type_id] ?? `نوع ${t.type_id}`) : 'غير مصنَّف'}
+                      </span>
+                      <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                        {t.cnt.toLocaleString('ar-EG')} محتوى
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sample entries */}
+            {serviceContentData.samples.length > 0 && (
+              <div>
+                <h2 className="text-base font-bold text-green-900 mb-3 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-amber-500 rounded-full inline-block" />
+                  نماذج من المحتوى
+                </h2>
+                <div className="space-y-3">
+                  {serviceContentData.samples.map(s => (
+                    <div key={s.id} className="bg-white border border-gray-100 rounded-xl p-4">
+                      {(s.book_name || (s.part_num > 0 && s.page_num > 0)) && (
+                        <p className="text-[11px] text-gray-400 mb-1.5">
+                          {s.book_name}{s.part_num > 0 && s.page_num > 0 ? ` (${s.part_num}/${s.page_num})` : ''}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-700 leading-relaxed line-clamp-3" dir="rtl">
+                        {stripTags(s.content).slice(0, 300)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </main>
     </div>

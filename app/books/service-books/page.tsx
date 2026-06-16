@@ -59,9 +59,9 @@ export default async function ServiceBooksPage({
 
   const { rows: books } = await pool.query<ServiceBook>(
     `SELECT b.id, b.title, b.takhrij_author, b.takhrij_death,
-            COUNT(h.main_id)::int AS hadith_count
+            COUNT(hsc.id)::int AS hadith_count
      FROM books b
-     LEFT JOIN hadith_toc h ON h.book_id = b.id AND h.is_leaf = true
+     LEFT JOIN hadith_service_content hsc ON hsc.book_id = b.id
      WHERE b.id IN (SELECT DISTINCT book_id FROM hadith_service_content WHERE book_id IS NOT NULL)
      GROUP BY b.id, b.title, b.takhrij_author, b.takhrij_death
      ORDER BY ${orderSql}`,
@@ -146,7 +146,7 @@ export default async function ServiceBooksPage({
             <div className="text-2xl font-bold text-amber-300">
               {totalHadiths > 0 ? totalHadiths.toLocaleString('ar-EG') : '—'}
             </div>
-            <div className="text-green-200 text-xs mt-0.5">إجمالي المداخل</div>
+            <div className="text-green-200 text-xs mt-0.5">إجمالي المحتويات</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-amber-300">
@@ -295,7 +295,7 @@ function BookCard({
         </span>
         {book.hadith_count > 0 && (
           <span className="text-xs text-gray-400 shrink-0">
-            {book.hadith_count.toLocaleString('ar-EG')} مدخل
+            {book.hadith_count.toLocaleString('ar-EG')} محتوى
           </span>
         )}
       </div>
