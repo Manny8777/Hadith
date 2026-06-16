@@ -1,5 +1,16 @@
 /** Shared types and helpers for غريب الحديث (Gharib al-Hadith). */
 
+/** Service books allowed as غريب/معجم sources (sections الغريب والمعاجم + المعاجم). */
+export const GHAREEB_SOURCE_BOOK_IDS = [
+  78, // النهاية في غريب الحديث والأثر
+  79, // لسان العرب
+  80, // معجم البلدان
+  95, // معجم المعالم الجغرافية في السيرة النبوية
+  12, // المعجم الكبير
+  13, // المعجم الأوسط
+  14, // المعجم الصغير
+] as const
+
 export interface GhareebTag {
   word: string
   refId: number | null

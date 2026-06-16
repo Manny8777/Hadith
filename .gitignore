@@ -48,3 +48,6 @@ build.log
 # local database backup & offline dev (never commit)
 /db-backup/
 pgdata/
+
+# local agent diagnostic scripts (not part of the app)
+/scripts/diagnostics/

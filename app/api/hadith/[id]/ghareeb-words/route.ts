@@ -5,6 +5,7 @@ import {
   buildGhareebSourceFromRef,
   buildGhareebWord,
   dedupeGhareebWords,
+  GHAREEB_SOURCE_BOOK_IDS,
   parseGhareebTags,
   stripTashkeel,
   type GhareebSource,
@@ -39,13 +40,21 @@ async function fetchSourcesByGhareebRef(refId: number): Promise<GhareebSource[]>
        id::bigint AS source_ref_id
      FROM hadith_service_content
      WHERE content LIKE '%ربط="' || $1::text || '"%'
+       AND book_id = ANY($2::int[])
      ORDER BY
-       CASE WHEN book_name ILIKE '%نهاية%' THEN 0
-            WHEN book_name ILIKE '%غريب%' THEN 1
-            ELSE 2 END,
+       CASE book_id
+         WHEN 78 THEN 0
+         WHEN 79 THEN 1
+         WHEN 80 THEN 2
+         WHEN 95 THEN 3
+         WHEN 12 THEN 4
+         WHEN 13 THEN 5
+         WHEN 14 THEN 6
+         ELSE 7
+       END,
        id
      LIMIT 5`,
-    [refId]
+    [refId, GHAREEB_SOURCE_BOOK_IDS]
   )
 
   const sources: GhareebSource[] = []
