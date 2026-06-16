@@ -57,9 +57,10 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       [mainId]
     ),
     pool.query(
-      `SELECT ic.narrator_ids, ih.isnad_type
+      `SELECT ic.narrator_ids, ih.isnad_type, it.sand_tahdeth AS tahdeth_term
        FROM isnad_hadiths ih
        JOIN isnad_chains ic ON ih.isnad_id = ic.id
+       LEFT JOIN isnad_tahdeth it ON it.id = ih.sanad_tahdeth_id
        WHERE ih.hadith_id = $1`,
       [mainId]
     ),
@@ -171,10 +172,10 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const chains: Chain[] = []
   if (isnadRes.rows.length > 0) {
     const allIds = new Set<number>()
-    const chainIdArrays: number[][] = []
+    const chainRows: Array<{ ids: number[]; tahdethTerm: string | null }> = []
     for (const row of isnadRes.rows) {
       const ids = (row.narrator_ids as string).trim().split(/\s+/).filter(Boolean).map(Number)
-      chainIdArrays.push(ids)
+      chainRows.push({ ids, tahdethTerm: (row.tahdeth_term as string | null) ?? null })
       ids.forEach(nid => allIds.add(nid))
     }
     if (allIds.size > 0) {
@@ -187,7 +188,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       narRes.rows.forEach(n => { narMap[n.id] = n })
 
       const seenChains = new Set<string>()
-      for (const ids of chainIdArrays) {
+      for (const { ids, tahdethTerm } of chainRows) {
         const key = ids.join('-')
         if (seenChains.has(key)) continue
         seenChains.add(key)
@@ -196,7 +197,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
           martaba_ibn_hajar: null, martaba_zahabi: null,
           is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
         })
-        chains.push({ narrators })
+        chains.push({ narrators, tahdethTerm })
       }
     }
   }

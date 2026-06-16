@@ -23,7 +23,7 @@ export async function GET(
   // Note: SELECT DISTINCT requires ORDER BY expressions to be in the select list;
   // use a subquery to sort after deduplication.
   const { rows: rawChains } = await pool.query(
-    `SELECT narrator_id_array, hadith_id, book_title, takhrij_author, takhrij_death, hadith_num
+    `SELECT narrator_id_array, hadith_id, book_title, takhrij_author, takhrij_death, hadith_num, tahdeth_raw
      FROM (
        SELECT DISTINCT
          ic.narrator_id_array,
@@ -31,12 +31,14 @@ export async function GET(
          b.title as book_title,
          b.takhrij_author,
          b.takhrij_death,
-         ht.tarqeem_harf as hadith_num
+         ht.tarqeem_harf as hadith_num,
+         it.sand_tahdeth as tahdeth_raw
        FROM takhrij t
        JOIN isnad_hadiths ih ON ih.hadith_id = t.hadith_id
        JOIN isnad_chains ic ON ic.id = ih.isnad_id
        JOIN hadith_toc ht ON ht.main_id = t.hadith_id
        JOIN books b ON b.id = ht.book_id
+       LEFT JOIN isnad_tahdeth it ON it.id = ih.sanad_tahdeth_id
        WHERE t.group_id = $1
          AND array_length(ic.narrator_id_array, 1) >= 2
      ) sub
@@ -44,9 +46,8 @@ export async function GET(
      LIMIT 100`,
     [groupId]
   ).catch(async () => {
-    // Fallback without author/death columns if books schema differs
     return pool.query(
-      `SELECT narrator_id_array, hadith_id, book_title, NULL::text as takhrij_author, NULL::int as takhrij_death, NULL::text as hadith_num
+      `SELECT narrator_id_array, hadith_id, book_title, NULL::text as takhrij_author, NULL::int as takhrij_death, NULL::text as hadith_num, NULL::text as tahdeth_raw
        FROM (
          SELECT DISTINCT
            ic.narrator_id_array,
@@ -67,6 +68,12 @@ export async function GET(
   })
 
   if (rawChains.length === 0) return NextResponse.json({ chains: [], groupId })
+
+  // Fetch transmission term types lookup
+  const tahdethTypes: Record<number, string> = {}
+  await pool.query(`SELECT id, text FROM isnad_tahdeth_types LIMIT 2000`)
+    .then(r => { r.rows.forEach((row: { id: number; text: string }) => { tahdethTypes[row.id] = row.text }) })
+    .catch(() => {})
 
   // Step 3: Collect all unique narrator IDs
   const allIds = new Set<number>()
@@ -94,11 +101,12 @@ export async function GET(
     takhrij_author: row.takhrij_author,
     takhrij_death: row.takhrij_death,
     hadith_num: row.hadith_num,
+    tahdethRaw: (row.tahdeth_raw as string | null) ?? null,
     narrators: (row.narrator_id_array as number[]).map(nid => narMap[nid] || {
       id: nid, name: `[${nid}]`, abb_name: null, martaba_ibn_hajar: null,
       is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
     }),
   }))
 
-  return NextResponse.json({ chains, groupId })
+  return NextResponse.json({ chains, groupId, tahdethTypes })
 }

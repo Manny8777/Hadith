@@ -71,6 +71,7 @@ export interface NarratorInChain {
 
 export interface Chain {
   narrators: NarratorInChain[]
+  tahdethTerm?: string | null
 }
 
 export interface Judgment {
@@ -620,13 +621,18 @@ export default function HadithSidebarLayout({
             <div className="space-y-3">
               {chains.map((chain, ci) => (
                 <div key={ci} className="rounded-xl border border-gray-100 bg-white p-5">
-                  <h3 className="font-bold text-green-900 text-sm mb-3 flex items-center gap-2">
+                  <h3 className="font-bold text-green-900 text-sm mb-3 flex items-center gap-2 flex-wrap">
                     {chains.length > 1
                       ? `السند ${ci === 0 ? 'الأول' : ci === 1 ? 'الثاني' : ci === 2 ? 'الثالث' : ci + 1}`
                       : 'السند'}
                     {chainDepthLabel(chain.narrators.length) && (
                       <span className="text-xs font-normal text-gray-400">
                         {chainDepthLabel(chain.narrators.length)} — {chain.narrators.length} رواة
+                      </span>
+                    )}
+                    {chain.tahdethTerm && (
+                      <span className="text-[10px] font-normal font-serif px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 ms-auto">
+                        {chain.tahdethTerm}
                       </span>
                     )}
                   </h3>
