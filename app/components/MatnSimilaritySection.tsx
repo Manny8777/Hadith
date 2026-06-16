@@ -1,19 +1,28 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import HadithNumber from './HadithNumber'
+import { prepareForComparison, wordDice, splitIntoPhrases } from '@/lib/arabicSimilarity'
 
 interface SimilarityRow {
-  hadith_id:    number
-  book_title:   string | null
-  book_death:   number | null
-  num_harf:     string | null
-  num_matboa:   string | null
-  old_label:    string | null
-  matn_display: string | null
-  score:        number
-  is_source:    boolean
+  hadith_id:       number
+  book_title:      string | null
+  book_death:      number | null
+  num_harf:        string | null
+  num_matboa:      string | null
+  old_label:       string | null
+  matn_display:    string | null
+  matn_normalized: string
+  score:           number
+  is_source:       boolean
+}
+
+interface ApiData {
+  results:              SimilarityRow[]
+  base_word_count:      number
+  base_matn_display:    string
+  base_matn_normalized: string
 }
 
 function scoreBadgeClass(score: number): string {
@@ -31,29 +40,74 @@ function scoreBarClass(score: number): string {
 }
 
 export default function MatnSimilaritySection({ hadithId }: { hadithId: number }) {
-  const [allRows, setAllRows]           = useState<SimilarityRow[]>([])
-  const [baseWordCount, setBaseWordCount] = useState(0)
-  const [loading, setLoading]           = useState(true)
-  const [error, setError]               = useState(false)
-  const [minScore, setMinScore]         = useState(0)
+  const [data, setData]             = useState<ApiData | null>(null)
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState(false)
+  const [minScore, setMinScore]     = useState(0)
+  // null = all selected (use server scores); Set<number> = specific phrase indices
+  const [selected, setSelected]     = useState<Set<number> | null>(null)
 
   useEffect(() => {
     setLoading(true)
+    setSelected(null)
     fetch(`/api/hadith/${hadithId}/matn-similarity`)
       .then(r => r.json())
-      .then((data: { results?: SimilarityRow[]; base_word_count?: number; error?: string }) => {
-        if (data.error || !data.results) { setError(true); return }
-        setAllRows(data.results)
-        setBaseWordCount(data.base_word_count ?? 0)
+      .then((d: ApiData & { error?: string }) => {
+        if (d.error || !d.results) { setError(true); return }
+        setData(d)
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [hadithId])
 
-  const filtered = useMemo(
-    () => allRows.filter(r => r.is_source || r.score >= minScore),
-    [allRows, minScore]
+  const phrases = useMemo(
+    () => data ? splitIntoPhrases(data.base_matn_display) : [],
+    [data]
   )
+
+  // When selected is null → use server scores; when partial → recompute
+  const rowsWithScores = useMemo(() => {
+    if (!data) return []
+    if (selected === null) return data.results
+
+    const phraseIndices = selected.size === 0
+      ? Array.from({ length: phrases.length }, (_, i) => i) // all if none selected
+      : Array.from(selected)
+
+    const queryText = phraseIndices.map(i => phrases[i]).join(' ')
+    const queryNorm = prepareForComparison(queryText)
+
+    if (!queryNorm) return data.results
+
+    return data.results.map(row => ({
+      ...row,
+      score: row.matn_normalized
+        ? Math.round(wordDice(queryNorm, row.matn_normalized) * 100)
+        : 0,
+    })).sort((a, b) => b.score - a.score)
+  }, [data, selected, phrases])
+
+  const filtered = useMemo(
+    () => rowsWithScores.filter(r => r.is_source || r.score >= minScore),
+    [rowsWithScores, minScore]
+  )
+
+  const togglePhrase = useCallback((idx: number) => {
+    setSelected(prev => {
+      // if null (all), start with all indices except this one
+      const full = new Set(phrases.map((_, i) => i))
+      const current = prev ?? full
+      const next = new Set(current)
+      if (next.has(idx)) next.delete(idx)
+      else next.add(idx)
+      // if all selected again, go back to null (server scores)
+      if (next.size === phrases.length) return null
+      return next
+    })
+  }, [phrases])
+
+  const isPartialMode = selected !== null
+  const allCount = data?.results.length ?? 0
 
   return (
     <section id="matn-similarity" className="mb-8 scroll-mt-14" dir="rtl">
@@ -67,13 +121,8 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
         <div className="flex-1 h-px bg-green-100" />
       </div>
 
-      {/* ── Old vs New labels ── */}
+      {/* ── Explanation pill ── */}
       <div className="flex flex-wrap gap-2 mb-4 text-[11px]">
-        <span className="inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-teal-400 shrink-0" />
-          <span className="font-semibold">النظام القديم</span>
-          تصنيف مسبق (بلفظه / بمثله / بنحوه…)
-        </span>
         <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full">
           <span className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
           <span className="font-semibold">الحساب المباشر</span>
@@ -93,24 +142,72 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
         </div>
       )}
 
-      {!loading && !error && allRows.length > 0 && (
+      {!loading && !error && data && allCount > 0 && (
         <>
+          {/* ── Phrase selector ── */}
+          {phrases.length > 0 && (
+            <div className="mb-5 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-semibold text-gray-600 tracking-wide">
+                  اختر أجزاء المتن للمقارنة
+                </span>
+                <div className="flex gap-2">
+                  {isPartialMode && (
+                    <button
+                      onClick={() => setSelected(null)}
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 hover:underline px-2 py-0.5 rounded"
+                    >
+                      الكل
+                    </button>
+                  )}
+                  {!isPartialMode && (
+                    <span className="text-[11px] text-gray-400">انقر على جزء لتحديده</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 leading-relaxed">
+                {phrases.map((phrase, idx) => {
+                  const isActive = selected === null || selected.has(idx)
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => togglePhrase(idx)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer text-right ${
+                        isActive
+                          ? 'bg-indigo-100 text-indigo-800 border-indigo-300 hover:bg-indigo-200'
+                          : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {phrase}
+                    </button>
+                  )
+                })}
+              </div>
+              {isPartialMode && (
+                <p className="mt-2 text-[11px] text-amber-700">
+                  المقارنة بناءً على {selected!.size} من {phrases.length} أجزاء
+                </p>
+              )}
+            </div>
+          )}
+
           {/* ── Controls bar ── */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-5 p-3 bg-gray-50 rounded-xl border border-gray-100">
-            {/* Count */}
             <span className="text-xs text-gray-600 font-medium shrink-0">
               {filtered.length} رواية
-              {filtered.length !== allRows.length && (
-                <span className="text-gray-400 font-normal"> (من {allRows.length})</span>
+              {filtered.length !== allCount && (
+                <span className="text-gray-400 font-normal"> (من {allCount})</span>
               )}
-              {baseWordCount > 0 && (
+              {(data.base_word_count ?? 0) > 0 && (
                 <span className="text-gray-400 font-normal mr-2">
-                  · كلمات المتن الأصلي: {baseWordCount}
+                  · كلمات المتن: {data.base_word_count}
                 </span>
+              )}
+              {isPartialMode && (
+                <span className="mr-2 text-amber-600 font-semibold">· مقارنة جزئية</span>
               )}
             </span>
 
-            {/* Slider */}
             <div className="flex items-center gap-3 flex-1 min-w-[240px]">
               <span className="text-xs text-gray-500 shrink-0">أدنى نسبة تطابق:</span>
               <input
@@ -139,7 +236,6 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
               >
                 {/* Citation line */}
                 <div className="flex items-start gap-3 px-4 py-3">
-                  {/* Ordinal */}
                   <span className="text-gray-300 text-xs shrink-0 pt-0.5 w-5 text-center">
                     {i + 1}
                   </span>
@@ -187,17 +283,17 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
                         </>
                       )}
 
-                      {/* Badges */}
                       <span className="inline-flex flex-wrap gap-1 mr-0.5">
                         {row.is_source && (
                           <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
                             المصدر الحالي
                           </span>
                         )}
-                        {/* Old system label */}
                         {row.old_label ? (
-                          <span className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-1.5 py-0.5 rounded-full"
-                            title="تصنيف النظام القديم">
+                          <span
+                            className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-1.5 py-0.5 rounded-full"
+                            title="تصنيف النظام القديم"
+                          >
                             {row.old_label}
                           </span>
                         ) : !row.is_source && (
@@ -216,10 +312,7 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
                     row.is_source ? 'border-amber-100 bg-amber-50/30' : 'border-gray-100 bg-gray-50/50'
                   }`}>
                     <p className="text-[11px] text-gray-400 mb-1.5 font-medium tracking-wide">المتن</p>
-                    <p
-                      className="text-sm leading-loose text-gray-800 font-serif"
-                      dir="rtl"
-                    >
+                    <p className="text-sm leading-loose text-gray-800 font-serif" dir="rtl">
                       {row.matn_display}
                     </p>
                   </div>
@@ -236,7 +329,7 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
         </>
       )}
 
-      {!loading && !error && allRows.length === 0 && (
+      {!loading && !error && (!data || allCount === 0) && (
         <p className="text-sm text-gray-400 py-4">لا يوجد تخريج لهذا الحديث</p>
       )}
     </section>

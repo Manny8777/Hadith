@@ -1,36 +1,9 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import { extractMatnForComparison, splitSanadMatn } from '@/lib/hadithText'
+import { normalizeArabic, wordDice, prepareForComparison } from '@/lib/arabicSimilarity'
 
 export const dynamic = 'force-dynamic'
-
-// Mirror PostgreSQL normalize_arabic(): alef variants, taa marbuta, alef maqsura, diacritics, tatweel
-function normalizeArabic(text: string): string {
-  return text
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي')
-    .replace(/[ًٌٍَُِّْٰ]/g, '')
-    .replace(/ـ/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-// LCS-based Dice coefficient on word sequences — order-aware, same as TakhrijClient diff
-function wordDice(a: string, b: string): number {
-  const aw = normalizeArabic(a).split(/\s+/).filter(Boolean)
-  const bw = normalizeArabic(b).split(/\s+/).filter(Boolean)
-  if (aw.length === 0 && bw.length === 0) return 1
-  if (aw.length === 0 || bw.length === 0) return 0
-  const m = aw.length, n = bw.length
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
-  for (let i = 1; i <= m; i++)
-    for (let j = 1; j <= n; j++)
-      dp[i][j] = aw[i - 1] === bw[j - 1]
-        ? dp[i - 1][j - 1] + 1
-        : Math.max(dp[i - 1][j], dp[i][j - 1])
-  return (2 * dp[m][n]) / (m + n)
-}
 
 export async function GET(
   _req: Request,
@@ -49,6 +22,8 @@ export async function GET(
   const baseRaw: string | null = baseRes.rows[0]?.content ?? null
   const baseMatn = baseRaw ? extractMatnForComparison(baseRaw) : ''
   if (!baseMatn) return NextResponse.json({ results: [], error: 'no_base_matn' })
+
+  const baseDisplay = baseRaw ? (splitSanadMatn(baseRaw).matn || '') : ''
 
   // Fetch all parallel hadiths in the same takhrij group + their old label
   const parallelRes = await pool.query(
@@ -75,25 +50,33 @@ export async function GET(
     [hadithId]
   ).catch(() => ({ rows: [] }))
 
-  const baseWords = normalizeArabic(baseMatn).split(/\s+/).filter(Boolean).length
+  const baseNormalized = normalizeArabic(baseMatn)
+  const baseWords = baseNormalized.split(/\s+/).filter(Boolean).length
 
   const results = parallelRes.rows.map(row => {
     const content = (row.content as string) || ''
     const compMatn = content ? extractMatnForComparison(content) : ''
-    const score = compMatn ? wordDice(baseMatn, compMatn) : 0
+    const matnNormalized = compMatn ? normalizeArabic(compMatn) : ''
+    const score = matnNormalized ? wordDice(baseNormalized, matnNormalized) : 0
     const { matn: matnDisplay } = splitSanadMatn(content)
     return {
-      hadith_id:    Number(row.hadith_id),
-      book_title:   (row.book_title as string | null) ?? null,
-      book_death:   row.takhrij_death != null ? Number(row.takhrij_death) : null,
-      num_harf:     (row.tarqeem_harf    as string | null) ?? null,
-      num_matboa:   (row.tarqeem_matboa1 as string | null) ?? null,
-      old_label:    row.old_label ? (row.old_label as string).replace(/\.$/, '').trim() : null,
-      matn_display: matnDisplay || null,
-      score:        Math.round(score * 100),
-      is_source:    Number(row.hadith_id) === hadithId,
+      hadith_id:      Number(row.hadith_id),
+      book_title:     (row.book_title as string | null) ?? null,
+      book_death:     row.takhrij_death != null ? Number(row.takhrij_death) : null,
+      num_harf:       (row.tarqeem_harf    as string | null) ?? null,
+      num_matboa:     (row.tarqeem_matboa1 as string | null) ?? null,
+      old_label:      row.old_label ? (row.old_label as string).replace(/\.$/, '').trim() : null,
+      matn_display:   matnDisplay || null,
+      matn_normalized: matnNormalized,
+      score:          Math.round(score * 100),
+      is_source:      Number(row.hadith_id) === hadithId,
     }
   }).sort((a, b) => b.score - a.score)
 
-  return NextResponse.json({ results, base_word_count: baseWords })
+  return NextResponse.json({
+    results,
+    base_word_count:  baseWords,
+    base_matn_display: baseDisplay,
+    base_matn_normalized: prepareForComparison(baseDisplay),
+  })
 }
