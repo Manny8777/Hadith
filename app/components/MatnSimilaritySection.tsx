@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import HadithNumber from './HadithNumber'
-import { prepareForComparison, wordDice, splitIntoPhrases } from '@/lib/arabicSimilarity'
+import { prepareForComparison, wordDice, queryRecall, splitIntoPhrases } from '@/lib/arabicSimilarity'
 
 interface SimilarityRow {
   hadith_id:       number
@@ -79,10 +79,12 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
 
     if (!queryNorm) return data.results
 
+    // Use queryRecall in partial mode: scores how much of the selected portion
+    // appears in each hadith (100% = phrase fully present), not penalised by matn length
     return data.results.map(row => ({
       ...row,
       score: row.matn_normalized
-        ? Math.round(wordDice(queryNorm, row.matn_normalized) * 100)
+        ? Math.round(queryRecall(queryNorm, row.matn_normalized) * 100)
         : 0,
     })).sort((a, b) => b.score - a.score)
   }, [data, selected, phrases])
