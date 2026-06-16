@@ -135,6 +135,16 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
+  // Parse books_takhrij: space-separated book IDs on hadith_toc
+  const booksTakhrijIds = (h.books_takhrij || '').trim().split(/\s+/).map(Number).filter((n: number) => n > 0)
+  const booksTakhrijRes = booksTakhrijIds.length > 0
+    ? await pool.query<{ id: number; title: string }>(
+        `SELECT id, title FROM books WHERE id = ANY($1::int[])`,
+        [booksTakhrijIds]
+      ).catch(() => ({ rows: [] as Array<{ id: number; title: string }> }))
+    : { rows: [] as Array<{ id: number; title: string }> }
+  const booksTakhrij = booksTakhrijRes.rows
+
   // Dominant isnad type (most frequent across chains)
   const isnadTypeCounts: Record<number, number> = {}
   for (const row of isnadRes.rows) {
@@ -276,6 +286,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       relatedHadiths={relatedHadiths}
       takhrijBooks={takhrijBooks}
       takhrijSummary={takhrijSummary}
+      booksTakhrij={booksTakhrij}
       hadithServices={hadithServices}
       isnadType={dominantIsnadType}
       matngroupSlot={<MatnGroupSection hadithId={mainId} />}
