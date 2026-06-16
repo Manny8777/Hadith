@@ -13,13 +13,13 @@ export function parseGhareebTags(xml: string): GhareebTag[] {
   const scope = matnStart >= 0 ? xml.slice(matnStart) : xml
 
   const tags: GhareebTag[] = []
-  const re = /<غريب[^>]*?(?:ربط="(\d+)")?[^>]*>([\s\S]*?)<\/غريب>/g
+  const re = /<غريب([^>]*)>([\s\S]*?)<\/غريب>/g
   let m: RegExpExecArray | null
   while ((m = re.exec(scope)) !== null) {
     const word = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
     if (!word) continue
-    const refRaw = m[1]?.trim()
-    const refId = refRaw && /^\d+$/.test(refRaw) ? parseInt(refRaw, 10) : null
+    const refMatch = m[1].match(/ربط\s*=\s*"(\d+)"/)
+    const refId = refMatch ? parseInt(refMatch[1], 10) : null
     tags.push({ word, refId })
   }
   return tags

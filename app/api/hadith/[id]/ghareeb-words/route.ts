@@ -105,7 +105,7 @@ async function fetchDefinitions(
 
   if (tagRefId) {
     const fromRef = await fetchSourcesByGhareebRef(tagRefId)
-    sources.push(...fromRef)
+    if (fromRef.length > 0) return dedupeSources(fromRef)
   }
 
   const fromLinks = await pool.query<ContentRow>(
@@ -181,7 +181,7 @@ async function wordsFromGhareebTags(content: string): Promise<GhareebWord[]> {
           formId: row.form_id,
           formText: tag.word,
           wordId: row.word_id,
-          wordText: row.word_text,
+          wordText: row.form_text,
         },
         sources
       )
