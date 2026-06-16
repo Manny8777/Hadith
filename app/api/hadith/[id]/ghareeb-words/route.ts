@@ -55,7 +55,7 @@ async function fetchSourcesByGhareebRef(refId: number): Promise<GhareebSource[]>
        END,
        id
      LIMIT 8`,
-    [refId, GHAREEB_SOURCE_BOOK_IDS]
+    [refId, [...GHAREEB_SOURCE_BOOK_IDS]]
   )
 
   const sources: GhareebSource[] = []
@@ -153,7 +153,10 @@ export async function GET(
 
     const words = dedupeGhareebWords(await wordsFromGhareebTags(content))
 
-    return NextResponse.json({ words, matn })
+    return NextResponse.json(
+      { words, matn },
+      { headers: { 'X-Ghareeb-Sources': 'v2' } }
+    )
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     return NextResponse.json({ error: msg }, { status: 500 })
