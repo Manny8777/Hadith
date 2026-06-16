@@ -364,7 +364,7 @@ export default function HadithSidebarLayout({
           )
         })()}
 
-        {/* Isnad type badge + غريب الحديث badge */}
+        {/* Isnad type badge + tahdeth term + غريب الحديث badge */}
         <div className="flex flex-wrap gap-1.5 mb-2">
           {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
             const t = ISNAD_TYPE_MAP[isnadType]
@@ -374,6 +374,18 @@ export default function HadithSidebarLayout({
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full border font-semibold text-xs ${t.cls}`}
               >
                 {t.label}
+              </span>
+            )
+          })()}
+          {(() => {
+            const terms = chains.map(c => c.tahdethTerm).filter(Boolean) as string[]
+            if (terms.length === 0) return null
+            const freq: Record<string, number> = {}
+            terms.forEach(t => { freq[t] = (freq[t] ?? 0) + 1 })
+            const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0]
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border font-serif text-xs bg-teal-50 text-teal-700 border-teal-200">
+                {dominant}
               </span>
             )
           })()}
