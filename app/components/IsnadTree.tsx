@@ -189,16 +189,21 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
 
 // ─── Linear single-chain display ──────────────────────────────────────────────
 
-function parseTahdeth(raw: string | null | undefined, types: Record<number, string>): string[] {
-  if (!raw) return []
-  const parts = raw.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return []
-  const ids = parts.map(p => parseInt(p, 10))
-  if (ids.every(n => !isNaN(n) && n > 0)) {
-    return ids.map(id => types[id] || '')
+// sand_tahdeth format: "narrator_id type_id$ narrator_id type_id$ ..." (last entry may omit type_id)
+function parseTahdeth(raw: string | null | undefined, types: Record<number, string>): Record<number, string> {
+  if (!raw) return {}
+  const result: Record<number, string> = {}
+  for (const seg of raw.split('$')) {
+    const parts = seg.trim().split(/\s+/)
+    if (parts.length >= 2) {
+      const narratorId = parseInt(parts[0], 10)
+      const typeId = parseInt(parts[1], 10)
+      if (!isNaN(narratorId) && !isNaN(typeId) && types[typeId]) {
+        result[narratorId] = types[typeId]
+      }
+    }
   }
-  // Plain text: return as single overall term
-  return [raw]
+  return result
 }
 
 function LinearChain({
@@ -224,23 +229,16 @@ function LinearChain({
     ? chain.takhrij_author + (chain.takhrij_death ? ` (${chain.takhrij_death}هـ)` : '')
     : chain.bookTitle
 
-  const tahdethLinks = parseTahdeth(chain.tahdethRaw, tahdethTypes)
-  const overallTerm = tahdethLinks.length === 1 && chain.narrators.length > 1 ? tahdethLinks[0] : null
-  const perLinkTerms = tahdethLinks.length > 1 ? tahdethLinks : []
+  const narratorTermMap = parseTahdeth(chain.tahdethRaw, tahdethTypes)
 
   return (
     <div className="flex flex-col items-center">
-      {overallTerm && (
-        <span className="mb-1 text-[10px] font-serif px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-          {overallTerm}
-        </span>
-      )}
       {/* Prophet root */}
       <div className="bg-green-900 text-white font-bold text-sm font-serif px-5 py-2.5 rounded-xl border-2 border-green-700 min-w-40 text-center shadow-sm">
         النبي ﷺ
       </div>
 
-      {chain.narrators.map((nar, narIdx) => {
+      {chain.narrators.map((nar) => {
         const isSelected = selectedNarratorId === nar.id
         const isExpanded = expandedNarrators.has(nar.id)
         const relatedChains = allChains.filter(
@@ -251,7 +249,7 @@ function LinearChain({
           <div key={nar.id} className="flex flex-col items-center w-full">
             {/* Connector */}
             {(() => {
-              const term = perLinkTerms[narIdx] || ''
+              const term = narratorTermMap[nar.id] || ''
               return term ? (
                 <div className="flex flex-col items-center py-0.5">
                   <div className="w-px h-2 bg-gray-300 shrink-0" />
