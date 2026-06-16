@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useNumbering } from '@/lib/numberingContext'
 
 export default function HadithNumSearch({ bookId }: { bookId: number }) {
+  const { pref } = useNumbering()
   const [num, setNum] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,7 +17,9 @@ export default function HadithNumSearch({ bookId }: { bookId: number }) {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`/api/books/${bookId}/by-num?num=${encodeURIComponent(trimmed)}`)
+      const res = await fetch(
+        `/api/books/${bookId}/by-num?num=${encodeURIComponent(trimmed)}&pref=${pref}`
+      )
       const data = await res.json()
       if (data.found && data.main_id) {
         router.push(`/hadith/${data.main_id}`)

@@ -2,10 +2,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useNumbering } from '@/lib/numberingContext'
 
 interface Book { id: number; title: string; takhrij_author: string | null; takhrij_death: number | null }
 
 export default function FindByNumberClient({ books }: { books: Book[] }) {
+  const { pref } = useNumbering()
   const [bookId, setBookId] = useState<string>('')
   const [num, setNum] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,7 +26,9 @@ export default function FindByNumberClient({ books }: { books: Book[] }) {
     setResults(null)
 
     try {
-      const res = await fetch(`/api/books/${bid}/by-num?num=${encodeURIComponent(trimmedNum)}`)
+      const res = await fetch(
+        `/api/books/${bid}/by-num?num=${encodeURIComponent(trimmedNum)}&pref=${pref}`
+      )
       const data = await res.json()
       if (!data.found) {
         setError(`لم يُعثر على الحديث رقم "${trimmedNum}" في هذا الكتاب`)

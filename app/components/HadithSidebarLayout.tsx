@@ -641,7 +641,7 @@ export default function HadithSidebarLayout({
 
         {/* ── التخريج ── */}
         <section id="takhrij" className="mb-8 scroll-mt-14">
-          <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من النظام القديم" />
+          <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع" />
           {takhrijSlot}
         </section>
 

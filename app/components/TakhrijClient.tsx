@@ -20,12 +20,14 @@ function getMatchLevel(desc: string | null): number {
 }
 
 const LEVEL_LABELS: Record<number, string> = {
-  1: 'بلفظه فقط',
-  2: 'بلفظه + بمثله',
-  3: 'حتى بنحوه',
-  4: 'حتى بمعناه',
-  5: 'الكل',
+  1: 'بلفظه',
+  2: 'بمثله',
+  3: 'بنحوه',
+  4: 'بمعناه',
+  5: 'غير محدد',
 }
+
+const LEVEL_OPTIONS = [1, 2, 3, 4, 5] as const
 
 // ── Word diff ─────────────────────────────────────────────────────────────────
 
@@ -648,7 +650,7 @@ export default function TakhrijClient({
   const [sourceGroup, setSourceGroup] = useState<SourceGroup>('matn')
   const [viewMode, setViewMode] = useState<ViewMode>('ijmali')
   const [sortBy, setSortBy] = useState<SortBy>('sihha')
-  const [maxLevel, setMaxLevel] = useState<number>(5)
+  const [excludedLevels, setExcludedLevels] = useState<Set<number>>(() => new Set())
   const [excludedBookIds, setExcludedBookIds] = useState<Set<number>>(() => new Set())
   const [booksOpen, setBooksOpen] = useState(false)
   const [accuracyOpen, setAccuracyOpen] = useState(false)
@@ -675,6 +677,9 @@ export default function TakhrijClient({
   const selectedBookCount = bookOptions.filter(book => !excludedBookIds.has(book.id)).length
   const allBooksSelected = bookOptions.length > 0 && selectedBookCount === bookOptions.length
 
+  const selectedLevelCount = LEVEL_OPTIONS.filter(level => !excludedLevels.has(level)).length
+  const allLevelsSelected = selectedLevelCount === LEVEL_OPTIONS.length
+
   const bookFiltered = useMemo(
     () => sorted.filter(r => !excludedBookIds.has(r.book_id)),
     [sorted, excludedBookIds]
@@ -682,8 +687,8 @@ export default function TakhrijClient({
 
   // Apply match-precision filter inside the selected book; source hadith is kept when visible.
   const filtered = useMemo(
-    () => bookFiltered.filter(r => r.main_id === sourceId || getMatchLevel(r.matn_description) <= maxLevel),
-    [bookFiltered, sourceId, maxLevel]
+    () => bookFiltered.filter(r => r.main_id === sourceId || !excludedLevels.has(getMatchLevel(r.matn_description))),
+    [bookFiltered, sourceId, excludedLevels]
   )
 
   const visibleBooks = useMemo(() => new Set(filtered.map(r => r.book_id)).size, [filtered])
@@ -692,6 +697,26 @@ export default function TakhrijClient({
 
   return (
     <div dir="rtl">
+      {/* Summary bar */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap text-xs">
+        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
+          {filtered.length} رواية في {visibleBooks} كتاب
+          {filtered.length !== rows.length && (
+            <span className="text-gray-400 mr-1">(من {rows.length})</span>
+          )}
+        </span>
+        {visibleMutabaat > 0 && (
+          <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
+            {visibleMutabaat} متابعة
+          </span>
+        )}
+        {visibleShawahid > 0 && (
+          <span className="bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full font-medium">
+            {visibleShawahid} شاهد
+          </span>
+        )}
+      </div>
+
       <div className="flex items-center gap-2 mb-4">
         {([
           ['matn', 'كتب المتون', visibleBooks || totalBooks],
@@ -722,26 +747,6 @@ export default function TakhrijClient({
         </>
       ) : (
         <>
-      {/* Summary bar */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap text-xs">
-        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
-          {filtered.length} رواية في {visibleBooks} كتاب
-          {filtered.length !== rows.length && (
-            <span className="text-gray-400 mr-1">(من {rows.length})</span>
-          )}
-        </span>
-        {visibleMutabaat > 0 && (
-          <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-            {visibleMutabaat} متابعة
-          </span>
-        )}
-        {visibleShawahid > 0 && (
-          <span className="bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full font-medium">
-            {visibleShawahid} شاهد
-          </span>
-        )}
-      </div>
-
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
         {/* View mode */}
@@ -828,31 +833,52 @@ export default function TakhrijClient({
             onClick={() => setAccuracyOpen(open => !open)}
             className="text-xs rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-700 outline-none transition-colors hover:border-teal-300"
           >
-            {LEVEL_LABELS[maxLevel]} ▼
+            {allLevelsSelected ? 'الكل' : `${selectedLevelCount} من ${LEVEL_OPTIONS.length}`} ▼
           </button>
           {accuracyOpen && (
-            <div className="absolute right-0 top-full z-20 mt-2 w-44 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
-              <div className="space-y-1">
-                {([1, 2, 3, 4, 5] as const).map(level => (
-                  <label
-                    key={level}
-                    className={`flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 cursor-pointer transition-colors ${
-                      maxLevel === level ? 'bg-teal-50 text-teal-800' : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="takhrij-match-level"
-                      checked={maxLevel === level}
-                      onChange={() => {
-                        setMaxLevel(level)
-                        setAccuracyOpen(false)
-                      }}
-                      className="accent-teal-700"
-                    />
-                    <span>{LEVEL_LABELS[level]}</span>
-                  </label>
-                ))}
+            <div className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+              <div className="max-h-72 overflow-auto space-y-1">
+                <label className="flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 text-gray-700 cursor-pointer hover:bg-teal-50">
+                  <input
+                    type="checkbox"
+                    checked={allLevelsSelected}
+                    onChange={() => {
+                      setExcludedLevels(allLevelsSelected
+                        ? new Set(LEVEL_OPTIONS)
+                        : new Set()
+                      )
+                    }}
+                    className="accent-teal-700"
+                  />
+                  <span className="font-medium">الكل</span>
+                </label>
+                <div className="h-px bg-gray-100" />
+                {LEVEL_OPTIONS.map(level => {
+                  const checked = !excludedLevels.has(level)
+                  return (
+                    <label
+                      key={level}
+                      className={`flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 cursor-pointer transition-colors ${
+                        checked ? 'text-teal-800 hover:bg-teal-50' : 'text-gray-400 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setExcludedLevels(prev => {
+                            const next = new Set(prev)
+                            if (next.has(level)) next.delete(level)
+                            else next.add(level)
+                            return next
+                          })
+                        }}
+                        className="accent-teal-700"
+                      />
+                      <span>{LEVEL_LABELS[level]}</span>
+                    </label>
+                  )
+                })}
               </div>
             </div>
           )}

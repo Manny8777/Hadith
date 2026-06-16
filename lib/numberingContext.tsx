@@ -6,10 +6,10 @@ type Pref = 'harf' | 'matboa'
 const NumberingContext = createContext<{
   pref: Pref
   toggle: () => void
-}>({ pref: 'harf', toggle: () => {} })
+}>({ pref: 'matboa', toggle: () => {} })
 
 export function NumberingProvider({ children }: { children: ReactNode }) {
-  const [pref, setPref] = useState<Pref>('harf')
+  const [pref, setPref] = useState<Pref>('matboa')
 
   useEffect(() => {
     const stored = localStorage.getItem('hadith-numbering') as Pref | null
