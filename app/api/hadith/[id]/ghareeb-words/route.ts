@@ -5,6 +5,7 @@ import {
   buildGhareebSourceFromRef,
   buildGhareebWord,
   dedupeGhareebWords,
+  ghareebRefContentWhere,
   GHAREEB_SOURCE_BOOK_IDS,
   parseGhareebTags,
   stripTashkeel,
@@ -39,7 +40,7 @@ async function fetchSourcesByGhareebRef(refId: number): Promise<GhareebSource[]>
        book_name AS source_book,
        id::bigint AS source_ref_id
      FROM hadith_service_content
-     WHERE content LIKE '%ربط="' || $1::text || '"%'
+     WHERE ${ghareebRefContentWhere('$1')}
        AND book_id = ANY($2::int[])
      ORDER BY
        CASE book_id
@@ -53,14 +54,20 @@ async function fetchSourcesByGhareebRef(refId: number): Promise<GhareebSource[]>
          ELSE 7
        END,
        id
-     LIMIT 5`,
+     LIMIT 8`,
     [refId, GHAREEB_SOURCE_BOOK_IDS]
   )
 
   const sources: GhareebSource[] = []
+  const seen = new Set<number>()
   for (const row of res.rows) {
+    const refKey = row.source_ref_id != null ? Number(row.source_ref_id) : 0
+    if (refKey && seen.has(refKey)) continue
     const src = buildGhareebSourceFromRef(row, refId)
-    if (src) sources.push(src)
+    if (src) {
+      if (refKey) seen.add(refKey)
+      sources.push(src)
+    }
   }
   return sources
 }

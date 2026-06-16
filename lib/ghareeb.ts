@@ -11,6 +11,26 @@ export const GHAREEB_SOURCE_BOOK_IDS = [
   14, // المعجم الصغير
 ] as const
 
+/** Match غريب anchor id in service content (single or space-separated ربط lists). */
+export function ghareebRefContentWhere(sqlRefParam = '$1'): string {
+  return `(
+    content LIKE '%ربط="' || ${sqlRefParam}::text || '"%'
+    OR content LIKE '%ربط="' || ${sqlRefParam}::text || ' %'
+    OR content LIKE '% ' || ${sqlRefParam}::text || ' %'
+    OR content LIKE '% ' || ${sqlRefParam}::text || '"%'
+  )`
+}
+
+function parseGhareebRefIds(attr: string): number[] {
+  const m = attr.match(/ربط\s*=\s*"([^"]*)"/)
+  if (!m) return []
+  return m[1]
+    .trim()
+    .split(/\s+/)
+    .map(s => parseInt(s, 10))
+    .filter(n => !isNaN(n) && n > 0)
+}
+
 export interface GhareebTag {
   word: string
   refId: number | null
@@ -187,29 +207,33 @@ export function extractGhareebRefSnippet(
 ): string | null {
   if (!xml || !refId) return null
 
-  const openRe = new RegExp(
-    `<غريب[^>]*ربط="${refId}"[^>]*>([\\s\\S]*?)<\\/غريب>`,
-    'i'
-  )
-  const m = openRe.exec(xml)
-  if (!m) return null
+  const tagRe = /<غريب([^>]*)>([\s\S]*?)<\/غريب>/gi
+  let m: RegExpExecArray | null
 
-  const word = m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
-  const afterStart = m.index + m[0].length
-  const tail = xml
-    .slice(afterStart)
-    .replace(/^(\s*<\/[^>]+>\s*)+/, '')
-  const endMatch = tail.match(/<نه\/>|<مسألة>|<متن[\s>]/)
-  const gloss = (endMatch ? tail.slice(0, endMatch.index) : tail)
-    .replace(/<[^>]+>/g, '')
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  while ((m = tagRe.exec(xml)) !== null) {
+    const refIds = parseGhareebRefIds(m[1])
+    if (!refIds.includes(refId)) continue
 
-  if (!word && !gloss) return null
-  return gloss ? `${word} — ${gloss}` : word
+    const word = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    const afterStart = m.index + m[0].length
+    let glossSource = xml
+      .slice(afterStart)
+      .replace(/^(\s*<\/[^>]+>\s*)+/, '')
+      .replace(/^<نه\/>/, '')
+    const endMatch = glossSource.match(/<مسألة>|<متن[\s>]|<غريب[\s>]|<نه\/>/)
+    const gloss = (endMatch ? glossSource.slice(0, endMatch.index) : glossSource)
+      .replace(/<[^>]+>/g, '')
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    if (!word && !gloss) continue
+    return gloss ? `${word} — ${gloss}` : word
+  }
+
+  return null
 }
 
 export function buildGhareebSourceFromRef(
