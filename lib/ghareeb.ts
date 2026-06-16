@@ -34,14 +34,22 @@ export function dedupeGhareebWords(words: GhareebWord[]): GhareebWord[] {
   })
 }
 
+export interface GhareebSource {
+  definition: string | null
+  sourceBook: string | null
+  sourceRefId: number | null
+}
+
 export interface GhareebWord {
   formId: number
   formText: string
   wordId: number
   wordText: string
+  /** Primary definition (first source) — kept for popover shorthand */
   definition: string | null
   sourceBook: string | null
   sourceRefId: number | null
+  sources: GhareebSource[]
 }
 
 export interface LexiconHadithRef {
@@ -54,10 +62,14 @@ export interface LexiconHadithRef {
   tarqeem_harf: string | null
 }
 
-const TASHKEEL_RE = /[ؐ-ًؚ-ٰٟ]/g
+/** Diacritics only — ranges must not span U+0620–U+064A (Arabic letters). */
+export const ARABIC_DIACRITICS_RE =
+  /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08F0-\u08FF]/g
+
+const OPTIONAL_DIACRITICS = '[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u08F0-\\u08FF\\s]*'
 
 export function stripTashkeel(text: string): string {
-  return text.replace(TASHKEEL_RE, '')
+  return text.replace(ARABIC_DIACRITICS_RE, '')
 }
 
 /** Escape special regex characters in a literal string. */
@@ -73,7 +85,7 @@ export function buildArabicWordPattern(word: string): RegExp {
   const base = stripTashkeel(word).replace(/\s+/g, '')
   if (!base) return /(?!)/
 
-  const parts = [...base].map(ch => `${escapeRegex(ch)}[ؐ-ًؚ-ٰٟ\\s]*`)
+  const parts = [...base].map(ch => `${escapeRegex(ch)}${OPTIONAL_DIACRITICS}`)
   return new RegExp(parts.join(''), 'gu')
 }
 
@@ -135,6 +147,27 @@ export function cleanDefinition(raw: string | null | undefined): string | null {
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim() || null
+}
+
+export function buildGhareebWord(
+  row: { formId: number; formText: string; wordId: number; wordText: string },
+  sources: GhareebSource[]
+): GhareebWord {
+  const primary = sources[0] ?? {
+    definition: null,
+    sourceBook: null,
+    sourceRefId: null,
+  }
+  return {
+    formId: row.formId,
+    formText: row.formText,
+    wordId: row.wordId,
+    wordText: row.wordText,
+    definition: primary.definition,
+    sourceBook: primary.sourceBook,
+    sourceRefId: primary.sourceRefId,
+    sources,
+  }
 }
 
 /** SQL fragment: CTE `lexicon_scope` must be defined with `$1` = lexicon item id. */

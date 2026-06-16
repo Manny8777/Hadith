@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { findGhareebMatches, type GhareebWord } from '@/lib/ghareeb'
+import { findGhareebMatches, stripTashkeel, type GhareebWord } from '@/lib/ghareeb'
 
 interface GhareebMatnProps {
   hadithId: number
@@ -38,50 +38,60 @@ function GhareebPopover({
     typeof window !== 'undefined' ? window.innerWidth - 160 : 160
   )
 
+  const sources = word.sources?.length ? word.sources : [{
+    definition: word.definition,
+    sourceBook: word.sourceBook,
+    sourceRefId: word.sourceRefId,
+  }]
+
   return (
     <div
       ref={ref}
       dir="rtl"
-      className="fixed z-50 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden"
+      className="fixed z-50 w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden"
       style={{ top, left }}
       role="tooltip"
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
     >
       <div className="px-4 pt-3 pb-2 border-b border-gray-700/80">
-        <span className="text-[10px] font-bold tracking-wider text-amber-400 uppercase">
+        <span className="text-[10px] font-bold tracking-wider text-orange-300 uppercase">
           غريب
         </span>
-        <p className="text-lg font-bold text-amber-100 mt-0.5 font-serif">{word.wordText}</p>
+        <p className="text-lg font-bold text-orange-100 mt-0.5 font-serif">{word.wordText}</p>
         {word.formText !== word.wordText && (
           <p className="text-xs text-gray-400 mt-0.5">صيغة: {word.formText}</p>
         )}
-        {word.sourceBook && (
-          <p className="text-xs text-gray-400 mt-1">{word.sourceBook}</p>
-        )}
       </div>
-      {word.definition ? (
-        <div className="px-4 py-3 max-h-44 overflow-y-auto text-sm text-gray-200 leading-relaxed font-serif">
-          {word.definition}
-        </div>
-      ) : (
-        <div className="px-4 py-3 text-xs text-gray-500">لا يوجد شرح متاح</div>
-      )}
-      <div className="px-4 py-2 bg-gray-800/60 border-t border-gray-700 flex items-center justify-between gap-2">
+      <div className="max-h-56 overflow-y-auto divide-y divide-gray-700/60">
+        {sources.map((src, i) => (
+          <div key={`${src.sourceRefId ?? i}-${src.sourceBook ?? i}`} className="px-4 py-3">
+            {src.sourceBook && (
+              <p className="text-[11px] font-semibold text-orange-300/90 mb-1.5">{src.sourceBook}</p>
+            )}
+            {src.definition ? (
+              <p className="text-sm text-gray-200 leading-relaxed font-serif">{src.definition}</p>
+            ) : (
+              <p className="text-xs text-gray-500">لا يوجد شرح متاح</p>
+            )}
+            {src.sourceRefId && (
+              <Link
+                href={`/service-content/${src.sourceRefId}`}
+                className="inline-block mt-2 text-[11px] text-gray-400 hover:text-orange-200 hover:underline"
+              >
+                عرض المصدر ←
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="px-4 py-2 bg-gray-800/60 border-t border-gray-700">
         <Link
           href={`/lexicon/${word.wordId}`}
-          className="text-xs text-amber-300 hover:text-amber-200 hover:underline"
+          className="text-xs text-orange-300 hover:text-orange-200 hover:underline"
         >
           المعجم ←
         </Link>
-        {word.sourceRefId && (
-          <Link
-            href={`/service-content/${word.sourceRefId}`}
-            className="text-xs text-gray-400 hover:text-gray-300 hover:underline"
-          >
-            المصدر
-          </Link>
-        )}
       </div>
     </div>
   )
@@ -124,7 +134,7 @@ export default function GhareebMatn({
 
   const displayMatn = useMemo(() => {
     if (showTashkeel) return matn
-    return matn.replace(/[ؐ-ًؚ-ٰٟ]/g, '')
+    return stripTashkeel(matn)
   }, [matn, showTashkeel])
 
   const matches = useMemo(
@@ -148,7 +158,15 @@ export default function GhareebMatn({
     scheduleClose()
   }, [scheduleClose])
 
-  if (loading || matches.length === 0) {
+  if (loading) {
+    return (
+      <p className={`text-lg leading-loose text-gray-900 font-serif ${className}`} dir="rtl">
+        {displayMatn}
+      </p>
+    )
+  }
+
+  if (matches.length === 0) {
     return (
       <p className={`text-lg leading-loose text-gray-900 font-serif ${className}`} dir="rtl">
         {displayMatn}
@@ -168,7 +186,7 @@ export default function GhareebMatn({
       segments.push(
         <span
           key={`${m.formId}-${m.start}`}
-          className="text-amber-800 border-b-2 border-dotted border-amber-500 cursor-help bg-amber-50/70 rounded-sm px-0.5 transition-colors hover:bg-amber-100 hover:text-amber-900"
+          className="text-gray-900 border-b border-dotted border-orange-400/80 cursor-help bg-orange-100/50 rounded-sm px-0.5 transition-colors hover:bg-orange-200/60 hover:border-orange-500"
           onMouseEnter={e => openPopover(word, e.currentTarget)}
           onMouseLeave={() => closePopover()}
           onClick={e => {

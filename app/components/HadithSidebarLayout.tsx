@@ -16,6 +16,7 @@ import PrevNextNav from './PrevNextNav'
 import GhareebMatn from './GhareebMatn'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
+import { stripTashkeel } from '@/lib/ghareeb'
 import { splitSanadMatn, stripXmlToVerbatim } from '@/lib/hadithText'
 import type { ReactNode } from 'react'
 
@@ -140,7 +141,7 @@ export default function HadithSidebarLayout({
 
   function applyTashkeel(text: string): string {
     if (showTashkeel) return text
-    return text.replace(/[ؐ-ًؚ-ٰٟ]/g, '')
+    return stripTashkeel(text)
   }
 
   // Judgment grade styles

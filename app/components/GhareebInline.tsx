@@ -43,8 +43,8 @@ export default function GhareebInline({ hadithId }: { hadithId: number }) {
   if (loading) {
     return (
       <div className="space-y-2 animate-pulse">
-        <div className="h-16 bg-amber-50 rounded-xl border border-amber-100" />
-        <div className="h-12 bg-amber-50 rounded-xl border border-amber-100" />
+        <div className="h-16 bg-orange-50 rounded-xl border border-orange-100" />
+        <div className="h-12 bg-orange-50 rounded-xl border border-orange-100" />
       </div>
     )
   }
@@ -55,12 +55,12 @@ export default function GhareebInline({ hadithId }: { hadithId: number }) {
 
   if (matched.length === 0) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 leading-relaxed">
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-900 leading-relaxed">
         <p className="mb-2">
           هذا الحديث مصنَّف ضمن <strong>غريب الحديث</strong>، لكن لم تُعثر على ألفاظ غريبة
           مرتبطة بمتنه في المعجم.
         </p>
-        <Link href="/lexicon" className="text-xs text-amber-800 hover:underline font-medium">
+        <Link href="/lexicon" className="text-xs text-orange-800 hover:underline font-medium">
           تصفّح معجم غريب الحديث ←
         </Link>
       </div>
@@ -69,43 +69,68 @@ export default function GhareebInline({ hadithId }: { hadithId: number }) {
 
   return (
     <div dir="rtl" className="space-y-3">
-      <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+      <p className="text-xs text-orange-800 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
         وُجد في متن هذا الحديث{' '}
         <strong>{matched.length.toLocaleString('ar-EG')}</strong>{' '}
         {matched.length === 1 ? 'لفظة غريبة' : 'ألفاظ غريبة'} — مرّر على المتن أعلاه لعرض الشرح
       </p>
 
-      <div className="grid sm:grid-cols-2 gap-2">
-        {matched.map(w => (
-          <Link
-            key={w.wordId}
-            href={`/lexicon/${w.wordId}`}
-            className="flex flex-col gap-1 bg-white border border-amber-200 rounded-xl px-4 py-3 hover:border-amber-400 hover:shadow-sm transition-all group"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-amber-900 text-base font-serif group-hover:text-green-800">
-                {w.wordText}
-              </span>
-              <span className="text-[10px] font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5 shrink-0">
-                غريب
-              </span>
+      <div className="space-y-3">
+        {matched.map(w => {
+          const sources = w.sources?.length
+            ? w.sources
+            : [{ definition: w.definition, sourceBook: w.sourceBook, sourceRefId: w.sourceRefId }]
+
+          return (
+            <div
+              key={w.wordId}
+              className="bg-white border border-orange-200 rounded-xl px-4 py-3"
+            >
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <Link
+                  href={`/lexicon/${w.wordId}`}
+                  className="font-bold text-orange-900 text-base font-serif hover:text-green-800 hover:underline"
+                >
+                  {w.wordText}
+                </Link>
+                <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5 shrink-0">
+                  غريب
+                </span>
+              </div>
+              {w.formText !== w.wordText && (
+                <span className="text-xs text-gray-500 block mb-2">صيغة: {w.formText}</span>
+              )}
+
+              <div className="space-y-2.5 border-t border-orange-100 pt-2.5">
+                {sources.map((src, i) => (
+                  <div key={`${src.sourceRefId ?? i}-${src.sourceBook ?? i}`} className="text-sm">
+                    {src.sourceBook && (
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[11px] font-semibold text-orange-700">
+                          {src.sourceBook}
+                        </span>
+                        {src.sourceRefId && (
+                          <Link
+                            href={`/service-content/${src.sourceRefId}`}
+                            className="text-[10px] text-gray-500 hover:text-orange-700 hover:underline shrink-0"
+                          >
+                            المصدر ←
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                    {src.definition && (
+                      <p className="text-xs text-gray-600 leading-relaxed">{src.definition}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            {w.formText !== w.wordText && (
-              <span className="text-xs text-gray-500">صيغة: {w.formText}</span>
-            )}
-            {w.sourceBook && (
-              <span className="text-[11px] text-gray-400">{w.sourceBook}</span>
-            )}
-            {w.definition && (
-              <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 mt-0.5">
-                {w.definition}
-              </p>
-            )}
-          </Link>
-        ))}
+          )
+        })}
       </div>
 
-      <Link href="/lexicon" className="inline-block text-xs text-amber-800 hover:underline font-medium mt-1">
+      <Link href="/lexicon" className="inline-block text-xs text-orange-800 hover:underline font-medium mt-1">
         تصفّح معجم غريب الحديث ←
       </Link>
     </div>
