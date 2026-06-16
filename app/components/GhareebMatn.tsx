@@ -40,6 +40,7 @@ function GhareebPopover({
 
   const sources = word.sources?.length ? word.sources : [{
     definition: word.definition,
+    verbatimText: word.definition,
     sourceBook: word.sourceBook,
     sourceRefId: word.sourceRefId,
   }]
@@ -48,7 +49,7 @@ function GhareebPopover({
     <div
       ref={ref}
       dir="rtl"
-      className="fixed z-50 w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden"
+      className="fixed z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden"
       style={{ top, left }}
       role="tooltip"
       onMouseEnter={onEnter}
@@ -63,14 +64,16 @@ function GhareebPopover({
           <p className="text-xs text-gray-400 mt-0.5">صيغة: {word.formText}</p>
         )}
       </div>
-      <div className="max-h-56 overflow-y-auto divide-y divide-gray-700/60">
-        {sources.map((src, i) => (
+      <div className="max-h-72 overflow-y-auto divide-y divide-gray-700/60">
+        {sources.map((src, i) => {
+          const text = src.verbatimText || src.definition
+          return (
           <div key={`${src.sourceRefId ?? i}-${src.sourceBook ?? i}`} className="px-4 py-3">
             {src.sourceBook && (
               <p className="text-[11px] font-semibold text-orange-300/90 mb-1.5">{src.sourceBook}</p>
             )}
-            {src.definition ? (
-              <p className="text-sm text-gray-200 leading-relaxed font-serif">{src.definition}</p>
+            {text ? (
+              <p className="text-sm text-gray-200 leading-relaxed font-serif whitespace-pre-wrap">{text}</p>
             ) : (
               <p className="text-xs text-gray-500">لا يوجد شرح متاح</p>
             )}
@@ -83,7 +86,8 @@ function GhareebPopover({
               </Link>
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
       <div className="px-4 py-2 bg-gray-800/60 border-t border-gray-700">
         <Link
@@ -186,7 +190,7 @@ export default function GhareebMatn({
       segments.push(
         <span
           key={`${m.formId}-${m.start}`}
-          className="text-gray-900 border-b border-dotted border-orange-400/80 cursor-help bg-orange-100/50 rounded-sm px-0.5 transition-colors hover:bg-orange-200/60 hover:border-orange-500"
+          className="text-gray-900 cursor-help bg-orange-100/50 rounded-sm px-0.5 transition-colors hover:bg-orange-200/60"
           onMouseEnter={e => openPopover(word, e.currentTarget)}
           onMouseLeave={() => closePopover()}
           onClick={e => {

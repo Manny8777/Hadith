@@ -35,7 +35,10 @@ export function dedupeGhareebWords(words: GhareebWord[]): GhareebWord[] {
 }
 
 export interface GhareebSource {
+  /** Short excerpt for the inline غريب section */
   definition: string | null
+  /** Full verbatim scholar text for hover popover */
+  verbatimText: string | null
   sourceBook: string | null
   sourceRefId: number | null
 }
@@ -149,12 +152,57 @@ export function cleanDefinition(raw: string | null | undefined): string | null {
     .trim() || null
 }
 
+/** Strip service-content XML to readable verbatim Arabic (matches service-content page). */
+export function parseServiceVerbatim(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  return raw
+    .replace(/<نه\/>/g, '\n')
+    .replace(/<آية[^>]*>([^<]*)<\/آية>/g, '\u{FD3E}$1\u{FD3F}')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim() || null
+}
+
+export function buildGhareebSource(row: {
+  part_text?: string | null
+  tarf?: string | null
+  content?: string | null
+  source_book?: string | null
+  source_ref_id?: number | null
+}): GhareebSource | null {
+  const verbatim =
+    parseServiceVerbatim(row.content) ||
+    cleanDefinition(row.tarf) ||
+    cleanDefinition(row.part_text)
+
+  if (!verbatim && !row.source_book) return null
+
+  const definition =
+    cleanDefinition(row.part_text) ||
+    cleanDefinition(row.tarf) ||
+    verbatim
+
+  return {
+    definition,
+    verbatimText: verbatim,
+    sourceBook: row.source_book ?? null,
+    sourceRefId: row.source_ref_id ?? null,
+  }
+}
+
 export function buildGhareebWord(
   row: { formId: number; formText: string; wordId: number; wordText: string },
   sources: GhareebSource[]
 ): GhareebWord {
   const primary = sources[0] ?? {
     definition: null,
+    verbatimText: null,
     sourceBook: null,
     sourceRefId: null,
   }

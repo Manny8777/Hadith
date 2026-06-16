@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import { extractMatnForComparison, splitSanadMatn } from '@/lib/hadithText'
 import {
+  buildGhareebSource,
   buildGhareebWord,
-  cleanDefinition,
   dedupeGhareebWords,
   parseGhareebTags,
   type GhareebSource,
@@ -19,26 +19,20 @@ interface LexiconRow {
   word_text: string
 }
 
-interface DefRow {
-  definition: string | null
+interface ContentRow {
+  part_text: string | null
+  tarf: string | null
+  content: string | null
   source_book: string | null
   source_ref_id: number | null
-}
-
-function toSource(row: DefRow): GhareebSource {
-  return {
-    definition: cleanDefinition(row.definition),
-    sourceBook: row.source_book,
-    sourceRefId: row.source_ref_id,
-  }
 }
 
 function dedupeSources(sources: GhareebSource[]): GhareebSource[] {
   const seen = new Set<string>()
   const out: GhareebSource[] = []
   for (const s of sources) {
-    if (!s.definition && !s.sourceBook) continue
-    const key = `${s.sourceRefId ?? ''}|${s.sourceBook ?? ''}|${s.definition ?? ''}`
+    if (!s.definition && !s.verbatimText && !s.sourceBook) continue
+    const key = String(s.sourceRefId ?? `${s.sourceBook ?? ''}|${(s.verbatimText ?? s.definition ?? '').slice(0, 80)}`)
     if (seen.has(key)) continue
     seen.add(key)
     out.push(s)
@@ -65,18 +59,18 @@ async function resolveLexiconForm(word: string): Promise<LexiconRow | null> {
 }
 
 async function fetchServiceContent(refId: number): Promise<GhareebSource | null> {
-  const res = await pool.query<DefRow>(
+  const res = await pool.query<ContentRow>(
     `SELECT
-       COALESCE(part_text, tarf, LEFT(content, 1200)) AS definition,
+       part_text,
+       tarf,
+       content,
        book_name AS source_book,
        id::bigint AS source_ref_id
      FROM hadith_service_content
      WHERE id = $1`,
     [refId]
   )
-  const row = res.rows[0]
-  if (!row?.definition) return null
-  return toSource(row)
+  return buildGhareebSource(res.rows[0] ?? {})
 }
 
 async function fetchDefinitions(
@@ -92,9 +86,11 @@ async function fetchDefinitions(
     if (direct) sources.push(direct)
   }
 
-  const fromLinks = await pool.query<DefRow>(
+  const fromLinks = await pool.query<ContentRow>(
     `SELECT
-       COALESCE(hsc.part_text, hsc.tarf, LEFT(hsc.content, 1200)) AS definition,
+       hsc.part_text,
+       hsc.tarf,
+       hsc.content,
        hsc.book_name AS source_book,
        hsc.id::bigint AS source_ref_id
      FROM lexicon_hadith lh
@@ -109,13 +105,16 @@ async function fetchDefinitions(
     [formId, wordId]
   )
   for (const row of fromLinks.rows) {
-    if (row.definition) sources.push(toSource(row))
+    const src = buildGhareebSource(row)
+    if (src) sources.push(src)
   }
 
   if (sources.length === 0) {
-    const fromNihaya = await pool.query<DefRow>(
+    const fromNihaya = await pool.query<ContentRow>(
       `SELECT
-         COALESCE(hsc.part_text, hsc.tarf, LEFT(hsc.content, 1200)) AS definition,
+         hsc.part_text,
+         hsc.tarf,
+         hsc.content,
          hsc.book_name AS source_book,
          hsc.id::bigint AS source_ref_id
        FROM hadith_service_content hsc
@@ -132,7 +131,8 @@ async function fetchDefinitions(
       [wordInMatn]
     )
     for (const row of fromNihaya.rows) {
-      if (row.definition) sources.push(toSource(row))
+      const src = buildGhareebSource(row)
+      if (src) sources.push(src)
     }
   }
 
@@ -175,7 +175,9 @@ async function wordsFromLexiconLinks(hadithId: number): Promise<GhareebWord[]> {
     form_text: string
     word_id: number
     word_text: string
-    definition: string | null
+    part_text: string | null
+    tarf: string | null
+    content: string | null
     source_book: string | null
     source_ref_id: number | null
   }>(
@@ -199,7 +201,9 @@ async function wordsFromLexiconLinks(hadithId: number): Promise<GhareebWord[]> {
        li.text AS form_text,
        COALESCE(word.id, li.id) AS word_id,
        COALESCE(word.text, li.text) AS word_text,
-       COALESCE(hsc.part_text, hsc.tarf, LEFT(hsc.content, 800)) AS definition,
+       hsc.part_text,
+       hsc.tarf,
+       hsc.content,
        hsc.book_name AS source_book,
        CASE WHEN hsc.id IS NOT NULL THEN hsc.id::bigint ELSE NULL END AS source_ref_id
      FROM linked
@@ -226,8 +230,9 @@ async function wordsFromLexiconLinks(hadithId: number): Promise<GhareebWord[]> {
       }
       byForm.set(r.form_id, entry)
     }
-    if (r.definition || r.source_book) {
-      entry.sources.push(toSource(r))
+    if (r.source_book || r.content || r.tarf || r.part_text) {
+      const src = buildGhareebSource(r)
+      if (src) entry.sources.push(src)
     }
   }
 
