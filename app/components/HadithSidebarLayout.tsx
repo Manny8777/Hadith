@@ -146,12 +146,10 @@ export default function HadithSidebarLayout({
   const serviceSections = activeServiceSections(hadithServices)
 
   // Sections shown in main content and sidebar TOC — dynamic based on available data
-  const hasGradeData = judgments.some(j => j.grade_class)
   const SECTIONS = [
     { id: 'isnad',   label: 'الأسانيد والرواة' },
     { id: 'shajar',  label: 'شجرة الإسناد' },
-    { id: 'aqwal',   label: 'أقوال العلماء' },
-    ...(hasGradeData ? [{ id: 'daraja', label: 'الدرجة' }] : []),
+    ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
     ...serviceSections.map(s => ({ id: s.id, label: s.label })),
     { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
@@ -398,59 +396,6 @@ export default function HadithSidebarLayout({
           </div>
         )}
 
-        {/* ── الدرجة ── inline section */}
-        {hasGradeData && (
-          <section id="daraja" className="mb-5 scroll-mt-14">
-            <div className="flex items-center gap-3 mb-3">
-              <h2 className="text-base font-bold text-green-900 shrink-0 font-display">الدرجة</h2>
-              <div className="flex-1 h-px bg-green-100" />
-              <a href="#aqwal" className="text-xs text-green-700 hover:underline shrink-0">أقوال العلماء ←</a>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              {(() => {
-                const counts: Record<string, number> = {}
-                judgments.forEach(j => { if (j.grade_class) counts[j.grade_class] = (counts[j.grade_class] ?? 0) + 1 })
-                const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
-                const domGrade = dominant?.[0] ?? null
-                const domCls = domGrade === 'صحيح' ? 'bg-green-600 text-white border-green-700' :
-                               domGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
-                               domGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
-                               'bg-gray-200 text-gray-600 border-gray-300'
-                return (
-                  <div className="flex flex-wrap items-center gap-3">
-                    {domGrade && (
-                      <span className={`text-sm font-bold px-4 py-1.5 rounded-full border ${domCls}`}>
-                        {domGrade}
-                      </span>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {Object.entries(counts).map(([g, n]) => {
-                        const cls = g === 'صحيح' ? 'bg-green-100 text-green-800 border-green-200' :
-                                    g === 'حسن'  ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                    'bg-red-100 text-red-700 border-red-200'
-                        return (
-                          <span key={g} className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${cls}`}>
-                            {g} ×{n}
-                          </span>
-                        )
-                      })}
-                      {(() => {
-                        const other = judgments.filter(j => !j.grade_class).length
-                        return other > 0 ? (
-                          <span className="text-xs px-2.5 py-0.5 rounded-full border bg-gray-100 text-gray-600 border-gray-200 font-medium">
-                            أخرى ×{other}
-                          </span>
-                        ) : null
-                      })()}
-                    </div>
-                    <span className="text-xs text-gray-400">{judgments.length} قول</span>
-                  </div>
-                )
-              })()}
-            </div>
-          </section>
-        )}
-
         {/* Mobile: horizontal TOC strip */}
         <div className="sm:hidden mb-5 overflow-x-auto">
           <div className="flex gap-1.5 pb-1 min-w-max">
@@ -530,27 +475,48 @@ export default function HadithSidebarLayout({
           <IsnadTree hadithId={hadithId} />
         </section>
 
-        {/* ── أقوال العلماء ── */}
+        {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
           <section id="aqwal" className="mb-8 scroll-mt-14">
-            <SectionHeader label="أقوال العلماء" />
+            <SectionHeader label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`} />
 
             {(() => {
-              const counts = { صحيح: 0, حسن: 0, ضعيف: 0, other: 0 }
-              judgmentGroups.forEach(g => {
-                const grade = g[0].grade_class
-                if (grade === 'صحيح') counts['صحيح']++
-                else if (grade === 'حسن') counts['حسن']++
-                else if (grade === 'ضعيف') counts['ضعيف']++
-                else counts.other++
-              })
+              const gradeCounts: Record<string, number> = {}
+              judgments.forEach(j => { if (j.grade_class) gradeCounts[j.grade_class] = (gradeCounts[j.grade_class] ?? 0) + 1 })
+              const dominant = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]
+              const domGrade = dominant?.[0] ?? null
+              const domCls = domGrade === 'صحيح' ? 'bg-green-600 text-white border-green-700' :
+                             domGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
+                             domGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
+                             'bg-gray-200 text-gray-600 border-gray-300'
+              const otherCount = judgments.filter(j => !j.grade_class).length
+              if (!domGrade && otherCount === judgments.length) return null
               return (
-                <div className="flex flex-wrap gap-2 mb-4 text-xs">
-                  <span className="text-gray-500">{judgmentGroups.length} عالم:</span>
-                  {counts['صحيح'] > 0 && <span className="bg-green-100 text-green-800 px-2.5 py-1 rounded-full font-medium">صحيح ×{counts['صحيح']}</span>}
-                  {counts['حسن'] > 0 && <span className="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-medium">حسن ×{counts['حسن']}</span>}
-                  {counts['ضعيف'] > 0 && <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-medium">ضعيف ×{counts['ضعيف']}</span>}
-                  {counts.other > 0 && <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium">أخرى ×{counts.other}</span>}
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {domGrade && (
+                      <span className={`text-sm font-bold px-4 py-1.5 rounded-full border ${domCls}`}>
+                        {domGrade}
+                      </span>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(gradeCounts).map(([g, n]) => {
+                        const cls = g === 'صحيح' ? 'bg-green-100 text-green-800 border-green-200' :
+                                    g === 'حسن'  ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                    'bg-red-100 text-red-700 border-red-200'
+                        return (
+                          <span key={g} className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${cls}`}>
+                            {g} ×{n}
+                          </span>
+                        )
+                      })}
+                      {otherCount > 0 && (
+                        <span className="text-xs px-2.5 py-0.5 rounded-full border bg-gray-100 text-gray-600 border-gray-200 font-medium">
+                          أخرى ×{otherCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             })()}
