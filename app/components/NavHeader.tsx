@@ -274,7 +274,7 @@ export default function NavHeader() {
   }
 
   return (
-    <nav ref={navRef} className="relative z-30 bg-paper/90 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
+    <nav ref={navRef} className="relative z-30 bg-surface-sunken/95 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
       <div className="max-w-7xl mx-auto flex items-center gap-1 px-3 sm:px-6 lg:px-7 py-2 sm:py-2.5 min-w-0">
         <a
           href="/"

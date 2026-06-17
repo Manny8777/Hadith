@@ -120,87 +120,56 @@
   --font-serif: 'ThmanyahSerifText', 'Traditional Arabic', serif;
   --font-display: 'ThmanyahSerifDisplay', 'Traditional Arabic', serif;
 
-  /* Semantic aliases — warm "manuscript" canvas (paper + muted teal-green) */
-  --color-paper: #FAF8F4;          /* warm cream page background */
-  --color-surface: #FFFFFF;        /* cards lift on the cream canvas */
-  --color-surface-sunken: #F7F1E1; /* clean warm parchment for secondary panels (sanad block, info boxes) */
-  --color-border: #E7E0D4;         /* warm hairline border */
-  --color-ink: #1A1A17;            /* warm near-black text */
-  --color-muted: #635B4B;          /* warm muted text */
-  --color-primary: #265E54;
-  --color-primary-soft: #EDF4F1;
-  --color-accent-gold: #B07D11;
+  /* ─────────── Light palette — warm paper / scholarly book page ─────────── */
+  --color-paper: #F7F2E8;          /* main reading background (warm paper, never pure white) */
+  --color-surface: #FFFDF7;        /* page cards (soft off-white) */
+  --color-surface-sunken: #F0E8D8; /* elevated/tinted panels — sanad block, info boxes, nav */
+  --color-border: #D8CDBA;         /* subtle warm divider */
+  --color-ink: #201B14;            /* primary reading text — dark ink brown */
+  --color-muted: #6F6558;          /* muted text */
+  --color-primary: #0F8F6A;        /* emerald */
+  --color-primary-soft: #DDF4EC;   /* emerald soft */
+  --color-accent-gold: #B8872F;    /* gold */
+  --color-white: #FFFDF7;          /* kill pure white — bg-white/text-white become soft off-white */
 
-  /* Muted teal-green — calm, scholarly accent (anchored to hdith.com's oklch(0.48 0.062 195)) */
-  --color-green-50: #EDF4F1;
-  --color-green-100: #D6E7E1;
-  --color-green-200: #AFD0C6;
-  --color-green-300: #82B5A8;
-  --color-green-400: #549585;
-  --color-green-500: #357A6B;
-  --color-green-600: #2C6E63;
-  --color-green-700: #265E54;
-  --color-green-800: #214F47;
-  --color-green-900: #1A3E38;
-  --color-green-950: #102621;
+  /* Emerald — narrator chains, active links, selected states, primary actions, صحيح/مرفوع */
+  --color-green-50:#DDF4EC; --color-green-100:#C3EBDD; --color-green-200:#9EDCC8; --color-green-300:#6FC9AD; --color-green-400:#3DAE8C; --color-green-500:#1A9A75; --color-green-600:#0F8F6A; --color-green-700:#0C7757; --color-green-800:#0A5F46; --color-green-900:#084836; --color-green-950:#042B20;
 
-  /* Neutral gray — crisp text hierarchy; only the light end is warmed to sit on cream */
-  --color-gray-50: #F6F3ED;
-  --color-gray-100: #EFEAE0;
-  --color-gray-200: #E7E0D4;
-  --color-gray-300: #D2C8B8;
-  --color-gray-400: #A99F8C;
-  --color-gray-500: #6B7280;
-  --color-gray-600: #4B5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1F2937;
-  --color-gray-900: #111827;
-  --color-gray-950: #030712;
+  /* Warm gray — text hierarchy, borders, subtle fills (soft text ≈ 400, muted ≈ 500, ink ≈ 900) */
+  --color-gray-50:#F4EEE1; --color-gray-100:#ECE3D2; --color-gray-200:#D8CDBA; --color-gray-300:#BFB199; --color-gray-400:#8A7C6A; --color-gray-500:#6F6558; --color-gray-600:#564D41; --color-gray-700:#413931; --color-gray-800:#2D2820; --color-gray-900:#201B14; --color-gray-950:#15110B;
 
-  /* Manuscript gold — visible on white */
-  --color-amber-50: #FFFBEB;
-  --color-amber-100: #FEF3C7;
-  --color-amber-200: #FDE68A;
-  --color-amber-300: #FCD34D;
-  --color-amber-400: #FBBF24;
-  --color-amber-500: #F59E0B;
-  --color-amber-600: #D97706;
-  --color-amber-700: #B45309;
-  --color-amber-800: #92400E;
-  --color-amber-900: #78350F;
-  --color-amber-950: #451A03;
+  /* Gold — references, badges, hadith/volume/page numbers, scholarly highlights, موقوف */
+  --color-amber-50:#FBF3DF; --color-amber-100:#F5E8C8; --color-amber-200:#EAD3A0; --color-amber-300:#DCBB74; --color-amber-400:#CFA552; --color-amber-500:#C0913A; --color-amber-600:#B8872F; --color-amber-700:#9C7026; --color-amber-800:#7C591E; --color-amber-900:#5E4316; --color-amber-950:#38280C;
 
-  /* Semantic blues (حسن) */
-  --color-blue-50: #EFF6FF;
-  --color-blue-100: #DBEAFE;
-  --color-blue-200: #BFDBFE;
-  --color-blue-300: #93C5FD;
-  --color-blue-400: #60A5FA;
-  --color-blue-500: #3B82F6;
-  --color-blue-600: #2563EB;
-  --color-blue-700: #1D4ED8;
-  --color-blue-800: #1E40AF;
+  /* Blue — citations, source links, clickable references, حسن/مرسل */
+  --color-blue-50:#DCEFFF; --color-blue-100:#BFE0FB; --color-blue-200:#93C9F4; --color-blue-300:#5FACEA; --color-blue-400:#2E8FD8; --color-blue-500:#1A82C8; --color-blue-600:#1378B8; --color-blue-700:#105F92; --color-blue-800:#0E4D75; --color-blue-900:#0B3A58; --color-blue-950:#082A41;
 
-  /* Semantic reds (ضعيف) */
-  --color-red-50: #FEF2F2;
-  --color-red-100: #FEE2E2;
-  --color-red-200: #FECACA;
-  --color-red-300: #FCA5A5;
-  --color-red-400: #F87171;
-  --color-red-500: #EF4444;
-  --color-red-600: #DC2626;
-  --color-red-700: #B91C1C;
+  /* Red — danger / weak, ضعيف */
+  --color-red-50:#F8E7E7; --color-red-100:#F0CECE; --color-red-200:#E3A9A9; --color-red-300:#D38282; --color-red-400:#C56565; --color-red-500:#BC5353; --color-red-600:#B44747; --color-red-700:#963A3A; --color-red-800:#762E2E; --color-red-900:#582424;
 
-  /* Teal aligned to green accent */
-  --color-teal-50: #F0FDFA;
-  --color-teal-100: #CCFBF1;
-  --color-teal-200: #99F6E4;
-  --color-teal-300: #5EEAD4;
-  --color-teal-400: #2DD4BF;
-  --color-teal-500: #14B8A6;
-  --color-teal-600: #0D9488;
-  --color-teal-700: #0F766E;
-  --color-teal-800: #115E59;
+  /* Teal — transmission terms (عن/حدثنا), kept within the emerald family */
+  --color-teal-50:#DCF2EA; --color-teal-100:#C0E7D8; --color-teal-200:#97D6BF; --color-teal-300:#67C0A2; --color-teal-400:#3AA585; --color-teal-500:#1C9272; --color-teal-600:#118566; --color-teal-700:#0E6E54; --color-teal-800:#0B5743; --color-teal-900:#08412F;
+
+  /* Purple — secondary tools used sparingly (notes, compare, BibTeX) */
+  --color-purple-50:#EFE5FF; --color-purple-100:#E0CEFB; --color-purple-200:#CBB0F4; --color-purple-300:#B08CEA; --color-purple-400:#976BDD; --color-purple-500:#8757CB; --color-purple-600:#7C4DB8; --color-purple-700:#663E98; --color-purple-800:#503078; --color-purple-900:#3C2459; --color-purple-950:#271637;
+
+  /* ── Aliases: map Tailwind's default palettes onto the scholarly set.
+     Because they reference the core vars, they auto-adapt in dark mode too. ── */
+  --color-emerald-50:var(--color-green-50); --color-emerald-100:var(--color-green-100); --color-emerald-200:var(--color-green-200); --color-emerald-300:var(--color-green-300); --color-emerald-400:var(--color-green-400); --color-emerald-500:var(--color-green-500); --color-emerald-600:var(--color-green-600); --color-emerald-700:var(--color-green-700); --color-emerald-800:var(--color-green-800); --color-emerald-900:var(--color-green-900); --color-emerald-950:var(--color-green-950);
+  --color-lime-50:var(--color-green-50); --color-lime-100:var(--color-green-100); --color-lime-200:var(--color-green-200); --color-lime-300:var(--color-green-300); --color-lime-400:var(--color-green-400); --color-lime-500:var(--color-green-500); --color-lime-600:var(--color-green-600); --color-lime-700:var(--color-green-700); --color-lime-800:var(--color-green-800); --color-lime-900:var(--color-green-900); --color-lime-950:var(--color-green-950);
+  --color-sky-50:var(--color-blue-50); --color-sky-100:var(--color-blue-100); --color-sky-200:var(--color-blue-200); --color-sky-300:var(--color-blue-300); --color-sky-400:var(--color-blue-400); --color-sky-500:var(--color-blue-500); --color-sky-600:var(--color-blue-600); --color-sky-700:var(--color-blue-700); --color-sky-800:var(--color-blue-800); --color-sky-900:var(--color-blue-900); --color-sky-950:var(--color-blue-950);
+  --color-cyan-50:var(--color-blue-50); --color-cyan-100:var(--color-blue-100); --color-cyan-200:var(--color-blue-200); --color-cyan-300:var(--color-blue-300); --color-cyan-400:var(--color-blue-400); --color-cyan-500:var(--color-blue-500); --color-cyan-600:var(--color-blue-600); --color-cyan-700:var(--color-blue-700); --color-cyan-800:var(--color-blue-800); --color-cyan-900:var(--color-blue-900); --color-cyan-950:var(--color-blue-950);
+  --color-indigo-50:var(--color-purple-50); --color-indigo-100:var(--color-purple-100); --color-indigo-200:var(--color-purple-200); --color-indigo-300:var(--color-purple-300); --color-indigo-400:var(--color-purple-400); --color-indigo-500:var(--color-purple-500); --color-indigo-600:var(--color-purple-600); --color-indigo-700:var(--color-purple-700); --color-indigo-800:var(--color-purple-800); --color-indigo-900:var(--color-purple-900); --color-indigo-950:var(--color-purple-950);
+  --color-violet-50:var(--color-purple-50); --color-violet-100:var(--color-purple-100); --color-violet-200:var(--color-purple-200); --color-violet-300:var(--color-purple-300); --color-violet-400:var(--color-purple-400); --color-violet-500:var(--color-purple-500); --color-violet-600:var(--color-purple-600); --color-violet-700:var(--color-purple-700); --color-violet-800:var(--color-purple-800); --color-violet-900:var(--color-purple-900); --color-violet-950:var(--color-purple-950);
+  --color-fuchsia-50:var(--color-purple-50); --color-fuchsia-100:var(--color-purple-100); --color-fuchsia-200:var(--color-purple-200); --color-fuchsia-300:var(--color-purple-300); --color-fuchsia-400:var(--color-purple-400); --color-fuchsia-500:var(--color-purple-500); --color-fuchsia-600:var(--color-purple-600); --color-fuchsia-700:var(--color-purple-700); --color-fuchsia-800:var(--color-purple-800); --color-fuchsia-900:var(--color-purple-900); --color-fuchsia-950:var(--color-purple-950);
+  --color-rose-50:var(--color-red-50); --color-rose-100:var(--color-red-100); --color-rose-200:var(--color-red-200); --color-rose-300:var(--color-red-300); --color-rose-400:var(--color-red-400); --color-rose-500:var(--color-red-500); --color-rose-600:var(--color-red-600); --color-rose-700:var(--color-red-700); --color-rose-800:var(--color-red-800); --color-rose-900:var(--color-red-900);
+  --color-pink-50:var(--color-red-50); --color-pink-100:var(--color-red-100); --color-pink-200:var(--color-red-200); --color-pink-300:var(--color-red-300); --color-pink-400:var(--color-red-400); --color-pink-500:var(--color-red-500); --color-pink-600:var(--color-red-600); --color-pink-700:var(--color-red-700); --color-pink-800:var(--color-red-800); --color-pink-900:var(--color-red-900);
+  --color-orange-50:var(--color-amber-50); --color-orange-100:var(--color-amber-100); --color-orange-200:var(--color-amber-200); --color-orange-300:var(--color-amber-300); --color-orange-400:var(--color-amber-400); --color-orange-500:var(--color-amber-500); --color-orange-600:var(--color-amber-600); --color-orange-700:var(--color-amber-700); --color-orange-800:var(--color-amber-800); --color-orange-900:var(--color-amber-900); --color-orange-950:var(--color-amber-950);
+  --color-yellow-50:var(--color-amber-50); --color-yellow-100:var(--color-amber-100); --color-yellow-200:var(--color-amber-200); --color-yellow-300:var(--color-amber-300); --color-yellow-400:var(--color-amber-400); --color-yellow-500:var(--color-amber-500); --color-yellow-600:var(--color-amber-600); --color-yellow-700:var(--color-amber-700); --color-yellow-800:var(--color-amber-800); --color-yellow-900:var(--color-amber-900); --color-yellow-950:var(--color-amber-950);
+  --color-slate-50:var(--color-gray-50); --color-slate-100:var(--color-gray-100); --color-slate-200:var(--color-gray-200); --color-slate-300:var(--color-gray-300); --color-slate-400:var(--color-gray-400); --color-slate-500:var(--color-gray-500); --color-slate-600:var(--color-gray-600); --color-slate-700:var(--color-gray-700); --color-slate-800:var(--color-gray-800); --color-slate-900:var(--color-gray-900); --color-slate-950:var(--color-gray-950);
+  --color-zinc-50:var(--color-gray-50); --color-zinc-100:var(--color-gray-100); --color-zinc-200:var(--color-gray-200); --color-zinc-300:var(--color-gray-300); --color-zinc-400:var(--color-gray-400); --color-zinc-500:var(--color-gray-500); --color-zinc-600:var(--color-gray-600); --color-zinc-700:var(--color-gray-700); --color-zinc-800:var(--color-gray-800); --color-zinc-900:var(--color-gray-900); --color-zinc-950:var(--color-gray-950);
+  --color-neutral-50:var(--color-gray-50); --color-neutral-100:var(--color-gray-100); --color-neutral-200:var(--color-gray-200); --color-neutral-300:var(--color-gray-300); --color-neutral-400:var(--color-gray-400); --color-neutral-500:var(--color-gray-500); --color-neutral-600:var(--color-gray-600); --color-neutral-700:var(--color-gray-700); --color-neutral-800:var(--color-gray-800); --color-neutral-900:var(--color-gray-900); --color-neutral-950:var(--color-gray-950);
+  --color-stone-50:var(--color-gray-50); --color-stone-100:var(--color-gray-100); --color-stone-200:var(--color-gray-200); --color-stone-300:var(--color-gray-300); --color-stone-400:var(--color-gray-400); --color-stone-500:var(--color-gray-500); --color-stone-600:var(--color-gray-600); --color-stone-700:var(--color-gray-700); --color-stone-800:var(--color-gray-800); --color-stone-900:var(--color-gray-900); --color-stone-950:var(--color-gray-950);
 }
 
 :root {
@@ -340,109 +309,43 @@ body {
 html.dark {
   color-scheme: dark;
 
-  --background: #0E1014;
-  --foreground: #ECEAE3;
+  --background: #050607;
+  --foreground: #ECE6DA;
 
-  --color-paper: #0E1014;
-  --color-surface: #161A20;
-  --color-surface-sunken: #1C212A;
-  --color-border: #2A2F39;
-  --color-ink: #ECEAE3;
-  --color-muted: #99A0AB;
-  --color-primary: #5BBDA1;
-  --color-primary-soft: #14302A;
-  --color-accent-gold: #E2BE63;
-  --color-white: #161A20;
+  /* Dark palette — near-black premium surfaces, warm off-white text.
+     Only the core scales are overridden; the @theme aliases (emerald/sky/violet/…)
+     reference these vars, so they adapt to dark automatically. */
+  --color-paper: #050607;          /* main reading background */
+  --color-surface: #151A21;        /* elevated cards */
+  --color-surface-sunken: #0E1116; /* nav / panels / sanad block */
+  --color-border: #2A313A;
+  --color-ink: #ECE6DA;            /* primary text — warm off-white, never harsh white */
+  --color-muted: #A7A094;
+  --color-primary: #6ED9B2;        /* emerald */
+  --color-primary-soft: #0E2A22;
+  --color-accent-gold: #D9AD5B;
+  --color-white: #151A21;          /* bg-white → elevated card; text-white → dark ink on light accents */
 
-  /* Gray — inverted: surfaces dark, text light */
-  --color-gray-50:  #161A20;
-  --color-gray-100: #1C212A;
-  --color-gray-200: #2A2F39;
-  --color-gray-300: #3A414D;
-  --color-gray-400: #5A6270;
-  --color-gray-500: #868D99;
-  --color-gray-600: #A7AEB9;
-  --color-gray-700: #C4CAD3;
-  --color-gray-800: #DCE0E6;
-  --color-gray-900: #ECEAE3;
-  --color-gray-950: #F6F4EF;
+  /* Warm gray — surfaces dark, text light (muted ≈ 500, ink ≈ 900) */
+  --color-gray-50:#0E1116; --color-gray-100:#151A21; --color-gray-200:#2A313A; --color-gray-300:#3A424D; --color-gray-400:#6E6A62; --color-gray-500:#A7A094; --color-gray-600:#BEB7AB; --color-gray-700:#D1CABE; --color-gray-800:#E0DACE; --color-gray-900:#ECE6DA; --color-gray-950:#F5F1E8;
 
-  /* Teal-green accent */
-  --color-green-50:  #102621;
-  --color-green-100: #143930;
-  --color-green-200: #19493D;
-  --color-green-300: #226153;
-  --color-green-400: #2C8068;
-  --color-green-500: #379A7E;
-  --color-green-600: #45AC8F;
-  --color-green-700: #5BBDA1;
-  --color-green-800: #79CDB4;
-  --color-green-900: #9FDCC9;
-  --color-green-950: #C9EEE2;
+  /* Emerald */
+  --color-green-50:#0E2A22; --color-green-100:#133A2F; --color-green-200:#1A4F40; --color-green-300:#246A56; --color-green-400:#348F74; --color-green-500:#45AD8D; --color-green-600:#58C7A2; --color-green-700:#6ED9B2; --color-green-800:#8EE3C4; --color-green-900:#B0EDD6; --color-green-950:#D8F6EC;
 
-  /* Manuscript gold */
-  --color-amber-50:  #2A1F0E;
-  --color-amber-100: #392B11;
-  --color-amber-200: #4E3B15;
-  --color-amber-300: #6B521E;
-  --color-amber-400: #94722B;
-  --color-amber-500: #BC9233;
-  --color-amber-600: #D2A741;
-  --color-amber-700: #E2BE63;
-  --color-amber-800: #EDCF8A;
-  --color-amber-900: #F4DEAC;
-  --color-amber-950: #FBF1D3;
+  /* Gold */
+  --color-amber-50:#2A2210; --color-amber-100:#3A2F14; --color-amber-200:#50421C; --color-amber-300:#6E5A26; --color-amber-400:#997E36; --color-amber-500:#C09A45; --color-amber-600:#D9AD5B; --color-amber-700:#E5C27E; --color-amber-800:#EED39C; --color-amber-900:#F4E1BC; --color-amber-950:#FBF3DD;
 
-  /* Blue (حسن) */
-  --color-blue-50:  #0F2236;
-  --color-blue-100: #16304C;
-  --color-blue-200: #1E466B;
-  --color-blue-300: #295F8E;
-  --color-blue-400: #3B7CB5;
-  --color-blue-500: #4F94D0;
-  --color-blue-600: #6BA8DD;
-  --color-blue-700: #8FC0E8;
-  --color-blue-800: #B0D2EF;
+  /* Cyan / blue link */
+  --color-blue-50:#0C2436; --color-blue-100:#103450; --color-blue-200:#16486E; --color-blue-300:#1E6395; --color-blue-400:#2C84C4; --color-blue-500:#3BA0E6; --color-blue-600:#4DB9FF; --color-blue-700:#76CBFF; --color-blue-800:#A0DBFF; --color-blue-900:#C6EAFF; --color-blue-950:#E2F4FF;
 
-  /* Red (ضعيف) */
-  --color-red-50:  #2D1414;
-  --color-red-100: #3F1A1A;
-  --color-red-200: #561F1F;
-  --color-red-300: #7A2A2A;
-  --color-red-400: #A53A3A;
-  --color-red-500: #C85050;
-  --color-red-600: #D96B6B;
-  --color-red-700: #E68A8A;
+  /* Alert red */
+  --color-red-50:#2C1414; --color-red-100:#3E1B1B; --color-red-200:#552525; --color-red-300:#743434; --color-red-400:#9C4848; --color-red-500:#BC5454; --color-red-600:#C85B5B; --color-red-700:#D97E7E; --color-red-800:#E6A3A3; --color-red-900:#F0C4C4;
 
-  /* Teal (transmission terms etc.) */
-  --color-teal-50:  #0E2622;
-  --color-teal-100: #123832;
-  --color-teal-200: #184A42;
-  --color-teal-300: #216158;
-  --color-teal-400: #2C8276;
-  --color-teal-500: #379A8C;
-  --color-teal-600: #45AC9D;
-  --color-teal-700: #5BBDAE;
-  --color-teal-800: #79CDC0;
+  /* Teal — transmission terms (within emerald family) */
+  --color-teal-50:#0C2620; --color-teal-100:#11362C; --color-teal-200:#184B3D; --color-teal-300:#226555; --color-teal-400:#338C73; --color-teal-500:#45AD8D; --color-teal-600:#58C7A2; --color-teal-700:#6ED9B2; --color-teal-800:#8EE3C4; --color-teal-900:#B0EDD6;
 
-  /* ── Tailwind default palettes used across pages (cards/badges) ──
-     Same pattern: low steps = dark tints, high steps = light text. */
-  --color-emerald-50:#0E241C; --color-emerald-100:#123A2C; --color-emerald-200:#184D3A; --color-emerald-300:#226B4F; --color-emerald-400:#2E8C68; --color-emerald-500:#39A87C; --color-emerald-600:#46BC8D; --color-emerald-700:#5ECBA0; --color-emerald-800:#82D9B7; --color-emerald-900:#A8E6CE; --color-emerald-950:#D2F2E5;
-  --color-sky-50:#0E2230; --color-sky-100:#123346; --color-sky-200:#184A66; --color-sky-300:#22638A; --color-sky-400:#2F84B5; --color-sky-500:#3F9FD6; --color-sky-600:#5DB4E4; --color-sky-700:#84CAEF; --color-sky-800:#ACDCF4; --color-sky-900:#CCE9F8; --color-sky-950:#E6F3FB;
-  --color-cyan-50:#0C2428; --color-cyan-100:#103439; --color-cyan-200:#164A52; --color-cyan-300:#1F6470; --color-cyan-400:#2A8696; --color-cyan-500:#36A1B4; --color-cyan-600:#45B6C8; --color-cyan-700:#5FC8D8; --color-cyan-800:#86D8E4; --color-cyan-900:#B0E6EE; --color-cyan-950:#D6F3F7;
-  --color-indigo-50:#15182E; --color-indigo-100:#1C2444; --color-indigo-200:#283366; --color-indigo-300:#36469A; --color-indigo-400:#4A5DC0; --color-indigo-500:#6072D6; --color-indigo-600:#7E8DE0; --color-indigo-700:#9FAAE9; --color-indigo-800:#BCC4F0; --color-indigo-900:#D6DBF6; --color-indigo-950:#EAEDFA;
-  --color-violet-50:#1C1530; --color-violet-100:#281C48; --color-violet-200:#382666; --color-violet-300:#4E338F; --color-violet-400:#6A47B5; --color-violet-500:#8360CC; --color-violet-600:#9B7BDB; --color-violet-700:#B49AE6; --color-violet-800:#CBB6F0; --color-violet-900:#DECFF6; --color-violet-950:#EEE6FA;
-  --color-purple-50:#221530; --color-purple-100:#311C48; --color-purple-200:#442666; --color-purple-300:#5E338F; --color-purple-400:#7C47B5; --color-purple-500:#9760CC; --color-purple-600:#AC7BDB; --color-purple-700:#C29AE6; --color-purple-800:#D4B6F0; --color-purple-900:#E2CFF6; --color-purple-950:#F1E7FB;
-  --color-rose-50:#2B1320; --color-rose-100:#3D1A2C; --color-rose-200:#541F3D; --color-rose-300:#762A55; --color-rose-400:#A03A73; --color-rose-500:#C2508F; --color-rose-600:#D36BA4; --color-rose-700:#E68ABC; --color-rose-800:#EFA8D0; --color-rose-900:#F5C9E2; --color-rose-950:#FBE6F1;
-  --color-pink-50:#2B1320; --color-pink-100:#3D1A2C; --color-pink-200:#541F3D; --color-pink-300:#762A55; --color-pink-400:#A03A73; --color-pink-500:#C2508F; --color-pink-600:#D36BA4; --color-pink-700:#E68ABC; --color-pink-800:#EFA8D0; --color-pink-900:#F5C9E2; --color-pink-950:#FBE6F1;
-  --color-orange-50:#2A1A0E; --color-orange-100:#392411; --color-orange-200:#4E3115; --color-orange-300:#6B441E; --color-orange-400:#94612B; --color-orange-500:#BC7B33; --color-orange-600:#D28F41; --color-orange-700:#E2A863; --color-orange-800:#EDC089; --color-orange-900:#F4D5AC; --color-orange-950:#FBEBD3;
-  --color-lime-50:#1C2410; --color-lime-100:#293414; --color-lime-200:#384A19; --color-lime-300:#4F6522; --color-lime-400:#6E882E; --color-lime-500:#86A23A; --color-lime-600:#9BB84A; --color-lime-700:#B6CB6E; --color-lime-800:#CEDA93; --color-lime-900:#E0E8B5; --color-lime-950:#F0F4DC;
-  --color-yellow-50:#27220C; --color-yellow-100:#352D0F; --color-yellow-200:#493D14; --color-yellow-300:#66541C; --color-yellow-400:#917829; --color-yellow-500:#B89733; --color-yellow-600:#D0AC3E; --color-yellow-700:#E0C566; --color-yellow-800:#ECD68D; --color-yellow-900:#F3E3B0; --color-yellow-950:#FAF2D6;
-  /* Neutral-ish ramps inverted like gray */
-  --color-slate-50:#16191F; --color-slate-100:#1C212A; --color-slate-200:#2A2F39; --color-slate-300:#3A414D; --color-slate-400:#5A6270; --color-slate-500:#868D99; --color-slate-600:#A7AEB9; --color-slate-700:#C4CAD3; --color-slate-800:#DCE0E6; --color-slate-900:#ECEAE3; --color-slate-950:#F6F4EF;
-  --color-zinc-50:#17181B; --color-zinc-100:#1D1F23; --color-zinc-200:#2B2E33; --color-zinc-300:#3C4046; --color-zinc-400:#5C616A; --color-zinc-500:#888D96; --color-zinc-600:#A9AEB6; --color-zinc-700:#C6CAD0; --color-zinc-800:#DDE0E4; --color-zinc-900:#ECECEC; --color-zinc-950:#F6F6F6;
-  --color-neutral-50:#181818; --color-neutral-100:#1E1E1E; --color-neutral-200:#2C2C2C; --color-neutral-300:#3D3D3D; --color-neutral-400:#5D5D5D; --color-neutral-500:#8A8A8A; --color-neutral-600:#ABABAB; --color-neutral-700:#C8C8C8; --color-neutral-800:#DEDEDE; --color-neutral-900:#ECECEC; --color-neutral-950:#F6F6F6;
-  --color-stone-50:#1A1815; --color-stone-100:#211E1A; --color-stone-200:#2F2B26; --color-stone-300:#403B34; --color-stone-400:#615B52; --color-stone-500:#8C857A; --color-stone-600:#ABA499; --color-stone-700:#C8C2B8; --color-stone-800:#DEDAD2; --color-stone-900:#ECEAE3; --color-stone-950:#F6F4EF;
+  /* Purple — secondary accent */
+  --color-purple-50:#1C1530; --color-purple-100:#281C46; --color-purple-200:#382663; --color-purple-300:#4D348C; --color-purple-400:#6A4AB8; --color-purple-500:#8C68DB; --color-purple-600:#B68CFF; --color-purple-700:#C7A6FF; --color-purple-800:#D6BCFF; --color-purple-900:#E5D3FF; --color-purple-950:#F2EAFF;
 }
 
 @media print {
