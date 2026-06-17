@@ -117,35 +117,36 @@
   --font-serif: 'ThmanyahSerifText', 'Traditional Arabic', serif;
   --font-display: 'ThmanyahSerifDisplay', 'Traditional Arabic', serif;
 
-  /* Semantic aliases — bright encyclopedia canvas (hdith.com-like) */
-  --color-paper: #FFFFFF;
-  --color-surface: #FFFFFF;
-  --color-border: #E5E7EB;
-  --color-ink: #111827;
-  --color-muted: #4B5563;
-  --color-primary: #166534;
-  --color-primary-soft: #F0FDF4;
-  --color-accent-gold: #CA8A04;
+  /* Semantic aliases — warm "manuscript" canvas (paper + muted teal-green) */
+  --color-paper: #FAF8F4;          /* warm cream page background */
+  --color-surface: #FFFFFF;        /* cards lift on the cream canvas */
+  --color-surface-sunken: #F4EFE6; /* warm beige for secondary panels (sanad block, info boxes) */
+  --color-border: #E7E0D4;         /* warm hairline border */
+  --color-ink: #1A1A17;            /* warm near-black text */
+  --color-muted: #635B4B;          /* warm muted text */
+  --color-primary: #265E54;
+  --color-primary-soft: #EDF4F1;
+  --color-accent-gold: #B07D11;
 
-  /* Emerald green — readable links & accents, not forest-dark */
-  --color-green-50: #F0FDF4;
-  --color-green-100: #DCFCE7;
-  --color-green-200: #BBF7D0;
-  --color-green-300: #86EFAC;
-  --color-green-400: #4ADE80;
-  --color-green-500: #22C55E;
-  --color-green-600: #16A34A;
-  --color-green-700: #15803D;
-  --color-green-800: #166534;
-  --color-green-900: #14532D;
-  --color-green-950: #052E16;
+  /* Muted teal-green — calm, scholarly accent (anchored to hdith.com's oklch(0.48 0.062 195)) */
+  --color-green-50: #EDF4F1;
+  --color-green-100: #D6E7E1;
+  --color-green-200: #AFD0C6;
+  --color-green-300: #82B5A8;
+  --color-green-400: #549585;
+  --color-green-500: #357A6B;
+  --color-green-600: #2C6E63;
+  --color-green-700: #265E54;
+  --color-green-800: #214F47;
+  --color-green-900: #1A3E38;
+  --color-green-950: #102621;
 
-  /* Neutral gray — clear hierarchy, not muddy stone */
-  --color-gray-50: #F9FAFB;
-  --color-gray-100: #F3F4F6;
-  --color-gray-200: #E5E7EB;
-  --color-gray-300: #D1D5DB;
-  --color-gray-400: #9CA3AF;
+  /* Neutral gray — crisp text hierarchy; only the light end is warmed to sit on cream */
+  --color-gray-50: #F6F3ED;
+  --color-gray-100: #EFEAE0;
+  --color-gray-200: #E7E0D4;
+  --color-gray-300: #D2C8B8;
+  --color-gray-400: #A99F8C;
   --color-gray-500: #6B7280;
   --color-gray-600: #4B5563;
   --color-gray-700: #374151;
@@ -305,6 +306,34 @@ body {
   .ui-label {
     @apply text-xs text-gray-600 shrink-0 font-sans font-medium;
   }
+
+  .hadith-sanad {
+    @apply text-[15px] sm:text-base text-gray-700 font-serif;
+    line-height: 2.1;
+  }
+
+  .hadith-watermark {
+    font-family: var(--font-display);
+    font-weight: 900;
+    line-height: 0.8;
+    font-size: clamp(5rem, 16vw, 11rem);
+    color: var(--color-green-900);
+    opacity: 0.05;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ── Hadith matn hero ──
+   Unlayered (not in @layer components) so it overrides the base utility classes
+   GhareebMatn hardcodes (text-lg / leading-loose / font-serif / text-gray-900). */
+.hadith-matn {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1rem + 2.3vw, 2.3rem);
+  line-height: 1.95;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-align: center;
+  text-wrap: balance;
 }
 
 @media print {

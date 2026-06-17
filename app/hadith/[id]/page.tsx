@@ -171,7 +171,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       ids.forEach(nid => allIds.add(nid))
     }
     if (allIds.size > 0) {
-      const [narRes, tahdethTypesRes] = await Promise.all([
+      const [narRes, tahdethTypesRes, tadlisRes] = await Promise.all([
         pool.query<NarratorInChain>(
           `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion, tabaqa, death_year_num, death_year
            FROM narrators WHERE id = ANY($1)`,
@@ -180,37 +180,53 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         pool.query<{ id: number; text: string }>(
           `SELECT id, text FROM isnad_tahdeth_types LIMIT 2000`
         ).catch(() => ({ rows: [] as Array<{ id: number; text: string }> })),
+        // Mudallis (tadlis) flags — same heuristic as /narrators/mudallis-catalog
+        pool.query<{ narrator_id: number }>(
+          `SELECT DISTINCT narrator_id FROM narrator_criticism
+           WHERE narrator_id = ANY($1) AND say_text ~* 'تدليس|مدلس|يدلس|دلّس'`,
+          [Array.from(allIds)]
+        ).catch(() => ({ rows: [] as Array<{ narrator_id: number }> })),
       ])
       const narMap: Record<number, NarratorInChain> = {}
       narRes.rows.forEach(n => { narMap[n.id] = n })
       const tahdethTypesMap: Record<number, string> = {}
       tahdethTypesRes.rows.forEach(r => { tahdethTypesMap[r.id] = r.text })
+      const mudallisSet = new Set<number>(tadlisRes.rows.map(r => Number(r.narrator_id)))
 
       const seenChains = new Set<string>()
       for (const { ids, tahdethTerm: rawTahdeth } of chainRows) {
         const key = ids.join('-')
         if (seenChains.has(key)) continue
         seenChains.add(key)
-        const narrators = ids.map(nid => narMap[nid] || {
-          id: nid, name: `[${nid}]`, abb_name: null,
-          martaba_ibn_hajar: null, martaba_zahabi: null,
-          is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
-        })
-        // Parse "narrator_id type_id$..." format → dominant transmission term
+        const narrators = ids.map(nid => ({
+          ...(narMap[nid] || {
+            id: nid, name: `[${nid}]`, abb_name: null,
+            martaba_ibn_hajar: null, martaba_zahabi: null,
+            is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
+          }),
+          mudallis: mudallisSet.has(nid),
+        }))
+        // Parse "narrator_id type_id$..." format → per-narrator term + dominant term
         let tahdethTerm: string | null = null
+        const narratorTerms: Record<number, string> = {}
         if (rawTahdeth) {
           const counts: Record<number, number> = {}
           for (const seg of rawTahdeth.split('$')) {
             const parts = seg.trim().split(/\s+/)
             if (parts.length >= 2) {
+              const narId = parseInt(parts[0], 10)
               const typeId = parseInt(parts[1], 10)
-              if (!isNaN(typeId)) counts[typeId] = (counts[typeId] ?? 0) + 1
+              if (!isNaN(typeId)) {
+                counts[typeId] = (counts[typeId] ?? 0) + 1
+                const term = tahdethTypesMap[typeId]
+                if (!isNaN(narId) && term && !narratorTerms[narId]) narratorTerms[narId] = term
+              }
             }
           }
           const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
           tahdethTerm = dominant ? (tahdethTypesMap[parseInt(dominant[0])] ?? null) : null
         }
-        chains.push({ narrators, tahdethTerm })
+        chains.push({ narrators, tahdethTerm, narratorTerms })
       }
     }
   }

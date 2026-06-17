@@ -201,11 +201,11 @@ function NumberingToggle() {
     <button
       onClick={toggle}
       title={pref === 'harf' ? 'التبديل الى ترقيم المطبوع' : 'التبديل الى ترقيم حرف'}
-      className="flex items-center gap-1 text-[11px] text-white/70 hover:text-white border border-white/20 hover:border-white/40 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
+      className="flex items-center gap-1 text-[11px] text-muted hover:text-ink border border-border hover:border-green-300 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
     >
-      <span className={pref === 'harf' ? 'text-amber-300 font-bold' : 'text-white/50'}>حرف</span>
-      <span className="text-white/30">&#x21C4;</span>
-      <span className={pref === 'matboa' ? 'text-amber-300 font-bold' : 'text-white/50'}>مطبوع</span>
+      <span className={pref === 'harf' ? 'text-green-700 font-bold' : 'text-gray-400'}>حرف</span>
+      <span className="text-gray-300">&#x21C4;</span>
+      <span className={pref === 'matboa' ? 'text-green-700 font-bold' : 'text-gray-400'}>مطبوع</span>
     </button>
   )
 }
@@ -229,17 +229,17 @@ export default function NavHeader() {
   }
 
   return (
-    <nav ref={navRef} className="relative z-30 bg-green-800 text-white font-sans border-b border-green-900/25" dir="rtl">
+    <nav ref={navRef} className="relative z-30 bg-paper/90 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
       <div className="max-w-7xl mx-auto flex items-center gap-1 px-3 sm:px-6 lg:px-7 py-2 sm:py-2.5 min-w-0">
         <a
           href="/"
-          className="text-sm sm:text-base font-bold hover:text-amber-200 transition-colors ml-2 sm:ml-3 shrink-0 whitespace-nowrap font-display"
+          className="text-sm sm:text-base font-bold text-green-800 hover:text-green-600 transition-colors ml-2 sm:ml-3 shrink-0 whitespace-nowrap font-display"
         >
           <span className="sm:hidden">الجامع</span>
           <span className="hidden sm:inline">جامع خادم الحرمين</span>
         </a>
 
-        <div className="hidden sm:block w-px h-5 bg-white/20 mx-1 shrink-0" />
+        <div className="hidden sm:block w-px h-5 bg-border mx-1 shrink-0" />
 
         <div className="flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
           {CATEGORIES.map(cat => (
@@ -249,8 +249,8 @@ export default function NavHeader() {
                 onClick={() => toggle(cat.id)}
                 className={`flex items-center gap-1 text-sm font-sans px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
-                    ? 'bg-white/15 text-white'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                    ? 'bg-green-700 text-white'
+                    : 'text-ink/75 hover:text-ink hover:bg-green-50'
                 }`}
               >
                 {cat.label}

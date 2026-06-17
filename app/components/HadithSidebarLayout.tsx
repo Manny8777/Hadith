@@ -6,6 +6,7 @@ import PrintButton from './PrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
 import ChainTimeline from './ChainTimeline'
+import IsnadChainTimeline from './IsnadChainTimeline'
 // import HadithNote from './HadithNote' // TODO: re-enable with per-user login
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
@@ -26,12 +27,13 @@ function cleanHadithContent(xml: string): string {
   return stripXmlToVerbatim(xml)
 }
 
-function chainDepthLabel(count: number): string {
-  const labels: Record<number, string> = {
-    3: 'ثلاثي', 4: 'رباعي', 5: 'خماسي', 6: 'سداسي',
-    7: 'سباعي', 8: 'ثماني', 9: 'تساعي', 10: 'عشاري',
-  }
-  return labels[count] || ''
+const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+function toArabicDigits(value: string | number | null | undefined): string {
+  if (value == null) return ''
+  // Keep only the leading run of digits so noisy strings still yield a clean numeral
+  const m = String(value).match(/\d+/)
+  if (!m) return ''
+  return m[0].replace(/\d/g, d => AR_DIGITS[Number(d)])
 }
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
@@ -54,11 +56,13 @@ export interface NarratorInChain {
   tabaqa: string | null
   death_year_num: number | null
   death_year: string | null
+  mudallis?: boolean
 }
 
 export interface Chain {
   narrators: NarratorInChain[]
   tahdethTerm?: string | null
+  narratorTerms?: Record<number, string>
 }
 
 export interface Judgment {
@@ -367,45 +371,57 @@ export default function HadithSidebarLayout({
           </div>
         </div>
 
-        {/* Hadith text — sanad then matn */}
+        {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {
           const { sanad, matn } = splitSanadMatn(h.content)
           const matnText = matn || cleanHadithContent(h.content)
+          const watermark = toArabicDigits(h.tarqeem_harf) || toArabicDigits(h.tarqeem_matboa1) || toArabicDigits(h.main_id)
           return (
             <div className="ui-card mb-4 overflow-hidden">
               {sanad && (
-                <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-gray-200 bg-gray-50/80">
+                <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border bg-surface-sunken">
                   <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">السند</p>
                   {sanadSegments && sanadSegments.length > 0 ? (
                     <SanadNarrators
                       segments={sanadSegments}
                       narrators={sanadNarrators}
                       showTashkeel={showTashkeel}
-                      className="text-sm sm:text-base leading-loose text-gray-800 font-serif"
+                      className="hadith-sanad"
                     />
                   ) : (
-                    <p className="text-sm sm:text-base leading-loose text-gray-800 font-serif" dir="rtl">
+                    <p className="hadith-sanad" dir="rtl">
                       {applyTashkeel(sanad)}
                     </p>
                   )}
                 </div>
               )}
-              <div className={`px-4 sm:px-6 ${sanad ? 'py-4 sm:py-5' : 'p-4 sm:p-6'}`}>
-                {sanad && (
-                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">المتن</p>
+              <div className={`relative ${sanad ? 'px-4 sm:px-6 py-6 sm:py-8' : 'px-4 sm:px-6 py-8 sm:py-10'}`}>
+                {/* Watermark hadith number — signature manuscript touch */}
+                {watermark && (
+                  <span
+                    aria-hidden
+                    className="hadith-watermark pointer-events-none select-none absolute top-1 left-2 sm:left-5 z-0"
+                  >
+                    {watermark}
+                  </span>
                 )}
-                {hadithServices?.ghareeb ? (
-                  <GhareebMatn
-                    hadithId={hadithId}
-                    matn={matnText}
-                    showTashkeel={showTashkeel}
-                    className="text-lg sm:text-xl leading-[2.1] text-gray-900 font-serif"
-                  />
-                ) : (
-                  <p className="text-base sm:text-lg leading-loose text-gray-900 font-serif" dir="rtl">
-                    {applyTashkeel(matnText)}
-                  </p>
-                )}
+                <div className="relative z-10">
+                  {sanad && (
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 font-sans text-center">المتن</p>
+                  )}
+                  {hadithServices?.ghareeb ? (
+                    <GhareebMatn
+                      hadithId={hadithId}
+                      matn={matnText}
+                      showTashkeel={showTashkeel}
+                      className="hadith-matn"
+                    />
+                  ) : (
+                    <p className="hadith-matn" dir="rtl">
+                      {applyTashkeel(matnText)}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           )
@@ -472,44 +488,27 @@ export default function HadithSidebarLayout({
             <p className="text-sm text-gray-400 py-4">لا يوجد إسناد مسجل لهذا الحديث</p>
           ) : (
             <div className="space-y-3">
-              {chains.map((chain, ci) => (
-                <div key={ci} className="rounded-xl border border-gray-100 bg-white p-5">
-                  <h3 className="font-bold text-green-900 text-sm mb-3 flex items-center gap-2 flex-wrap">
-                    {chains.length > 1
-                      ? `السند ${ci === 0 ? 'الأول' : ci === 1 ? 'الثاني' : ci === 2 ? 'الثالث' : ci + 1}`
-                      : 'السند'}
-                    {chainDepthLabel(chain.narrators.length) && (
-                      <span className="text-xs font-normal text-gray-400">
-                        {chainDepthLabel(chain.narrators.length)} — {chain.narrators.length} رواة
-                      </span>
-                    )}
-                    {chain.tahdethTerm && (
-                      <span className="text-[10px] font-normal font-serif px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 ms-auto">
-                        {chain.tahdethTerm}
-                      </span>
-                    )}
-                  </h3>
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {chain.narrators.map((nar, i) => (
-                      <span key={i} className="flex items-center gap-1.5">
-                        <Link href={`/narrator/${nar.id}`}
-                          className="px-3 py-1.5 rounded-lg text-sm border border-gray-200 bg-gray-50 hover:border-green-300 hover:bg-green-50 hover:text-green-900 transition-all">
-                          {nar.abb_name || nar.name}
-                        </Link>
-                        {i < chain.narrators.length - 1 && <span className="text-gray-300 text-lg">←</span>}
-                      </span>
-                    ))}
-                  </div>
-                  <ChainTimeline narrators={chain.narrators} />
+              {/* Primary: rich vertical isnad timeline (death year · grade · tabaqa · tadlis · per-link term) */}
+              <IsnadChainTimeline chains={chains} />
+
+              {/* Secondary: chronological (death-year) view of the primary chain */}
+              <details className="rounded-xl border border-border bg-surface overflow-hidden group">
+                <summary className="cursor-pointer list-none select-none px-4 py-3 flex items-center justify-between gap-2 text-sm font-medium text-gray-600 hover:text-green-800 transition-colors">
+                  <span>الجدول الزمني للسند — الفجوات بين الرواة</span>
+                  <span className="text-xs text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div className="px-4 pb-4 -mt-1">
+                  <ChainTimeline narrators={chains[0].narrators} />
                 </div>
-              ))}
+              </details>
+
               {commonNarrators.length > 0 && (
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-blue-700 mb-2">النقطة المشتركة في جميع الأسانيد</p>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-green-800 mb-2">النقطة المشتركة (مدار) جميع الأسانيد</p>
                   <div className="flex flex-wrap gap-2">
                     {commonNarrators.map(n => (
                       <Link key={n.id} href={`/narrator/${n.id}`}
-                        className="text-sm px-3 py-1 rounded-lg border border-blue-200 bg-white hover:shadow-sm transition-all">
+                        className="text-sm px-3 py-1 rounded-lg border border-green-200 bg-surface hover:shadow-sm hover:border-green-300 transition-all">
                         {n.abb_name || n.name}
                       </Link>
                     ))}

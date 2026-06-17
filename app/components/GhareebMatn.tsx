@@ -192,7 +192,7 @@ export default function GhareebMatn({
 
   if (loading) {
     return (
-      <p className={`text-lg leading-loose text-gray-900 font-serif ${className}`} dir="rtl">
+      <p className={className || 'text-lg leading-loose text-gray-900 font-serif'} dir="rtl">
         {displayMatn}
       </p>
     )
@@ -200,7 +200,7 @@ export default function GhareebMatn({
 
   if (matches.length === 0) {
     return (
-      <p className={`text-lg leading-loose text-gray-900 font-serif ${className}`} dir="rtl">
+      <p className={className || 'text-lg leading-loose text-gray-900 font-serif'} dir="rtl">
         {displayMatn}
       </p>
     )
@@ -218,7 +218,7 @@ export default function GhareebMatn({
       segments.push(
         <span
           key={`${m.formId}-${m.start}`}
-          className="text-gray-900 cursor-help bg-orange-100/50 rounded-sm px-0.5 transition-colors hover:bg-orange-200/60"
+          className="cursor-help bg-orange-100/50 rounded-sm px-0.5 transition-colors hover:bg-orange-200/60"
           onMouseEnter={e => openPopover(word, e.currentTarget)}
           onMouseLeave={() => closePopover()}
           onClick={e => {
@@ -245,7 +245,7 @@ export default function GhareebMatn({
 
   return (
     <>
-      <p className={`text-lg leading-loose text-gray-900 font-serif ${className}`} dir="rtl">
+      <p className={className || 'text-lg leading-loose text-gray-900 font-serif'} dir="rtl">
         {segments}
       </p>
       {activeWord && anchorRect && (
