@@ -9,7 +9,7 @@ function decodeEntities(s: string): string {
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)))
 }
 
-export function stripXmlToVerbatim(xml: string): string {
+function cleanXmlTags(xml: string): string {
   return decodeEntities(
     (xml || '')
       .replace(/<سند_مخفي[\s\S]*?<\/سند_مخفي>/g, '')
@@ -21,7 +21,20 @@ export function stripXmlToVerbatim(xml: string): string {
   )
     .replace(/^\s*[-–—]\s*/, '')
     .replace(/\s+/g, ' ')
-    .trim()
+}
+
+export function stripXmlToVerbatim(xml: string): string {
+  return cleanXmlTags(xml).trim()
+}
+
+/**
+ * Like {@link stripXmlToVerbatim} but preserves a single leading/trailing space
+ * (no trim). Use when slicing a run into adjacent segments so the word boundaries
+ * between a narrator name and its surrounding text survive (otherwise the words
+ * render glued together, e.g. "حدثنيالضحاك").
+ */
+export function stripXmlKeepEdges(xml: string): string {
+  return cleanXmlTags(xml)
 }
 
 export function splitSanadMatn(xml: string): { sanad: string; matn: string } {

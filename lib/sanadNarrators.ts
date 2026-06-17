@@ -1,4 +1,4 @@
-import { stripXmlToVerbatim } from '@/lib/hadithText'
+import { stripXmlToVerbatim, stripXmlKeepEdges } from '@/lib/hadithText'
 
 export interface SanadSegment {
   kind: 'text' | 'narrator'
@@ -36,7 +36,8 @@ export function parseSanadNarratorSegments(xml: string): SanadSegment[] {
   NARRATOR_TAG_RE.lastIndex = 0
   while ((m = NARRATOR_TAG_RE.exec(scope)) !== null) {
     if (m.index > lastIndex) {
-      const plain = stripXmlToVerbatim(scope.slice(lastIndex, m.index))
+      // Keep edge whitespace so the name doesn't glue onto the surrounding words
+      const plain = stripXmlKeepEdges(scope.slice(lastIndex, m.index))
       if (plain) segments.push({ kind: 'text', text: plain })
     }
 
@@ -55,7 +56,7 @@ export function parseSanadNarratorSegments(xml: string): SanadSegment[] {
   }
 
   if (lastIndex < scope.length) {
-    const plain = stripXmlToVerbatim(scope.slice(lastIndex))
+    const plain = stripXmlKeepEdges(scope.slice(lastIndex))
     if (plain) segments.push({ kind: 'text', text: plain })
   }
 
@@ -64,7 +65,36 @@ export function parseSanadNarratorSegments(xml: string): SanadSegment[] {
     if (fallback) segments.push({ kind: 'text', text: fallback })
   }
 
-  return segments
+  return ensureWordBoundaries(segments)
+}
+
+// Closing punctuation hugs the previous token (no space before it).
+const HUGS_PREV = /^[\s،؛؟.!:،,)\]}»”’"']/
+// Opening punctuation hugs the next token (no space after it).
+const HUGS_NEXT = /[([{«“]$/
+
+/**
+ * Guarantee a word boundary between adjacent segments by inserting a plain (non-bold)
+ * space wherever one is missing — so a narrator name never glues onto a neighbouring
+ * word. The space is its own text segment so it stays outside the highlighted name span.
+ */
+function ensureWordBoundaries(segments: SanadSegment[]): SanadSegment[] {
+  const out: SanadSegment[] = []
+  for (let i = 0; i < segments.length; i++) {
+    const cur = segments[i]
+    const prev = segments[i - 1]
+    if (
+      prev?.text &&
+      cur.text &&
+      !/\s$/.test(prev.text) &&
+      !HUGS_PREV.test(cur.text) &&
+      !HUGS_NEXT.test(prev.text)
+    ) {
+      out.push({ kind: 'text', text: ' ' })
+    }
+    out.push(cur)
+  }
+  return out
 }
 
 export function sanadSegmentsHaveNarrators(segments: SanadSegment[]): boolean {
