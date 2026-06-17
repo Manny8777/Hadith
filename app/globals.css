@@ -330,7 +330,7 @@ html.dark {
   --color-gray-50:#0E1116; --color-gray-100:#151A21; --color-gray-200:#2A313A; --color-gray-300:#3A424D; --color-gray-400:#6E6A62; --color-gray-500:#A7A094; --color-gray-600:#BEB7AB; --color-gray-700:#D1CABE; --color-gray-800:#E0DACE; --color-gray-900:#ECE6DA; --color-gray-950:#F5F1E8;
 
   /* Emerald */
-  --color-green-50:#0E2A22; --color-green-100:#133A2F; --color-green-200:#1A4F40; --color-green-300:#246A56; --color-green-400:#348F74; --color-green-500:#45AD8D; --color-green-600:#58C7A2; --color-green-700:#2596BE; --color-green-800:#8EE3C4; --color-green-900:#B0EDD6; --color-green-950:#D8F6EC;
+  --color-green-50:#0E2A22; --color-green-100:#133A2F; --color-green-200:#1A4F40; --color-green-300:#246A56; --color-green-400:#348F74; --color-green-500:#45AD8D; --color-green-600:#58C7A2; --color-green-700:#2596BE; --color-green-800:#4EBA65; --color-green-900:#B0EDD6; --color-green-950:#D8F6EC;
 
   /* Gold */
   --color-amber-50:#2A2210; --color-amber-100:#3A2F14; --color-amber-200:#50421C; --color-amber-300:#6E5A26; --color-amber-400:#997E36; --color-amber-500:#C09A45; --color-amber-600:#D9AD5B; --color-amber-700:#E5C27E; --color-amber-800:#EED39C; --color-amber-900:#F4E1BC; --color-amber-950:#FBF3DD;
@@ -342,7 +342,7 @@ html.dark {
   --color-red-50:#2C1414; --color-red-100:#3E1B1B; --color-red-200:#552525; --color-red-300:#743434; --color-red-400:#9C4848; --color-red-500:#BC5454; --color-red-600:#C85B5B; --color-red-700:#D97E7E; --color-red-800:#E6A3A3; --color-red-900:#F0C4C4;
 
   /* Teal — transmission terms (within emerald family) */
-  --color-teal-50:#0C2620; --color-teal-100:#11362C; --color-teal-200:#184B3D; --color-teal-300:#226555; --color-teal-400:#338C73; --color-teal-500:#45AD8D; --color-teal-600:#58C7A2; --color-teal-700:#2596BE; --color-teal-800:#8EE3C4; --color-teal-900:#B0EDD6;
+  --color-teal-50:#0C2620; --color-teal-100:#11362C; --color-teal-200:#184B3D; --color-teal-300:#226555; --color-teal-400:#338C73; --color-teal-500:#45AD8D; --color-teal-600:#58C7A2; --color-teal-700:#2596BE; --color-teal-800:#4EBA65; --color-teal-900:#B0EDD6;
 
   /* Purple — secondary accent */
   --color-purple-50:#1C1530; --color-purple-100:#281C46; --color-purple-200:#382663; --color-purple-300:#4D348C; --color-purple-400:#6A4AB8; --color-purple-500:#8C68DB; --color-purple-600:#B68CFF; --color-purple-700:#C7A6FF; --color-purple-800:#D6BCFF; --color-purple-900:#E5D3FF; --color-purple-950:#F2EAFF;
