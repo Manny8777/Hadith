@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -41,6 +41,7 @@ type Phase = 'idle' | 'loading' | 'done' | 'error'
 
 const NW = 170
 const NH = 50
+const MAX_GRAPH_CHAINS = 28
 
 // ─── ReactFlow full-graph builder ─────────────────────────────────────────────
 
@@ -412,14 +413,21 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
+  // Cap chains fed to the full graph so it stays legible, current hadith's chains first.
+  const graphChains = useMemo(() => {
+    const cur = allChains.filter(c => c.hadithId === hadithId)
+    const others = allChains.filter(c => c.hadithId !== hadithId)
+    return [...cur, ...others].slice(0, MAX_GRAPH_CHAINS)
+  }, [allChains, hadithId])
+
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (allChains.length) {
-      const { nodes: n, edges: e } = buildGraph(allChains, hadithId, dark)
+    if (graphChains.length) {
+      const { nodes: n, edges: e } = buildGraph(graphChains, hadithId, dark)
       setNodes(n); setEdges(e)
     }
-  }, [dark, allChains]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dark, graphChains]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setPhase('loading')
@@ -435,8 +443,7 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
       setAllChains(chains)
       const curr = chains.filter(c => c.hadithId === hadithId)
       setCurrentChains(curr.length > 0 ? curr : [chains[0]])
-      const { nodes: n, edges: e } = buildGraph(chains, hadithId, dark)
-      setNodes(n); setEdges(e)
+      // Graph nodes are built by the [dark, graphChains] effect once allChains is set.
       setPhase('done')
     } catch {
       setErrorMsg('تعذّر تحميل البيانات'); setPhase('error')
@@ -533,7 +540,10 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
       {viewMode === 'graph' && (
         <div>
           <p className="text-xs text-gray-400 mb-2">
-            {allChains.length} إسناداً — اسحب للتنقل · عجلة الماوس للتكبير · انقر على الراوي لترجمته
+            {allChains.length > graphChains.length
+              ? `عرض ${graphChains.length} من ${allChains.length} إسناد (أسانيد هذا الحديث أولاً) — للمزيد استعرض الأسانيد فردياً`
+              : `${allChains.length} إسناداً`}
+            {' '}— اسحب للتنقل · عجلة الماوس للتكبير · انقر على الراوي لترجمته
           </p>
           <div style={{ height: 520 }} className="w-full border border-gray-100 rounded-xl overflow-hidden bg-surface">
             <ReactFlow

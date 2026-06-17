@@ -655,7 +655,7 @@ function DivNodeCmp({ data }: { data: { label: React.ReactNode; isInsertion: boo
   )
 }
 
-function SourceLabelCmp({ data }: { data: { label: string; num: string | null; hadithId: number; width: number } }) {
+function SourceLabelCmp({ data }: { data: { label: string; num: string | null; hadithId: number; width: number; height?: number } }) {
   const { theme } = useTheme()
   const dark = theme === 'dark'
   const P = dark
@@ -668,7 +668,7 @@ function SourceLabelCmp({ data }: { data: { label: string; num: string | null; h
       onClick={e => e.stopPropagation()}
       style={{
         background: P.bg, border: `1px solid ${P.border}`, borderRadius: 6,
-        width: data.width, height: ROW_HEIGHT,
+        width: data.width, height: data.height ?? ROW_HEIGHT,
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
         justifyContent: 'center', padding: '4px 10px', boxSizing: 'border-box',
         textDecoration: 'none', cursor: 'pointer',
@@ -738,11 +738,11 @@ function buildVariantFlow(
   segments: VariantSegment[],
   sourceBookTitle: string,
   dark: boolean,
-): { nodes: Node[]; edges: Edge[]; numSources: number; totalSources: number } {
+): { nodes: Node[]; edges: Edge[]; numSources: number; totalSources: number; contentHeight: number } {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
-  if (segments.length === 0) return { nodes, edges, numSources: 0, totalSources: 0 }
+  if (segments.length === 0) return { nodes, edges, numSources: 0, totalSources: 0, contentHeight: 300 }
 
   // Collect unique sources in order of first appearance across all segments
   const sourceOrder: SourceRef[] = []
@@ -764,12 +764,6 @@ function buildVariantFlow(
   const shownSources = sourceOrder.slice(0, MAX_SOURCES)
   const shownIds = new Set(shownSources.map(s => s.id))
 
-  // Assign each shown source a fixed Y row — all nodes for a source share the same Y
-  const sourceRowY = new Map<number, number>()
-  shownSources.forEach((src, idx) => {
-    sourceRowY.set(src.id, BACKBONE_Y + BACKBONE_HEIGHT + V_GAP + idx * (ROW_HEIGHT + ROW_GAP))
-  })
-
   // Backbone X positions (right-to-left: segment 0 = rightmost)
   const widths = segments.map(s => calcBackboneWidth(s.words))
   const totalWidth = widths.reduce((sum, w) => sum + w + H_GAP, 0) - H_GAP
@@ -781,42 +775,87 @@ function buildVariantFlow(
     xCursor -= H_GAP
   }
 
-  // Full line width (from left edge of labels to right edge of rightmost backbone)
-  const lineWidth = LABEL_WIDTH + H_GAP + totalWidth
-  const lineX = -(LABEL_WIDTH + H_GAP)
+  // Pre-compute per-(segment) source divergences once, so rows can be sized before placement
+  const segDivWidth = widths.map(w => Math.max(100, Math.min(w + 10, 210)))
+  const segSrcDiv: Array<Map<number, { word: string; isInsertion: boolean; src: SourceRef }>> = segments.map(seg => {
+    const m = new Map<number, { word: string; isInsertion: boolean; src: SourceRef }>()
+    for (const div of seg.divergences) {
+      const isInsertion = div.type === 'insertion'
+      for (const src of div.sources) {
+        if (!m.has(src.id)) m.set(src.id, { word: div.word, isInsertion, src })
+        else {
+          const prev = m.get(src.id)!
+          m.set(src.id, { word: prev.word + ' / ' + div.word, isInsertion: prev.isInsertion || isInsertion, src: prev.src })
+        }
+      }
+    }
+    return m
+  })
 
-  // Backbone row label (current hadith indicator)
+  // Estimate a divergence node's rendered height so taller content never overlaps the next row
+  const estimateDivHeight = (word: string, dWidth: number, isInsertion: boolean): number => {
+    const usable = Math.max(40, dWidth - 22)
+    const lines = Math.max(1, Math.ceil((word.length * 7.4) / usable))
+    return 12 /* padding */ + (isInsertion ? 13 : 0) + lines * 18 /* word line(s) */ + 14 /* source link */
+  }
+
+  // Dynamic per-source row height = max(min row, tallest divergence node across all segments)
+  const rowHeight = new Map<number, number>()
+  for (const src of shownSources) rowHeight.set(src.id, ROW_HEIGHT)
+  for (let i = 0; i < segments.length; i++) {
+    for (const [srcId, { word, isInsertion }] of segSrcDiv[i]) {
+      if (!shownIds.has(srcId)) continue
+      rowHeight.set(srcId, Math.max(rowHeight.get(srcId) ?? ROW_HEIGHT, estimateDivHeight(word, segDivWidth[i], isInsertion)))
+    }
+  }
+
+  // Stack rows with their dynamic heights — all nodes for a source share the same Y
+  const sourceRowY = new Map<number, number>()
+  let yCursor = BACKBONE_Y + BACKBONE_HEIGHT + V_GAP
+  for (const src of shownSources) {
+    sourceRowY.set(src.id, yCursor)
+    yCursor += (rowHeight.get(src.id) ?? ROW_HEIGHT) + ROW_GAP
+  }
+  const contentHeight = yCursor + 40
+
+  // RTL layout: the source/label column sits on the RIGHT of the backbone (Arabic reads right-to-left)
+  const labelX = totalWidth + H_GAP
+  const hlineLeft = -80 // buffer for divergence nodes that overhang the leftmost segment
+  const hlineWidth = labelX + LABEL_WIDTH - hlineLeft
+
+  // Backbone row label (current hadith indicator) — right column
   nodes.push({
     id: 'backbone-label',
     type: 'backboneLabel',
     data: { label: sourceBookTitle, width: LABEL_WIDTH },
-    position: { x: lineX, y: BACKBONE_Y },
+    position: { x: labelX, y: BACKBONE_Y },
   })
 
   // Horizontal guide line between backbone row and source rows
   nodes.push({
     id: 'hline-top',
     type: 'hline',
-    data: { width: lineWidth },
-    position: { x: lineX, y: BACKBONE_Y + BACKBONE_HEIGHT + Math.floor(V_GAP / 2) },
+    data: { width: hlineWidth },
+    position: { x: hlineLeft, y: BACKBONE_Y + BACKBONE_HEIGHT + Math.floor(V_GAP / 2) },
   })
 
-  // Source label nodes + horizontal guide lines — one per source row
+  // Source label nodes (right column) + horizontal guide lines — one per source row
   for (const [idx, src] of shownSources.entries()) {
     const rowY = sourceRowY.get(src.id)!
+    const rh = rowHeight.get(src.id) ?? ROW_HEIGHT
     nodes.push({
       id: `label-${src.id}`,
       type: 'sourceLabel',
-      data: { label: src.bookTitle, num: src.num, hadithId: src.id, width: LABEL_WIDTH },
-      position: { x: lineX, y: rowY },
+      data: { label: src.bookTitle, num: src.num, hadithId: src.id, width: LABEL_WIDTH, height: rh },
+      position: { x: labelX, y: rowY },
     })
-    // Guide line at bottom of this row (separates rows)
+    // Guide line at the bottom of this row (separates rows)
     if (idx < shownSources.length - 1) {
       nodes.push({
         id: `hline-${src.id}`,
         type: 'hline',
-        data: { width: lineWidth },
-        position: { x: lineX, y: rowY + ROW_HEIGHT + Math.floor(ROW_GAP / 2) },
+        data: { width: hlineWidth },
+        position: { x: hlineLeft, y: rowY + rh + Math.floor(ROW_GAP / 2) },
       })
     }
   }
@@ -854,19 +893,8 @@ function buildVariantFlow(
       })
     }
 
-    // Expand divergences into per-source entries — one node per (segment, source)
-    const srcDivMap = new Map<number, { word: string; isInsertion: boolean; src: SourceRef }>()
-    for (const div of seg.divergences) {
-      const isInsertion = div.type === 'insertion'
-      for (const src of div.sources) {
-        if (!srcDivMap.has(src.id)) {
-          srcDivMap.set(src.id, { word: div.word, isInsertion, src })
-        } else {
-          const prev = srcDivMap.get(src.id)!
-          srcDivMap.set(src.id, { word: prev.word + ' / ' + div.word, isInsertion: prev.isInsertion || isInsertion, src: prev.src })
-        }
-      }
-    }
+    // Per-source divergences for this segment (pre-computed above for row sizing)
+    const srcDivMap = segSrcDiv[i]
 
     const dWidth = Math.max(100, Math.min(bWidth + 10, 210))
     const dX = bx + (bWidth - dWidth) / 2
@@ -920,7 +948,7 @@ function buildVariantFlow(
     }
   }
 
-  return { nodes, edges, numSources: shownSources.length, totalSources }
+  return { nodes, edges, numSources: shownSources.length, totalSources, contentHeight }
 }
 
 // ── VariantsFlowChart ──────────────────────────────────────────────────────────
@@ -933,7 +961,7 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
 
   const computed = useMemo(() => {
     const segments = buildVariantData(source, others)
-    if (segments.length === 0) return { nodes: [], edges: [], empty: true, numSources: 0, totalSources: 0 }
+    if (segments.length === 0) return { nodes: [], edges: [], empty: true, numSources: 0, totalSources: 0, contentHeight: 300 }
     return { ...buildVariantFlow(segments, source.bookTitle, dark), empty: false }
   }, [source, others, dark])
 
@@ -943,9 +971,8 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
   }, [computed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const height = useMemo(() => {
-    const rowsH = computed.numSources * (ROW_HEIGHT + ROW_GAP)
-    return Math.max(300, Math.min(BACKBONE_Y + BACKBONE_HEIGHT + V_GAP + rowsH + 80, 900))
-  }, [computed.numSources])
+    return Math.max(300, Math.min(computed.contentHeight, 1100))
+  }, [computed.contentHeight])
 
   if (computed.empty) {
     return <p className="text-xs text-gray-400">لا توجد روايات كافية</p>
