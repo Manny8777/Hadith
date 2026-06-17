@@ -352,7 +352,7 @@ function CompositeMatn({ items, totalSources }: { items: DisplayItem[]; totalSou
             <span key={key} className="relative inline-block">
               <button
                 onClick={e => { e.stopPropagation(); toggle(key) }}
-                className={`rounded px-0.5 mx-px transition-colors cursor-pointer ${colorCls} ${isOpen ? 'ring-2 ring-offset-1 ring-green-400' : ''}`}
+                className={`rounded px-0.5 mx-px transition-colors cursor-pointer dark:text-ink ${colorCls} ${isOpen ? 'ring-2 ring-offset-1 ring-green-400' : ''}`}
               >
                 {item.canonical}
                 {showCount && (
@@ -382,7 +382,7 @@ function CompositeMatn({ items, totalSources }: { items: DisplayItem[]; totalSou
           <span key={key} className="relative inline-block">
             <button
               onClick={e => { e.stopPropagation(); toggle(key) }}
-              className={`text-sm text-teal-700 bg-teal-50 border border-teal-200 rounded px-1 mx-0.5 hover:bg-teal-100 transition-colors cursor-pointer ${isOpen ? 'ring-2 ring-offset-1 ring-teal-400' : ''}`}
+              className={`text-sm text-teal-700 dark:text-ink bg-teal-50 border border-teal-200 rounded px-1 mx-0.5 hover:bg-teal-100 transition-colors cursor-pointer ${isOpen ? 'ring-2 ring-offset-1 ring-teal-400' : ''}`}
             >
               [{item.words.map(w => w.text).join(' ')}]
               <sup className="text-[9px] text-teal-500 ml-px">{topCount}</sup>

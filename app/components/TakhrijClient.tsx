@@ -78,9 +78,9 @@ function DiffText({ chunks, side }: { chunks: DiffChunk[]; side: 'base' | 'comp'
       {chunks.map((c, i) => {
         if (c.type === 'equal') return <span key={i}>{c.text} </span>
         if (side === 'base' && c.type === 'del')
-          return <span key={i} className="bg-blue-100 text-blue-800 rounded px-0.5">{c.text} </span>
+          return <span key={i} className="bg-blue-100 text-blue-800 dark:text-ink rounded px-0.5">{c.text} </span>
         if (side === 'comp' && c.type === 'add')
-          return <span key={i} className="bg-red-100 text-red-800 rounded px-0.5">{c.text} </span>
+          return <span key={i} className="bg-red-100 text-red-800 dark:text-ink rounded px-0.5">{c.text} </span>
         return <span key={i}>{c.text} </span>
       })}
     </p>
