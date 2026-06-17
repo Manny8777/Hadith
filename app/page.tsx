@@ -32,7 +32,7 @@ export default async function Home() {
       {/* Hero */}
       <div className="border-b border-gray-100">
       <div className="max-w-4xl mx-auto px-4 pt-14 pb-10 text-center">
-        <div className="inline-block bg-green-800 text-amber-100 text-xs font-sans font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide">
+        <div className="inline-block bg-green-800 text-amber-100 dark:bg-green-100 dark:text-amber-700 text-xs font-sans font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide">
           برنامج خادم الحرمين الشريفين
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight font-display">
@@ -58,7 +58,7 @@ export default async function Home() {
       </div>
 
       {/* Stats banner */}
-      <div className="bg-green-800 text-white py-6">
+      <div className="bg-green-800 text-white dark:bg-surface dark:border-y dark:border-border py-6">
         <div className="max-w-4xl mx-auto px-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
           {[
             { num: hadiths.toLocaleString('ar-EG'), label: 'حديث' },
@@ -69,8 +69,8 @@ export default async function Home() {
             { num: criticism.toLocaleString('ar-EG'), label: 'راوٍ مجروح/معدَّل' },
           ].map((s, i) => (
             <div key={i}>
-              <div className="text-2xl font-bold text-amber-300 font-display">{s.num}</div>
-              <div className="text-xs text-green-200/90 mt-0.5 font-sans">{s.label}</div>
+              <div className="text-2xl font-bold text-amber-300 dark:text-amber-700 font-display">{s.num}</div>
+              <div className="text-xs text-green-200/90 dark:text-muted mt-0.5 font-sans">{s.label}</div>
             </div>
           ))}
         </div>
@@ -435,9 +435,9 @@ export default async function Home() {
               <div className="font-semibold text-gray-900 text-sm group-hover:text-gray-700">الإحصاءات الشاملة</div>
               <div className="text-xs text-gray-500 mt-1">لوحة بيانات إجمالية لكل محتوى الموسوعة — الأحاديث والرواة والأسانيد والأحكام والكتب والموضوعات</div>
             </Link>
-            <Link href="/takhrij" className="bg-green-900 border border-green-800 rounded-xl px-4 py-3 hover:bg-green-800 hover:shadow-md transition-all group">
-              <div className="font-semibold text-amber-300 text-sm group-hover:text-amber-200">محرك التخريج</div>
-              <div className="text-xs text-green-200 mt-1">أدخل نص حديث لاستخراج جميع رواياته الموازية مجموعةً بالتخريج — أساس البحث الأكاديمي في توثيق الحديث</div>
+            <Link href="/takhrij" className="bg-green-900 border border-green-800 dark:bg-green-100 dark:border-green-200 rounded-xl px-4 py-3 hover:bg-green-800 dark:hover:bg-green-200 hover:shadow-md transition-all group">
+              <div className="font-semibold text-amber-300 dark:text-amber-700 text-sm group-hover:text-amber-200">محرك التخريج</div>
+              <div className="text-xs text-green-200 dark:text-green-900/80 mt-1">أدخل نص حديث لاستخراج جميع رواياته الموازية مجموعةً بالتخريج — أساس البحث الأكاديمي في توثيق الحديث</div>
             </Link>
             <Link href="/companions/compare" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">مقارنة الصحابة</div>
@@ -455,9 +455,9 @@ export default async function Home() {
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">الموقوف والمقطوع والمرسل</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث حُكم عليها بالوقف أو القطع أو الإرسال أو الانقطاع — أداة لتمييز الأثر عن المرفوع في البحث الفقهي</div>
             </Link>
-            <Link href="/hadiths/strongest" className="bg-green-900 border border-green-700 rounded-xl px-4 py-3 hover:bg-green-800 hover:shadow-md transition-all group">
-              <div className="font-semibold text-amber-300 text-sm group-hover:text-amber-200">أقوى الأحاديث توثيقاً</div>
-              <div className="text-xs text-green-200 mt-1">ترتيب مركَّب: الأسانيد الذهبية + تعدد التصحيح + تعدد الكتب — تحديد أعلى الأحاديث درجةً بمعايير موضوعية متعددة</div>
+            <Link href="/hadiths/strongest" className="bg-green-900 border border-green-700 dark:bg-green-100 dark:border-green-200 rounded-xl px-4 py-3 hover:bg-green-800 dark:hover:bg-green-200 hover:shadow-md transition-all group">
+              <div className="font-semibold text-amber-300 dark:text-amber-700 text-sm group-hover:text-amber-200">أقوى الأحاديث توثيقاً</div>
+              <div className="text-xs text-green-200 dark:text-green-900/80 mt-1">ترتيب مركَّب: الأسانيد الذهبية + تعدد التصحيح + تعدد الكتب — تحديد أعلى الأحاديث درجةً بمعايير موضوعية متعددة</div>
             </Link>
             <Link href="/hadiths/fiqh-map" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">خريطة الفقه</div>

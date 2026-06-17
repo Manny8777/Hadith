@@ -7,6 +7,10 @@ import SiteNotice from './components/SiteNotice'
 import NumeralConverter from './components/NumeralConverter'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
+import { ThemeProvider } from '@/lib/themeContext'
+
+// Applied before paint to avoid a flash of the wrong theme.
+const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`
 
 export const metadata: Metadata = {
   title: 'جامع خادم الحرمين الشريفين',
@@ -15,9 +19,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
-      <head />
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      </head>
       <body className="bg-paper text-ink min-h-screen font-serif">
+        <ThemeProvider>
         <NumberingProvider>
           <NumeralProvider>
             <NumeralConverter />
@@ -31,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-7 py-5 sm:py-8">{children}</main>
           </NumeralProvider>
         </NumberingProvider>
+        </ThemeProvider>
         <footer className="text-center text-xs text-gray-500 font-sans py-6 border-t border-gray-200 mt-12">
           برنامج خادم الحرمين الشريفين – موسوعة الحديث النبوي الشريف
         </footer>

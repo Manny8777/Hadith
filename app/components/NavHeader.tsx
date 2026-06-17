@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNumbering } from '@/lib/numberingContext'
 import { useNumeral } from '@/lib/numeralContext'
+import { useTheme } from '@/lib/themeContext'
 
 type NavLink = { href: string; label: string; isNew?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
@@ -211,6 +212,33 @@ function NumberingToggle() {
   )
 }
 
+function ThemeToggle() {
+  const { theme, toggle } = useTheme()
+  const dark = theme === 'dark'
+  return (
+    <button
+      onClick={toggle}
+      data-no-convert
+      title={dark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
+      aria-label="تبديل المظهر"
+      className="flex items-center justify-center w-8 h-8 rounded-md text-muted hover:text-ink border border-border hover:border-green-300 transition-colors shrink-0"
+    >
+      {dark ? (
+        // sun
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        </svg>
+      ) : (
+        // moon
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
 function NumeralToggle() {
   const { pref, toggle } = useNumeral()
   return (
@@ -311,9 +339,12 @@ export default function NavHeader() {
           <span className="hidden sm:inline">★ مجموعتي</span>
         </a>
         */}
-        <div className="flex flex-col items-stretch gap-1 shrink-0">
-          <NumberingToggle />
-          <NumeralToggle />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <ThemeToggle />
+          <div className="flex flex-col items-stretch gap-1">
+            <NumberingToggle />
+            <NumeralToggle />
+          </div>
         </div>
       </div>
     </nav>
