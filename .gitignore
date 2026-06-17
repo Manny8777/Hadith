@@ -51,3 +51,6 @@ pgdata/
 
 # local agent diagnostic scripts (not part of the app)
 /scripts/diagnostics/
+
+# playwright mcp screenshots / artifacts
+/.playwright-mcp/

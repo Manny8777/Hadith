@@ -6,7 +6,7 @@ import PrintButton from './PrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
 import ChainTimeline from './ChainTimeline'
-import IsnadChainTimeline from './IsnadChainTimeline'
+import HadithGradeBadge from './HadithGradeBadge'
 // import HadithNote from './HadithNote' // TODO: re-enable with per-user login
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
@@ -67,6 +67,13 @@ export interface Chain {
   narratorTerms?: Record<number, string>
 }
 
+// جرح وتعديل sayings for one narrator, grouped by the critic who said them.
+export interface CriticismGroup {
+  scientist_name: string
+  scientist_noun_id: number | null
+  entries: { text: string; garh_label: string | null }[]
+}
+
 export interface Judgment {
   say_text: string
   scientist_id: number | null
@@ -107,6 +114,7 @@ export interface HadithSidebarLayoutProps {
   hadithId: number
   hadith: HadithInfo
   chains: Chain[]
+  narratorCriticism?: Record<number, CriticismGroup[]>
   commonNarrators: NarratorInChain[]
   judgments: Judgment[]
   subjects: Array<{ id: number; title: string }>
@@ -130,7 +138,7 @@ const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string 
 }
 
 export default function HadithSidebarLayout({
-  hadithId, hadith: h, chains, commonNarrators,
+  hadithId, hadith: h, chains, narratorCriticism = {}, commonNarrators,
   judgments, subjects, takhrijBooks, takhrijSummary,
   hadithServices, isnadType,
   sanadSegments,
@@ -166,7 +174,6 @@ export default function HadithSidebarLayout({
   // Sections shown in main content and sidebar TOC — dynamic based on available data
   const SECTIONS = [
     { id: 'isnad',   label: 'الأسانيد والرواة' },
-    { id: 'shajar',  label: 'شجرة الإسناد' },
     ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
     ...serviceSections.map(s => ({ id: s.id, label: s.label })),
@@ -273,17 +280,10 @@ export default function HadithSidebarLayout({
             consensusGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
             consensusGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
             'bg-gray-200 text-gray-500 border-gray-300'
-          const tooltip = Object.entries(gradeCounts).map(([g, n]) => `${g} ×${n}`).join('، ')
           const takhrijCount = takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount
           return (
             <div className="mb-3 flex items-center gap-3 flex-wrap">
-              <span
-                title={tooltip || undefined}
-                className={`inline-flex items-center gap-1 text-sm px-3 py-1 rounded-full border cursor-default ${gradeBadgeCls}`}
-              >
-                <span className="font-normal opacity-80">الحكم:</span>
-                <span className="font-bold">{consensusGrade ?? 'لا يوجد'}</span>
-              </span>
+              <HadithGradeBadge judgments={judgments} consensusGrade={consensusGrade} chipCls={gradeBadgeCls} />
               {takhrijCount > 0 && (
                 <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
                   أُخرجه في {takhrijCount} مصدر
@@ -507,8 +507,8 @@ export default function HadithSidebarLayout({
             <p className="text-sm text-gray-400 py-4">لا يوجد إسناد مسجل لهذا الحديث</p>
           ) : (
             <div className="space-y-3">
-              {/* Primary: rich vertical isnad timeline (death year · grade · tabaqa · tadlis · per-link term) */}
-              <IsnadChainTimeline chains={chains} />
+              {/* Primary: this hadith's isnad in a React Flow (rich سلسلة nodes) with a toggle to the full cross-book tree */}
+              <IsnadTree hadithId={hadithId} chains={chains} narratorCriticism={narratorCriticism} />
 
               {/* Secondary: chronological (death-year) view of the primary chain */}
               <details className="rounded-xl border border-border bg-surface overflow-hidden group">
@@ -536,12 +536,6 @@ export default function HadithSidebarLayout({
               )}
             </div>
           )}
-        </section>
-
-        {/* ── شجرة الإسناد ── */}
-        <section id="shajar" className="mb-8 scroll-mt-header">
-          <SectionHeader label="شجرة الإسناد" sub="رسم تشجيري لمسارات رواية الحديث عبر جميع كتب التخريج" />
-          <IsnadTree hadithId={hadithId} />
         </section>
 
         {/* ── أقوال العلماء والدرجة ── */}

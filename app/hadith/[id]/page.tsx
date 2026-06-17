@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import { notFound } from 'next/navigation'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
-import type { NarratorInChain, Chain } from '@/app/components/HadithSidebarLayout'
+import type { NarratorInChain, Chain, CriticismGroup } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
 import {
@@ -231,6 +231,33 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  // جرح وتعديل for the isnad narrators — show all critics' sayings (not just Ibn Hajar's grade)
+  const narratorCriticism: Record<number, CriticismGroup[]> = {}
+  if (chains.length > 0) {
+    const chainNarIds = Array.from(new Set(chains.flatMap(c => c.narrators.map(n => n.id))))
+    if (chainNarIds.length > 0) {
+      const critRes = await pool.query<{ narrator_id: number; scientist_name: string | null; scientist_noun_id: number | null; say_text: string | null; garh_label: string | null; say_sort: number }>(
+        `SELECT narrator_id, COALESCE(scientist_name, 'غير معروف') AS scientist_name,
+                scientist_noun_id, say_text, garh_label, say_sort
+         FROM narrator_criticism
+         WHERE narrator_id = ANY($1::int[])
+         ORDER BY narrator_id, scientist_name, say_sort`,
+        [chainNarIds]
+      ).catch(() => ({ rows: [] as Array<{ narrator_id: number; scientist_name: string | null; scientist_noun_id: number | null; say_text: string | null; garh_label: string | null; say_sort: number }> }))
+
+      const byNar: Record<number, Record<string, CriticismGroup>> = {}
+      for (const r of critRes.rows) {
+        if (!r.say_text) continue
+        const nid = Number(r.narrator_id)
+        const sci = r.scientist_name || 'غير معروف'
+        if (!byNar[nid]) byNar[nid] = {}
+        if (!byNar[nid][sci]) byNar[nid][sci] = { scientist_name: sci, scientist_noun_id: r.scientist_noun_id, entries: [] }
+        byNar[nid][sci].entries.push({ text: r.say_text, garh_label: r.garh_label || null })
+      }
+      for (const nid of Object.keys(byNar)) narratorCriticism[Number(nid)] = Object.values(byNar[Number(nid)])
+    }
+  }
+
   // Common narrators across all chains
   let commonNarrators: NarratorInChain[] = []
   if (chains.length > 1) {
@@ -320,6 +347,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       hadithId={mainId}
       hadith={h}
       chains={chains}
+      narratorCriticism={narratorCriticism}
       commonNarrators={commonNarrators}
       sanadSegments={sanadSegmentsHaveNarrators(sanadSegments) ? sanadSegments : undefined}
       sanadNarrators={sanadNarrators}
