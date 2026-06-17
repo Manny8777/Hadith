@@ -120,7 +120,7 @@
   /* Semantic aliases — warm "manuscript" canvas (paper + muted teal-green) */
   --color-paper: #FAF8F4;          /* warm cream page background */
   --color-surface: #FFFFFF;        /* cards lift on the cream canvas */
-  --color-surface-sunken: #F4EFE6; /* warm beige for secondary panels (sanad block, info boxes) */
+  --color-surface-sunken: #F7F1E1; /* clean warm parchment for secondary panels (sanad block, info boxes) */
   --color-border: #E7E0D4;         /* warm hairline border */
   --color-ink: #1A1A17;            /* warm near-black text */
   --color-muted: #635B4B;          /* warm muted text */
