@@ -818,8 +818,20 @@ function buildVariantFlow(
   }
   const contentHeight = yCursor + 40
 
-  // RTL layout: the source/label column sits on the RIGHT of the backbone (Arabic reads right-to-left)
-  const labelX = totalWidth + H_GAP
+  // A divergence node is centred under its segment and may be wider than it, so it can
+  // overhang to the right of the backbone. Find the rightmost edge of any shown div node
+  // so the label column clears it (otherwise the source labels sit behind those nodes).
+  const NODE_GAP = 5
+  let maxContentRight = totalWidth
+  for (let i = 0; i < segments.length; i++) {
+    let hasShown = false
+    for (const srcId of segSrcDiv[i].keys()) { if (shownIds.has(srcId)) { hasShown = true; break } }
+    if (!hasShown) continue
+    maxContentRight = Math.max(maxContentRight, xPositions[i] + (widths[i] + segDivWidth[i]) / 2)
+  }
+
+  // RTL layout: the source/label column sits on the RIGHT of all content (Arabic reads right-to-left)
+  const labelX = maxContentRight + H_GAP + NODE_GAP
   const hlineLeft = -80 // buffer for divergence nodes that overhang the leftmost segment
   const hlineWidth = labelX + LABEL_WIDTH - hlineLeft
 
