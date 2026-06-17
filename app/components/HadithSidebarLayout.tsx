@@ -195,12 +195,12 @@ export default function HadithSidebarLayout({
     <div className="flex flex-col sm:flex-row -mx-3 sm:-mx-4 gap-0 min-w-0">
 
       {/* ── RIGHT SIDEBAR (TOC) ── */}
-      <aside className="w-52 shrink-0 self-start sticky top-36 hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ minHeight: 'calc(100vh - 9rem)' }}>
-        <div className="px-3 pt-3 pb-2 border-b border-gray-100">
+      <aside className="w-52 shrink-0 self-start sticky top-36 hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ height: 'calc(100vh - 9rem)' }}>
+        <div className="px-3 pt-3 pb-2 border-b border-gray-100 shrink-0">
           <p className="text-[11px] font-bold text-gray-400 tracking-wider uppercase">المحتوى</p>
         </div>
 
-        <nav className="flex-1 py-1 overflow-y-auto">
+        <nav className="flex-1 min-h-0 py-1 overflow-y-auto">
           {SECTIONS.map(s => (
             <a key={s.id} href={`#${s.id}`} className={tocLinkClass}>
               <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />
@@ -210,7 +210,7 @@ export default function HadithSidebarLayout({
 
         </nav>
 
-        <div className="border-t border-gray-100 px-3 py-3 space-y-1.5">
+        <div className="border-t border-gray-100 px-3 py-3 space-y-1.5 shrink-0">
           <p className="text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">روابط سريعة</p>
           {[
             { href: `/hadith/${hadithId}/witnesses`,       label: 'الشواهد والمتابعات' },
