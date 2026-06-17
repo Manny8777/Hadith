@@ -27,15 +27,6 @@ function cleanHadithContent(xml: string): string {
   return stripXmlToVerbatim(xml)
 }
 
-const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
-function toArabicDigits(value: string | number | null | undefined): string {
-  if (value == null) return ''
-  // Keep only the leading run of digits so noisy strings still yield a clean numeral
-  const m = String(value).match(/\d+/)
-  if (!m) return ''
-  return m[0].replace(/\d/g, d => AR_DIGITS[Number(d)])
-}
-
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   return (
     <div className="ui-section-head">
@@ -375,7 +366,6 @@ export default function HadithSidebarLayout({
         {(() => {
           const { sanad, matn } = splitSanadMatn(h.content)
           const matnText = matn || cleanHadithContent(h.content)
-          const watermark = toArabicDigits(h.tarqeem_harf) || toArabicDigits(h.tarqeem_matboa1) || toArabicDigits(h.main_id)
           return (
             <div className="ui-card mb-4 overflow-hidden">
               {sanad && (
@@ -395,33 +385,22 @@ export default function HadithSidebarLayout({
                   )}
                 </div>
               )}
-              <div className={`relative ${sanad ? 'px-4 sm:px-6 py-6 sm:py-8' : 'px-4 sm:px-6 py-8 sm:py-10'}`}>
-                {/* Watermark hadith number — signature manuscript touch */}
-                {watermark && (
-                  <span
-                    aria-hidden
-                    className="hadith-watermark pointer-events-none select-none absolute top-1 left-2 sm:left-5 z-0"
-                  >
-                    {watermark}
-                  </span>
+              <div className={sanad ? 'px-4 sm:px-6 py-6 sm:py-8' : 'px-4 sm:px-6 py-8 sm:py-10'}>
+                {sanad && (
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">المتن</p>
                 )}
-                <div className="relative z-10">
-                  {sanad && (
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 font-sans text-center">المتن</p>
-                  )}
-                  {hadithServices?.ghareeb ? (
-                    <GhareebMatn
-                      hadithId={hadithId}
-                      matn={matnText}
-                      showTashkeel={showTashkeel}
-                      className="hadith-matn"
-                    />
-                  ) : (
-                    <p className="hadith-matn" dir="rtl">
-                      {applyTashkeel(matnText)}
-                    </p>
-                  )}
-                </div>
+                {hadithServices?.ghareeb ? (
+                  <GhareebMatn
+                    hadithId={hadithId}
+                    matn={matnText}
+                    showTashkeel={showTashkeel}
+                    className="hadith-matn"
+                  />
+                ) : (
+                  <p className="hadith-matn" dir="rtl">
+                    {applyTashkeel(matnText)}
+                  </p>
+                )}
               </div>
             </div>
           )

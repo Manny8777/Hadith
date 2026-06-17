@@ -311,29 +311,19 @@ body {
     @apply text-[15px] sm:text-base text-gray-700 font-serif;
     line-height: 2.1;
   }
-
-  .hadith-watermark {
-    font-family: var(--font-display);
-    font-weight: 900;
-    line-height: 0.8;
-    font-size: clamp(5rem, 16vw, 11rem);
-    color: var(--color-green-900);
-    opacity: 0.05;
-    letter-spacing: -0.02em;
-  }
 }
 
 /* ── Hadith matn hero ──
    Unlayered (not in @layer components) so it overrides the base utility classes
-   GhareebMatn hardcodes (text-lg / leading-loose / font-serif / text-gray-900). */
+   GhareebMatn hardcodes (text-lg / leading-loose / font-serif / text-gray-900).
+   Aligned to the start (right, in RTL) to match the sanad block. */
 .hadith-matn {
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 1rem + 2.3vw, 2.3rem);
   line-height: 1.95;
   font-weight: 500;
   color: var(--color-ink);
-  text-align: center;
-  text-wrap: balance;
+  text-align: start;
 }
 
 @media print {
