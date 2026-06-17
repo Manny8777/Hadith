@@ -142,6 +142,17 @@ export default function HadithSidebarLayout({
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
 
+  // Track the sticky header height so the TOC sidebar + section anchors sit flush under it
+  useEffect(() => {
+    const header = document.querySelector('header')
+    if (!header) return
+    const apply = () => document.documentElement.style.setProperty('--app-header-h', `${Math.round(header.getBoundingClientRect().height)}px`)
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(header)
+    return () => ro.disconnect()
+  }, [])
+
   // Persist the reader's matn-size preference across hadiths/sessions
   useEffect(() => {
     const saved = parseInt(localStorage.getItem('matnSize') ?? '', 10)
@@ -195,34 +206,36 @@ export default function HadithSidebarLayout({
     <div className="flex flex-col sm:flex-row -mx-3 sm:-mx-4 gap-0 min-w-0">
 
       {/* ── RIGHT SIDEBAR (TOC) ── */}
-      <aside className="w-52 shrink-0 self-start sticky top-36 hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ height: 'calc(100vh - 9rem)' }}>
+      <aside className="w-52 shrink-0 self-start sticky hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ top: 'var(--app-header-h, 9rem)', height: 'calc(100dvh - var(--app-header-h, 9rem))' }}>
         <div className="px-3 pt-3 pb-2 border-b border-gray-100 shrink-0">
           <p className="text-[11px] font-bold text-gray-400 tracking-wider uppercase">المحتوى</p>
         </div>
 
-        <nav className="flex-1 min-h-0 py-1 overflow-y-auto">
-          {SECTIONS.map(s => (
-            <a key={s.id} href={`#${s.id}`} className={tocLinkClass}>
-              <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />
-              {s.label}
-            </a>
-          ))}
+        {/* Section list + quick links scroll together so the list isn't squeezed by a pinned footer */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <nav className="py-1">
+            {SECTIONS.map(s => (
+              <a key={s.id} href={`#${s.id}`} className={tocLinkClass}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />
+                {s.label}
+              </a>
+            ))}
+          </nav>
 
-        </nav>
-
-        <div className="border-t border-gray-100 px-3 py-3 space-y-1.5 shrink-0">
-          <p className="text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">روابط سريعة</p>
-          {[
-            { href: `/hadith/${hadithId}/witnesses`,       label: 'الشواهد والمتابعات' },
-            { href: `/hadith/${hadithId}/pivot`,           label: 'مدار الحديث' },
-            { href: `/hadith/${hadithId}/isnad-ranking`,   label: 'ترتيب الأسانيد' },
-            { href: `/hadith/${hadithId}/across-books`,    label: 'الحديث في المصادر' },
-          ].map(lnk => (
-            <a key={lnk.href} href={lnk.href}
-              className="block text-xs text-green-700 hover:text-green-900 hover:underline py-0.5">
-              {lnk.label} ←
-            </a>
-          ))}
+          <div className="border-t border-gray-100 px-3 py-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">روابط سريعة</p>
+            {[
+              { href: `/hadith/${hadithId}/witnesses`,       label: 'الشواهد والمتابعات' },
+              { href: `/hadith/${hadithId}/pivot`,           label: 'مدار الحديث' },
+              { href: `/hadith/${hadithId}/isnad-ranking`,   label: 'ترتيب الأسانيد' },
+              { href: `/hadith/${hadithId}/across-books`,    label: 'الحديث في المصادر' },
+            ].map(lnk => (
+              <a key={lnk.href} href={lnk.href}
+                className="block text-xs text-green-700 hover:text-green-900 hover:underline py-0.5">
+                {lnk.label} ←
+              </a>
+            ))}
+          </div>
         </div>
       </aside>
 
@@ -501,7 +514,7 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
-        <section id="isnad" className="mb-8 scroll-mt-36">
+        <section id="isnad" className="mb-8 scroll-mt-header">
           <SectionHeader label="الأسانيد والرواة" sub={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)
@@ -545,14 +558,14 @@ export default function HadithSidebarLayout({
         </section>
 
         {/* ── شجرة الإسناد ── */}
-        <section id="shajar" className="mb-8 scroll-mt-36">
+        <section id="shajar" className="mb-8 scroll-mt-header">
           <SectionHeader label="شجرة الإسناد" sub="رسم تشجيري لمسارات رواية الحديث عبر جميع كتب التخريج" />
           <IsnadTree hadithId={hadithId} />
         </section>
 
         {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
-          <section id="aqwal" className="mb-8 scroll-mt-36">
+          <section id="aqwal" className="mb-8 scroll-mt-header">
             <SectionHeader label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`} />
 
             {(() => {
@@ -666,7 +679,7 @@ export default function HadithSidebarLayout({
         )}
 
         {/* ── التخريج ── */}
-        <section id="takhrij" className="mb-8 scroll-mt-36">
+        <section id="takhrij" className="mb-8 scroll-mt-header">
           <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع" />
           {takhrijSlot}
         </section>
@@ -676,7 +689,7 @@ export default function HadithSidebarLayout({
 
         {/* ── الخدمات العلمية (inline) ── */}
         {serviceSections.map(cfg => (
-          <section key={cfg.id} id={cfg.id} className="mb-8 scroll-mt-36">
+          <section key={cfg.id} id={cfg.id} className="mb-8 scroll-mt-header">
             <SectionHeader label={cfg.label} />
             <HadithServiceSection hadithId={hadithId} config={cfg} />
           </section>
@@ -684,13 +697,13 @@ export default function HadithSidebarLayout({
 
         {/* ── مقارنة المتون (group matn) ── */}
         {matngroupSlot && (
-          <section id="matn-group" className="mb-6 scroll-mt-36">
+          <section id="matn-group" className="mb-6 scroll-mt-header">
             {matngroupSlot}
           </section>
         )}
 
         {/* ── المتن المُجمَّع والاختلافات ── */}
-        <section id="variants" className="mb-8 scroll-mt-36">
+        <section id="variants" className="mb-8 scroll-mt-header">
           <SectionHeader label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات" />
           <MatnVariants
             hadithId={hadithId}
@@ -701,7 +714,7 @@ export default function HadithSidebarLayout({
         </section>
 
         {/* ── أدوات البحث ── */}
-        <section id="adawat" className="mb-8 scroll-mt-36">
+        <section id="adawat" className="mb-8 scroll-mt-header">
           <SectionHeader label="أدوات البحث" />
           <div className="grid sm:grid-cols-2 gap-3">
             {[

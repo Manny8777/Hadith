@@ -283,6 +283,11 @@ body {
     @apply text-[15px] sm:text-base text-gray-700 font-serif;
     line-height: 2.1;
   }
+
+  /* Anchor offset that tracks the sticky header height (set on <html> by the layout) */
+  .scroll-mt-header {
+    scroll-margin-top: var(--app-header-h, 9rem);
+  }
 }
 
 /* ── Hadith matn hero ──
