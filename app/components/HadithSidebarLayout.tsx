@@ -334,7 +334,7 @@ export default function HadithSidebarLayout({
             <div className="text-xs text-gray-500 mb-2 text-right" dir="rtl">
               رواه{' '}
               <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold">
-                {companion.name}
+                {companion.abb_name || companion.name}
               </Link>
             </div>
           )
