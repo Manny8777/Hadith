@@ -1,7 +1,28 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
 import { extractMatnForComparison, stripXmlToVerbatim } from '@/lib/hadithText'
 import { useTheme } from '@/lib/themeContext'
+
+// Position a popover as fixed, anchored under its wrapper span, clamped fully into the viewport.
+function useClampedPopover() {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: -9999, left: -9999 })
+  useLayoutEffect(() => {
+    const el = ref.current
+    const anchor = el?.parentElement?.getBoundingClientRect()
+    if (!el || !anchor) return
+    const pad = 8
+    const { width: w, height: h } = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    let top = anchor.bottom + 6
+    if (top + h > vh - pad) top = anchor.top - 6 - h   // flip above if no room below
+    top = Math.max(pad, Math.min(top, vh - h - pad))
+    const left = Math.max(pad, Math.min(anchor.right - w, vw - w - pad))
+    setPos({ top, left })
+  }, [])
+  return { ref, pos }
+}
 import ReactFlow, {
   Background,
   Controls,
@@ -221,9 +242,12 @@ function WordPopover({
   absentIn: SourceRef[]
   onClose: () => void
 }) {
+  const { ref, pos } = useClampedPopover()
   return (
     <span
-      className="absolute z-50 top-full right-0 mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-right text-xs"
+      ref={ref}
+      className="fixed z-50 w-[min(18rem,calc(100vw-1rem))] max-h-[calc(100vh-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-right text-xs"
+      style={{ top: pos.top, left: pos.left }}
       dir="rtl"
       onClick={e => e.stopPropagation()}
     >
@@ -280,9 +304,12 @@ function InsertionPopover({
   words: { text: string; sources: SourceRef[] }[]
   onClose: () => void
 }) {
+  const { ref, pos } = useClampedPopover()
   return (
     <span
-      className="absolute z-50 top-full right-0 mt-1 w-72 bg-white border border-amber-200 rounded-xl shadow-lg p-3 text-right text-xs"
+      ref={ref}
+      className="fixed z-50 w-[min(18rem,calc(100vw-1rem))] max-h-[calc(100vh-1rem)] overflow-y-auto bg-white border border-amber-200 rounded-xl shadow-lg p-3 text-right text-xs"
+      style={{ top: pos.top, left: pos.left }}
       dir="rtl"
       onClick={e => e.stopPropagation()}
     >
