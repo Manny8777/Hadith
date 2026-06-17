@@ -43,7 +43,7 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
   const [data, setData]             = useState<ApiData | null>(null)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(false)
-  const [minScore, setMinScore]     = useState(0)
+  const [minScore, setMinScore]     = useState(100)
   // null = all selected (use server scores); Set<number> = specific phrase indices
   const [selected, setSelected]     = useState<Set<number> | null>(null)
 

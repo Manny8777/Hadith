@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { extractMatnForComparison, stripXmlToVerbatim } from '@/lib/hadithText'
+import { useTheme } from '@/lib/themeContext'
 import ReactFlow, {
   Background,
   Controls,
@@ -603,75 +604,103 @@ const LABEL_WIDTH = 140
 // ── Custom ReactFlow node components ─────────────────────────────────────────
 
 function BackboneNodeCmp({ data }: { data: { label: React.ReactNode; width: number } }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const P = dark
+    ? { bg: '#1C212A', border: '#2A313A', handle: '#3A424D', text: '#ECE6DA' }
+    : { bg: '#fafaf9', border: '#d6d3d1', handle: '#a8a29e', text: '#1c1917' }
   return (
     <div style={{
-      background: '#fafaf9', border: '1.5px solid #d6d3d1', borderRadius: 8,
+      background: P.bg, border: `1.5px solid ${P.border}`, borderRadius: 8, color: P.text,
       width: data.width, height: BACKBONE_HEIGHT,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '8px 12px', textAlign: 'center', boxSizing: 'border-box',
     }}>
       <Handle type="target" position={Position.Right} id="right"
-        style={{ background: '#a8a29e', width: 8, height: 8, border: 'none' }} />
+        style={{ background: P.handle, width: 8, height: 8, border: 'none' }} />
       <Handle type="source" position={Position.Left} id="left"
-        style={{ background: '#a8a29e', width: 8, height: 8, border: 'none' }} />
+        style={{ background: P.handle, width: 8, height: 8, border: 'none' }} />
       <Handle type="source" position={Position.Bottom} id="bottom"
-        style={{ background: '#a8a29e', width: 8, height: 8, border: 'none' }} />
+        style={{ background: P.handle, width: 8, height: 8, border: 'none' }} />
       {data.label}
     </div>
   )
 }
 
 function DivNodeCmp({ data }: { data: { label: React.ReactNode; isInsertion: boolean; width: number } }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const P = dark
+    ? {
+        bg: '#1C212A', insBg: '#2A2210',
+        border: '#2A313A', insBorder: '#D9AD5B',
+        handle: '#3A424D', insHandle: '#D9AD5B', text: '#ECE6DA',
+      }
+    : {
+        bg: '#ffffff', insBg: '#fffbeb',
+        border: '#a8a29e', insBorder: '#d97706',
+        handle: '#a8a29e', insHandle: '#d97706', text: '#1c1917',
+      }
   return (
     <div style={{
-      background: data.isInsertion ? '#fffbeb' : '#ffffff',
-      border: data.isInsertion ? '1.5px dashed #d97706' : '1px solid #a8a29e',
-      borderRadius: 6, width: data.width, padding: '6px 10px',
+      background: data.isInsertion ? P.insBg : P.bg,
+      border: data.isInsertion ? `1.5px dashed ${P.insBorder}` : `1px solid ${P.border}`,
+      borderRadius: 6, width: data.width, padding: '6px 10px', color: P.text,
       fontSize: 11, textAlign: 'right', boxSizing: 'border-box',
     }}>
       <Handle type="target" position={Position.Top} id="top"
-        style={{ background: data.isInsertion ? '#d97706' : '#a8a29e', width: 8, height: 8, border: 'none' }} />
+        style={{ background: data.isInsertion ? P.insHandle : P.handle, width: 8, height: 8, border: 'none' }} />
       {data.label}
     </div>
   )
 }
 
 function SourceLabelCmp({ data }: { data: { label: string; num: string | null; hadithId: number; width: number } }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const P = dark
+    ? { bg: '#1C212A', border: '#2A313A', label: '#4DB9FF', num: '#76CBFF' }
+    : { bg: '#f8fafc', border: '#e2e8f0', label: '#3730a3', num: '#6366f1' }
   return (
     <a
       href={`/hadith/${data.hadithId}`}
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
       style={{
-        background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6,
+        background: P.bg, border: `1px solid ${P.border}`, borderRadius: 6,
         width: data.width, height: ROW_HEIGHT,
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
         justifyContent: 'center', padding: '4px 10px', boxSizing: 'border-box',
         textDecoration: 'none', cursor: 'pointer',
       }}
     >
-      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: '#3730a3', textAlign: 'right', lineHeight: 1.3 }}>
+      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: P.label, textAlign: 'right', lineHeight: 1.3 }}>
         {data.label}
       </div>
       {data.num && (
-        <div style={{ fontSize: 9, color: '#6366f1', textAlign: 'right' }}>({data.num})</div>
+        <div style={{ fontSize: 9, color: P.num, textAlign: 'right' }}>({data.num})</div>
       )}
     </a>
   )
 }
 
 function BackboneLabelCmp({ data }: { data: { label: string; width: number } }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const P = dark
+    ? { bg: '#12352A', border: '#4EBA65', current: '#4EBA65', label: '#ECE6DA' }
+    : { bg: '#f0fdf4', border: '#bbf7d0', current: '#16a34a', label: '#15803d' }
   return (
     <div style={{
-      background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6,
+      background: P.bg, border: `1px solid ${P.border}`, borderRadius: 6,
       width: data.width, height: BACKBONE_HEIGHT,
       display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
       justifyContent: 'center', padding: '4px 10px', boxSizing: 'border-box',
     }}>
-      <div style={{ fontSize: 9, color: '#16a34a', fontWeight: 700, textAlign: 'right', marginBottom: 2 }}>
+      <div style={{ fontSize: 9, color: P.current, fontWeight: 700, textAlign: 'right', marginBottom: 2 }}>
         الحديث الحالي
       </div>
-      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: '#15803d', textAlign: 'right', lineHeight: 1.3 }}>
+      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: P.label, textAlign: 'right', lineHeight: 1.3 }}>
         {data.label}
       </div>
     </div>
@@ -679,10 +708,13 @@ function BackboneLabelCmp({ data }: { data: { label: string; width: number } }) 
 }
 
 function HLineCmp({ data }: { data: { width: number } }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const lineColor = dark ? '#2A313A' : '#e5e7eb'
   return (
     <div style={{
       width: data.width, height: 1,
-      borderBottom: '1px dashed #e5e7eb',
+      borderBottom: `1px dashed ${lineColor}`,
       pointerEvents: 'none', boxSizing: 'border-box',
     }} />
   )
@@ -705,11 +737,12 @@ function calcBackboneWidth(words: string[]): number {
 function buildVariantFlow(
   segments: VariantSegment[],
   sourceBookTitle: string,
-): { nodes: Node[]; edges: Edge[]; numSources: number } {
+  dark: boolean,
+): { nodes: Node[]; edges: Edge[]; numSources: number; totalSources: number } {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
-  if (segments.length === 0) return { nodes, edges, numSources: 0 }
+  if (segments.length === 0) return { nodes, edges, numSources: 0, totalSources: 0 }
 
   // Collect unique sources in order of first appearance across all segments
   const sourceOrder: SourceRef[] = []
@@ -725,9 +758,15 @@ function buildVariantFlow(
     }
   }
 
-  // Assign each source a fixed Y row — all nodes for a source share the same Y
+  // Cap visible source rows so the chart stays legible (the full list lives on the matn-variants page)
+  const totalSources = sourceOrder.length
+  const MAX_SOURCES = 12
+  const shownSources = sourceOrder.slice(0, MAX_SOURCES)
+  const shownIds = new Set(shownSources.map(s => s.id))
+
+  // Assign each shown source a fixed Y row — all nodes for a source share the same Y
   const sourceRowY = new Map<number, number>()
-  sourceOrder.forEach((src, idx) => {
+  shownSources.forEach((src, idx) => {
     sourceRowY.set(src.id, BACKBONE_Y + BACKBONE_HEIGHT + V_GAP + idx * (ROW_HEIGHT + ROW_GAP))
   })
 
@@ -763,7 +802,7 @@ function buildVariantFlow(
   })
 
   // Source label nodes + horizontal guide lines — one per source row
-  for (const [idx, src] of sourceOrder.entries()) {
+  for (const [idx, src] of shownSources.entries()) {
     const rowY = sourceRowY.get(src.id)!
     nodes.push({
       id: `label-${src.id}`,
@@ -772,7 +811,7 @@ function buildVariantFlow(
       position: { x: lineX, y: rowY },
     })
     // Guide line at bottom of this row (separates rows)
-    if (idx < sourceOrder.length - 1) {
+    if (idx < shownSources.length - 1) {
       nodes.push({
         id: `hline-${src.id}`,
         type: 'hline',
@@ -811,7 +850,7 @@ function buildVariantFlow(
         sourceHandle: 'left',
         targetHandle: 'right',
         type: 'straight',
-        style: { stroke: '#d6d3d1', strokeWidth: 1.5 },
+        style: { stroke: dark ? '#2A313A' : '#d6d3d1', strokeWidth: 1.5 },
       })
     }
 
@@ -833,6 +872,7 @@ function buildVariantFlow(
     const dX = bx + (bWidth - dWidth) / 2
 
     for (const [srcId, { word, isInsertion, src }] of srcDivMap) {
+      if (!shownIds.has(srcId)) continue
       const dId = `div-${i}-${srcId}`
       nodes.push({
         id: dId,
@@ -843,14 +883,14 @@ function buildVariantFlow(
           label: (
             <div dir="rtl" style={{ fontFamily: 'Amiri, serif', lineHeight: 1.4, textAlign: 'center' }}>
               {isInsertion && (
-                <div style={{ fontSize: 9, color: '#b45309', marginBottom: 1, fontWeight: 'bold' }}>زيادة</div>
+                <div style={{ fontSize: 9, color: dark ? '#D9AD5B' : '#b45309', marginBottom: 1, fontWeight: 'bold' }}>زيادة</div>
               )}
-              <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 3 }}>{word}</div>
+              <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 3, color: dark ? '#ECE6DA' : '#1c1917' }}>{word}</div>
               <a
                 href={`/hadith/${srcId}`}
                 onMouseDown={e => e.stopPropagation()}
                 onClick={e => e.stopPropagation()}
-                style={{ fontSize: 9, color: '#4f46e5', textDecoration: 'underline', cursor: 'pointer', display: 'block' }}
+                style={{ fontSize: 9, color: dark ? '#4DB9FF' : '#4f46e5', textDecoration: 'underline', cursor: 'pointer', display: 'block' }}
               >
                 {src.bookTitle}{src.num ? ` (${src.num})` : ''}
               </a>
@@ -868,11 +908,11 @@ function buildVariantFlow(
         targetHandle: 'top',
         type: 'step',
         style: isInsertion
-          ? { stroke: '#d97706', strokeWidth: 1, strokeDasharray: '5 3' }
-          : { stroke: '#a8a29e', strokeWidth: 1, strokeDasharray: '4 2' },
+          ? { stroke: dark ? '#D9AD5B' : '#d97706', strokeWidth: 1, strokeDasharray: '5 3' }
+          : { stroke: dark ? '#3A424D' : '#a8a29e', strokeWidth: 1, strokeDasharray: '4 2' },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isInsertion ? '#d97706' : '#a8a29e',
+          color: isInsertion ? (dark ? '#D9AD5B' : '#d97706') : (dark ? '#3A424D' : '#a8a29e'),
           width: 8,
           height: 8,
         },
@@ -880,20 +920,22 @@ function buildVariantFlow(
     }
   }
 
-  return { nodes, edges, numSources: sourceOrder.length }
+  return { nodes, edges, numSources: shownSources.length, totalSources }
 }
 
 // ── VariantsFlowChart ──────────────────────────────────────────────────────────
 
 function VariantsFlowChart({ source, others }: { source: TextEntry; others: TextEntry[] }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const computed = useMemo(() => {
     const segments = buildVariantData(source, others)
-    if (segments.length === 0) return { nodes: [], edges: [], empty: true, numSources: 0 }
-    return { ...buildVariantFlow(segments, source.bookTitle), empty: false }
-  }, [source, others])
+    if (segments.length === 0) return { nodes: [], edges: [], empty: true, numSources: 0, totalSources: 0 }
+    return { ...buildVariantFlow(segments, source.bookTitle, dark), empty: false }
+  }, [source, others, dark])
 
   useEffect(() => {
     setNodes(computed.nodes)
@@ -910,23 +952,30 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
   }
 
   return (
-    <div style={{ height }} className="w-full rounded-xl border border-gray-100 overflow-hidden bg-[#faf9f7] shadow-sm">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={FLOW_NODE_TYPES}
-        fitView
-        fitViewOptions={{ padding: 0.12 }}
-        minZoom={0.2}
-        maxZoom={2}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background color="#e7e5e4" gap={24} size={1} />
-        <Controls showInteractive={false} />
-      </ReactFlow>
-    </div>
+    <>
+      {computed.totalSources > computed.numSources && (
+        <p className="text-[11px] text-amber-700 mb-1.5 font-sans">
+          عرض أكثر {computed.numSources} روايةً اختلافًا من أصل {computed.totalSources} — القائمة الكاملة في صفحة «الحديث في كتب الحديث»
+        </p>
+      )}
+      <div style={{ height }} className="w-full rounded-xl border border-border overflow-hidden bg-surface shadow-sm">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={FLOW_NODE_TYPES}
+          fitView
+          fitViewOptions={{ padding: 0.12 }}
+          minZoom={0.2}
+          maxZoom={2}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background color={dark ? '#2A313A' : '#e7e5e4'} gap={24} size={1} />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </div>
+    </>
   )
 }
 

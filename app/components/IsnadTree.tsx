@@ -13,6 +13,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import dagre from 'dagre'
+import { useTheme } from '@/lib/themeContext'
 
 interface Narrator {
   id: number
@@ -43,7 +44,29 @@ const NH = 50
 
 // ─── ReactFlow full-graph builder ─────────────────────────────────────────────
 
-function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[]; edges: Edge[] } {
+function buildGraph(chains: ChainRow[], currentHadithId: number, dark: boolean): { nodes: Node[]; edges: Edge[] } {
+  const P = dark ? {
+    rootBg: '#103A2E', rootBorder: '#4EBA65', rootText: '#ECE6DA',
+    narratorCompanionBg: '#2A2210', narratorBg: '#1C212A',
+    narratorText: '#ECE6DA', narratorCompanionBorder: '#D9AD5B', narratorBorder: '#2A313A',
+    currentBookBg: '#D9AD5B', currentBookText: '#1A140A', currentBookBorder: '#E5C27E',
+    otherBookBg: '#103450', otherBookText: '#A0DBFF', otherBookBorder: '#4DB9FF',
+    edgeCurrentStroke: '#4EBA65', edgeCurrentMarker: '#4EBA65',
+    edgeOtherStroke: '#3A424D', edgeOtherMarker: '#5A6470',
+    bookEdgeOtherStroke: '#1E466B', bookEdgeOtherMarker: '#4DB9FF',
+    grid: '#2A313A',
+  } : {
+    rootBg: '#14532d', rootBorder: '#166534', rootText: 'white',
+    narratorCompanionBg: '#fffbeb', narratorBg: '#f9fafb',
+    narratorText: '#111827', narratorCompanionBorder: '#f59e0b', narratorBorder: '#d1d5db',
+    currentBookBg: '#d97706', currentBookText: 'white', currentBookBorder: '#b45309',
+    otherBookBg: '#eff6ff', otherBookText: '#1d4ed8', otherBookBorder: '#93c5fd',
+    edgeCurrentStroke: '#16a34a', edgeCurrentMarker: '#15803d',
+    edgeOtherStroke: '#d1d5db', edgeOtherMarker: '#9ca3af',
+    bookEdgeOtherStroke: '#bfdbfe', bookEdgeOtherMarker: '#93c5fd',
+    grid: '#e5e7eb',
+  }
+
   const nodeMap = new Map<string, Node>()
   const edgeSet = new Set<string>()
   const rawEdges: Edge[] = []
@@ -68,8 +91,8 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
     sourcePosition: Position.Bottom,
     targetPosition: Position.Top,
     style: {
-      background: '#14532d', color: 'white', fontFamily: 'Amiri, serif',
-      fontSize: 13, fontWeight: 'bold', border: '2px solid #166534',
+      background: P.rootBg, color: P.rootText, fontFamily: 'Amiri, serif',
+      fontSize: 13, fontWeight: 'bold', border: `2px solid ${P.rootBorder}`,
       borderRadius: 8, width: NW, padding: '4px 8px', textAlign: 'center',
     },
   })
@@ -90,9 +113,9 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
           style: {
-            background: nar.is_companion ? '#fffbeb' : '#f9fafb',
-            color: '#111827',
-            border: `1px solid ${nar.is_companion ? '#f59e0b' : '#d1d5db'}`,
+            background: nar.is_companion ? P.narratorCompanionBg : P.narratorBg,
+            color: P.narratorText,
+            border: `1px solid ${nar.is_companion ? P.narratorCompanionBorder : P.narratorBorder}`,
             borderRadius: 6, fontFamily: 'Amiri, serif',
             fontSize: 11, width: NW, padding: '3px 6px',
             textAlign: 'center', cursor: 'pointer', whiteSpace: 'pre-line',
@@ -108,11 +131,11 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
           id: eKey, source: prevId, target: nodeId, type: 'smoothstep',
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: isCurrent ? '#15803d' : '#9ca3af',
+            color: isCurrent ? P.edgeCurrentMarker : P.edgeOtherMarker,
             width: 12, height: 12,
           },
           style: {
-            stroke: isCurrent ? '#16a34a' : '#d1d5db',
+            stroke: isCurrent ? P.edgeCurrentStroke : P.edgeOtherStroke,
             strokeWidth: isCurrent ? 2.5 : 1,
             opacity: isCurrent ? 1 : 0.5,
           },
@@ -134,14 +157,14 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         style: isCurrentBook ? {
-          background: '#d97706', color: 'white',
-          border: '2px solid #b45309', borderRadius: 6,
+          background: P.currentBookBg, color: P.currentBookText,
+          border: `2px solid ${P.currentBookBorder}`, borderRadius: 6,
           fontFamily: 'Amiri, serif', fontSize: 10, width: NW,
           padding: '3px 6px', textAlign: 'center', cursor: 'pointer',
           fontWeight: 'bold', whiteSpace: 'pre-line',
         } : {
-          background: '#eff6ff', color: '#1d4ed8',
-          border: '1px solid #93c5fd', borderRadius: 6,
+          background: P.otherBookBg, color: P.otherBookText,
+          border: `1px solid ${P.otherBookBorder}`, borderRadius: 6,
           fontFamily: 'Amiri, serif', fontSize: 10, width: NW,
           padding: '3px 6px', textAlign: 'center', cursor: 'pointer',
           whiteSpace: 'pre-line',
@@ -157,11 +180,11 @@ function buildGraph(chains: ChainRow[], currentHadithId: number): { nodes: Node[
         id: bKey, source: prevId, target: bookId, type: 'smoothstep',
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isCurrent ? '#15803d' : '#93c5fd',
+          color: isCurrent ? P.edgeCurrentMarker : P.bookEdgeOtherMarker,
           width: 10, height: 10,
         },
         style: {
-          stroke: isCurrent ? '#16a34a' : '#bfdbfe',
+          stroke: isCurrent ? P.edgeCurrentStroke : P.bookEdgeOtherStroke,
           strokeWidth: isCurrent ? 2.5 : 1,
           opacity: isCurrent ? 1 : 0.5,
         },
@@ -375,6 +398,8 @@ function NarratorPanel({ nar, onClose }: { nar: Narrator; onClose: () => void })
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function IsnadTree({ hadithId }: { hadithId: number }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
   const [phase, setPhase] = useState<Phase>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [allChains, setAllChains] = useState<ChainRow[]>([])
@@ -388,6 +413,13 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (allChains.length) {
+      const { nodes: n, edges: e } = buildGraph(allChains, hadithId, dark)
+      setNodes(n); setEdges(e)
+    }
+  }, [dark, allChains]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setPhase('loading')
@@ -403,7 +435,7 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
       setAllChains(chains)
       const curr = chains.filter(c => c.hadithId === hadithId)
       setCurrentChains(curr.length > 0 ? curr : [chains[0]])
-      const { nodes: n, edges: e } = buildGraph(chains, hadithId)
+      const { nodes: n, edges: e } = buildGraph(chains, hadithId, dark)
       setNodes(n); setEdges(e)
       setPhase('done')
     } catch {
@@ -503,7 +535,7 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
           <p className="text-xs text-gray-400 mb-2">
             {allChains.length} إسناداً — اسحب للتنقل · عجلة الماوس للتكبير · انقر على الراوي لترجمته
           </p>
-          <div style={{ height: 520 }} className="w-full border border-gray-100 rounded-xl overflow-hidden bg-white">
+          <div style={{ height: 520 }} className="w-full border border-gray-100 rounded-xl overflow-hidden bg-surface">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -519,7 +551,7 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
               nodesConnectable={false}
               elementsSelectable={true}
             >
-              <Background color="#e5e7eb" gap={20} size={1} />
+              <Background color={dark ? '#2A313A' : '#e5e7eb'} gap={20} size={1} />
               <Controls position="bottom-right" showInteractive={false} />
               <MiniMap
                 nodeColor={n =>
@@ -529,6 +561,8 @@ export default function IsnadTree({ hadithId }: { hadithId: number }) {
                   : (n.style?.border as string || '').includes('f59e0b') ? '#fcd34d'
                   : '#d1d5db'
                 }
+                maskColor={dark ? 'rgba(5,6,7,0.6)' : undefined}
+                style={{ background: dark ? '#0E1116' : undefined }}
                 pannable
                 zoomable
               />
