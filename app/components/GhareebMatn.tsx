@@ -23,14 +23,9 @@ function GhareebPopover({
   onEnter: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [style, setStyle] = useState<{
-    top: number
-    left: number
-    transform: string
-  }>({
-    top: anchorRect.top + anchorRect.height / 2,
-    left: anchorRect.left - 10,
-    transform: 'translate(-100%, -50%)',
+  const [style, setStyle] = useState<{ top: number; left: number }>({
+    top: anchorRect.top,
+    left: anchorRect.left,
   })
 
   useEffect(() => {
@@ -45,23 +40,22 @@ function GhareebPopover({
     const el = ref.current
     if (!el) return
 
-    const pad = 12
+    const pad = 8
     const gap = 10
     const { width: w, height: h } = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+
+    // Open on whichever side of the word has more room, then clamp fully into the viewport
+    let left = anchorRect.left >= vw - anchorRect.right
+      ? anchorRect.left - gap - w
+      : anchorRect.right + gap
+    left = Math.max(pad, Math.min(left, vw - w - pad))
 
     let top = anchorRect.top + anchorRect.height / 2 - h / 2
-    top = Math.max(pad, Math.min(top, window.innerHeight - h - pad))
+    top = Math.max(pad, Math.min(top, vh - h - pad))
 
-    // Default: open to the left of the word (RTL matn — uses left margin)
-    let left = anchorRect.left - gap
-    let transform = 'translate(-100%, 0)'
-
-    if (left - w < pad) {
-      left = anchorRect.right + gap
-      transform = 'translate(0, 0)'
-    }
-
-    setStyle({ top, left, transform })
+    setStyle({ top, left })
   }, [anchorRect, word])
 
   const sources = word.sources?.length ? word.sources : [{
@@ -75,8 +69,8 @@ function GhareebPopover({
     <div
       ref={ref}
       dir="rtl"
-      className="fixed z-50 w-[min(28rem,calc(100vw-2rem))] max-h-[calc(100vh-1.5rem)] rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden flex flex-col"
-      style={{ top: style.top, left: style.left, transform: style.transform }}
+      className="fixed z-50 w-[min(28rem,calc(100vw-2rem))] max-h-[calc(100vh-1rem)] rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700 overflow-hidden flex flex-col"
+      style={{ top: style.top, left: style.left }}
       role="tooltip"
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
