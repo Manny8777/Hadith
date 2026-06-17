@@ -35,7 +35,7 @@ const MATN_SIZES = [
   'clamp(1.75rem, 1.1rem + 2.9vw, 2.8rem)',
   'clamp(2rem, 1.2rem + 3.6vw, 3.3rem)',
 ]
-const MATN_SIZE_DEFAULT = 2
+const MATN_SIZE_DEFAULT = 0
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   return (
