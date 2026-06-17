@@ -165,11 +165,6 @@ export default function ChainTimeline({ narrators }: Props) {
           )
         })}
 
-        {/* Legend */}
-        <g transform={`translate(${PADDING_X}, ${SVG_HEIGHT - 18})`}>
-          <line x1={0} y1={6} x2={14} y2={6} stroke="#f59e0b" strokeWidth={2} strokeDasharray="4,2" />
-          <text x={18} y={10} fontSize={8} fill="#9ca3af">فجوة زمنية كبيرة بين الرواة</text>
-        </g>
       </svg>
       <p className="text-[11px] text-gray-400 text-right mt-1" dir="rtl">
         * قد يُذكر للراوي أكثر من تاريخ وفاة — المعروض هنا هو التاريخ الأول الوارد. مرّر الفأرة على الراوي لعرض جميع التواريخ.
