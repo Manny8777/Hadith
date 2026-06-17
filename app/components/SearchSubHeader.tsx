@@ -45,7 +45,7 @@ export default function SearchSubHeader() {
             </button>
           </form>
 
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0 text-xs sm:text-sm">
+          <div className="hidden sm:flex items-center gap-1 sm:gap-2 shrink-0 text-xs sm:text-sm">
             <Link
               href="/find-by-number"
               className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-gray-700 hover:border-green-300 hover:bg-green-50 hover:text-green-800 transition-colors whitespace-nowrap"
