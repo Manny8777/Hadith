@@ -257,12 +257,14 @@ function NumeralToggle() {
 
 export default function NavHeader() {
   const [open, setOpen] = useState<string | null>(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const navRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setOpen(null)
+        setMobileOpen(false)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -275,10 +277,10 @@ export default function NavHeader() {
 
   return (
     <nav ref={navRef} className="relative z-30 bg-surface-sunken/95 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
-      <div className="max-w-7xl mx-auto flex items-center gap-1 px-3 sm:px-6 lg:px-7 py-2 sm:py-2.5 min-w-0">
+      <div className="max-w-7xl mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
         <a
           href="/"
-          className="text-sm sm:text-base font-bold text-green-800 hover:text-green-600 transition-colors ml-2 sm:ml-3 shrink-0 whitespace-nowrap font-display"
+          className="text-sm sm:text-base font-bold text-green-800 hover:text-green-600 transition-colors ml-1 sm:ml-3 shrink-0 whitespace-nowrap font-display"
         >
           <span className="sm:hidden">الجامع</span>
           <span className="hidden sm:inline">جامع خادم الحرمين</span>
@@ -286,7 +288,8 @@ export default function NavHeader() {
 
         <div className="hidden sm:block w-px h-5 bg-border mx-1 shrink-0" />
 
-        <div className="flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
+        {/* Desktop: inline categories with dropdowns */}
+        <div className="hidden sm:flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
           {CATEGORIES.map(cat => (
             <div key={cat.id} className="relative shrink-0">
               <button
@@ -329,24 +332,67 @@ export default function NavHeader() {
           ))}
         </div>
 
-        {/* TODO: re-enable when per-user login/collection is implemented
-        <a
-          href="/saved"
-          className="text-amber-300 hover:text-amber-200 transition-colors px-1.5 sm:px-2 py-1.5 text-sm shrink-0 whitespace-nowrap"
-          title="مجموعتي"
-        >
-          <span className="sm:hidden">★</span>
-          <span className="hidden sm:inline">★ مجموعتي</span>
-        </a>
-        */}
+        {/* Mobile: push toggles + menu button to the end */}
+        <div className="flex-1 sm:hidden" />
+
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
-          <div className="flex flex-col items-stretch gap-1">
+          <div className="flex flex-row sm:flex-col items-stretch gap-1">
             <NumberingToggle />
             <NumeralToggle />
           </div>
         </div>
+
+        {/* Mobile: hamburger toggles the category menu */}
+        <button
+          type="button"
+          onClick={() => { setMobileOpen(v => !v); setOpen(null) }}
+          aria-label="القائمة"
+          aria-expanded={mobileOpen}
+          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md text-ink border border-border hover:border-green-300 hover:bg-green-50 transition-colors shrink-0"
+        >
+          {mobileOpen
+            ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>}
+        </button>
       </div>
+
+      {/* Mobile: collapsible category menu (accordion — avoids clipping dropdowns) */}
+      {mobileOpen && (
+        <div className="sm:hidden border-t border-border bg-surface max-h-[72vh] overflow-y-auto overscroll-contain">
+          {CATEGORIES.map(cat => (
+            <div key={cat.id} className="border-b border-border/60">
+              <button
+                type="button"
+                onClick={() => toggle(cat.id)}
+                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                  open === cat.id ? 'text-green-800 font-semibold bg-green-50' : 'text-ink/85'
+                }`}
+              >
+                {cat.label}
+                <span className="text-[10px] opacity-60">{open === cat.id ? '▲' : '▼'}</span>
+              </button>
+              {open === cat.id && (
+                <div className="px-3 pb-2.5 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                  {cat.links.map(link => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => { setOpen(null); setMobileOpen(false) }}
+                      className="flex items-center justify-between gap-1 text-[13px] text-gray-700 hover:text-green-800 active:bg-green-50 px-2 py-1 rounded transition-colors"
+                    >
+                      <span className="truncate">{link.label}</span>
+                      {link.isNew && (
+                        <span className="shrink-0 text-[8px] bg-amber-100 text-amber-700 border border-amber-200 px-1 rounded-sm font-bold leading-none">جديد</span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </nav>
   )
 }
