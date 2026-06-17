@@ -18,7 +18,7 @@ export default function SiteNotice() {
             rel="noopener noreferrer"
             className="font-semibold text-green-700 hover:text-green-800 underline underline-offset-2"
           >
-            <bdi dir="ltr" className="tabular-nums">+61 426 047 327</bdi>
+            <bdi dir="ltr" className="tabular-nums" data-no-convert>+61 426 047 327</bdi>
           </a>
         </span>
       </div>

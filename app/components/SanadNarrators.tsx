@@ -181,7 +181,7 @@ export default function SanadNarrators({
         nodes.push(
           <span
             key={`nar-${id}-${i}`}
-            className="font-bold text-ink cursor-help rounded-sm px-0.5 underline decoration-green-300 decoration-1 underline-offset-[5px] transition-colors hover:decoration-green-600 hover:text-green-800"
+            className="font-bold text-ink cursor-help rounded-sm mx-1 px-0.5 underline decoration-green-300 decoration-1 underline-offset-[5px] transition-colors hover:decoration-green-600 hover:text-green-800"
             onMouseEnter={e => openPopover(id, e.currentTarget)}
             onMouseLeave={closePopover}
             onClick={e => {

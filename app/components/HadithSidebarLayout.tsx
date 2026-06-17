@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import PrintButton from './PrintButton'
 import SaveHadith from './SaveHadith'
@@ -26,6 +26,16 @@ import type { ReactNode } from 'react'
 function cleanHadithContent(xml: string): string {
   return stripXmlToVerbatim(xml)
 }
+
+// Reader-adjustable matn sizes (responsive clamps so every level scales on mobile).
+const MATN_SIZES = [
+  'clamp(1.15rem, 0.9rem + 1.2vw, 1.55rem)',
+  'clamp(1.3rem, 0.95rem + 1.7vw, 1.9rem)',
+  'clamp(1.5rem, 1rem + 2.3vw, 2.3rem)',     // default
+  'clamp(1.75rem, 1.1rem + 2.9vw, 2.8rem)',
+  'clamp(2rem, 1.2rem + 3.6vw, 3.3rem)',
+]
+const MATN_SIZE_DEFAULT = 2
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   return (
@@ -129,6 +139,16 @@ export default function HadithSidebarLayout({
   takhrijSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
+  const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
+
+  // Persist the reader's matn-size preference across hadiths/sessions
+  useEffect(() => {
+    const saved = parseInt(localStorage.getItem('matnSize') ?? '', 10)
+    if (!Number.isNaN(saved) && saved >= 0 && saved < MATN_SIZES.length) setMatnSize(saved)
+  }, [])
+  useEffect(() => {
+    localStorage.setItem('matnSize', String(matnSize))
+  }, [matnSize])
 
   const serviceSections = activeServiceSections(hadithServices)
 
@@ -331,6 +351,28 @@ export default function HadithSidebarLayout({
             >
               {showTashkeel ? 'بلا تشكيل' : 'مع التشكيل'}
             </button>
+            {/* Matn font-size stepper */}
+            <div className="inline-flex items-center rounded-lg border border-gray-200 overflow-hidden" data-no-convert>
+              <button
+                onClick={() => setMatnSize(s => Math.max(0, s - 1))}
+                disabled={matnSize <= 0}
+                title="تصغير حجم المتن"
+                aria-label="تصغير حجم المتن"
+                className="px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+              >
+                أ−
+              </button>
+              <span className="px-1.5 text-[10px] text-gray-400 border-x border-gray-200 select-none" title="حجم المتن">حجم</span>
+              <button
+                onClick={() => setMatnSize(s => Math.min(MATN_SIZES.length - 1, s + 1))}
+                disabled={matnSize >= MATN_SIZES.length - 1}
+                title="تكبير حجم المتن"
+                aria-label="تكبير حجم المتن"
+                className="px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+              >
+                أ+
+              </button>
+            </div>
             <PrintButton />
             <SaveHadith hadithId={hadithId} />
             <HadithExport
@@ -385,7 +427,10 @@ export default function HadithSidebarLayout({
                   )}
                 </div>
               )}
-              <div className={sanad ? 'px-4 sm:px-6 py-6 sm:py-8' : 'px-4 sm:px-6 py-8 sm:py-10'}>
+              <div
+                className={sanad ? 'px-4 sm:px-6 py-6 sm:py-8' : 'px-4 sm:px-6 py-8 sm:py-10'}
+                style={{ ['--matn-size' as string]: MATN_SIZES[matnSize] }}
+              >
                 {sanad && (
                   <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">المتن</p>
                 )}

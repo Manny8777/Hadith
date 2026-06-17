@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useNumbering } from '@/lib/numberingContext'
+import { useNumeral } from '@/lib/numeralContext'
 
 type NavLink = { href: string; label: string; isNew?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
@@ -210,6 +211,22 @@ function NumberingToggle() {
   )
 }
 
+function NumeralToggle() {
+  const { pref, toggle } = useNumeral()
+  return (
+    <button
+      onClick={toggle}
+      data-no-convert
+      title="تبديل صيغة الأرقام بين الإنجليزية (123) والعربية (١٢٣) — يشمل الموقع كله"
+      className="flex items-center justify-center gap-1 text-[11px] text-muted hover:text-ink border border-border hover:border-green-300 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
+    >
+      <span className={pref === 'western' ? 'text-green-700 font-bold' : 'text-gray-400'}>123</span>
+      <span className="text-gray-300">&#x21C4;</span>
+      <span className={pref === 'arabic' ? 'text-green-700 font-bold' : 'text-gray-400'}>١٢٣</span>
+    </button>
+  )
+}
+
 export default function NavHeader() {
   const [open, setOpen] = useState<string | null>(null)
   const navRef = useRef<HTMLElement>(null)
@@ -294,7 +311,10 @@ export default function NavHeader() {
           <span className="hidden sm:inline">★ مجموعتي</span>
         </a>
         */}
-        <NumberingToggle />
+        <div className="flex flex-col items-stretch gap-1 shrink-0">
+          <NumberingToggle />
+          <NumeralToggle />
+        </div>
       </div>
     </nav>
   )

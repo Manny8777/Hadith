@@ -319,7 +319,7 @@ body {
    Aligned to the start (right, in RTL) to match the sanad block. */
 .hadith-matn {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 1rem + 2.3vw, 2.3rem);
+  font-size: var(--matn-size, clamp(1.5rem, 1rem + 2.3vw, 2.3rem));
   line-height: 1.95;
   font-weight: 500;
   color: var(--color-ink);
