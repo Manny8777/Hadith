@@ -28,14 +28,15 @@ function cleanHadithContent(xml: string): string {
 }
 
 // Reader-adjustable matn sizes (responsive clamps so every level scales on mobile).
+// Level 0 matches the sanad text size; the default sits one level above it.
 const MATN_SIZES = [
-  'clamp(1.15rem, 0.9rem + 1.2vw, 1.55rem)',
-  'clamp(1.3rem, 0.95rem + 1.7vw, 1.9rem)',
-  'clamp(1.5rem, 1rem + 2.3vw, 2.3rem)',     // default
-  'clamp(1.75rem, 1.1rem + 2.9vw, 2.8rem)',
-  'clamp(2rem, 1.2rem + 3.6vw, 3.3rem)',
+  'clamp(0.9375rem, 0.9rem + 0.2vw, 1.05rem)', // 0 — same as السند (~15–16px)
+  'clamp(1.1rem, 0.95rem + 0.7vw, 1.35rem)',   // 1 — default (~18–22px)
+  'clamp(1.3rem, 1rem + 1.3vw, 1.7rem)',       // 2
+  'clamp(1.55rem, 1.05rem + 2vw, 2.05rem)',    // 3
+  'clamp(1.8rem, 1.1rem + 2.8vw, 2.4rem)',     // 4
 ]
-const MATN_SIZE_DEFAULT = 0
+const MATN_SIZE_DEFAULT = 1
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   return (
