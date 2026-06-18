@@ -11,7 +11,7 @@ export default function SiteNotice() {
         </span>
         <span className="hidden sm:inline text-amber-300">·</span>
         <span className="text-amber-800/80">
-          للمساهمة تواصل واتساب:{' '}
+          نحن بحاجة لطلاب علم لإرشادنا ومساعدتنا — تواصل واتساب:{' '}
           <a
             href="https://wa.me/61426047327"
             target="_blank"
