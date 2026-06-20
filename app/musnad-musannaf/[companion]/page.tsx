@@ -20,6 +20,7 @@ interface Ilal { id: number; entry_id: number; narrator_id: number | null; narra
 interface Ref { id: number; entry_id: number; ref_book: string | null; ref_no: string | null; kind: string | null }
 
 const toLatinDigits = (s: string) => s.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/\D/g, '')
+const toArabicDigits = (s: string) => s.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])
 
 // render the book's «الفوائد» text faithfully: split on the book's bullet dashes,
 // bold each "قلنا:/قال فلان:" lead, and mute the «source» references
@@ -212,7 +213,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                                 <span className="inline-block text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded" title={`الرابط يفتح نسخة: ${edition}`}>📖 {edition}</span>
                               )}
                               {numDiffers && (
-                                <span className="inline-block text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded" title="ترقيم نسخة الموقع يختلف عن ترقيم المسند المصنف">↩ رقمه في النسخة: {rNo}</span>
+                                <span className="inline-block text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded" title="ترقيم نسخة الموقع يختلف عن ترقيم المسند المصنف">↩ رقمه في النسخة: {toArabicDigits(rNo)}</span>
                               )}
                             </span>
                             {t.isnad_text && <div className="text-gray-500 text-[12.5px] mt-0.5 leading-relaxed">{t.isnad_text}</div>}

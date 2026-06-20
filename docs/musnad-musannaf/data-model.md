@@ -92,11 +92,21 @@ which railway hadith it maps to.
 | `source_no` | TEXT | Hadith number as written (Arabic-Indic digits), e.g. `٢٧٧١`. |
 | `source_no_int` | INTEGER | Same number as Western integer, `2771`. |
 | `railway_book_id` | INTEGER → `books(id)` | Railway book id resolved via `BOOKMAP` (الدارمي→9, ابن ماجة→6, …). |
-| **`matched_main_id`** | INTEGER | Per-source lens: the `main_id` of this source's member inside the resolved group (so each takhrīj line can link to its own `/hadith/[id]`). |
+| **`matched_main_id`** | INTEGER | Per-source lens: the railway `main_id` this citation links to (`/hadith/[id]`). Resolved **number-first** — see *Edition-aware matching* below. |
 | `edition_kb_id` | INTEGER | KetabOnline edition id of the verified source edition. (Schema column; not populated by the bulk extractor.) |
-| `edition_note` | TEXT | e.g. `ت الغمري، فتح المنان`. (Schema column; surfaced in the UI via the page's `EDITIONS` map, not this column.) |
+| `edition_note` | TEXT | e.g. `ت الغمري، فتح المنان`. (Schema column; the UI instead shows the railway destination edition live from `books.print1_edition`.) |
 | `isnad_text` | TEXT | The source's isnad snippet (`قال: أخبرنا …`), trimmed to ≤ 300 chars. |
-| `match_status` | TEXT DEFAULT 'pending' | `matched` / `unmatched` (extractor sets one of these per row). Schema also anticipates `edition-mismatch`. |
+| `match_status` | TEXT | `matched` (exact number match in the cited book) · `edition-fixed` (cited edition renumbers vs railway's, bridged through the takhrīj cluster) · `group-approx` (aligned book, no number match, cluster member used) · `unmatched`. |
+
+### Edition-aware matching (`matched_main_id`)
+
+The number shown on the page is the **المسند المصنف** citation; the link opens the **railway** copy of that book — a *different print edition*. The two only share a hadith number when railway's edition uses the same numbering the المسند cites. Resolution per citation (`pick_target` in `ilal_extract_all.py`):
+
+1. **Exact number** — railway hadith in the cited book whose own `tarqeem_matboa1/harf/matboa2` equals the cited number (`num2main`, `matboa1`-priority, digit-extracted so `"1380 (م)"` → `1380`). 61,939 / 63,568 links. → `matched`.
+2. **Edition-fixed** — for books whose railway edition renumbers (set `MISALIGNED`, currently `{9}` الدارمي: railway *دار المغني* vs المسند *فتح المنان* للغمري, ~121 offset), the cited number is meaningless on railway, so the link is bridged through the entry's **takhrīj cluster** (the railway `takhrij.group_id` of the entry's first edition-aligned core citation), disambiguated among same-book cluster members by chapter↔matn keyword overlap. → `edition-fixed`.
+3. **Fallback** — aligned book with no number hit → cluster member if any (`group-approx`), else `unmatched`.
+
+The UI surfaces this honestly: the destination edition badge (`books.print1_edition`) and, when railway's own number differs from the cited number, a `↩ رقمه في النسخة` chip.
 
 Indexes: `idx_ilal_takhrij_entry` on `entry_id`, `idx_ilal_takhrij_main` on `matched_main_id`.
 
