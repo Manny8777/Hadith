@@ -198,6 +198,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                         <div key={x.id} className="py-2 text-sm leading-relaxed text-gray-700">
                           <strong className="text-gray-900">{x.scientist}:</strong> {x.say_text}
                           {x.garh_label && <span className={`ms-2 inline-block text-[10px] px-1.5 py-0.5 rounded border font-semibold ${garhColor(x.garh_label)}`}>{x.garh_label}</span>}
+                          {x.narrator_id && <Link href={`/narrator/${x.narrator_id}`} className="ms-2 text-[11px] ui-link">ترجمة الراوي ↗</Link>}
                           {x.source_ref && <span className="text-gray-400 text-[11px] block mt-0.5">{x.source_ref}</span>}
                         </div>
                       ))}

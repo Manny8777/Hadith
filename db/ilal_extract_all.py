@@ -22,14 +22,17 @@ def ar2i(s):
 def clean(s): return re.sub(r'\s+',' ',re.sub('<[^>]+>',' ',s or '')).strip()
 def st(s): return ''.join(c for c in unicodedata.normalize('NFC',s or '') if unicodedata.category(c)!='Mn')
 
-BOOKMAP={'البخاري':1,'مسلم':2,'أبو داود':3,'أبي داود':3,'أبو داوُد':3,'الترمذي':4,'الترمِذي':4,'النسائي':5,
- 'ابن ماجة':6,'ابن ماجه':6,'مالك':7,'أحمد':8,'الدارمي':9,'الدَّارمي':9,'الدَّارِمي':9,'ابن حبان':10,'ابن حِبَّان':10,
- 'ابن خزيمة':11,'ابن أبي شيبة':15,'عبد الرزاق':16,'البيهقي':17,'الدارقطني':18,'الدارقُطني':18,
- 'الحاكم':24,'الطبراني':12,'البزار':19,'أبو يعلى':23,'الحميدي':20,'النسائي في الكبرى':22}
-BOOKMAP_N={st(k):v for k,v in BOOKMAP.items()}
-CORE_PREF=[3,4,6,2,1,5,10,11,9,8,15,16,17,18,24,22,12,19,23,20,7]  # representative pick order
+BOOKMAP={'النسائي في الكبرى':22,'النسائي الكبرى':22,'عبد الله بن أحمد':8,'البخاري':1,'مسلم':2,
+ 'أبو داود':3,'أبي داود':3,'الترمذي':4,'النسائي':5,'ابن ماجة':6,'ابن ماجه':6,'مالك':7,'أحمد':8,
+ 'الدارمي':9,'ابن حبان':10,'ابن خزيمة':11,'الطبراني':12,'ابن أبي شيبة':15,'عبد الرزاق':16,
+ 'البيهقي':17,'الدارقطني':18,'البزار':19,'الحميدي':20,'الطيالسي':21,'أبو يعلى':23,'الحاكم':24,
+ 'عبد بن حميد':29,'سعيد بن منصور':30}
+BMS={st(k):v for k,v in BOOKMAP.items()}
+CORE_PREF=[3,4,6,2,1,5,10,11,9,8,15,16,17,18,24,22,12,19,23,20,29,21,30,7]  # representative pick order
 
-CITE = re.compile(r'(?:«\s*([^»]{2,40}?)\s*»|((?:ابن|أبو|أبي)\s+[؀-ۿ]+(?:\s+[؀-ۿ]+){0,2}|ال[؀-ۿ]{3,}))\s*\(\s*([٠-٩]+)\s*\)')
+# book name (longest first) + optional «», optional «vol/page», then (number)
+_BALT='|'.join(re.escape(b) for b in sorted(BMS,key=len,reverse=True))
+CITE=re.compile(r'(?:«\s*)?('+_BALT+r')\s*»?\s*(?:[٠-٩]+\s*[/،]\s*[٠-٩]+\s*)?\(\s*([٠-٩]+)\s*\)')
 
 def slugify(name, seq):
     base=re.sub(r'[^\w]+','-',st(name)).strip('-')[:40] or 'companion'
@@ -41,16 +44,16 @@ def parse_entry(body, foot, qulna):
     qi=body.find('«'); ai=body.find('أخرجه')
     isnad_ctx = body[:qi].strip(' ؛:') if 0<qi<400 else (body[:ai].strip(' ؛:')[:300] if ai>0 else '')
     mm=re.search(r'«([^»]*)»',body); matn=mm.group(1).strip() if mm else ''
-    takhrij_raw=body[ai:] if ai>=0 else ''
+    takhrij_raw=body[ai:] if ai>=0 else body
     la=re.search(r'اللفظ\s+ل[^\.\(،]+',foot); lafz=la.group(0).strip() if la else None
-    # citations
+    # citations (match on tashkeel-stripped text — normalizes الدَّارِمي→الدارمي etc.)
+    tx=st(takhrij_raw)
     cites=[]; seen=set()
-    for m in CITE.finditer(takhrij_raw):
-        bk=(m.group(1) or m.group(2) or '').strip(); no=m.group(3); key=st(bk)
-        bid=BOOKMAP_N.get(key) or next((v for k,v in BOOKMAP_N.items() if k in key or key in k),None)
+    for m in CITE.finditer(tx):
+        bk=m.group(1); no=m.group(2); bid=BMS.get(bk)
         if not bid or (bid,no) in seen: continue
         seen.add((bid,no))
-        isn=takhrij_raw[m.end():m.end()+150].split('. و')[0].split('. «')[0].strip()
+        isn=tx[m.end():m.end()+150].split('. و')[0].split('. «')[0].strip()
         cites.append({'book':bk,'no':no,'no_int':ar2i(no),'bid':bid,'isnad':isn[:300]})
     # ilal (criticism)
     ilal=[]
