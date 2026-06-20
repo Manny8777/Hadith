@@ -162,7 +162,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                 <span className="min-w-8 h-8 rounded-full bg-green-800 text-white flex items-center justify-center text-xs font-bold">{e.hadith_no}</span>
                 <span className="ui-chip">مرفوع</span>
                 {e.judgment && <span className={`text-[11px] px-2 py-1 rounded border font-semibold ${judgmentTone(e.judgment)}`}>{e.judgment.split('؛')[0]}</span>}
-                {e.matched_main_id && <Link href={`/hadith/${e.matched_main_id}`} className="ms-auto text-[11px] ui-link">الحديث في railway ↗</Link>}
+                {e.matched_main_id && <Link href={`/hadith/${e.matched_main_id}`} target="_blank" rel="noopener noreferrer" className="ms-auto text-[11px] ui-link">الحديث في railway ↗</Link>}
               </div>
 
               <div className="px-5 py-4">
@@ -194,7 +194,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                 {tk.length > 0 && (
                   <div className="mt-4">
                     <div className="text-[11px] font-bold text-gray-500 tracking-wider mb-1.5 flex items-center gap-2">مصادر التخريج<span className="flex-1 h-px bg-gray-200" /></div>
-                    <p className="text-[10.5px] text-gray-400 mb-2 leading-relaxed">الرقم بترقيم «المسند المصنف»؛ والرابط يفتح الحديث نفسه في نسخة المكتبة المعتمدة في الموقع — وقد يختلف ترقيمها.</p>
+                    <p className="text-[10.5px] text-gray-400 mb-2 leading-relaxed">الرقم بترقيم «المسند المصنف»؛ والرابط ↗ يفتح الحديث نفسه في نسخة المكتبة المعتمدة في الموقع (في تبويب جديد) — وقد يختلف ترقيمها.</p>
                     <div className="flex flex-col gap-1.5">
                       {tk.map(t => {
                         const rNo = t.matched_main_id != null ? railwayNo[t.matched_main_id] : undefined
@@ -207,7 +207,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                           <div className="min-w-0 flex-1">
                             <span className="flex items-center gap-2 flex-wrap">
                               {t.matched_main_id
-                                ? <Link href={`/hadith/${t.matched_main_id}`} className="font-bold text-green-800 hover:underline">{t.source_book}</Link>
+                                ? <Link href={`/hadith/${t.matched_main_id}`} target="_blank" rel="noopener noreferrer" className="font-bold text-green-800 hover:underline">{t.source_book} ↗</Link>
                                 : <span className="font-bold text-gray-700">{t.source_book}</span>}
                               {edition && (
                                 <span className="inline-block text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded" title={`الرابط يفتح نسخة: ${edition}`}>📖 {edition}</span>
