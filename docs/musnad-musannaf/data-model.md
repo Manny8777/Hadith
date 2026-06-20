@@ -64,7 +64,8 @@ One row per hadith of the book. **This is where the lens lives.**
 | `isnad_context` | TEXT | Lead-in isnad text up to the matn, e.g. `عن سعيد بن أبيض، عن أبيه أبيض بن حمال`. |
 | `matn` | TEXT | The matn text (extracted from between `«…»`). |
 | `lafz_attr` | TEXT | "اللفظ ل…" attribution (e.g. `اللفظ لابن ماجة`), if present in the footnote. |
-| `judgment` | TEXT | The authors' حكم, e.g. `إسناده ضعيف؛ …`. (Populated from the فوائد page's `qulna` field.) |
+| `judgment` | TEXT | The authors' حكم verdict line, e.g. `إسناده ضعيف`. (Populated from the فوائد page's `qulna` field.) |
+| `fawaid` | TEXT | The book's **full «الفوائد» block** for the hadith — verdict + the authors' علل analysis and scholar quotes (e.g. ابن القطان / الذهبي). Cleaned body of the `has_fawaid=1` pages, with the leading `- فوائد:` marker stripped. Rendered as the "الفوائد" section. علل are parsed **only** from this text (never from the hadith footnote), which prevents the companion bio leaking in as a علة. |
 | `juz` | INTEGER | (Reserved; not populated by the current extractor.) |
 | `print_page` | INTEGER | Printed-edition page number (٢١٠). |
 | `page_num` | INTEGER | `musnad.db` `page_num` of the body text (٣٢٥). |
