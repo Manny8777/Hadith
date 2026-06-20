@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS ilal_entries (
   isnad_context TEXT,                           -- عن سعيد بن أبيض، عن أبيه أبيض بن حمال
   matn          TEXT,                           -- «المتن»
   lafz_attr     TEXT,                           -- "اللفظ لابن ماجة"
-  judgment      TEXT,                           -- حكم المؤلفين: "إسناده ضعيف؛ ..."
+  judgment      TEXT,                           -- حكم المؤلفين: "إسناده ضعيف" (سطر قلنا)
+  fawaid        TEXT,                           -- نص «الفوائد» الكامل (تحليل المؤلفين)
   juz           INTEGER,
   print_page    INTEGER,                        -- رقم الصفحة المطبوعة (٢١٠)
   page_num      INTEGER,                        -- musnad.db page_num للنص (٣٢٥)

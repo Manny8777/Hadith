@@ -9,7 +9,7 @@ import { getChainsForHadith } from '@/lib/isnadChains'
 interface Companion { id: number; seq: number; name: string; slug: string; tarjama: string | null; narrator_id: number | null }
 interface Entry {
   id: number; seq: number; hadith_no: number; isnad_context: string | null; matn: string | null
-  lafz_attr: string | null; judgment: string | null; print_page: number | null
+  lafz_attr: string | null; judgment: string | null; fawaid: string | null; print_page: number | null
   matched_main_id: number | null; takhrij_group_id: number | null
 }
 interface Takhrij {
@@ -31,13 +31,35 @@ const EDITIONS: Record<number, string> = {
   22: 'النسائي الكبرى — ت شلبي، الرسالة ١٤٢١',
 }
 
-function garhColor(g: string | null): string {
-  if (!g) return 'bg-gray-100 text-gray-600 border-gray-200'
-  if (/ثقة|صحيح|عدل|صحابي/.test(g)) return 'bg-green-100 text-green-800 border-green-200'
-  if (/صدوق|حسن|مقبول/.test(g)) return 'bg-amber-100 text-amber-800 border-amber-200'
-  if (/ضعيف|منكر|متروك|كذاب|مجهول|لا يعرف|لا يصح/.test(g)) return 'bg-red-100 text-red-700 border-red-200'
-  return 'bg-gray-100 text-gray-600 border-gray-200'
+// render the book's «الفوائد» text faithfully: split on the book's bullet dashes,
+// bold each "قلنا:/قال فلان:" lead, and mute the «source» references
+function FawaidText({ text }: { text: string }) {
+  const items = text.split(/\s+[-ـ]\s+(?=قلنا|قال|وقال|أخرجه|وأخرجه|انظر|ورواه|رواه)/).map(s => s.trim()).filter(Boolean)
+  const renderInline = (seg: string, key: number) => {
+    // split keeping «...» reference groups (plus any trailing volume/number) intact
+    const parts = seg.split(/(«[^»]*»\s*[٠-٩]*\s*[/،]?\s*[٠-٩]*|\([٠-٩\s]+\))/g).filter(Boolean)
+    return parts.map((p, i) =>
+      (p.startsWith('«') || p.startsWith('('))
+        ? <span key={i} className="text-teal-700 text-[12px] whitespace-nowrap">{p}</span>
+        : <span key={i}>{p}</span>
+    )
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {items.map((seg, i) => {
+        const m = seg.match(/^((?:و?قلنا|و?قال(?:\s+[^\:؛]{1,28})?))\s*[:：]\s*([\s\S]*)$/)
+        return (
+          <p key={i} className="text-[14px] leading-loose text-gray-800 flex flex-wrap gap-x-1">
+            {m
+              ? <><strong className="text-gray-900">{m[1]}:</strong> {renderInline(m[2], i)}</>
+              : renderInline(seg, i)}
+          </p>
+        )
+      })}
+    </div>
+  )
 }
+
 function judgmentTone(j: string | null): string {
   if (!j) return 'bg-gray-100 text-gray-700 border-gray-200'
   if (/ضعيف|منكر|موضوع|لا يصح|باطل/.test(j)) return 'bg-red-50 text-red-700 border-red-200'
@@ -63,7 +85,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
   const offset = (Math.min(page, totalPages) - 1) * PER_PAGE
 
   const entriesRes = await pool.query<Entry>(
-    `SELECT id, seq, hadith_no, isnad_context, matn, lafz_attr, judgment, print_page, matched_main_id, takhrij_group_id
+    `SELECT id, seq, hadith_no, isnad_context, matn, lafz_attr, judgment, fawaid, print_page, matched_main_id, takhrij_group_id
      FROM ilal_entries WHERE companion_id = $1 ORDER BY seq LIMIT ${PER_PAGE} OFFSET ${offset}`,
     [companion.id]
   )
@@ -189,19 +211,26 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                   </div>
                 )}
 
-                {/* علل — narrator criticism */}
-                {il.length > 0 && (
-                  <div className="mt-4 rounded-lg border border-red-200 overflow-hidden">
-                    <div className="px-3.5 py-2 bg-red-50 border-b border-red-200 text-[12.5px] font-bold text-red-800">العلل وأقوال النقاد</div>
-                    <div className="px-4 py-2 bg-white flex flex-col divide-y divide-gray-100">
-                      {il.map(x => (
-                        <div key={x.id} className="py-2 text-sm leading-relaxed text-gray-700">
-                          <strong className="text-gray-900">{x.scientist}:</strong> {x.say_text}
-                          {x.garh_label && <span className={`ms-2 inline-block text-[10px] px-1.5 py-0.5 rounded border font-semibold ${garhColor(x.garh_label)}`}>{x.garh_label}</span>}
-                          {x.narrator_id && <Link href={`/narrator/${x.narrator_id}`} className="ms-2 text-[11px] ui-link">ترجمة الراوي ↗</Link>}
-                          {x.source_ref && <span className="text-gray-400 text-[11px] block mt-0.5">{x.source_ref}</span>}
-                        </div>
-                      ))}
+                {/* الفوائد — نصّ المؤلفين كاملًا (الحكم + تحليل العلل + أقوال النقاد) */}
+                {(e.fawaid || il.length > 0) && (
+                  <div className="mt-4 rounded-lg border border-amber-200/70 overflow-hidden">
+                    <div className="px-3.5 py-2 bg-amber-50/70 border-b border-amber-200/70 text-[12.5px] font-bold text-amber-900 flex items-center gap-2">
+                      <span>الفوائد</span>
+                      <span className="text-[10px] font-normal text-amber-700/70">تحليل المؤلفين وأقوال النقاد في العلل</span>
+                    </div>
+                    <div className="px-4 py-3 bg-white">
+                      {e.fawaid
+                        ? <FawaidText text={e.fawaid} />
+                        : (
+                          <div className="flex flex-col divide-y divide-gray-100">
+                            {il.map(x => (
+                              <div key={x.id} className="py-2 text-sm leading-relaxed text-gray-700">
+                                <strong className="text-gray-900">{x.scientist}:</strong> {x.say_text}
+                                {x.source_ref && <span className="text-teal-700 text-[12px]"> {x.source_ref}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                     </div>
                   </div>
                 )}

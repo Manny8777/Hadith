@@ -30,17 +30,21 @@ BOOKMAP={'النسائي في الكبرى':22,'النسائي الكبرى':22,
 BMS={st(k):v for k,v in BOOKMAP.items()}
 CORE_PREF=[3,4,6,2,1,5,10,11,9,8,15,16,17,18,24,22,12,19,23,20,29,21,30,7]  # representative pick order
 
-# book name (longest first) + optional «», optional «vol/page», then (number)
+# book name (longest first) + optional «», optional «في «الكبرى»» (سنن النسائي الكبرى), optional «vol/page», then (number)
 _BALT='|'.join(re.escape(b) for b in sorted(BMS,key=len,reverse=True))
-CITE=re.compile(r'(?:«\s*)?('+_BALT+r')\s*»?\s*(?:[٠-٩]+\s*[/،]\s*[٠-٩]+\s*)?\(\s*([٠-٩]+)\s*\)')
+CITE=re.compile(r'(?:«\s*)?('+_BALT+r')\s*»?\s*(في\s*«الكبرى»\s*)?(?:[٠-٩]+\s*[/،]\s*[٠-٩]+\s*)?\(\s*([٠-٩]+)\s*\)')
 
 def slugify(name, seq):
     base=re.sub(r'[^\w]+','-',st(name)).strip('-')[:40] or 'companion'
     return f"{seq}-{base}" if seq else base
 
-def parse_entry(body, foot, qulna):
-    body=clean(body); foot=clean(foot)
-    body=re.sub(r'^\s*[٠-٩]+\s*-\s*','',body)
+def parse_entry(body, foot, fawaid, qulna):
+    # body = نص الحديث ، foot = الحواشي (للإحالات واللفظ) ، fawaid = نص صفحة «الفوائد»
+    body=clean(body); foot=clean(foot); fawaid=clean(fawaid)
+    # على صفحة العنوان المشتركة يسبق المتنَ عنوانُ الصحابي وترجمته — نقصّ إلى أول واسمة حديث
+    mh=re.search(r'[٠-٩]+\s*[-ـ]\s*(?=عن\b|عَن|حدثنا|حدّثنا|أخبرنا|حدثني|أخبرني|أنه|أنّه|أن\s|قال\b)', body)
+    if mh and mh.start()>0: body=body[mh.start():]
+    body=re.sub(r'^\s*[٠-٩]+\s*[-ـ]\s*','',body)
     qi=body.find('«'); ai=body.find('أخرجه')
     isnad_ctx = body[:qi].strip(' ؛:') if 0<qi<400 else (body[:ai].strip(' ؛:')[:300] if ai>0 else '')
     mm=re.search(r'«([^»]*)»',body); matn=mm.group(1).strip() if mm else ''
@@ -50,14 +54,19 @@ def parse_entry(body, foot, qulna):
     tx=st(takhrij_raw)
     cites=[]; seen=set()
     for m in CITE.finditer(tx):
-        bk=m.group(1); no=m.group(2); bid=BMS.get(bk)
-        if not bid or (bid,no) in seen: continue
+        bk=m.group(1); kubra=m.group(2); no=m.group(3); bid=BMS.get(bk)
+        if not bid: continue
+        if kubra and bid==5: bid=22; bk='النسائي الكبرى'   # «النسائي» في «الكبرى» → السنن الكبرى
+        if (bid,no) in seen: continue
         seen.add((bid,no))
         isn=tx[m.end():m.end()+150].split('. و')[0].split('. «')[0].strip()
         cites.append({'book':bk,'no':no,'no_int':ar2i(no),'bid':bid,'isnad':isn[:300]})
-    # ilal (criticism)
+    # الفوائد: النص الكامل لقسم «الفوائد» كما في الكتاب (نزيل واسمة «- فوائد:» المتصدّرة)
+    fw=re.sub(r'^\s*[-ـ]?\s*فوائد\s*[:：]\s*','',fawaid).strip()
+    fw=re.sub(r'^\s*[-ـ]\s*','',fw).strip()
+    # ilal (أقوال النقاد في الرواة) — تُستخرج من «الفوائد» وحدها لا من حاشية الحديث (تجنُّب تسرُّب ترجمة الصحابي)
     ilal=[]
-    for m in re.finditer(r'قال\s+([^\:؛]{2,28}?)\s*:\s*([^«\.]{4,200}?)\.?\s*«([^»]+)»\s*([٠-٩/ ]*)',foot):
+    for m in re.finditer(r'قال\s+([^\:؛]{2,28}?)\s*:\s*([^«\.]{4,200}?)\.?\s*«([^»]+)»\s*([٠-٩/ ]*)',fawaid):
         say=m.group(2).strip(); gl=None
         for g in ['لا يعرف','مجهول','لا يصح','ضعيف','منكر','متروك','ثقة','صدوق','صحيح','حسن']:
             if g in say or g in (qulna or ''): gl=g; break
@@ -67,7 +76,7 @@ def parse_entry(body, foot, qulna):
     for m in re.finditer(r'(المسند الجامع|تحفة الأشراف|الطبراني|الدارقُطني|الدارقطني|ابن أبي عاصم|البيهقي|أحمد)\s*(?:في\s*«[^»]+»)?\s*\(\s*([٠-٩ و]+)\s*\)',foot):
         rb=m.group(1).strip(); kind='primary-index' if rb in ('المسند الجامع','تحفة الأشراف') else 'secondary'
         refs.append({'book':rb,'no':m.group(2).strip(),'kind':kind})
-    return dict(isnad_ctx=isnad_ctx, matn=matn, lafz=lafz, cites=cites, ilal=ilal, refs=refs)
+    return dict(isnad_ctx=isnad_ctx, matn=matn, lafz=lafz, cites=cites, ilal=ilal, refs=refs, fawaid=fw)
 
 def main():
     print("loading railway match indexes ...", flush=True)
@@ -144,10 +153,10 @@ def main():
         parsed=[]
         for eseq,e in enumerate(ents,1):
             body=' '.join(clean(pages[p]['body']) for p in e['pages'] if pages[p]['body'])
-            foot=' '.join(clean(pages[p]['foot']) for p in e['pages']+e['fw'] if pages[p]['foot'])
+            foot=' '.join(clean(pages[p]['foot']) for p in e['pages'] if pages[p]['foot'])   # حواشي الحديث فقط
             qulna=next((clean(pages[p]['qulna']) for p in e['fw'] if pages[p]['qulna']),None)
-            fw_foot=' '.join(clean(pages[p]['body']) for p in e['fw'] if pages[p]['body'])
-            P=parse_entry(body, foot+' '+fw_foot, qulna)
+            fawaid=' '.join(clean(pages[p]['body']) for p in e['fw'] if pages[p]['body'])     # نص صفحات «الفوائد»
+            P=parse_entry(body, foot, fawaid, qulna)
             r=resolve(P['cites']); rep,gid=(r[0],r[1]) if r else (None,None)
             members=r[2] if r and len(r)>2 else {}
             P.update(seq=eseq,hno=e['hno'],qulna=qulna,print=e['print'],page=e['pages'][0],
@@ -173,11 +182,11 @@ def main():
     for cidx,c in enumerate(companions):
         for e in c['entries']:
             entry_vals.append((comp_ids[cidx],e['seq'],e['hno'],e['isnad_ctx'],e['matn'],e['lafz'],
-                               e['qulna'],e['print'],e['page'],e['rep'],e['gid'],e['body'],e['foot']))
+                               e['qulna'],e['fawaid'],e['print'],e['page'],e['rep'],e['gid'],e['body'],e['foot']))
             owners.append(e)
     eids=[r[0] for r in execute_values(cur,
         """INSERT INTO ilal_entries(companion_id,seq,hadith_no,isnad_context,matn,lafz_attr,
-           judgment,print_page,page_num,matched_main_id,takhrij_group_id,body_raw,foot_raw)
+           judgment,fawaid,print_page,page_num,matched_main_id,takhrij_group_id,body_raw,foot_raw)
            VALUES %s RETURNING id""", entry_vals, page_size=1000, fetch=True)]
 
     tk=[]; il=[]; rf=[]; matched=0
