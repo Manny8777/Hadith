@@ -13,6 +13,7 @@ const CATEGORIES: NavCategory[] = [
     label: 'عرض',
     links: [
       { href: '/books', label: 'كتب المتون' },
+      { href: '/musnad-musannaf', label: 'المسند المصنف المعلل', isNew: true },
       { href: '/books/service-books', label: 'الكتب الخدمية' },
       { href: '/hadiths/tarf-index', label: 'قائمة الأطراف' },
       { href: '/hadiths/tarfs-by-isnad', label: 'أطراف على الأسانيد' },
