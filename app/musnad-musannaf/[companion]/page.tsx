@@ -19,17 +19,7 @@ interface Takhrij {
 interface Ilal { id: number; entry_id: number; narrator_id: number | null; narrator_name: string | null; scientist: string | null; say_text: string | null; garh_label: string | null; source_ref: string | null }
 interface Ref { id: number; entry_id: number; ref_book: string | null; ref_no: string | null; kind: string | null }
 
-// verified editions backing each source book (this session's extraction)
-const EDITIONS: Record<number, string> = {
-  1: 'البخاري — أرقام فتح الباري/السلطانية',
-  3: 'أبو داود — ت الأرنؤوط، الرسالة ١٤٣٠',
-  4: 'الترمذي — ت بشار عواد، دار الغرب ١٩٩٨',
-  6: 'ابن ماجه — ترقيم عبد الباقي/بشار عواد',
-  9: 'الدارمي — ت الغمري «فتح المنان» (= أسد بفارق ترقيم)',
-  10: 'ابن حبان — الإحسان، ت الأرنؤوط',
-  15: 'ابن أبي شيبة — ت عوامة، دار القبلة',
-  22: 'النسائي الكبرى — ت شلبي، الرسالة ١٤٢١',
-}
+const toLatinDigits = (s: string) => s.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/\D/g, '')
 
 // render the book's «الفوائد» text faithfully: split on the book's bullet dashes,
 // bold each "قلنا:/قال فلان:" lead, and mute the «source» references
@@ -96,10 +86,21 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
     pool.query<Takhrij>(`SELECT * FROM ilal_takhrij WHERE entry_id = ANY($1::int[]) ORDER BY entry_id, sort`, [entryIds]),
     pool.query<Ilal>(`SELECT * FROM ilal_ilal WHERE entry_id = ANY($1::int[]) ORDER BY entry_id, sort`, [entryIds]),
     pool.query<Ref>(`SELECT * FROM ilal_refs WHERE entry_id = ANY($1::int[]) ORDER BY entry_id, sort`, [entryIds]),
-    pool.query<{ id: number; title: string }>(`SELECT id, title FROM books`),
+    pool.query<{ id: number; title: string; print1_edition: string | null }>(`SELECT id, title, print1_edition FROM books`),
   ])
   const bookTitle: Record<number, string> = {}
-  bookTitlesRes.rows.forEach(b => { bookTitle[b.id] = b.title })
+  const bookEdition: Record<number, string> = {}      // the railway edition each link OPENS into
+  bookTitlesRes.rows.forEach(b => { bookTitle[b.id] = b.title; if (b.print1_edition) bookEdition[b.id] = b.print1_edition })
+
+  // railway's OWN number for each linked hadith — so we can show it when it differs from the
+  // المسند citation number (different print editions renumber)
+  const linkedIds = [...new Set(takhrijRes.rows.map(t => t.matched_main_id).filter((x): x is number => x != null))]
+  const railwayNo: Record<number, string> = {}
+  if (linkedIds.length) {
+    const rn = await pool.query<{ main_id: number; n: string | null }>(
+      `SELECT main_id, tarqeem_matboa1 AS n FROM hadith_toc WHERE main_id = ANY($1::int[])`, [linkedIds])
+    rn.rows.forEach(r => { if (r.n) railwayNo[r.main_id] = String(r.n) })
+  }
   const byEntry = <T extends { entry_id: number }>(rows: T[], id: number) => rows.filter(r => r.entry_id === id)
 
   // live isnad chains per entry (the lens → railway data)
@@ -191,22 +192,34 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                 {/* takhrij sources → lens into railway */}
                 {tk.length > 0 && (
                   <div className="mt-4">
-                    <div className="text-[11px] font-bold text-gray-500 tracking-wider mb-2 flex items-center gap-2">مصادر التخريج<span className="flex-1 h-px bg-gray-200" /></div>
+                    <div className="text-[11px] font-bold text-gray-500 tracking-wider mb-1.5 flex items-center gap-2">مصادر التخريج<span className="flex-1 h-px bg-gray-200" /></div>
+                    <p className="text-[10.5px] text-gray-400 mb-2 leading-relaxed">الرقم بترقيم «المسند المصنف»؛ والرابط يفتح الحديث نفسه في نسخة المكتبة المعتمدة في الموقع — وقد يختلف ترقيمها.</p>
                     <div className="flex flex-col gap-1.5">
-                      {tk.map(t => (
+                      {tk.map(t => {
+                        const rNo = t.matched_main_id != null ? railwayNo[t.matched_main_id] : undefined
+                        const citedLatin = toLatinDigits(t.source_no || '')
+                        const numDiffers = rNo != null && rNo !== citedLatin
+                        const edition = t.railway_book_id != null ? bookEdition[t.railway_book_id] : undefined
+                        return (
                         <div key={t.id} className="px-3 py-2.5 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-sm flex items-start gap-2.5">
                           <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-[11.5px] font-bold shrink-0">{t.source_no}</span>
-                          <div className="min-w-0">
-                            {t.matched_main_id
-                              ? <Link href={`/hadith/${t.matched_main_id}`} className="font-bold text-green-800 hover:underline">{t.source_book}</Link>
-                              : <span className="font-bold text-gray-700">{t.source_book}</span>}
-                            {t.railway_book_id && EDITIONS[t.railway_book_id] && (
-                              <span className="ms-2 inline-block text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded" title={EDITIONS[t.railway_book_id]}>📖 {EDITIONS[t.railway_book_id].split('—')[1]?.trim()}</span>
-                            )}
+                          <div className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2 flex-wrap">
+                              {t.matched_main_id
+                                ? <Link href={`/hadith/${t.matched_main_id}`} className="font-bold text-green-800 hover:underline">{t.source_book}</Link>
+                                : <span className="font-bold text-gray-700">{t.source_book}</span>}
+                              {edition && (
+                                <span className="inline-block text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded" title={`الرابط يفتح نسخة: ${edition}`}>📖 {edition}</span>
+                              )}
+                              {numDiffers && (
+                                <span className="inline-block text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded" title="ترقيم نسخة الموقع يختلف عن ترقيم المسند المصنف">↩ رقمه في النسخة: {rNo}</span>
+                              )}
+                            </span>
                             {t.isnad_text && <div className="text-gray-500 text-[12.5px] mt-0.5 leading-relaxed">{t.isnad_text}</div>}
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}

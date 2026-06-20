@@ -81,12 +81,20 @@ def parse_entry(body, foot, fawaid, qulna):
 def main():
     print("loading railway match indexes ...", flush=True)
     pg=psycopg2.connect(PG); cur=pg.cursor()
-    num2main={}
-    cur.execute("SELECT main_id,book_id,tarqeem_matboa1,tarqeem_harf,tarqeem_matboa2 FROM hadith_toc WHERE is_leaf=true")
-    for mid,bid,m1,mh,m2 in cur.fetchall():
-        for v in (m1,mh,m2):
-            if v and str(v).strip().isdigit():
-                num2main.setdefault((bid,str(int(v))),mid)
+    def _digits(v):
+        if v is None: return None
+        m=re.search(r'\d+',str(v)); return m.group() if m else None
+    num2main={}; main2chap={}
+    cur.execute("SELECT main_id,book_id,tarqeem_matboa1,tarqeem_harf,tarqeem_matboa2,chapter_text FROM hadith_toc WHERE is_leaf=true")
+    _toc=cur.fetchall()
+    for mid,bid,m1,mh,m2,ch in _toc:
+        if ch: main2chap[mid]=ch
+    # priority: tarqeem_matboa1 (primary print number) wins over harf/matboa2 so a cited
+    # print number maps to the hadith whose MAIN number is that, not one whose alt number collides
+    for col in (0,1,2):
+        for mid,bid,m1,mh,m2,ch in _toc:
+            v=_digits((m1,mh,m2)[col])
+            if v: num2main.setdefault((bid,v),mid)
     print(f"  num2main: {len(num2main)}", flush=True)
     main2group={}; group_members={}
     cur.execute("SELECT t.hadith_id,t.group_id,h.book_id FROM takhrij t JOIN hadith_toc h ON h.main_id=t.hadith_id")
@@ -94,23 +102,56 @@ def main():
         main2group[mid]=gid; group_members.setdefault(gid,[]).append((bid,mid))
     print(f"  groups: {len(group_members)}", flush=True)
 
+    from collections import Counter
+    def _words(s):
+        # significant Arabic words, with leading ال/و/ف/ب/ل clitics stripped so chapter «الحمى»
+        # matches matn «حمى» etc.
+        out=set()
+        for w in re.findall(r'[؀-ۿ]{3,}', st(s or '')):
+            w=re.sub(r'^(ال|وال|بال|فال|لل|و|ف|ب|ل)','',w)
+            if len(w)>=3: out.add(w)
+        return out
+    def best_member(mids, matn):
+        # among several same-book members of the cluster, pick the one whose chapter shares
+        # the most words with the entry's matn (dis?ambiguates e.g. القطائع vs الحمى); else first
+        if len(mids)==1: return mids[0]
+        kw=_words(matn); best=mids[0]; bs=-1
+        for m in mids:
+            sc=len(kw & _words(main2chap.get(m,'')))
+            if sc>bs: bs=sc; best=m
+        return best
+
+    # books whose railway edition renumbers vs the edition المسند cites, so the cited number does
+    # NOT address the right railway hadith and must be bridged through the takhrij cluster instead.
+    # الدارمي: railway = «دار المغني» ، المسند يحيل على «فتح المنان» للغمري (إزاحة ~١٢١)
+    MISALIGNED={9}
     def resolve(cites):
-        # candidate main_ids from citations via number index
-        cand=[]
+        # candidate main_ids from citations via the EXACT number index (book + cited number)
+        cand=[]                                   # [(book_id, main_id)] direct number matches
         for c in cites:
             mid=num2main.get((c['bid'],str(c['no_int']))) if c['no_int'] is not None else None
-            if mid: cand.append(mid)
+            if mid: cand.append((c['bid'],mid))
         if not cand: return None,None
-        # group-mode: pick the most common group among candidates
-        from collections import Counter
-        grps=Counter(main2group[m] for m in cand if m in main2group)
-        if not grps:
-            return cand[0],None
-        gid=grps.most_common(1)[0][0]
-        members={b:m for b,m in group_members.get(gid,[])}
-        rep=next((members[b] for b in CORE_PREF if b in members), cand[0])
-        return rep,gid,members
-    # (resolve returns 2 or 3-tuple; normalize below)
+        cand_first={}                             # book -> first matched main_id (no overwrite)
+        for b,m in cand: cand_first.setdefault(b,m)
+        # anchor the cluster on the first ALIGNED core book (skip misaligned ones so the group is
+        # trustworthy); the anchor's takhrij group drives both the IsnadTree rep and the الدارمي fix
+        rep=(next((cand_first[b] for b in CORE_PREF if b in cand_first and b not in MISALIGNED), None)
+             or next((cand_first[b] for b in CORE_PREF if b in cand_first), None)
+             or cand[0][1])
+        return rep,main2group.get(rep)
+
+    def pick_target(c, gid, matn):
+        bid=c['bid']; no=str(c['no_int']) if c['no_int'] is not None else None
+        direct=num2main.get((bid,no)) if no else None
+        gmembers=sorted(m for b,m in group_members.get(gid,[]) if b==bid) if gid else []
+        # misaligned edition: the cited number is meaningless on railway → use the cluster member
+        if bid in MISALIGNED and gmembers: return best_member(gmembers,matn),'edition-fixed'
+        # aligned edition: the cited number addresses the exact railway hadith
+        if direct: return direct,'matched'
+        # aligned but number not found → cluster member as a last resort
+        if gmembers: return best_member(gmembers,matn),'group-approx'
+        return None,'unmatched'
 
     sq=sqlite3.connect(MUSNAD); sq.row_factory=sqlite3.Row
     comps=sq.execute("SELECT title_page,title FROM companions ORDER BY title_page").fetchall()
@@ -157,10 +198,9 @@ def main():
             qulna=next((clean(pages[p]['qulna']) for p in e['fw'] if pages[p]['qulna']),None)
             fawaid=' '.join(clean(pages[p]['body']) for p in e['fw'] if pages[p]['body'])     # نص صفحات «الفوائد»
             P=parse_entry(body, foot, fawaid, qulna)
-            r=resolve(P['cites']); rep,gid=(r[0],r[1]) if r else (None,None)
-            members=r[2] if r and len(r)>2 else {}
+            rep,gid=resolve(P['cites'])
             P.update(seq=eseq,hno=e['hno'],qulna=qulna,print=e['print'],page=e['pages'][0],
-                     rep=rep,gid=gid,members=members,body=body[:8000],foot=foot[:8000])
+                     rep=rep,gid=gid,body=body[:8000],foot=foot[:8000])
             parsed.append(P)
         slug=slugify(name,seq)
         if slug in used_slugs:
@@ -189,12 +229,14 @@ def main():
            judgment,fawaid,print_page,page_num,matched_main_id,takhrij_group_id,body_raw,foot_raw)
            VALUES %s RETURNING id""", entry_vals, page_size=1000, fetch=True)]
 
-    tk=[]; il=[]; rf=[]; matched=0
+    tk=[]; il=[]; rf=[]; matched=0; n_exact=0; n_group=0
     for eid,e in zip(eids,owners):
         if e['rep']: matched+=1
         for i,c in enumerate(e['cites']):
-            tk.append((eid,i+1,c['book'],c['no'],c['no_int'],c['bid'],e['members'].get(c['bid']),c['isnad'],
-                       'matched' if e['members'].get(c['bid']) else 'unmatched'))
+            mm,status=pick_target(c, e['gid'], e['matn'])
+            if status=='matched': n_exact+=1
+            elif status in ('edition-fixed','group-approx'): n_group+=1
+            tk.append((eid,i+1,c['book'],c['no'],c['no_int'],c['bid'],mm,c['isnad'],status))
         for i,c in enumerate(e['ilal']): il.append((eid,i+1,c['sci'],c['say'],c['gl'],c['ref']))
         for i,c in enumerate(e['refs']): rf.append((eid,i+1,c['book'],c['no'],c['kind']))
     def bulk(sql,rows):
@@ -205,6 +247,7 @@ def main():
     pg.commit()
     print("\n=== DONE ===")
     print(f"  companions: {len(comp_ids)}\n  entries: {len(eids)}  (matched {matched}, {matched/max(1,len(eids))*100:.1f}%)")
+    print(f"  takhrij links: exact(number)={n_exact}  group-approx={n_group}  unmatched={len(tk)-n_exact-n_group}")
     print(f"  takhrij: {len(tk)}\n  ilal: {len(il)}\n  refs: {len(rf)}")
     pg.close(); sq.close()
 
