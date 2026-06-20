@@ -112,11 +112,21 @@ def main():
 
     # ── PASS 1: parse everything into memory (fast, local) ──
     print("parsing musnad.db ...", flush=True)
-    companions=[]; used_slugs=set()
+    MUSNAD_START=46                              # «مسند الصحابة» begins; pages before = مقدمة
+    COMP_RE=re.compile(r'^\s*([٠-٩]+)\s*[-ـ]\s*(.*)$')   # numbered صحابي (handles - and ـ)
+    companions=[]; used_slugs=set(); intro=[]
+    # extract المقدمة sections (with HTML content) for the intro page
+    intro_rows=[c for c in comps if c['title_page']<MUSNAD_START]
+    for ii,ic in enumerate(intro_rows):
+        a=ic['title_page']; b=intro_rows[ii+1]['title_page'] if ii+1<len(intro_rows) else MUSNAD_START
+        html=' '.join(pages[p]['body'] for p in range(a,b) if p in pages and pages[p]['body'])
+        intro.append((ii+1, clean(ic['title']).rstrip(': '), a, html[:300000]))
     for ci,c in enumerate(comps):
         tp=c['title_page']; title=clean(c['title'])
-        seq=ar2i(title.split('-')[0]) if '-' in title else None
-        name=title.split('-',1)[1].strip() if '-' in title else title
+        if tp<MUSNAD_START: continue             # المقدمة rows → handled as intro above
+        m=COMP_RE.match(title)
+        if m: kind='companion'; seq=ar2i(m.group(1)); name=m.group(2).strip()
+        else: kind='section'; seq=None; name=title
         tar=clean(pages[tp]['foot']) if tp in pages and pages[tp]['foot'] else None
         nexttp=comp_pages[ci+1] if ci+1<len(comp_pages) else maxpg+1
         ents=[]; cur_e=None
@@ -149,14 +159,15 @@ def main():
             while f"{slug}-{k}" in used_slugs: k+=1
             slug=f"{slug}-{k}"
         used_slugs.add(slug)
-        companions.append(dict(seq=seq,name=name,slug=slug,tp=tp,tarjama=tar,entries=parsed))
+        companions.append(dict(seq=seq,name=name,slug=slug,tp=tp,tarjama=tar,entries=parsed,kind=kind))
 
     # ── PASS 2: bulk insert ──
     print("bulk inserting ...", flush=True)
-    cur.execute("TRUNCATE ilal_refs,ilal_ilal,ilal_takhrij,ilal_entries,ilal_companions RESTART IDENTITY CASCADE")
+    cur.execute("TRUNCATE ilal_refs,ilal_ilal,ilal_takhrij,ilal_entries,ilal_companions,ilal_intro RESTART IDENTITY CASCADE")
+    execute_values(cur,"INSERT INTO ilal_intro(sort,title,page_from,content) VALUES %s",intro)
     comp_ids=[r[0] for r in execute_values(cur,
-        "INSERT INTO ilal_companions(seq,name,slug,title_page,tarjama,narrator_id) VALUES %s RETURNING id",
-        [(c['seq'],c['name'],c['slug'],c['tp'],c['tarjama'],None) for c in companions], page_size=1000, fetch=True)]
+        "INSERT INTO ilal_companions(seq,name,slug,title_page,tarjama,narrator_id,kind) VALUES %s RETURNING id",
+        [(c['seq'],c['name'],c['slug'],c['tp'],c['tarjama'],None,c['kind']) for c in companions], page_size=1000, fetch=True)]
 
     entry_vals=[]; owners=[]
     for cidx,c in enumerate(companions):

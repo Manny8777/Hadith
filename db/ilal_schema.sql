@@ -11,9 +11,19 @@ CREATE TABLE IF NOT EXISTS ilal_companions (
   seq          INTEGER,                        -- ترتيب الصحابي في الكتاب (٤)
   name         TEXT NOT NULL,                  -- أبيض بن حمال المأربي
   slug         TEXT UNIQUE,                    -- abyad-ibn-hammal (URL)
-  title_page   INTEGER,                        -- musnad.db page_num لصفحة العنوان
+  title_page   INTEGER,                        -- musnad.db page_num لصفحة العنوان (= ترتيب الكتاب)
   tarjama      TEXT,                            -- ترجمة الصحابي (من الحاشية)
-  narrator_id  INTEGER REFERENCES narrators(id) -- ربط بالراوي في railway
+  narrator_id  INTEGER REFERENCES narrators(id),-- ربط بالراوي في railway
+  kind         TEXT                             -- 'companion' | 'section' | 'intro'
+);
+
+-- مقدمة الكتاب (موارد الكتاب، المنهج…) — أقسام المقدمة بمحتواها
+CREATE TABLE IF NOT EXISTS ilal_intro (
+  id         SERIAL PRIMARY KEY,
+  sort       INTEGER,
+  title      TEXT,
+  page_from  INTEGER,
+  content    TEXT                               -- HTML الصفحات
 );
 CREATE INDEX IF NOT EXISTS idx_ilal_comp_slug ON ilal_companions(slug);
 
