@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import pool from '@/lib/db'
+import { displayNarratorName } from '@/lib/narratorName'
 
 export const dynamic = 'force-dynamic'
 
@@ -483,8 +484,8 @@ export default async function NarratorsPage({
                     {narrator.is_mobham && (
                       <span className="shrink-0 bg-gray-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">مبهم</span>
                     )}
-                    <span className="text-green-900 font-medium group-hover:text-green-700 transition-colors">
-                      {narrator.name}
+                    <span className="text-green-900 font-medium group-hover:text-green-700 transition-colors" title={narrator.name}>
+                      {displayNarratorName(narrator.name, narrator.abb_name)}
                     </span>
                     {narrator.martaba_ibn_hajar && (
                       <span className="text-xs text-gray-500">ابن حجر: {narrator.martaba_ibn_hajar}</span>

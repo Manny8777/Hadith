@@ -12,6 +12,7 @@ import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
 import HadithNumber from './HadithNumber'
 import MatnVariants from './MatnVariants'
+import { displayNarratorName } from '@/lib/narratorName'
 import MatnSimilaritySection from './MatnSimilaritySection'
 import PrevNextNav from './PrevNextNav'
 import GhareebMatn from './GhareebMatn'
@@ -332,8 +333,8 @@ export default function HadithSidebarLayout({
           return (
             <div className="text-xs text-gray-500 mb-2 text-right" dir="rtl">
               رواه{' '}
-              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold">
-                {companion.abb_name || companion.name}
+              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
+                {displayNarratorName(companion.name, companion.abb_name)}
               </Link>
             </div>
           )
