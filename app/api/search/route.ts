@@ -1,44 +1,97 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { ANY_GRADE, gradeExistsClause, gradeHintCase, normalizeGrade } from '@/lib/searchGrades'
 
 export const dynamic = 'force-dynamic'
+
+type MatchMode = 'all' | 'any' | 'phrase'
+
+function parseMatch(raw: string | null): MatchMode {
+  const m = (raw ?? '').trim().toLowerCase()
+  return m === 'any' || m === 'phrase' ? m : 'all'
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim()
-  const page = parseInt(searchParams.get('page') || '1')
-  const bookIdParam = searchParams.get('book_id')
-  const bookId = bookIdParam ? parseInt(bookIdParam) : null
-  const narratorIdParam = searchParams.get('narrator_id')
-  const narratorId = narratorIdParam ? parseInt(narratorIdParam) : null
-  const gradeFilter = searchParams.get('grade') || '' // 'sahih'|'hasan'|'daif'|''
-  const subjectCatIdParam = searchParams.get('subject_cat_id')
-  const subjectCatId = subjectCatIdParam ? parseInt(subjectCatIdParam) : null
-  const maxDepthParam = searchParams.get('max_depth')
-  const maxDepth = maxDepthParam ? parseInt(maxDepthParam) : null
+
+  // All params are parsed through one tolerant helper: unknown/blank/non-numeric values
+  // become null instead of NaN (previously `book_id=abc` or `page=` produced NaN and the
+  // filter silently vanished).
+  const intParam = (name: string): number | null => {
+    const raw = searchParams.get(name)
+    if (raw === null || raw.trim() === '') return null
+    const n = parseInt(raw, 10)
+    return Number.isFinite(n) ? n : null
+  }
+
+  const page = Math.max(1, intParam('page') ?? 1)
+  const limit = Math.min(100, Math.max(1, intParam('limit') ?? 20))
+  const bookId = intParam('book_id')
+  const narratorId = intParam('narrator_id')
+  const subjectCatId = intParam('subject_cat_id')
+  const maxDepth = intParam('max_depth')
+  const gradeFilter = normalizeGrade(searchParams.get('grade') as string | null)
   // search_scope: 'tarf' = أطراف فقط, 'both' (default) = متن + أطراف
-  const searchScope = searchParams.get('search_scope') === 'tarf' ? 'tarf' : 'both'
-  const limit = 20
+  const searchScope = (searchParams.get('search_scope') ?? '').trim().toLowerCase() === 'tarf' ? 'tarf' : 'both'
+  // match: 'all' (default, all words) | 'any' (أي من الكلمات) | 'phrase' (متتالية)
+  const matchMode = parseMatch(searchParams.get('match'))
   const offset = (page - 1) * limit
 
-  // Helper: build the text-match SQL expression based on scope
-  // 'tarf' searches only the hadith opening; 'both' also searches full content
-  function textMatchExpr(tarfAlias: string, contentAlias: string): string {
-    if (searchScope === 'tarf') {
-      return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ plainto_tsquery('simple', normalize_hadith($1))`
-    }
+  // The stored `content` is marked-up text (<متن>, <سند>, <رقم_حديث نوع="مطبوع">, hidden
+  // matn in attributes such as نص="…"). The legacy engine indexes element text only — tag
+  // and attribute text is NOT searchable — and indexing markup made the same query return
+  // extra rows (e.g. markup-only hits: ربط 276k vs 11 in tarf). Strip tags before indexing.
+  // Kept expression-identical to the GIN index in db/add_visible_text_index.js so the index
+  // is actually used (a wrapper that does not match an index forces a full table scan).
+  const visibleText = (alias: string): string => `regexp_replace(coalesce(${alias},''), '<[^>]*>', ' ', 'g')`
+
+  const visibleMatch = (contentAlias: string, param: string): string =>
+    `to_tsvector('simple', normalize_hadith(${visibleText(contentAlias)})) @@ ${queryExpr(param)}`
+
+  // Document used only for ranking (computed for the matched rows, not for the scan).
+  const rankDoc = (tarfAlias: string, contentAlias: string): string =>
+    searchScope === 'tarf'
+      ? `coalesce(${tarfAlias},'')`
+      : `(coalesce(${tarfAlias},'') || ' ' || ${visibleText(contentAlias)})`
+
+  // Normalised + punctuation-stripped query text, whitespace-trimmed. Used by `any`, where the
+  // words are re-joined with `|` — splitting on whitespace yields empty elements for leading,
+  // trailing or repeated separators, and an empty tsquery operand is a syntax error (that made
+  // `q=الصلاة "الصوم"&match=any` fail with a 500), so empties are removed and the degenerate
+  // all-punctuation case falls back to an empty (match-nothing) tsquery.
+  const normWords = (param: string): string =>
+    `btrim(regexp_replace(normalize_hadith(${param}), '[^\\w\\s]+', ' ', 'g'))`
+
+  // The tsquery for the given parameter placeholder.
+  const queryExpr = (param: string): string => {
+    if (matchMode === 'phrase') return `phraseto_tsquery('simple', normalize_hadith(${param}))`
+    if (matchMode === 'any')
+      return `(CASE WHEN ${normWords(param)} = ''
+                    THEN plainto_tsquery('simple', '')
+                    ELSE to_tsquery('simple', array_to_string(
+                           array_remove(regexp_split_to_array(${normWords(param)}, '\\s+'), ''), ' | '))
+                    END)`
+    return `plainto_tsquery('simple', normalize_hadith(${param}))`
+  }
+
+  // Helper: build the text-match SQL expression based on scope and match mode.
+  // Scope `both` stays an OR of the two tsvector predicates so the planner can combine
+  // idx_hadith_toc_tarf_norm with the stripped-content index (a concatenated document would
+  // have no matching index and would full-scan 339k rows).
+  function textMatchExpr(tarfAlias: string, contentAlias: string, param = '$1'): string {
+    const q = queryExpr(param)
+    if (searchScope === 'tarf')
+      return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
     return `(
-      to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ plainto_tsquery('simple', normalize_hadith($1))
-      OR to_tsvector('simple', normalize_hadith(coalesce(${contentAlias},''))) @@ plainto_tsquery('simple', normalize_hadith($1))
+      to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}
+      OR ${visibleMatch(contentAlias, param)}
     )`
   }
 
   // Combined narrator + text search
-  if (narratorId !== null && !isNaN(narratorId) && q && q.length >= 2) {
-    let gradeExistsClause2 = ''
-    if (gradeFilter === 'sahih') gradeExistsClause2 = `AND EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = ht.main_id AND j.say_text ~* 'صحيح')`
-    else if (gradeFilter === 'hasan') gradeExistsClause2 = `AND EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = ht.main_id AND j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND j.say_text !~* 'صحيح')`
-    else if (gradeFilter === 'daif') gradeExistsClause2 = `AND EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = ht.main_id AND j.say_text ~* 'ضعيف|منكر|متروك|موضوع')`
+  if (narratorId !== null && q && q.length >= 2) {
+    const gradeExistsClause2 = gradeExistsClause(gradeFilter, 'ht.main_id')
 
     const [hadithsRes, countRes] = await Promise.all([
       pool.query(
@@ -51,14 +104,10 @@ export async function GET(req: Request) {
          JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
          JOIN books b ON b.id = ht.book_id
          LEFT JOIN LATERAL (
-           SELECT CASE
-             WHEN say_text ~* 'صحيح' THEN 'صحيح'
-             WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 'حسن'
-             WHEN say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 'ضعيف'
-             ELSE NULL END as grade_hint
+           SELECT ${gradeHintCase('say_text')} as grade_hint
            FROM hadith_judgments j2
            WHERE j2.hadith_id = ht.main_id
-             AND (j2.say_text ~* 'صحيح|إسناده حسن|حديث حسن|سنده حسن|ضعيف|منكر|متروك')
+             AND (j2.say_text ~* '${ANY_GRADE}')
            ORDER BY CASE
              WHEN j2.say_text ~* 'صحيح' THEN 1
              WHEN j2.say_text ~* 'حسن' THEN 2
@@ -68,8 +117,8 @@ export async function GET(req: Request) {
          ) jg ON true
          WHERE ic.narrator_id_array @> ARRAY[$1::integer]
            AND ht.is_leaf = true
-           AND ${textMatchExpr('ht.tarf', 'ht.content').replace(/\$1/g, '$2')}
-           ${gradeExistsClause2}
+           AND ${textMatchExpr('ht.tarf', 'ht.content', '$2')}
+           ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}
          ORDER BY ht.book_id, ht.main_id
          LIMIT $3 OFFSET $4`,
         [narratorId, q, limit, offset]
@@ -81,8 +130,8 @@ export async function GET(req: Request) {
          JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
          WHERE ic.narrator_id_array @> ARRAY[$1::integer]
            AND ht.is_leaf = true
-           AND ${textMatchExpr('ht.tarf', 'ht.content').replace(/\$1/g, '$2')}
-           ${gradeExistsClause2}`,
+           AND ${textMatchExpr('ht.tarf', 'ht.content', '$2')}
+           ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}`,
         [narratorId, q]
       ),
     ])
@@ -92,19 +141,14 @@ export async function GET(req: Request) {
       page,
       limit,
       mode: 'narrator+text',
+      search_scope: searchScope,
+      match: matchMode,
     })
   }
 
   // Narrator-only isnad search mode
-  if (narratorId !== null && !isNaN(narratorId)) {
-    let gradeExistsClause = ''
-    if (gradeFilter === 'sahih') {
-      gradeExistsClause = `AND EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = ht.main_id AND j.say_text ~* 'صحيح|صحح|حسن صحيح')`
-    } else if (gradeFilter === 'hasan') {
-      gradeExistsClause = `AND EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = ht.main_id AND j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND j.say_text !~* 'صحيح')`
-    } else if (gradeFilter === 'daif') {
-      gradeExistsClause = `AND EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = ht.main_id AND j.say_text ~* 'ضعيف|ضعفه|منكر|متروك|موضوع')`
-    }
+  if (narratorId !== null) {
+    const gradeExists = gradeExistsClause(gradeFilter, 'ht.main_id')
 
     const [hadithsRes, countRes] = await Promise.all([
       pool.query(
@@ -117,14 +161,10 @@ export async function GET(req: Request) {
          JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
          JOIN books b ON b.id = ht.book_id
          LEFT JOIN LATERAL (
-           SELECT CASE
-             WHEN say_text ~* 'صحيح' THEN 'صحيح'
-             WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 'حسن'
-             WHEN say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 'ضعيف'
-             ELSE NULL END as grade_hint
+           SELECT ${gradeHintCase('say_text')} as grade_hint
            FROM hadith_judgments j2
            WHERE j2.hadith_id = ht.main_id
-             AND (j2.say_text ~* 'صحيح|إسناده حسن|حديث حسن|سنده حسن|ضعيف|منكر|متروك')
+             AND (j2.say_text ~* '${ANY_GRADE}')
            ORDER BY CASE
              WHEN j2.say_text ~* 'صحيح' THEN 1
              WHEN j2.say_text ~* 'حسن' THEN 2
@@ -134,7 +174,7 @@ export async function GET(req: Request) {
          ) jg ON true
          WHERE ic.narrator_id_array @> ARRAY[$1::integer]
            AND ht.is_leaf = true
-           ${gradeExistsClause}
+           ${gradeExists ? 'AND ' + gradeExists : ''}
          ORDER BY ht.book_id, ht.main_id
          LIMIT $2 OFFSET $3`,
         [narratorId, limit, offset]
@@ -146,7 +186,7 @@ export async function GET(req: Request) {
          JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
          WHERE ic.narrator_id_array @> ARRAY[$1::integer]
            AND ht.is_leaf = true
-           ${gradeExistsClause}`,
+           ${gradeExists ? 'AND ' + gradeExists : ''}`,
         [narratorId]
       ),
     ])
@@ -168,13 +208,13 @@ export async function GET(req: Request) {
   const params: (string | number)[] = [q, limit, offset]
   let paramIdx = 4
 
-  if (bookId !== null && !isNaN(bookId)) {
+  if (bookId !== null) {
     conditions.push(`h.book_id = $${paramIdx}`)
     params.push(bookId)
     paramIdx++
   }
 
-  if (subjectCatId !== null && !isNaN(subjectCatId)) {
+  if (subjectCatId !== null) {
     conditions.push(
       `EXISTS (
         SELECT 1 FROM hadith_subjects hs
@@ -189,7 +229,7 @@ export async function GET(req: Request) {
     paramIdx++
   }
 
-  if (maxDepth !== null && !isNaN(maxDepth) && maxDepth > 0) {
+  if (maxDepth !== null && maxDepth > 0) {
     conditions.push(
       `EXISTS (
         SELECT 1 FROM isnad_hadiths iha
@@ -201,13 +241,8 @@ export async function GET(req: Request) {
     paramIdx++
   }
 
-  if (gradeFilter === 'sahih') {
-    conditions.push(`EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = h.main_id AND j.say_text ~* 'صحيح|صحح|حسن صحيح')`)
-  } else if (gradeFilter === 'hasan') {
-    conditions.push(`EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = h.main_id AND j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND j.say_text !~* 'صحيح')`)
-  } else if (gradeFilter === 'daif') {
-    conditions.push(`EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = h.main_id AND j.say_text ~* 'ضعيف|ضعفه|منكر|متروك|موضوع')`)
-  }
+  const gradeCondition = gradeExistsClause(gradeFilter, 'h.main_id')
+  if (gradeCondition) conditions.push(gradeCondition)
 
   const whereClause = conditions.join(' AND ')
 
@@ -215,8 +250,8 @@ export async function GET(req: Request) {
     `SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf,
             h.section_text, h.chapter_text, h.part_num, h.page_num,
             h.tarqeem_harf, h.tarqeem_matboa1,
-            ts_rank(to_tsvector('simple', normalize_hadith(coalesce(h.tarf,''))),
-                    plainto_tsquery('simple', normalize_hadith($1))) AS rank,
+            ts_rank(to_tsvector('simple', normalize_hadith(${rankDoc('h.tarf', 'h.content')})),
+                    ${queryExpr('$1')}) AS rank,
             jg.grade_hint,
             par.parallel_count
      FROM hadith_toc h
@@ -228,14 +263,10 @@ export async function GET(req: Request) {
        WHERE t1.hadith_id = h.main_id
      ) par ON true
      LEFT JOIN LATERAL (
-       SELECT CASE
-         WHEN say_text ~* 'صحيح' THEN 'صحيح'
-         WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' THEN 'حسن'
-         WHEN say_text ~* 'ضعيف|منكر|متروك|موضوع' THEN 'ضعيف'
-         ELSE NULL END as grade_hint
+       SELECT ${gradeHintCase('say_text')} as grade_hint
        FROM hadith_judgments j2
        WHERE j2.hadith_id = h.main_id
-         AND (j2.say_text ~* 'صحيح|إسناده حسن|حديث حسن|سنده حسن|ضعيف|منكر|متروك')
+         AND (j2.say_text ~* '${ANY_GRADE}')
        ORDER BY CASE
          WHEN j2.say_text ~* 'صحيح' THEN 1
          WHEN j2.say_text ~* 'حسن' THEN 2
@@ -244,7 +275,7 @@ export async function GET(req: Request) {
        LIMIT 1
      ) jg ON true
      WHERE ${whereClause}
-     ORDER BY rank DESC
+     ORDER BY rank DESC, h.main_id ASC
      LIMIT $2 OFFSET $3`,
     params
   )
@@ -254,13 +285,13 @@ export async function GET(req: Request) {
   const countConditions: string[] = ['is_leaf = true', textMatchCount]
   let countParamIdx = 2
 
-  if (bookId !== null && !isNaN(bookId)) {
+  if (bookId !== null) {
     countConditions.push(`book_id = $${countParamIdx}`)
     countParams.push(bookId)
     countParamIdx++
   }
 
-  if (subjectCatId !== null && !isNaN(subjectCatId)) {
+  if (subjectCatId !== null) {
     countConditions.push(
       `EXISTS (
         SELECT 1 FROM hadith_subjects hs
@@ -275,7 +306,7 @@ export async function GET(req: Request) {
     countParamIdx++
   }
 
-  if (maxDepth !== null && !isNaN(maxDepth) && maxDepth > 0) {
+  if (maxDepth !== null && maxDepth > 0) {
     countConditions.push(
       `EXISTS (
         SELECT 1 FROM isnad_hadiths iha
@@ -287,13 +318,8 @@ export async function GET(req: Request) {
     countParamIdx++
   }
 
-  if (gradeFilter === 'sahih') {
-    countConditions.push(`EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = main_id AND j.say_text ~* 'صحيح|صحح|حسن صحيح')`)
-  } else if (gradeFilter === 'hasan') {
-    countConditions.push(`EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = main_id AND j.say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND j.say_text !~* 'صحيح')`)
-  } else if (gradeFilter === 'daif') {
-    countConditions.push(`EXISTS (SELECT 1 FROM hadith_judgments j WHERE j.hadith_id = main_id AND j.say_text ~* 'ضعيف|ضعفه|منكر|متروك|موضوع')`)
-  }
+  const countGradeCondition = gradeExistsClause(gradeFilter, 'main_id')
+  if (countGradeCondition) countConditions.push(countGradeCondition)
 
   const countResult = await pool.query(
     `SELECT COUNT(*) FROM hadith_toc WHERE ${countConditions.join(' AND ')}`,
@@ -307,5 +333,6 @@ export async function GET(req: Request) {
     limit,
     mode: 'text',
     search_scope: searchScope,
+    match: matchMode,
   })
 }

@@ -54,3 +54,6 @@ pgdata/
 
 # playwright mcp screenshots / artifacts
 /.playwright-mcp/
+
+# local audit of the legacy Windows app (not for the repo)
+/legacy-audit/
