@@ -154,9 +154,15 @@ export default async function TopicItemPage({
     else if (grade === 'hasan') gradeJoin = `AND jg.grade_hint = 'حسن'`
     else if (grade === 'daif') gradeJoin = `AND jg.grade_hint = 'ضعيف'`
 
+    // The stored hadith content is marked-up: 276,353 of 276,355 leaf rows carry tags/attributes
+    // (e.g. <متن>, <رقم_حديث نوع="مطبوع">, hidden matn in نص="…"). The original app indexes element
+    // text only, so tag and attribute text must not be searchable — searching the raw column
+    // matched basically every row for common tag words. Same fix as app/api/search/route.ts.
+    const visible = `regexp_replace(coalesce(h.content,''), '<[^>]*>', ' ', 'g')`
+
     const textClause = q.length >= 2
       ? `AND (to_tsvector('simple', normalize_hadith(coalesce(h.tarf,''))) @@ plainto_tsquery('simple', normalize_hadith($4))
-           OR to_tsvector('simple', normalize_hadith(coalesce(h.content,''))) @@ plainto_tsquery('simple', normalize_hadith($4)))`
+           OR to_tsvector('simple', normalize_hadith(${visible})) @@ plainto_tsquery('simple', normalize_hadith($4)))`
       : ''
 
     const { rows } = await pool.query<HadithRow>(
@@ -199,7 +205,7 @@ export default async function TopicItemPage({
     if (hasGradeFilter || hasTextFilter) {
       const countTextClause = hasTextFilter
         ? `AND (to_tsvector('simple', normalize_hadith(coalesce(h.tarf,''))) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2}))
-             OR to_tsvector('simple', normalize_hadith(coalesce(h.content,''))) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2})))`
+             OR to_tsvector('simple', normalize_hadith(${visible})) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2})))`
         : ''
       countQuery = `SELECT COUNT(*) FROM hadith_subjects hs
          JOIN hadith_toc h ON h.main_id = hs.paragraph_main_id
