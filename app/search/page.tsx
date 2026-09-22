@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import HadithNumber from '@/app/components/HadithNumber'
+import SaveHadith from '@/app/components/SaveHadith'
 
 interface SearchResult {
   main_id: number
@@ -393,11 +394,8 @@ function SearchInner() {
 
       <div className="grid gap-4">
         {results.map(r => (
-          <Link
-            key={r.main_id}
-            href={`/hadith/${r.main_id}`}
-            className="block ui-card px-5 py-4 hover:border-green-300 transition-all"
-          >
+          <div key={r.main_id} className="ui-card px-5 py-4 hover:border-green-300 transition-all flex flex-col gap-2">
+            <Link href={`/hadith/${r.main_id}`} className="block">
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-xs text-green-700 font-semibold">{r.book_name}</span>
               {r.grade_hint && (
@@ -436,6 +434,10 @@ function SearchInner() {
               )}
             </div>
           </Link>
+          <div className="flex justify-start mt-2">
+            <SaveHadith hadithId={r.main_id} />
+          </div>
+          </div>
         ))}
       </div>
 

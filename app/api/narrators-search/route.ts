@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   if (q.length < 2) return NextResponse.json([])
 
   const { rows } = await pool.query(
-    `SELECT id, name, abb_name, martaba_ibn_hajar, tabaqa, is_companion
+    `SELECT id, name, abb_name, martaba_ibn_hajar, tabaqa, is_companion, death_year_num, death_year
      FROM narrators
      WHERE name ILIKE $1 OR abb_name ILIKE $1
      ORDER BY

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import HadithNumber from '@/app/components/HadithNumber'
 
-type NarratorLike = { id: number; name: string; abb_name: string; is_companion?: boolean }
+type NarratorLike = { id: number; name: string; abb_name: string; is_companion?: boolean; death_year_num?: number | null }
 type Narrator = NarratorLike & { hadiths_count?: number }
 type Candidate = NarratorLike & { pair_count: number }
 type ResultRow = {
@@ -239,9 +239,14 @@ export default function SanadBuilderPage() {
                       className="w-full text-right px-4 py-2.5 text-sm hover:bg-green-50 transition-colors flex items-center justify-between gap-2"
                     >
                       <span className="truncate max-w-[28rem]">{n.abb_name || n.name}</span>
-                      {n.is_companion && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">صاحب</span>
-                      )}
+                      <span className="flex items-center gap-1 shrink-0">
+                        {n.death_year_num != null && n.death_year_num > 0 && (
+                          <span className="text-[10px] text-gray-500">ت {arNum(n.death_year_num)} هـ</span>
+                        )}
+                        {n.is_companion && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">صاحب</span>
+                        )}
+                      </span>
                     </button>
                   </li>
                 ))}
