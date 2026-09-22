@@ -50,6 +50,46 @@ export default function SanadBuilderPage() {
   const [resultsLoading, setResultsLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
   const [err, setErr] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  // ---- shareable chain link: hydrate ?ids= on mount ----
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ids = (params.get('ids') || '').split(',').map(s => parseInt(s)).filter(n => !isNaN(n) && n > 0)
+    if (ids.length < 1 || ids.length > 5) return
+    const controller = new AbortController()
+    fetch(`/api/chain-share?ids=${ids.join(',')}`, { signal: controller.signal })
+      .then(r => r.json())
+      .then((rows: Narrator[]) => {
+        // Preserve the requested order, drop any unknown ids.
+        setSelected(rows.filter(r => ids.includes(r.id)).map(r => ({
+          id: r.id, name: r.name, abb_name: r.abb_name || r.name, is_companion: r.is_companion,
+        })))
+        if (params.get('page')) {
+          const p = parseInt(params.get('page')!) || 1
+          const g = params.get('grade') || ''
+          setPage(p)
+          setSearchDone(true)
+          const gurl = `/api/chain-filter?narrator_ids=${ids.join(',')}&page=${p}&grade=${encodeURIComponent(g)}`
+          fetch(gurl).then(r => r.json()).then(d => {
+            setResults((d.results || []) as ResultRow[])
+            setTotal(parseInt(d.total || '0'))
+          }).catch(() => {})
+        }
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---- copy shareable chain link ----
+  const chainLink = selected.length > 0 ? `${window.location.origin}/asaneed/builder?ids=${selected.map(n => n.id).join(',')}` : ''
+  const copyChainLink = useCallback(async () => {
+    if (!chainLink) return
+    try { await navigator.clipboard.writeText(chainLink) }
+    catch { /* clipboard blocked; fallback below */ }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [chainLink])
 
   // ---- autocomplete (debounced) ----
   useEffect(() => {
@@ -234,6 +274,18 @@ export default function SanadBuilderPage() {
               >
                 🔎 بحث الأحاديث ({selected.length >= 2 ? 'سند مركّب' : 'راوٍ واحد'})
               </button>
+              {chainLink && (
+                <button
+                  type="button"
+                  onClick={copyChainLink}
+                  title="نسخ رابط هذا السند — يُفتح مباشرةً"
+                  className={`text-sm font-semibold px-4 py-2.5 rounded-xl border transition-colors ${
+                    copied ? 'bg-green-700 text-white border-green-700' : 'bg-white text-green-800 border-green-300 hover:bg-green-50'
+                  }`}
+                >
+                  {copied ? '✓ نُسخ' : '📎 نسخ رابط السند'}
+                </button>
+              )}
               <button type="button" onClick={() => removeAt(selected.length - 1)} className="text-sm text-gray-500 hover:text-green-700 hover:underline">
                 ← حذف الأخير
               </button>
