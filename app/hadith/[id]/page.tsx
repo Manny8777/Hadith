@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain, CriticismGroup } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection from '@/app/components/TakhrijSection'
@@ -342,25 +343,54 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     for (const n of sanadNarRes.rows) sanadNarrators[n.id] = n
   }
 
+  // Musakarat (مشكل) nodes for this hadith — badge linking to the leaf-node issue
+  const musakaratRes = await pool.query<{ node_id: number; text: string; is_leaf: boolean }>(
+    `SELECT hcd.node_id, ct.text, ct.is_leaf
+     FROM hadith_service_links hsl
+     JOIN hadith_controversial_descriptions hcd ON hcd.service_main_id = hsl.service_content_id
+     JOIN hadith_controversial_tree ct ON ct.id = hcd.node_id
+     WHERE hsl.hadith_id = $1
+     ORDER BY ct.id
+     LIMIT 5`,
+    [mainId]
+  ).catch(() => ({ rows: [] as Array<{ node_id: number; text: string; is_leaf: boolean }> }))
+  const musakaratNodes = musakaratRes.rows
+
   return (
-    <HadithSidebarLayout
-      hadithId={mainId}
-      hadith={h}
-      chains={chains}
-      narratorCriticism={narratorCriticism}
-      commonNarrators={commonNarrators}
-      sanadSegments={sanadSegmentsHaveNarrators(sanadSegments) ? sanadSegments : undefined}
-      sanadNarrators={sanadNarrators}
-      judgments={judgments}
-      subjects={subjects}
-      relatedHadiths={relatedHadiths}
-      takhrijBooks={takhrijBooks}
-      takhrijSummary={takhrijSummary}
-      booksTakhrij={booksTakhrij}
-      hadithServices={hadithServices}
-      isnadType={dominantIsnadType}
-      matngroupSlot={<MatnGroupSection hadithId={mainId} />}
-      takhrijSlot={<TakhrijSection hadithId={mainId} />}
-    />
+    <>
+      {musakaratNodes.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <span className="text-sm font-semibold text-amber-800">🔗 يُسار إلى شجرة مختلف الحديث</span>
+          {musakaratNodes.map(n => (
+            <Link
+              key={n.node_id}
+              href={`/topics/contradictions/node/${n.node_id}`}
+              className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full border border-amber-200 hover:bg-amber-200"
+            >
+              {n.text.slice(0, 40)}
+            </Link>
+          ))}
+        </div>
+      )}
+      <HadithSidebarLayout
+        hadithId={mainId}
+        hadith={h}
+        chains={chains}
+        narratorCriticism={narratorCriticism}
+        commonNarrators={commonNarrators}
+        sanadSegments={sanadSegmentsHaveNarrators(sanadSegments) ? sanadSegments : undefined}
+        sanadNarrators={sanadNarrators}
+        judgments={judgments}
+        subjects={subjects}
+        relatedHadiths={relatedHadiths}
+        takhrijBooks={takhrijBooks}
+        takhrijSummary={takhrijSummary}
+        booksTakhrij={booksTakhrij}
+        hadithServices={hadithServices}
+        isnadType={dominantIsnadType}
+        matngroupSlot={<MatnGroupSection hadithId={mainId} />}
+        takhrijSlot={<TakhrijSection hadithId={mainId} />}
+      />
+    </>
   )
 }
