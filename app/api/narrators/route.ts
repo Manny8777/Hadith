@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q') ?? ''
-  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
-  const limitParam = parseInt(searchParams.get('limit') ?? '30', 10)
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
+  const limitParam = parseInt(searchParams.get('limit') ?? '30', 10) || 30
   const limit = Math.min(Math.max(1, limitParam), 100)
   const offset = (page - 1) * limit
 

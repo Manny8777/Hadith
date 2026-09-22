@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const aId = parseInt(searchParams.get('a') || '')
   const bId = parseInt(searchParams.get('b') || '')
   const mode = searchParams.get('mode') || 'disagree'
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
   const limit = 20
   const offset = (page - 1) * limit
 

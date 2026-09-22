@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim()
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
   const bookFilter = searchParams.get('book') || ''
 
   if (!q || q.length < 3) return NextResponse.json({ results: [], hasMore: false })

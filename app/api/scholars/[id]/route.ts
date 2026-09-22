@@ -13,7 +13,7 @@ export async function GET(
 
   const { searchParams } = new URL(req.url)
   const grade = searchParams.get('grade') || '' // 'sahih'|'hasan'|'daif'|''
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
   const limit = 30
   const offset = (page - 1) * limit
 

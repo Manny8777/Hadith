@@ -12,7 +12,7 @@ export async function GET(
   if (isNaN(itemId)) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
 
   const { searchParams } = new URL(req.url)
-  const page  = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const page  = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
   const limit = 20
   const offset = (page - 1) * limit
 

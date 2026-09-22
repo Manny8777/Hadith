@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim() || ''
-  const limit = Math.min(10, parseInt(searchParams.get('limit') || '8'))
+  const limit = Math.min(10, Math.max(1, parseInt(searchParams.get('limit') || '8', 10) || 8))
 
   if (q.length < 2) return NextResponse.json([])
 

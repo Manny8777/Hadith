@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const limit = Math.min(25, Math.max(8, parseInt(searchParams.get('limit') || '20')))
+  const limit = Math.min(25, Math.max(8, parseInt(searchParams.get('limit') || '20', 10) || 20))
 
   // Top narrators by chain count
   const topRes = await pool.query<{
