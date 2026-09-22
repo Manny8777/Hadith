@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useNumbering } from '@/lib/numberingContext'
 import { useNumeral } from '@/lib/numeralContext'
@@ -179,6 +179,7 @@ const CATEGORIES: NavCategory[] = [
     label: 'بحث',
     links: [
       { href: '/search', label: 'بحث نصي' },
+      { href: '/asaneed/builder', label: 'البحث بواسطة السند', isNew: true },
       { href: '/hadiths/advanced-research', label: 'بحث متعدد' },
     ],
   },
