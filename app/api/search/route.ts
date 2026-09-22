@@ -322,13 +322,20 @@ export async function GET(req: Request) {
   if (countGradeCondition) countConditions.push(countGradeCondition)
 
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM hadith_toc WHERE ${countConditions.join(' AND ')}`,
+    `SELECT COUNT(*)::int AS total,
+            COUNT(*) FILTER (WHERE btrim(coalesce(tarqeem_matboa1, '')) <> '')::int AS hadiths
+     FROM hadith_toc WHERE ${countConditions.join(' AND ')}`,
     countParams
   )
 
   return NextResponse.json({
     results: rows,
-    total: parseInt(countResult.rows[0].count),
+    total: countResult.rows[0].total,
+    // The original app's result list shows hadith rows only — rows without a printed hadith
+    // number (book introductions and the like) are matched but never listed. `total` counts
+    // every match (what this API returns), `total_hadiths` counts what the original would have
+    // listed, so parity against the legacy app is measurable at any result size.
+    total_hadiths: countResult.rows[0].hadiths,
     page,
     limit,
     mode: 'text',
