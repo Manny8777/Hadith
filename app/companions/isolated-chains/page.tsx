@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import StretchedLink from '@/app/components/StretchedLink'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الصحابة ذوو الطرق المحدودة — جامع خادم الحرمين' }
@@ -134,17 +135,17 @@ export default async function IsolatedChainsPage({
           </h2>
           <div className="space-y-2">
             {companions.map(c => (
-              <Link key={c.id}
-                href={buildUrl({ companion: String(c.id) })}
-                className={`block rounded-xl border px-4 py-3 transition-all hover:shadow-sm ${
+              <div key={c.id}
+                className={`relative block rounded-xl border px-4 py-3 transition-all hover:shadow-sm ${
                   selectedCompanionId === c.id
                     ? 'border-green-400 bg-green-50'
                     : 'border-gray-100 bg-white hover:border-green-200'
                 }`}>
+                <StretchedLink href={buildUrl({ companion: String(c.id) })} label={c.abb_name || c.name} />
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-1">
-                    <Link href={`/narrator/${c.id}`} onClick={e => e.stopPropagation()}
-                      className="font-semibold text-sm text-green-900 hover:underline">
+                    <Link href={`/narrator/${c.id}`}
+                      className="relative z-10 font-semibold text-sm text-green-900 hover:underline">
                       {c.abb_name || c.name}
                     </Link>
                     {c.death_year && <span className="text-xs text-gray-400">ت {c.death_year}</span>}
@@ -162,7 +163,7 @@ export default async function IsolatedChainsPage({
                     </span>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 

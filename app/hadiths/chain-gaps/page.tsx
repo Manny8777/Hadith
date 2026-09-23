@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import StretchedLink from '@/app/components/StretchedLink'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'كاشف الانقطاع في الأسانيد — جامع خادم الحرمين' }
@@ -166,8 +167,9 @@ export default async function ChainGapsPage({
 
       <div className="space-y-3">
         {results.map((r) => (
-          <Link key={r.hadith_id} href={`/hadith/${r.hadith_id}`}
-            className="block bg-white rounded-xl border border-gray-100 px-4 py-4 hover:shadow-md hover:border-red-200 transition-all group">
+          <div key={r.hadith_id}
+            className="relative block bg-white rounded-xl border border-gray-100 px-4 py-4 hover:shadow-md hover:border-red-200 transition-all group">
+            <StretchedLink href={`/hadith/${r.hadith_id}`} label={`الحديث ${r.hadith_id}`} />
 
             <div className="flex items-start gap-3 justify-between mb-2 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
@@ -188,8 +190,7 @@ export default async function ChainGapsPage({
             {/* Gap visualization */}
             <div className="flex items-center gap-1 flex-wrap text-xs">
               <Link href={`/narrator/${r.nar1_id}`}
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                className="text-blue-700 hover:underline font-medium">
+                className="relative z-10 text-blue-700 hover:underline font-medium">
                 {r.name1}
               </Link>
               <span className="text-gray-400">ت {r.death1}هـ</span>
@@ -199,13 +200,12 @@ export default async function ChainGapsPage({
               </div>
               <span className="text-gray-300 mx-1">→</span>
               <Link href={`/narrator/${r.nar2_id}`}
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                className="text-blue-700 hover:underline font-medium">
+                className="relative z-10 text-blue-700 hover:underline font-medium">
                 {r.name2}
               </Link>
               <span className="text-gray-400">ت {r.death2}هـ</span>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 

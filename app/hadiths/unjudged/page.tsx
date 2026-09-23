@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import StretchedLink from '@/app/components/StretchedLink'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الأحاديث غير المحكوم عليها — جامع خادم الحرمين' }
@@ -170,13 +171,14 @@ export default async function UnjudgedPage({
 
       <div className="space-y-3">
         {hadiths.rows.map((h, idx) => (
-          <Link key={h.hadith_id} href={`/hadith/${h.hadith_id}`}
-            className="block bg-white rounded-xl border border-gray-100 px-4 py-4 hover:shadow-sm hover:border-amber-200 transition-all group">
+          <div key={h.hadith_id}
+            className="relative block bg-white rounded-xl border border-gray-100 px-4 py-4 hover:shadow-sm hover:border-amber-200 transition-all group">
+            <StretchedLink href={`/hadith/${h.hadith_id}`} label={`الحديث ${h.hadith_id}`} />
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-300">{(offset + idx + 1).toLocaleString('ar-EG')}</span>
-                <Link href={`/books/${h.book_id}`} onClick={e => e.stopPropagation()}
-                  className="text-xs text-green-700 font-medium hover:underline">
+                <Link href={`/books/${h.book_id}`}
+                  className="relative z-10 text-xs text-green-700 font-medium hover:underline">
                   {h.book_title}
                 </Link>
               </div>
@@ -192,7 +194,7 @@ export default async function UnjudgedPage({
             <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 group-hover:text-green-900">
               {stripTags(h.tarf).slice(0, 220) || '...'}
             </p>
-          </Link>
+          </div>
         ))}
       </div>
 

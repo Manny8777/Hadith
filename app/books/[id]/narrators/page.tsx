@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import NavCheckbox from '@/app/components/NavCheckbox'
 import { notFound } from 'next/navigation'
 
 interface NarratorRow {
@@ -136,11 +137,9 @@ export default async function BookNarratorsPage({
           {/* Filters */}
           <div className="mt-4 flex flex-wrap gap-2">
             <label className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="checkbox"
-                readOnly
+              <NavCheckbox
                 checked={companionFilter}
-                onClick={() => { window.location.href = buildHref({ companion: companionFilter ? undefined : '1', page: undefined }) }}
+                href={buildHref({ companion: companionFilter ? undefined : '1', page: undefined })}
                 className="w-4 h-4 rounded text-amber-500"
               />
               <span className="text-white/80 text-xs">الصحابة فقط</span>
