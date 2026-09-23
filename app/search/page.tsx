@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -52,6 +52,11 @@ function SearchInner() {
   const [matchMode, setMatchMode] = useState<MatchMode>(
     (searchParams.get('match') as MatchMode) || 'phrase'
   )
+
+  // The search box shows connectives as blocked-out tokens behind the text, so the reader can see
+  // which words are operators and which are words — و and أو are also letters inside ordinary words.
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const highlightRef = useRef<HTMLDivElement | null>(null)
   const [books, setBooks] = useState<Book[]>([])
   const [subjectCats, setSubjectCats] = useState<SubjectCat[]>([])
   const [results, setResults] = useState<SearchResult[]>([])
@@ -164,6 +169,22 @@ function SearchInner() {
   // are expressed (legacy-audit/10-legacy-search-callsite.md §2b). The keys below just type them.
   // The keys type the connective in Arabic — the same words the API accepts (و / أو / ليس) — so what
   // appears in the box is what the reader sees, with no English operator arriving from nowhere.
+  // The same whitespace-delimited rule the API applies when it parses the query — so the highlight
+  // and the server can never disagree about what is an operator. A token counts only when it stands
+  // alone: والزكاة, بدونه, ولاية are words and stay unhighlighted.
+  const CONN_TOKEN = /^(?:AND|OR|NOT|XOR|و|أو|ليس|وليس|بدون|وبدون)$/i
+  function highlightTokens(raw: string): { text: string; conn: boolean }[] {
+    return raw
+      .split(/(\s+)/)
+      .map(seg => ({ text: seg, conn: seg.trim() !== '' && CONN_TOKEN.test(seg.trim()) }))
+  }
+
+  // Keep the highlight layer aligned with the input when the text is longer than the box.
+  function syncHighlight(el: HTMLInputElement) {
+    const hl = highlightRef.current
+    if (hl) hl.scrollLeft = el.scrollLeft
+  }
+
   function insertOp(op: 'AND' | 'OR' | 'NOT' | '*' | '?') {
     setQ(prev => {
       const t = prev.trim()
@@ -175,6 +196,16 @@ function SearchInner() {
       // «و ليس» rather than a bare «ليس» so the connective is unambiguous and the API reads the
       // NOT from the connector instead of having to rescue a leading word.
       return op === 'NOT' ? `${t} و ليس ` : `${t} ${word} `
+    })
+    // Leave the caret at the end, ready for the next word: clicking a key should read as "و" then
+    // keep typing, not as a click that steals focus.
+    requestAnimationFrame(() => {
+      const el = inputRef.current
+      if (el) {
+        el.focus()
+        el.setSelectionRange(el.value.length, el.value.length)
+        syncHighlight(el)
+      }
     })
   }
 
@@ -205,17 +236,42 @@ function SearchInner() {
       {/* Search form — always visible */}
       <form onSubmit={handleSubmit} className="mb-8">
         <div className="flex gap-3 mb-3">
-          <input
-            type="text"
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder={isNarratorMode
-              ? `بحث في أحاديث ${narratorNameParam || 'الراوي'}...`
-              : 'ابحث في الأحاديث النبوية...'
-            }
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-700"
-            dir="rtl"
-          />
+          <div className="relative flex-1 rounded-lg border border-gray-300 bg-white shadow-sm focus-within:ring-2 focus-within:ring-green-700">
+            {/* Highlight layer, behind the text. Invisible except for the connector tokens, and
+                mirroring the input's font/padding exactly so the blocks land under the words. */}
+            <div
+              ref={highlightRef}
+              aria-hidden
+              className="pointer-events-none absolute inset-0 select-none overflow-hidden whitespace-pre rounded-lg px-4 py-3 text-lg text-transparent"
+              dir="rtl"
+            >
+              {highlightTokens(q).map((t, i) =>
+                t.conn ? (
+                  <mark
+                    key={i}
+                    className="rounded-sm bg-amber-200 text-transparent shadow-[0_0_0_2px_rgba(253,230,138,0.85)]"
+                  >
+                    {t.text}
+                  </mark>
+                ) : (
+                  <span key={i}>{t.text}</span>
+                )
+              )}
+            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              value={q}
+              onChange={e => { setQ(e.target.value); syncHighlight(e.target) }}
+              onScroll={e => syncHighlight(e.currentTarget)}
+              placeholder={isNarratorMode
+                ? `بحث في أحاديث ${narratorNameParam || 'الراوي'}...`
+                : 'ابحث في الأحاديث النبوية...'
+              }
+              className="relative w-full rounded-lg bg-transparent px-4 py-3 text-lg focus:outline-none"
+              dir="rtl"
+            />
+          </div>
           <button
             type="submit"
             className="bg-green-900 text-white px-6 py-3 rounded-lg hover:bg-green-800 transition-colors font-semibold"
