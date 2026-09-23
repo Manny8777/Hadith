@@ -162,13 +162,19 @@ function SearchInner() {
   // The original dialog composes its WHERE clause from operators (' AND ', ' OR ', ' NOT ', ' XOR ')
   // and wildcards ('*', '?') — that is how its two-word and "contains this but not that" searches
   // are expressed (legacy-audit/10-legacy-search-callsite.md §2b). The keys below just type them.
+  // The keys type the connective in Arabic — the same words the API accepts (و / أو / ليس) — so what
+  // appears in the box is what the reader sees, with no English operator arriving from nowhere.
   function insertOp(op: 'AND' | 'OR' | 'NOT' | '*' | '?') {
     setQ(prev => {
       const t = prev.trim()
       if (op === '*' || op === '?') return `${t}${op}`
-      if (!t) return op === 'NOT' ? 'NOT ' : ''
-      if (op === 'NOT') return `${t} AND NOT `
-      return `${t} ${op} `
+      // A connective needs something to connect: with an empty box it does nothing, so the reader
+      // never gets a query that starts with a dangling «ليس».
+      if (!t) return prev
+      const word = op === 'AND' ? 'و' : op === 'OR' ? 'أو' : 'ليس'
+      // «و ليس» rather than a bare «ليس» so the connective is unambiguous and the API reads the
+      // NOT from the connector instead of having to rescue a leading word.
+      return op === 'NOT' ? `${t} و ليس ` : `${t} ${word} `
     })
   }
 
@@ -258,7 +264,8 @@ function SearchInner() {
         </div>
 
         {/* Match mode + operator keys — the original's متتالية / كل الكلمات / أي من الكلمات, and the
-            operators its dialog composes the WHERE clause from. */}
+            operators its dialog composes the WHERE clause from, offered in Arabic words (و / أو / ليس)
+            that the API accepts as connectives. */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-xs text-gray-500 shrink-0">طريقة المطابقة:</span>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
@@ -280,33 +287,54 @@ function SearchInner() {
             )}
           </div>
 
-          <span className="text-xs text-gray-500 shrink-0 mr-1">معاملات:</span>
+          <span className="text-xs text-gray-500 shrink-0 mr-1">ربط الشروط:</span>
           <div className="flex gap-1">
-            {([['AND', 'و'], ['OR', 'أو'], ['NOT', 'ليس'], ['*', '*'], ['?', '?']] as [string, string][]).map(
-              ([op, label]) => (
-                <button
-                  key={op}
-                  type="button"
-                  onClick={() => insertOp(op as 'AND' | 'OR' | 'NOT' | '*' | '?')}
-                  title={op === '*' ? 'أي عدد من الحروف' : op === '?' ? 'حرف واحد' : op}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-                  dir="ltr"
-                >
-                  {label}
-                </button>
-              )
-            )}
+            {([
+              ['AND', 'و', 'وأيضاً: لا بدّ أن توجد الكلمة الأخرى أيضاً'],
+              ['OR', 'أو', 'إحدى الكلمتين: أيّهما وُجد في الحديث'],
+              ['NOT', 'ليس', 'بدون هذه الكلمة: توجد الأولى ولا توجد هذه'],
+            ] as [string, string, string][]).map(([op, label, hint]) => (
+              <button
+                key={op}
+                type="button"
+                onClick={() => insertOp(op as 'AND' | 'OR' | 'NOT')}
+                title={hint}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-xs text-gray-500 shrink-0 mr-1">حروف ناقصة:</span>
+          <div className="flex gap-1">
+            {([
+              ['*', 'أيّ عدد من الحروف *', 'مثال: صلا* تجد كل كلمة تبدأ بـ صلا'],
+              ['?', 'حرف واحد ناقص ?', 'مثال: الصل? تجد الصلاة — حرف واحد لا تعرفه'],
+            ] as [string, string, string][]).map(([op, label, hint]) => (
+              <button
+                key={op}
+                type="button"
+                onClick={() => insertOp(op as '*' | '?')}
+                title={hint}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="text-xs text-gray-400 mb-3 leading-relaxed">
           أمثلة:
-          <span className="font-mono mx-1 text-gray-500" dir="ltr">الصلاة AND الزكاة</span>
+          <span className="mx-1 text-gray-500 font-semibold">«الصلاة و الزكاة»</span>
           حديث فيه الكلمتان —
-          <span className="font-mono mx-1 text-gray-500" dir="ltr">الصلاة AND NOT الزكاة</span>
-          فيه الأولى وليست الثانية —
-          <span className="font-mono mx-1 text-gray-500" dir="ltr">صلا*</span>
-          أي كلمة تبدأ بـ«صلا». («و/أو/ليس» تكتب المعاملات نفسها.)
+          <span className="mx-1 text-gray-500 font-semibold">«الصلاة و ليس الزكاة»</span>
+          حديث فيه الأولى وليست فيه الثانية —
+          <span className="mx-1 text-gray-500 font-semibold">«صلا*»</span>
+          أيّ كلمة تبدأ بـ«صلا» —
+          <span className="mx-1 text-gray-500 font-semibold">«الصل?»</span>
+          كلمة مثل «الصلاة» ينقصها حرف واحد. (وتُقبل المعاملات الإنجليزية AND / OR / NOT كذلك.)
         </div>
 
         {/* Book + Grade filters */}

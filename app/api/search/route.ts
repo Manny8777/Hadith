@@ -105,16 +105,27 @@ export async function GET(req: Request) {
   type BoolConn = 'AND' | 'OR' | 'NOT' | 'XOR'
   type BoolTerm = { conn: BoolConn | null; term: string; regex: string | null }
 
+  // The connectives, in the words the search page's own buttons show: و = AND, أو = OR,
+  // ليس / وليس / بدون = NOT. An Arabic connective only counts when it stands alone between spaces,
+  // so a word that merely begins with و (والزكاة) stays a search word, as it must.
+  const CONNECTIVES: Record<string, BoolConn> = {
+    AND: 'AND', OR: 'OR', NOT: 'NOT', XOR: 'XOR',
+    'و': 'AND', 'أو': 'OR', 'ليس': 'NOT', 'وليس': 'NOT', 'بدون': 'NOT', 'وبدون': 'NOT',
+  }
+  const CONN_SPLIT = /\s+(AND|OR|NOT|XOR|و|أو|ليس|وليس|بدون|وبدون)\s+/i
+  const CONN_LEADING = /^(?:NOT|ليس|وليس|بدون|وبدون)\s+/i
+
   // Turn the raw query into terms. Splitting only on whitespace-delimited connectives keeps words
   // that merely contain those letters (e.g. 'AND' inside a transliteration) intact; a leading '-'
   // is the shorthand for NOT.
   function parseQueryTerms(raw: string): BoolTerm[] {
-    const parts = raw.split(/\s+(AND|OR|NOT|XOR)\s+/i)
+    const parts = raw.split(CONN_SPLIT)
     const out: BoolTerm[] = []
     const terms: string[] = [parts[0] ?? '']
     const conns: (BoolConn | null)[] = [null]
     for (let i = 1; i < parts.length; i += 2) {
-      conns.push((parts[i] ?? 'AND').toUpperCase() as BoolConn)
+      const key = (parts[i] ?? 'AND').trim()
+      conns.push(CONNECTIVES[key.toUpperCase()] ?? 'AND')
       terms.push(parts[i + 1] ?? '')
     }
     for (let i = 0; i < terms.length; i++) {
@@ -123,7 +134,11 @@ export async function GET(req: Request) {
       let conn = conns[i]
       // 'A AND NOT B' splits into ['A', 'AND', 'NOT B'] — the NOT has no leading whitespace left,
       // so it survives in the term and must be lifted back out as the connector.
-      if (/^NOT\s+/i.test(t)) { conn = 'NOT'; t = t.replace(/^NOT\s+/i, '').trim() }
+      const lead = t.match(CONN_LEADING)
+      // Only lift a leading NOT when a connective was actually used ('A AND NOT B' splits into
+      // ['A', 'AND', 'NOT B']). Otherwise «ليس المؤمن بالطعان» — a real hadith wording — would be
+      // read as "NOT المؤمن بالطعان" instead of the phrase it is.
+      if (lead && parts.length > 1) { conn = 'NOT'; t = t.slice(lead[0].length).trim() }
       else if (t.startsWith('-') && t.length > 1) { conn = 'NOT'; t = t.slice(1).trim() }
       out.push({ conn, term: t, regex: wildcardToRegex(t) })
     }
