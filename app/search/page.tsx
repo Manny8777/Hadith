@@ -26,6 +26,8 @@ interface SubjectCat { id: number; title: string }
 
 // search_scope: 'both' = بحث في المتن كاملاً، 'tarf' = بحث في الأطراف فقط
 type SearchScope = 'both' | 'tarf'
+// match: 'phrase' = متتالية (the original's default), 'all' = كل الكلمات, 'any' = أي من الكلمات
+type MatchMode = 'phrase' | 'all' | 'any'
 
 function stripTags(html: string) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -46,6 +48,9 @@ function SearchInner() {
   const [maxDepth, setMaxDepth] = useState(searchParams.get('max_depth') || '')
   const [searchScope, setSearchScope] = useState<SearchScope>(
     (searchParams.get('search_scope') as SearchScope) || 'both'
+  )
+  const [matchMode, setMatchMode] = useState<MatchMode>(
+    (searchParams.get('match') as MatchMode) || 'phrase'
   )
   const [books, setBooks] = useState<Book[]>([])
   const [subjectCats, setSubjectCats] = useState<SubjectCat[]>([])
@@ -80,7 +85,7 @@ function SearchInner() {
       let url: string
       if (nid && query.trim().length >= 2) {
         // Combined narrator + text search
-        url = `/api/search?narrator_id=${encodeURIComponent(nid)}&q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}`
+        url = `/api/search?narrator_id=${encodeURIComponent(nid)}&q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}${matchMode !== 'phrase' ? `&match=${matchMode}` : ''}`
         if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
       } else if (nid) {
         // Narrator-only: all hadiths in chain
@@ -88,7 +93,7 @@ function SearchInner() {
         if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
       } else {
         if (query.trim().length < 2) { setLoading(false); return }
-        url = `/api/search?q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}`
+        url = `/api/search?q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}${matchMode !== 'phrase' ? `&match=${matchMode}` : ''}`
         if (bId) url += `&book_id=${encodeURIComponent(bId)}`
         if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
         if (subjectCatId) url += `&subject_cat_id=${encodeURIComponent(subjectCatId)}`
@@ -105,7 +110,7 @@ function SearchInner() {
     } finally {
       setLoading(false)
     }
-  }, [gradeFilter, subjectCatId, maxDepth, searchScope])
+  }, [gradeFilter, subjectCatId, maxDepth, searchScope, matchMode])
 
   useEffect(() => {
     if (narratorIdParam) {
@@ -125,12 +130,14 @@ function SearchInner() {
       if (narratorNameParam) url += `&narrator_name=${encodeURIComponent(narratorNameParam)}`
       if (trimmed) url += `&q=${encodeURIComponent(trimmed)}`
       if (searchScope !== 'both') url += `&search_scope=${searchScope}`
+      if (matchMode !== 'phrase') url += `&match=${matchMode}`
       router.push(url)
       doSearch(trimmed, '', 1, narratorIdParam, searchScope)
     } else {
       let url = `/search?q=${encodeURIComponent(trimmed)}`
       if (bookId) url += `&book_id=${encodeURIComponent(bookId)}`
       if (searchScope !== 'both') url += `&search_scope=${searchScope}`
+      if (matchMode !== 'phrase') url += `&match=${matchMode}`
       router.push(url)
       doSearch(trimmed, bookId, 1, '', searchScope)
     }
@@ -142,6 +149,27 @@ function SearchInner() {
     if (searched && (q.trim().length >= 2 || isNarratorMode)) {
       doSearch(q, bookId, 1, narratorIdParam, newScope)
     }
+  }
+
+  function handleMatchChange(newMatch: MatchMode) {
+    setMatchMode(newMatch)
+    // Re-run immediately, like the scope toggle does.
+    if (searched && (q.trim().length >= 2 || isNarratorMode)) {
+      doSearch(q, bookId, 1, narratorIdParam, searchScope)
+    }
+  }
+
+  // The original dialog composes its WHERE clause from operators (' AND ', ' OR ', ' NOT ', ' XOR ')
+  // and wildcards ('*', '?') — that is how its two-word and "contains this but not that" searches
+  // are expressed (legacy-audit/10-legacy-search-callsite.md §2b). The keys below just type them.
+  function insertOp(op: 'AND' | 'OR' | 'NOT' | '*' | '?') {
+    setQ(prev => {
+      const t = prev.trim()
+      if (op === '*' || op === '?') return `${t}${op}`
+      if (!t) return op === 'NOT' ? 'NOT ' : ''
+      if (op === 'NOT') return `${t} AND NOT `
+      return `${t} ${op} `
+    })
   }
 
   const totalPages = Math.ceil(total / 20)
@@ -227,6 +255,58 @@ function SearchInner() {
               — يشمل المتن كاملاً والأطراف
             </span>
           )}
+        </div>
+
+        {/* Match mode + operator keys — the original's متتالية / كل الكلمات / أي من الكلمات, and the
+            operators its dialog composes the WHERE clause from. */}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <span className="text-xs text-gray-500 shrink-0">طريقة المطابقة:</span>
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+            {([['phrase', 'متتالية'], ['all', 'كل الكلمات'], ['any', 'أي من الكلمات']] as [MatchMode, string][]).map(
+              ([value, label], i) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => handleMatchChange(value)}
+                  className={`px-3 py-1.5 transition-colors ${i > 0 ? 'border-r border-gray-200 ' : ''}${
+                    matchMode === value
+                      ? 'bg-green-800 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            )}
+          </div>
+
+          <span className="text-xs text-gray-500 shrink-0 mr-1">معاملات:</span>
+          <div className="flex gap-1">
+            {([['AND', 'و'], ['OR', 'أو'], ['NOT', 'ليس'], ['*', '*'], ['?', '?']] as [string, string][]).map(
+              ([op, label]) => (
+                <button
+                  key={op}
+                  type="button"
+                  onClick={() => insertOp(op as 'AND' | 'OR' | 'NOT' | '*' | '?')}
+                  title={op === '*' ? 'أي عدد من الحروف' : op === '?' ? 'حرف واحد' : op}
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                  dir="ltr"
+                >
+                  {label}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+
+        <div className="text-xs text-gray-400 mb-3 leading-relaxed">
+          أمثلة:
+          <span className="font-mono mx-1 text-gray-500" dir="ltr">الصلاة AND الزكاة</span>
+          حديث فيه الكلمتان —
+          <span className="font-mono mx-1 text-gray-500" dir="ltr">الصلاة AND NOT الزكاة</span>
+          فيه الأولى وليست الثانية —
+          <span className="font-mono mx-1 text-gray-500" dir="ltr">صلا*</span>
+          أي كلمة تبدأ بـ«صلا». («و/أو/ليس» تكتب المعاملات نفسها.)
         </div>
 
         {/* Book + Grade filters */}

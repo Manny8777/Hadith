@@ -78,11 +78,127 @@ export async function GET(req: Request) {
     return `plainto_tsquery('simple', normalize_hadith(${param}))`
   }
 
+  // ---------------------------------------------------------------------------
+  // Boolean query terms — the original's dialog is not a single string search.
+  //
+  // The old app builds its WHERE text from a 21-entry vocabulary of comparators ('=', '!=', '>',
+  // '<', '<=', '>='), connectives (' AND ', ' OR ', ' NOT ', ' XOR ') and wildcards ('*', '?')
+  // (legacy-audit/10-legacy-search-callsite.md §2b, dumped from the exe's initialised CString
+  // arrays). Measured against the engine, on BookTOC_Hadith.Content:
+  //
+  //   'الصلاة'                   -> 17,304        'الصلاة' AND 'الزكاة'        -> 578
+  //   'الزكاة'                   ->  1,280        'الصلاة' OR  'الزكاة'        -> 18,006
+  //   'الصلاة' AND NOT 'الزكاة'  -> 16,726        'صلا*'                       -> 14,902
+  //   Tarf = 'الصلاة'            ->  8,902
+  //
+  // and those numbers are consistent set-wise (17,304 + 1,280 − 578 = 18,006; 17,304 − 578 = 16,726).
+  //
+  // A query with no connective and no wildcard takes the path below unchanged, so the behaviour
+  // verified against the engine for the six existing modes (legacy-audit/09-search-parity-a1.md)
+  // cannot regress.
+  // ---------------------------------------------------------------------------
+
+  // Escape a value for a string literal. The boolean path inlines terms (the engine's own SQL is
+  // built the same way) — the single-term path keeps using bound parameters.
+  const sqlLit = (s: string): string => `'${s.replace(/'/g, "''")}'`
+
+  type BoolConn = 'AND' | 'OR' | 'NOT' | 'XOR'
+  type BoolTerm = { conn: BoolConn | null; term: string; regex: string | null }
+
+  // Turn the raw query into terms. Splitting only on whitespace-delimited connectives keeps words
+  // that merely contain those letters (e.g. 'AND' inside a transliteration) intact; a leading '-'
+  // is the shorthand for NOT.
+  function parseQueryTerms(raw: string): BoolTerm[] {
+    const parts = raw.split(/\s+(AND|OR|NOT|XOR)\s+/i)
+    const out: BoolTerm[] = []
+    const terms: string[] = [parts[0] ?? '']
+    const conns: (BoolConn | null)[] = [null]
+    for (let i = 1; i < parts.length; i += 2) {
+      conns.push((parts[i] ?? 'AND').toUpperCase() as BoolConn)
+      terms.push(parts[i + 1] ?? '')
+    }
+    for (let i = 0; i < terms.length; i++) {
+      let t = terms[i].trim()
+      if (!t) continue
+      let conn = conns[i]
+      // 'A AND NOT B' splits into ['A', 'AND', 'NOT B'] — the NOT has no leading whitespace left,
+      // so it survives in the term and must be lifted back out as the connector.
+      if (/^NOT\s+/i.test(t)) { conn = 'NOT'; t = t.replace(/^NOT\s+/i, '').trim() }
+      else if (t.startsWith('-') && t.length > 1) { conn = 'NOT'; t = t.slice(1).trim() }
+      out.push({ conn, term: t, regex: wildcardToRegex(t) })
+    }
+    return out
+  }
+
+  // '*' = any run of characters, '?' = one character, matched against whole words of the normalised
+  // text — the same reading the engine's wildcards have ('صلا*' finds words starting with صلا).
+  function wildcardToRegex(term: string): string | null {
+    if (!/[*?]/.test(term)) return null
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, (ch) => (ch === '*' || ch === '?' ? ch : `\\${ch}`))
+    const body = escaped.replace(/\*/g, '[^ ]*').replace(/\?/g, '.')
+    return `(^| )${body}( |$)`
+  }
+
+  // One term's match expression. A trailing-only wildcard ('صلا*') can go through the tsquery
+  // prefix operator, which the GIN index serves; any other position falls back to a regex over the
+  // normalised text (no index — noted in the audit as the cost of mid-word wildcards).
+  function termMatchExpr(t: BoolTerm, tarfAlias: string, contentAlias: string): string {
+    const trailingOnly = t.regex !== null && /^[^*?]*\*$/.test(t.term)
+    if (trailingOnly) {
+      const prefix = t.term.slice(0, -1).trim()
+      const q = `to_tsquery('simple', normalize_hadith(${sqlLit(prefix)}) || ':*')`
+      if (searchScope === 'tarf')
+        return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
+      return `(
+        to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}
+        OR normalize_hadith(${visibleText(contentAlias)}) ~ ${sqlLit(t.regex!)}
+      )`
+    }
+    if (t.regex) {
+      const rx = sqlLit(t.regex)
+      if (searchScope === 'tarf') return `normalize_hadith(coalesce(${tarfAlias},'')) ~ ${rx}`
+      return `(normalize_hadith(coalesce(${tarfAlias},'')) ~ ${rx} OR normalize_hadith(${visibleText(contentAlias)}) ~ ${rx})`
+    }
+    const q = queryExpr(sqlLit(t.term))
+    if (searchScope === 'tarf')
+      return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
+    return `(
+      to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}
+      OR ${visibleMatch(contentAlias, sqlLit(t.term))}
+    )`
+  }
+
+  function composeBooleanExpr(terms: BoolTerm[], tarfAlias: string, contentAlias: string): string {
+    let expr = ''
+    terms.forEach((t, i) => {
+      const m = termMatchExpr(t, tarfAlias, contentAlias)
+      if (i === 0) { expr = t.conn === 'NOT' ? `NOT (${m})` : m; return }
+      if (t.conn === 'NOT') expr = `(${expr}) AND NOT (${m})`
+      else if (t.conn === 'OR') expr = `((${expr}) OR (${m}))`
+      else if (t.conn === 'XOR')
+        // either-or-but-not-both; operands are evaluated twice, accepted for a rare operator
+        expr = `(((${expr}) OR (${m})) AND NOT ((${expr}) AND (${m})))`
+      else expr = `((${expr}) AND (${m}))`
+    })
+    return expr
+  }
+
+  const booleanTerms = q ? parseQueryTerms(q) : []
+  const useBoolean = booleanTerms.length > 1
+    || (booleanTerms.length === 1 && (booleanTerms[0].regex !== null || booleanTerms[0].conn === 'NOT'))
+
   // Helper: build the text-match SQL expression based on scope and match mode.
   // Scope `both` stays an OR of the two tsvector predicates so the planner can combine
   // idx_hadith_toc_tarf_norm with the stripped-content index (a concatenated document would
   // have no matching index and would full-scan 339k rows).
   function textMatchExpr(tarfAlias: string, contentAlias: string, param = '$1'): string {
+    if (useBoolean) {
+      // The boolean branch inlines its terms, so it leaves no placeholder for the query text while
+      // the call sites still bind it — Postgres rejects a bind with more values than placeholders.
+      // Keep one reference, folded to a constant by the planner, instead of renumbering the
+      // placeholders of every call site.
+      return `(${composeBooleanExpr(booleanTerms, tarfAlias, contentAlias)} AND (${param}::text IS NOT NULL))`
+    }
     const q = queryExpr(param)
     if (searchScope === 'tarf')
       return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
