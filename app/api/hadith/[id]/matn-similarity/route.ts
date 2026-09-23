@@ -34,10 +34,20 @@ export async function GET(
        b.takhrij_death,
        h.tarqeem_harf,
        h.tarqeem_matboa1,
-       mc.description AS old_label
+       -- The original's own wording for "this hadith's matn vs that one's", keyed the way the
+       -- original keys it: master = the HADITH being viewed. matn_comparison is keyed by compound
+       -- (the app's own earlier extract), which is why it is the fallback, not the first source.
+       COALESCE(lc.description, mc.description) AS old_label
      FROM takhrij t
      JOIN hadith_toc h  ON h.main_id  = t.hadith_id
      JOIN books b       ON b.id       = h.book_id
+     LEFT JOIN LATERAL (
+       SELECT v.description
+         FROM matn_comparison_hadith_v v
+        WHERE v.master_hadith_id = $1
+          AND v.slave_hadith_id  = t.hadith_id
+        LIMIT 1
+     ) lc ON true
      LEFT JOIN matn_comparison mc
        ON mc.master_compound_id = (
             SELECT compound_matn_id FROM takhrij WHERE hadith_id = $1 LIMIT 1
