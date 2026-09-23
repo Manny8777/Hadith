@@ -420,7 +420,7 @@ export default function HadithSidebarLayout({
 
         {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {
-          const { sanad, matn } = splitSanadMatn(h.content)
+          const { sanad, matn, tail, footnotes } = splitSanadMatn(h.content)
           const matnText = matn || cleanHadithContent(h.content)
           return (
             <div className="ui-card mb-4 overflow-hidden">
@@ -459,6 +459,20 @@ export default function HadithSidebarLayout({
                   <p className="hadith-matn" dir="rtl">
                     {applyTashkeel(matnText)}
                   </p>
+                )}
+                {tail && (
+                  <div className="mt-4 pt-4 border-t border-border text-sm text-gray-700 leading-loose" dir="rtl">
+                    {applyTashkeel(tail)}
+                  </div>
+                )}
+                {footnotes.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1" dir="rtl">
+                    {footnotes.map(f => (
+                      <div key={f.id} className="text-xs text-gray-500 leading-relaxed">
+                        <span className="font-medium text-gray-600">({f.id})</span> {applyTashkeel(f.text)}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

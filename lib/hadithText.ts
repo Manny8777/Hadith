@@ -37,21 +37,66 @@ export function stripXmlKeepEdges(xml: string): string {
   return cleanXmlTags(xml)
 }
 
-export function splitSanadMatn(xml: string): { sanad: string; matn: string } {
+export interface HadithTail {
+  text: string
+  footnotes: { id: string; text: string }[]
+}
+
+const FOOTNOTE_RE = /<FootNote[^>]*\bID="(\d+)"[^>]*>([\s\S]*?)<\/FootNote>/g
+
+/**
+ * The part of a record that follows the last </متن>: the author's قول/تكشيف notes and the taḥqīq
+ * footnotes. The original renders the whole document in order — its XSL leaves only
+ * إضافي/متن_مخفي/سند_مخفي/تعليق_مخفي/ترقيم_حرف empty, prints <الصفحات …/> as «[جزء/صفحة]», <هامش> as a
+ * superscript «(n)», the مطبوع hadith number inline, and appends the footnote bodies at the end.
+ * This reproduces that, so the ~85% of hadiths whose record continues past the matn stop losing it.
+ */
+export function renderHadithTail(tailRaw: string): HadithTail {
+  const raw = tailRaw || ''
+  const footnotes: { id: string; text: string }[] = []
+  const seen = new Set<string>()
+  let m: RegExpExecArray | null
+  FOOTNOTE_RE.lastIndex = 0
+  while ((m = FOOTNOTE_RE.exec(raw)) !== null) {
+    if (seen.has(m[1])) continue
+    seen.add(m[1])
+    footnotes.push({ id: m[1], text: stripXmlToVerbatim(m[2]) })
+  }
+
+  const marked = raw
+    .replace(/<Margin[^>]*>[\s\S]*?<\/Margin>/g, ' ')
+    .replace(/<FootNote[\s\S]*?<\/FootNote>/g, ' ')
+    .replace(/<هامش[^>]*ID="(\d+)"[^>]*\/?>(?:\s*<\/هامش>)?/g, ' ($1)')
+    .replace(/<الصفحات[^>]*جزء="([^"]*)"[^>]*صفحة="([^"]*)"[^>]*\/?>/g, ' [$1/$2] ')
+    .replace(/<رقم_حديث[^>]*نوع="([^"]*)"[^>]*>([\s\S]*?)<\/رقم_حديث>/g,
+      (_s: string, kind: string, n: string) => (kind === 'مطبوع' ? ` (${n.trim()}) ` : ' '))
+
+  return { text: stripXmlToVerbatim(marked), footnotes }
+}
+
+export function splitSanadMatn(xml: string): { sanad: string; matn: string; tail: string; footnotes: { id: string; text: string }[] } {
   const raw = xml || ''
   const matnStart = raw.search(/<متن[\s>]/)
   if (matnStart === -1) {
-    return { sanad: '', matn: stripXmlToVerbatim(raw) }
+    return { sanad: '', matn: stripXmlToVerbatim(raw), tail: '', footnotes: [] }
   }
 
   const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
   const matnParts: string[] = []
   let match: RegExpExecArray | null
-  while ((match = matnRe.exec(raw)) !== null) matnParts.push(match[1])
+  let lastEnd = -1
+  while ((match = matnRe.exec(raw)) !== null) {
+    matnParts.push(match[1])
+    lastEnd = matnRe.lastIndex
+  }
+
+  const { text: tail, footnotes } = renderHadithTail(lastEnd >= 0 ? raw.slice(lastEnd) : '')
 
   return {
     sanad: stripXmlToVerbatim(raw.slice(0, matnStart)),
     matn: stripXmlToVerbatim(matnParts.join(' ')),
+    tail,
+    footnotes,
   }
 }
 
