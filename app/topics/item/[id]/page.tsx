@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { attachMatnSnippets, snipColumns, type SnipPart } from '@/lib/matnSnippet'
+import MatnMatchLine from '@/app/components/MatnMatchLine'
 import { notFound } from 'next/navigation'
 import TopicExport from '@/app/components/TopicExport'
 import HadithNumber from '@/app/components/HadithNumber'
@@ -25,6 +27,8 @@ interface HadithRow {
   tarqeem_harf: string | null
   tarqeem_matboa1: string | null
   grade_hint?: string | null
+  // match line, attached by attachMatnSnippets (lib/matnSnippet.ts)
+  snippet?: SnipPart[] | null
 }
 
 interface ChildItem {
@@ -167,7 +171,8 @@ export default async function TopicItemPage({
 
     const { rows } = await pool.query<HadithRow>(
       `SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf, h.part_num, h.page_num,
-              h.section_text, h.chapter_text, h.tarqeem_harf, h.tarqeem_matboa1, jg.grade_hint
+              h.section_text, h.chapter_text, h.tarqeem_harf, h.tarqeem_matboa1, jg.grade_hint,
+              ${snipColumns('h.content')}
        FROM hadith_subjects hs
        JOIN hadith_toc h ON h.main_id = hs.paragraph_main_id
        JOIN books b ON b.id = h.book_id
@@ -194,7 +199,7 @@ export default async function TopicItemPage({
        LIMIT $2 OFFSET $3`,
       q.length >= 2 ? [itemId, limit, offset, q] : [itemId, limit, offset]
     )
-    hadiths = rows
+    hadiths = await attachMatnSnippets(rows, [q])
 
     const hasTextFilter = q.length >= 2
     const hasGradeFilter = !!grade
@@ -448,6 +453,8 @@ export default async function TopicItemPage({
                       (انقر لعرض الحديث)
                     </p>
                   )}
+
+                  <MatnMatchLine parts={h.snippet} />
 
                   <div className="mt-3 flex justify-end">
                     <span className="text-xs text-green-600 group-hover:text-green-700 transition-colors">

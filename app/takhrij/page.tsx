@@ -1,5 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { attachMatnSnippets, snipColumns, type SnipPart } from '@/lib/matnSnippet'
+import MatnMatchLine from '@/app/components/MatnMatchLine'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'محرك التخريج — جامع خادم الحرمين' }
@@ -11,6 +13,8 @@ interface VersionRow {
   book_death: number | null
   chapter_name: string | null
   hadith_text: string
+  // match line, attached by attachMatnSnippets (lib/matnSnippet.ts)
+  snippet?: SnipPart[] | null
   chain_count: number
   takhrij_id: number | null
 }
@@ -48,6 +52,7 @@ export default async function TakhrijPage({
                 b.takhrij_death AS book_death,
                 ht.chapter_text AS chapter_name,
                 LEFT(regexp_replace(COALESCE(ht.tarf, ''), '<[^>]+>', ' ', 'g'), 350) AS hadith_text,
+                ${snipColumns('ht.tarf')},
                 tk.group_id AS takhrij_id,
                 (SELECT COUNT(DISTINCT ic.id)::int
                  FROM isnad_chains ic
@@ -62,7 +67,10 @@ export default async function TakhrijPage({
          ORDER BY ht.main_id, b.takhrij_death ASC NULLS LAST
          LIMIT 100`,
         [searchPattern]
-      ).catch(() => ({ rows: [] as VersionRow[] })),
+      ).catch(err => {
+        console.error('takhrij search failed:', err)
+        return { rows: [] as VersionRow[] }
+      }),
 
       pool.query<JudgmentRow>(
         `SELECT DISTINCT ON (hj.hadith_id)
@@ -82,7 +90,7 @@ export default async function TakhrijPage({
       ).catch(() => ({ rows: [] })),
     ])
 
-    results = searchRes.rows
+    results = await attachMatnSnippets(searchRes.rows, [query])
     judgments = judgmentsRes.rows
 
     // Group by takhrij_id
@@ -245,6 +253,7 @@ export default async function TakhrijPage({
                         <p className="text-sm text-gray-800 leading-relaxed line-clamp-2">
                           {v.hadith_text}{v.hadith_text?.length >= 350 ? '...' : ''}
                         </p>
+                        <MatnMatchLine parts={v.snippet} />
                         <Link href={`/hadith/${v.hadith_id}`}
                           className="text-xs text-green-700 hover:underline mt-1 inline-block">
                           الحديث بأسانيده ←
