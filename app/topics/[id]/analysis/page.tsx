@@ -90,7 +90,9 @@ export default async function TopicAnalysisPage({
          FROM hadith_subjects hs
          JOIN subject_items si ON si.id = hs.subject_id
          JOIN hadith_toc ht ON ht.main_id = hs.paragraph_main_id
-         JOIN narrators n ON n.id = ht.narrator_id_array[1] AND n.is_companion = true
+         JOIN isnad_hadiths ih ON ih.hadith_id = ht.main_id
+         JOIN isnad_chains ic ON ic.id = ih.isnad_id
+         JOIN narrators n ON n.id = ic.narrator_id_array[1] AND n.is_companion = true
          WHERE si.left_value > $1 AND si.right_value < $2
            AND ht.is_leaf = true AND ht.is_paragraph = true
          GROUP BY n.id, n.name

@@ -44,7 +44,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
        LEFT JOIN narrators n ON j.scientist_id = n.id
        WHERE j.hadith_id = $1
        ORDER BY n.death_year_num ASC NULLS LAST
-       LIMIT 30`,
+       LIMIT 300`,
       [mainId]
     ),
     pool.query(
@@ -86,7 +86,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
        JOIN subject_items si ON si.id = hs.subject_id
        WHERE hs.paragraph_main_id = $1
        ORDER BY si.left_value
-       LIMIT 15`,
+       LIMIT 300`,
       [mainId]
     ).catch(() => ({ rows: [] })),
     pool.query(

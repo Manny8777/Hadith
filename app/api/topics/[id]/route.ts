@@ -33,7 +33,7 @@ export async function GET(
        si.is_leaf,
        si.left_value,
        si.right_value,
-       COUNT(DISTINCT hs.hadith_id) AS hadith_count
+       COUNT(DISTINCT hs.paragraph_main_id) AS hadith_count
      FROM subject_items si
      LEFT JOIN hadith_subjects hs ON hs.subject_id = si.id
      WHERE si.parent_id = $1

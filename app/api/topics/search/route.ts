@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
   const { rows } = await pool.query(
     `SELECT si.id, si.title, si.is_leaf,
-            COUNT(hs.hadith_id) as hadith_count
+            COUNT(DISTINCT hs.paragraph_main_id) as hadith_count
      FROM subject_items si
      LEFT JOIN hadith_subjects hs ON hs.subject_id = si.id
      WHERE si.title ILIKE $1

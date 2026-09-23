@@ -247,12 +247,11 @@ export default async function BookPage({
                  AND left_value > t.left_value AND left_value < t.right_value) AS hadith_count
        FROM hadith_toc t
        WHERE book_id = $2 AND parent_id = $1 AND is_leaf = false
-       ORDER BY left_value
-       LIMIT 200`,
+       ORDER BY left_value`,
       [rootId, bookId]
     ) : pool.query(
       `SELECT main_id, content, chapter_text, section_text, left_value, right_value, 0 as hadith_count
-       FROM hadith_toc WHERE book_id = $1 AND is_leaf = false ORDER BY left_value LIMIT 100`,
+       FROM hadith_toc WHERE book_id = $1 AND is_leaf = false ORDER BY left_value`,
       [bookId]
     ),
     // First few hadiths as a preview

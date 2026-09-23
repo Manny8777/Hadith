@@ -127,7 +127,7 @@ export default async function TopicItemPage({
   // Check if has children
   const { rows: children } = await pool.query<ChildItem>(
     `SELECT si.id, si.title, si.is_leaf, si.left_value,
-            COUNT(DISTINCT hs.id) AS hadith_count
+            COUNT(DISTINCT hs.paragraph_main_id) AS hadith_count
      FROM subject_items si
      LEFT JOIN hadith_subjects hs ON hs.subject_id = si.id
      WHERE si.parent_id = $1
@@ -170,7 +170,7 @@ export default async function TopicItemPage({
       : ''
 
     const { rows } = await pool.query<HadithRow>(
-      `SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf, h.part_num, h.page_num,
+      `SELECT DISTINCT h.main_id, h.book_id, b.title AS book_name, h.tarf, h.part_num, h.page_num,
               h.section_text, h.chapter_text, h.tarqeem_harf, h.tarqeem_matboa1, jg.grade_hint,
               ${snipColumns('h.content')}
        FROM hadith_subjects hs
@@ -212,7 +212,7 @@ export default async function TopicItemPage({
         ? `AND (to_tsvector('simple', normalize_hadith(coalesce(h.tarf,''))) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2}))
              OR to_tsvector('simple', normalize_hadith(${visible})) @@ plainto_tsquery('simple', normalize_hadith($${hasGradeFilter ? 2 : 2})))`
         : ''
-      countQuery = `SELECT COUNT(*) FROM hadith_subjects hs
+      countQuery = `SELECT COUNT(DISTINCT hs.paragraph_main_id) FROM hadith_subjects hs
          JOIN hadith_toc h ON h.main_id = hs.paragraph_main_id
          LEFT JOIN LATERAL (
            SELECT CASE
@@ -230,7 +230,7 @@ export default async function TopicItemPage({
            ${countTextClause}`
       countParams = hasTextFilter ? [itemId, q] : [itemId]
     } else {
-      countQuery = `SELECT COUNT(*) FROM hadith_subjects WHERE subject_id = $1`
+      countQuery = `SELECT COUNT(DISTINCT paragraph_main_id) FROM hadith_subjects WHERE subject_id = $1`
       countParams = [itemId]
     }
 

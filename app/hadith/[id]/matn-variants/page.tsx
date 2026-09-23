@@ -13,6 +13,8 @@ interface VersionRow {
   chain_count: number
   judgment: string | null
   companion_name: string | null
+  match_sort: number | null
+  label: string | null
 }
 
 export default async function MatnVariantsPage({
@@ -25,14 +27,23 @@ export default async function MatnVariantsPage({
   if (isNaN(mainId)) notFound()
 
   const [mainRes, versionsRes] = await Promise.all([
-    pool.query<{ id: number; text: string; book_name: string; takhrij_id: number | null }>(
-      `SELECT ht.main_id AS id, ht.tarf AS text, b.title AS book_name, ht.takhrij_id
+    pool.query<{ id: number; text: string; book_name: string }>(
+      `SELECT ht.main_id AS id, ht.tarf AS text, b.title AS book_name
        FROM hadith_toc ht JOIN books b ON b.id = ht.book_id WHERE ht.main_id = $1`,
       [mainId]
-    ).catch(() => ({ rows: [] })),
+    ),
 
     pool.query<VersionRow>(
-      `SELECT ht.main_id AS hadith_id,
+      `WITH variants AS (
+         SELECT slave_hadith_id AS other_id, match_sort, label_id
+           FROM matn_comparison_hadith WHERE master_hadith_id = $1
+         UNION
+         SELECT master_hadith_id AS other_id, match_sort, label_id
+           FROM matn_comparison_hadith WHERE slave_hadith_id = $1
+         UNION
+         SELECT $1::int AS other_id, (-1)::smallint AS match_sort, NULL::smallint AS label_id
+       )
+       SELECT ht.main_id AS hadith_id,
               b.title AS book_name,
               b.takhrij_death AS book_death,
               ht.chapter_text AS chapter_name,
@@ -43,27 +54,30 @@ export default async function MatnVariantsPage({
               (SELECT n.name FROM isnad_chains ic
                JOIN isnad_hadiths ih ON ih.isnad_id = ic.id AND ih.hadith_id = ht.main_id
                JOIN narrators n ON n.id = ic.narrator_id_array[1]
-               WHERE n.is_companion = true LIMIT 1) AS companion_name
-       FROM hadith_toc ht
+               WHERE n.is_companion = true LIMIT 1) AS companion_name,
+              v.match_sort,
+              l.phrase AS label
+       FROM variants v
+       JOIN hadith_toc ht ON ht.main_id = v.other_id
        JOIN books b ON b.id = ht.book_id
-       WHERE ht.takhrij_id = (SELECT takhrij_id FROM hadith_toc WHERE main_id = $1)
-         AND ht.takhrij_id IS NOT NULL
-       ORDER BY b.takhrij_death ASC NULLS LAST, ht.main_id
+       LEFT JOIN matn_comparison_labels l ON l.id = v.label_id
+       ORDER BY v.match_sort ASC, b.takhrij_death ASC NULLS LAST, ht.main_id
        LIMIT 15`,
       [mainId]
-    ).catch(() => ({ rows: [] as VersionRow[] })),
+    ),
   ])
 
   const main = mainRes.rows[0]
   if (!main) notFound()
 
   const versions = versionsRes.rows
-  if (versions.length === 0) {
+  const parallelCount = Math.max(versions.length - 1, 0)
+  if (versions.length <= 1) {
     return (
       <div dir="rtl">
         <h1 className="text-xl font-bold text-green-900 mb-3">تحليل المتن</h1>
         <div className="bg-amber-50 rounded-xl p-4 text-sm text-amber-800">
-          هذا الحديث لا يحمل رقم تخريج — لا توجد روايات موازية للمقارنة
+          لا توجد روايات موازية لهذا الحديث في قاعدة مقارنة المتون
         </div>
         <Link href={`/hadith/${mainId}`} className="text-sm text-green-700 hover:underline mt-3 block">← العودة للحديث</Link>
       </div>
@@ -124,7 +138,7 @@ export default async function MatnVariantsPage({
         </div>
         <h1 className="text-xl font-bold text-green-900 mb-2">تحليل الفروق النصية بين الروايات</h1>
         <p className="text-sm text-gray-500">
-          {versions.length} رواية موازية — مقارنة اللفظ وبيان الزيادات والاختلافات
+          {parallelCount} رواية موازية — مقارنة اللفظ وبيان الزيادات والاختلافات
         </p>
       </div>
 
@@ -157,6 +171,11 @@ export default async function MatnVariantsPage({
                 {v.companion_name && (
                   <span className="text-xs bg-amber-50 text-amber-800 border border-amber-100 px-2 py-0.5 rounded-full">
                     {v.companion_name}
+                  </span>
+                )}
+                {v.label && (
+                  <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
+                    {v.label}
                   </span>
                 )}
                 {v.judgment && (

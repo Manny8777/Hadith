@@ -76,8 +76,7 @@ export default async function ServiceContentPage({
     pool.query<ChildNode>(
       `SELECT id, section_text, part_text, tarf, is_leaf, part_num, page_num
        FROM hadith_service_content WHERE parent_id = $1
-       ORDER BY part_num, id
-       LIMIT 50`,
+       ORDER BY part_num, id`,
       [nodeId]
     ),
     pool.query<{ id: number; section_text: string | null; part_text: string | null }>(

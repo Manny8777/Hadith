@@ -39,7 +39,9 @@ export default async function TopicsCompanionsPage({
     `SELECT n.id AS companion_id, n.name AS companion_name,
             COUNT(DISTINCT ht.main_id)::int AS total_hadiths
      FROM narrators n
-     JOIN hadith_toc ht ON ht.narrator_id_array[1] = n.id
+     JOIN isnad_chains ic ON ic.narrator_id_array[1] = n.id
+     JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+     JOIN hadith_toc ht ON ht.main_id = ih.hadith_id
      WHERE n.is_companion = true
        AND ht.is_leaf = true AND ht.is_paragraph = true
      GROUP BY n.id, n.name
@@ -74,18 +76,20 @@ export default async function TopicsCompanionsPage({
   // Build the cross-reference counts
   // For each companion × category: count distinct hadiths tagged under that category's subjects
   const cellsRes = await pool.query<CellRow>(
-    `SELECT ht.narrator_id_array[1] AS companion_id,
+    `SELECT ic.narrator_id_array[1] AS companion_id,
             sc.id AS cat_id,
             COUNT(DISTINCT ht.main_id)::int AS cnt
      FROM hadith_toc ht
+     JOIN isnad_hadiths ih ON ih.hadith_id = ht.main_id
+     JOIN isnad_chains ic ON ic.id = ih.isnad_id
      JOIN hadith_subjects hs ON hs.paragraph_main_id = ht.main_id
      JOIN subject_items si ON si.id = hs.subject_id
      JOIN subject_categories sc ON sc.left_value < si.left_value AND sc.right_value > si.right_value
          AND sc.parent_id = 1
-     WHERE ht.narrator_id_array[1] = ANY($1::int[])
+     WHERE ic.narrator_id_array[1] = ANY($1::int[])
        AND sc.id = ANY($2::int[])
        AND ht.is_leaf = true AND ht.is_paragraph = true
-     GROUP BY ht.narrator_id_array[1], sc.id`,
+     GROUP BY ic.narrator_id_array[1], sc.id`,
     [companionIds, catIds]
   ).catch(() => ({ rows: [] }))
 

@@ -34,33 +34,25 @@ export default async function NarratorTeachersPage({
     ).catch(() => ({ rows: [] })),
 
     pool.query<TeacherRow>(
+      // The original's الشيوخ tab is NounsShyoukhTalamize (per-pair مرويات count) → narrator_teachers,
+      // which is at exact parity with the engine. Deriving teachers from the chains gives a different,
+      // smaller set, so the legacy table is the source of truth here.
       `SELECT
          n.id AS teacher_id,
          n.name AS teacher_name,
          n.abb_name AS teacher_abb,
          n.martaba_ibn_hajar AS teacher_grade,
          n.death_year AS teacher_death,
-         n.city AS teacher_city,
+         COALESCE(n.birth_city, n.death_city) AS teacher_city,
          COALESCE(n.is_companion, false) AS is_companion,
-         COUNT(DISTINCT ic.id)::int AS chain_count,
-         COUNT(DISTINCT ih.hadith_id)::int AS hadith_count,
-         COUNT(DISTINCT ht.book_id)::int AS book_count,
-         STRING_AGG(DISTINCT b.title, '، ' ORDER BY b.title) AS book_names
-       FROM isnad_chains ic
-       CROSS JOIN LATERAL (
-         SELECT t.ord AS nar_pos
-         FROM unnest(ic.narrator_id_array) WITH ORDINALITY AS t(nid, ord)
-         WHERE t.nid = $1
-         LIMIT 1
-       ) pos
-       JOIN narrators n ON n.id = ic.narrator_id_array[pos.nar_pos - 1]
-       JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
-       JOIN hadith_toc ht ON ht.main_id = ih.hadith_id
-       JOIN books b ON b.id = ht.book_id
-       WHERE $1 = ANY(ic.narrator_id_array)
-         AND pos.nar_pos > 1
-       GROUP BY n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.death_year, n.city, n.is_companion
-       ORDER BY hadith_count DESC
+         0::int AS chain_count,
+         nt.hadiths_count::int AS hadith_count,
+         0::int AS book_count,
+         NULL::text AS book_names
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.shyoukh_id
+       WHERE nt.rawy_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
        LIMIT 80`,
       [narId]
     ).catch(() => ({ rows: [] as TeacherRow[] })),
@@ -108,7 +100,7 @@ export default async function NarratorTeachersPage({
           الشيوخ — روى عنهم
         </h1>
         <p className="text-sm text-gray-500">
-          الرواة الذين روى عنهم {narrator.abb_name || narrator.name} في الأسانيد المسجَّلة
+          الرواة الذين روى عنهم {narrator.abb_name || narrator.name} — قائمة الشيوخ ومروياتهم في الموسوعة
         </p>
       </div>
 
@@ -186,9 +178,11 @@ export default async function NarratorTeachersPage({
                     <div className="text-xs font-medium text-green-800">
                       {t.hadith_count.toLocaleString('ar-EG')} ح
                     </div>
-                    <div className="text-xs text-gray-400">
-                      {t.book_count} كتاب
-                    </div>
+                    {t.book_count > 0 && (
+                      <div className="text-xs text-gray-400">
+                        {t.book_count} كتاب
+                      </div>
+                    )}
                   </div>
                   <Link href={`/narrator/${t.teacher_id}`}
                     className="text-xs text-green-600 hover:underline shrink-0 hidden sm:block">←</Link>

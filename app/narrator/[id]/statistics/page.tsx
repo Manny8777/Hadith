@@ -64,8 +64,8 @@ export default async function NarratorStatisticsPage({ params }: { params: Promi
       `SELECT si.title AS subject, COUNT(DISTINCT ih.hadith_id)::int AS hadith_count
        FROM isnad_chains ic
        JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
-       JOIN hadith_subjects hs ON hs.hadith_id = ih.hadith_id
-       JOIN subject_index si ON si.id = hs.subject_id
+       JOIN hadith_subjects hs ON hs.paragraph_main_id = ih.hadith_id
+       JOIN subject_items si ON si.id = hs.subject_id
        WHERE $1 = ANY(ic.narrator_id_array)
        GROUP BY si.id, si.title
        ORDER BY hadith_count DESC
