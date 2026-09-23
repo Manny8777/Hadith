@@ -19,6 +19,10 @@ interface SearchResult {
   tarqeem_matboa1?: string | null
   grade_hint?: string | null
   parallel_count?: number | null
+  // Match line for the matn, built server-side: the opening words and each place the query matches
+  // with a couple of words either side, elided with '…'. null when the query has no text terms or
+  // the match is beyond the text the server reads for it.
+  snippet?: { t: string; hit: boolean }[] | null
 }
 
 interface Book { id: number; title: string }
@@ -581,6 +585,29 @@ function SearchInner() {
             <p className="text-gray-800 text-sm leading-relaxed line-clamp-4">
               {stripTags(r.tarf).slice(0, 300) || '...'}
             </p>
+            {/* The match line: where the query actually falls in the matn, with the matched words
+                marked. Without it a match deep in a long matn was invisible in the results. */}
+            {r.snippet && r.snippet.length > 0 && (
+              <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2">
+                <span className="block text-[10px] font-semibold text-amber-700 mb-1">
+                  موضع المطابقة في المتن
+                </span>
+                <p className="text-sm leading-relaxed text-gray-700">
+                  {r.snippet.map((part, i) => (
+                    <span key={i}>
+                      {i > 0 ? ' ' : ''}
+                      {part.hit ? (
+                        <mark className="rounded bg-amber-200 px-0.5 font-semibold text-amber-900">
+                          {part.t}
+                        </mark>
+                      ) : (
+                        part.t
+                      )}
+                    </span>
+                  ))}
+                </p>
+              </div>
+            )}
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               {(r.part_num > 0 || r.page_num > 0) && (
                 <span className="text-xs text-gray-400">
