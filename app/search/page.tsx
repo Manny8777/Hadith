@@ -11,6 +11,8 @@ interface SearchResult {
   main_id: number
   book_id: number
   book_name: string
+  // 'service' for الكتب الخدمية rows (they live under /service-content, not a hadith id)
+  result_kind?: string | null
   tarf: string
   section_text: string
   chapter_text: string
@@ -33,6 +35,9 @@ interface SubjectCat { id: number; title: string }
 type SearchScope = 'both' | 'tarf'
 // match: 'phrase' = متتالية (the original's default), 'all' = كل الكلمات, 'any' = أي من الكلمات
 type MatchMode = 'phrase' | 'all' | 'any'
+// src: the original's two catalogues — كتب الحديث (hadiths, hadith_toc) and الكتب الخدمية
+// (شروح/تراجم/جرح وتعديل/أماكن, hadith_service_content, 212 books)
+type BookSource = 'hadith' | 'service'
 
 function stripTags(html: string) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -57,6 +62,9 @@ function SearchInner() {
   const [matchMode, setMatchMode] = useState<MatchMode>(
     (searchParams.get('match') as MatchMode) || 'phrase'
   )
+  const [bookSource, setBookSource] = useState<BookSource>(
+    searchParams.get('src') === 'service' ? 'service' : 'hadith'
+  )
 
   // The search box shows connectives as blocked-out tokens behind the text, so the reader can see
   // which words are operators and which are words — و and أو are also letters inside ordinary words.
@@ -72,7 +80,7 @@ function SearchInner() {
   const [mode, setMode] = useState<string>('text')
 
   useEffect(() => {
-    fetch('/api/books')
+    fetch('/api/books?src=' + bookSource)
       .then(r => r.json())
       .then(data => setBooks(Array.isArray(data) ? data : data.books || []))
       .catch(() => {})
@@ -80,14 +88,15 @@ function SearchInner() {
       .then(r => r.json())
       .then(data => setSubjectCats(Array.isArray(data) ? data : []))
       .catch(() => {})
-  }, [])
+  }, [bookSource])
 
   const doSearch = useCallback(async (
     query: string,
     bId: string,
     pg = 1,
     nid = '',
-    scope: SearchScope = searchScope
+    scope: SearchScope = searchScope,
+    src: BookSource = bookSource
   ) => {
     setLoading(true)
     setSearched(true)
@@ -103,7 +112,7 @@ function SearchInner() {
         if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
       } else {
         if (query.trim().length < 2) { setLoading(false); return }
-        url = `/api/search?q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}${matchMode !== 'phrase' ? `&match=${matchMode}` : ''}`
+        url = `/api/search?q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}${matchMode !== 'phrase' ? `&match=${matchMode}` : ''}${src === 'service' ? '&src=service' : ''}`
         if (bId) url += `&book_id=${encodeURIComponent(bId)}`
         if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
         if (subjectCatId) url += `&subject_cat_id=${encodeURIComponent(subjectCatId)}`
@@ -120,7 +129,7 @@ function SearchInner() {
     } finally {
       setLoading(false)
     }
-  }, [gradeFilter, subjectCatId, maxDepth, searchScope, matchMode])
+  }, [gradeFilter, subjectCatId, maxDepth, searchScope, matchMode, bookSource])
 
   useEffect(() => {
     if (narratorIdParam) {
@@ -148,8 +157,9 @@ function SearchInner() {
       if (bookId) url += `&book_id=${encodeURIComponent(bookId)}`
       if (searchScope !== 'both') url += `&search_scope=${searchScope}`
       if (matchMode !== 'phrase') url += `&match=${matchMode}`
+      if (bookSource === 'service') url += `&src=service`
       router.push(url)
-      doSearch(trimmed, bookId, 1, '', searchScope)
+      doSearch(trimmed, bookId, 1, '', searchScope, bookSource)
     }
   }
 
@@ -158,6 +168,15 @@ function SearchInner() {
     // Re-run search immediately with new scope if we already have results
     if (searched && (q.trim().length >= 2 || isNarratorMode)) {
       doSearch(q, bookId, 1, narratorIdParam, newScope)
+    }
+  }
+
+  function handleSourceChange(newSource: BookSource) {
+    setBookSource(newSource)
+    // The two catalogues share no book, so a book filter would silently return nothing: drop it.
+    setBookId('')
+    if (searched && q.trim().length >= 2 && !isNarratorMode) {
+      doSearch(q, '', 1, '', searchScope, newSource)
     }
   }
 
@@ -401,6 +420,34 @@ function SearchInner() {
         {/* Book + Grade filters */}
         {!isNarratorMode && (
           <div className="space-y-2">
+            <div className="flex gap-3 items-center flex-wrap">
+              <label className="text-sm text-gray-600 shrink-0 min-w-24">نطاق الكتب:</label>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => handleSourceChange('hadith')}
+                  className={`px-3 py-1.5 transition-colors ${
+                    bookSource === 'hadith' ? 'bg-green-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  كتب الحديث
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSourceChange('service')}
+                  className={`px-3 py-1.5 border-r border-gray-200 transition-colors ${
+                    bookSource === 'service' ? 'bg-green-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  الكتب الخدمية (شروح وتراجم وجرح وتعديل)
+                </button>
+              </div>
+              {bookSource === 'service' && (
+                <span className="text-xs text-gray-400">
+                  — لا أسانيد ولا درجات هنا؛ فلاتر الدرجة والموضوع وعلو الإسناد لا تنطبق
+                </span>
+              )}
+            </div>
             <div className="flex gap-3 items-center">
               <label className="text-sm text-gray-600 shrink-0 min-w-24">حسب الكتاب:</label>
               <select
@@ -419,6 +466,7 @@ function SearchInner() {
               <label className="text-sm text-gray-600 shrink-0 min-w-24">درجة الحديث:</label>
               <select
                 value={gradeFilter}
+                disabled={bookSource === 'service'}
                 onChange={e => setGradeFilter(e.target.value)}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                 dir="rtl"
@@ -449,6 +497,7 @@ function SearchInner() {
                 <label className="text-sm text-gray-600 shrink-0 min-w-24">حسب الموضوع:</label>
                 <select
                   value={subjectCatId}
+                  disabled={bookSource === 'service'}
                   onChange={e => setSubjectCatId(e.target.value)}
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                   dir="rtl"
@@ -464,6 +513,7 @@ function SearchInner() {
               <label className="text-sm text-gray-600 shrink-0 min-w-24">علو الإسناد:</label>
               <select
                 value={maxDepth}
+                disabled={bookSource === 'service'}
                 onChange={e => setMaxDepth(e.target.value)}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                 dir="rtl"
@@ -527,7 +577,8 @@ function SearchInner() {
         <p className="text-gray-600 mb-4">
           {total > 0 ? (
             <>
-              <span className="font-semibold">{total.toLocaleString('ar-EG')}</span> حديث
+              <span className="font-semibold">{total.toLocaleString('ar-EG')}</span>{' '}
+              {bookSource === 'service' ? 'مادة' : 'حديث'}
               {!isNarratorMode && bookId && books.length > 0 && (
                 <span className="text-amber-700 mr-2">
                   — في: {books.find(b => String(b.id) === bookId)?.title || ''}
@@ -564,9 +615,15 @@ function SearchInner() {
       <div className="grid gap-4">
         {results.map(r => (
           <div key={r.main_id} className="ui-card px-5 py-4 hover:border-green-300 transition-all flex flex-col gap-2">
-            <Link href={`/hadith/${r.main_id}`} className="block">
+            <Link
+              href={r.result_kind === 'service' ? `/service-content/${r.main_id}` : `/hadith/${r.main_id}`}
+              className="block"
+            >
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-xs text-green-700 font-semibold">{r.book_name}</span>
+              {r.result_kind === 'service' && (
+                <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full shrink-0">كتاب خدمي</span>
+              )}
               {r.grade_hint && (
                 <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${
                   r.grade_hint === 'صحيح' ? 'bg-green-100 text-green-700' :
@@ -604,9 +661,11 @@ function SearchInner() {
               )}
             </div>
           </Link>
-          <div className="flex justify-start mt-2">
-            <SaveHadith hadithId={r.main_id} />
-          </div>
+          {r.result_kind !== 'service' && (
+            <div className="flex justify-start mt-2">
+              <SaveHadith hadithId={r.main_id} />
+            </div>
+          )}
           </div>
         ))}
       </div>

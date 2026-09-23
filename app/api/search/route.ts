@@ -40,6 +40,9 @@ export async function GET(req: Request) {
   const searchScope = (searchParams.get('search_scope') ?? '').trim().toLowerCase() === 'tarf' ? 'tarf' : 'both'
   // match: 'all' (default, all words) | 'any' (أي من الكلمات) | 'phrase' (متتالية)
   const matchMode = parseMatch(searchParams.get('match'))
+  // src=service -> الكتب الخدمية (the 212 books with no hadiths of their own). The original offers
+  // both catalogues from the same dialog; the web only ever searched the 33 hadith books.
+  const bookSource = (searchParams.get('src') ?? '').trim().toLowerCase() === 'service' ? 'service' : 'hadith'
   const offset = (page - 1) * limit
 
   // The stored `content` is marked-up text (<متن>, <سند>, <رقم_حديث نوع="مطبوع">, hidden
@@ -336,6 +339,61 @@ export async function GET(req: Request) {
   }
 
   if (!q || q.length < 2) return NextResponse.json({ results: [], total: 0 })
+
+  // ---- الكتب الخدمية (service books) -----------------------------------------------------------
+  // Shuruh, biographies, jarh wa-ta'dil, place names: 212 books, 600,575 leaf rows, searched from the
+  // same dialog in the original (its كتب الحديث / الكتب الخدمية checkboxes). The web could not: those
+  // books are in the picker but every search returned nothing. The predicates are shared with the
+  // hadith branch verbatim by aliasing the table as h; chain, grade and subject filters do not apply.
+  if (bookSource === 'service') {
+    const conditions = ['h.is_leaf = true', textMatchExpr('h.tarf', 'h.content')]
+    const serviceParams: (string | number)[] = [q, limit, offset]
+    let serviceParamIdx = 4
+    if (bookId !== null) {
+      conditions.push(`h.book_id = $${serviceParamIdx}`)
+      serviceParams.push(bookId)
+      serviceParamIdx++
+    }
+
+    const serviceCountConditions = ['is_leaf = true', textMatchExpr('tarf', 'content')]
+    const serviceCountParams: (string | number)[] = [q]
+    if (bookId !== null) {
+      serviceCountConditions.push('book_id = $2')
+      serviceCountParams.push(bookId)
+    }
+
+    const [serviceRes, serviceCountRes] = await Promise.all([
+      pool.query(
+        `SELECT h.id AS main_id, h.book_id, h.book_name, h.tarf, h.section_text,
+                h.part_num, h.page_num,
+                ${snipColumns('h.content')},
+                'service' AS result_kind,
+                ts_rank(to_tsvector('simple', normalize_hadith(${rankDoc('h.tarf', 'h.content')})),
+                        ${queryExpr('$1')}) AS rank
+         FROM hadith_service_content h
+         WHERE ${conditions.join(' AND ')}
+         ORDER BY rank DESC, h.book_id, h.id
+         LIMIT $2 OFFSET $3`,
+        serviceParams
+      ),
+      pool.query(
+        `SELECT COUNT(*)::int AS total FROM hadith_service_content WHERE ${serviceCountConditions.join(' AND ')}`,
+        serviceCountParams
+      ),
+    ])
+
+    return NextResponse.json({
+      results: await attachMatnSnippets(serviceRes.rows, booleanTerms.map(t => t.term)),
+      total: serviceCountRes.rows[0].total,
+      total_hadiths: serviceCountRes.rows[0].total,
+      page,
+      limit,
+      mode: 'service',
+      source: 'service',
+      search_scope: searchScope,
+      match: matchMode,
+    })
+  }
 
   // Pure text search — normalized indexes (tashkeel-stripped + hamza-normalized)
   // Scope is controlled by search_scope param: 'tarf' = أطراف فقط, 'both' (default) = متن + أطراف
