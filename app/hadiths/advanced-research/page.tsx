@@ -1,5 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import MatnMatchLine from '@/app/components/MatnMatchLine'
+import { attachMatnSnippets, snipColumns, type SnipPart } from '@/lib/matnSnippet'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'البحث البحثي المتقدم — جامع خادم الحرمين' }
@@ -13,6 +15,8 @@ interface ResultRow {
   companion_name: string | null
   best_judgment: string | null
   takhrij_group_id: number | null
+  // Match line for the matn, attached by attachMatnSnippets (see lib/matnSnippet.ts)
+  snippet?: SnipPart[] | null
 }
 
 interface BookOption { id: number; title: string }
@@ -55,10 +59,19 @@ export default async function AdvancedResearchPage({
     JOIN LATERAL unnest(ic.narrator_id_array) AS nid ON true
     JOIN narrators nf ON nf.id = nid
     WHERE iha.hadith_id = ht.main_id
-      AND (nf.name ~* $2 OR nf.abb_name ~* $2)
+      AND (nf.name ~* $2::text OR nf.abb_name ~* $2::text)
   )`
 
   // $1=text, $2=narrator, $3=chapter, $4=book, $5=pageSize, $6=offset
+  // Why not the old `ht.tarf ~* $1 OR ht.content ~* $1`: the stored matn is fully vowelled
+  // (الْوَسْوَسَة), so a word typed without tashkeel could never match, and the page returned nothing
+  // for ordinary queries. This mirrors /api/search's text predicate: normalised (tashkeel and hamza
+  // folded, ة→ه) over tag-stripped text, as a phrase, which is also what the original app indexes.
+  const textMatchSql =
+    `(to_tsvector('simple', normalize_hadith(coalesce(ht.tarf, ''))) @@ ` +
+    `phraseto_tsquery('simple', normalize_hadith($1::text)) ` +
+    `OR to_tsvector('simple', normalize_hadith(regexp_replace(coalesce(ht.content, ''), '<[^>]*>', ' ', 'g'))) @@ ` +
+    `phraseto_tsquery('simple', normalize_hadith($1::text)))`
   const params = [textQ || null, narratorQ || null, chapterQ || null, bookId, pageSize, offset]
   const countParams = [textQ || null, narratorQ || null, chapterQ || null, bookId]
 
@@ -68,6 +81,7 @@ export default async function AdvancedResearchPage({
   const mainQuery = `
     SELECT ht.main_id AS hadith_id,
            LEFT(regexp_replace(coalesce(ht.tarf, ht.content, ''), '<[^>]+>', ' ', 'g'), 300) AS hadith_text,
+           ${snipColumns('ht.content')},
            b.title AS book_title,
            ht.chapter_text,
            (SELECT t.group_id FROM takhrij t WHERE t.hadith_id = ht.main_id LIMIT 1) AS takhrij_group_id,
@@ -93,29 +107,34 @@ export default async function AdvancedResearchPage({
     FROM hadith_toc ht
     JOIN books b ON b.id = ht.book_id
     WHERE ht.is_leaf = true AND ht.is_paragraph = true
-      AND ($1 IS NULL OR ht.tarf ~* $1 OR ht.content ~* $1)
-      AND ($3 IS NULL OR ht.chapter_text ~* $3)
-      AND ($4 IS NULL OR ht.book_id = $4)
-      AND ($2 IS NULL OR ${narratorSubquery})
+      AND ($1::text IS NULL OR ${textMatchSql})
+      AND ($3::text IS NULL OR ht.chapter_text ~* $3::text)
+      AND ($4::int IS NULL OR ht.book_id = $4::int)
+      AND ($2::text IS NULL OR ${narratorSubquery})
       ${gradeSql}
     ORDER BY ht.main_id
-    LIMIT $5 OFFSET $6`
+    LIMIT $5::int OFFSET $6::int`
 
   const countQuery = `
     SELECT COUNT(*)::int AS cnt
     FROM hadith_toc ht
     WHERE ht.is_leaf = true AND ht.is_paragraph = true
-      AND ($1 IS NULL OR ht.tarf ~* $1 OR ht.content ~* $1)
-      AND ($3 IS NULL OR ht.chapter_text ~* $3)
-      AND ($4 IS NULL OR ht.book_id = $4)
-      AND ($2 IS NULL OR ${narratorSubquery})
+      AND ($1::text IS NULL OR ${textMatchSql})
+      AND ($3::text IS NULL OR ht.chapter_text ~* $3::text)
+      AND ($4::int IS NULL OR ht.book_id = $4::int)
+      AND ($2::text IS NULL OR ${narratorSubquery})
       ${gradeSql}`
 
   const [booksRes, resultsRes, countRes] = await Promise.all([
     pool.query<BookOption>(`SELECT id, title FROM books ORDER BY tarteeb, id LIMIT 100`)
       .catch(() => ({ rows: [] as BookOption[] })),
     hasSearch
-      ? pool.query<ResultRow>(mainQuery, params).catch(() => ({ rows: [] as ResultRow[] }))
+      ? pool.query<ResultRow>(mainQuery, params).catch(err => {
+          // Never swallow silently: a hidden fallback here is exactly how this page's search stayed
+          // broken (it returned "no results" for every query instead of erroring).
+          console.error('advanced-research mainQuery failed:', err)
+          return { rows: [] as ResultRow[] }
+        })
       : Promise.resolve({ rows: [] as ResultRow[] }),
     hasSearch
       ? pool.query<{ cnt: number }>(countQuery, countParams).catch(() => ({ rows: [{ cnt: 0 }] }))
@@ -123,7 +142,9 @@ export default async function AdvancedResearchPage({
   ])
 
   const books = booksRes.rows
-  const allResults = resultsRes.rows
+  // The same match line the search page shows: where the text query falls in the matn, so a match
+  // buried in a long matn is visible here too.
+  const allResults = await attachMatnSnippets(resultsRes.rows, [textQ])
   const results = minChains > 0 ? allResults.filter(r => r.chain_count >= minChains) : allResults
   const totalCount = countRes.rows[0]?.cnt || 0
 
@@ -255,6 +276,7 @@ export default async function AdvancedResearchPage({
               <p className="text-sm text-gray-900 leading-relaxed mb-2">
                 {h.hadith_text}{h.hadith_text?.length === 300 && '...'}
               </p>
+              <MatnMatchLine parts={h.snippet} />
               <div className="flex gap-3 text-xs">
                 <Link href={`/hadith/${h.hadith_id}`} className="text-green-700 hover:underline">تفاصيل ←</Link>
                 <Link href={`/hadith/${h.hadith_id}/research-report`} className="text-blue-600 hover:underline">تقرير ←</Link>

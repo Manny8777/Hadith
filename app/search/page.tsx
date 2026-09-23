@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import HadithNumber from '@/app/components/HadithNumber'
 import SaveHadith from '@/app/components/SaveHadith'
+import MatnMatchLine from '@/app/components/MatnMatchLine'
 
 interface SearchResult {
   main_id: number
@@ -585,29 +586,7 @@ function SearchInner() {
             <p className="text-gray-800 text-sm leading-relaxed line-clamp-4">
               {stripTags(r.tarf).slice(0, 300) || '...'}
             </p>
-            {/* The match line: where the query actually falls in the matn, with the matched words
-                marked. Without it a match deep in a long matn was invisible in the results. */}
-            {r.snippet && r.snippet.length > 0 && (
-              <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2">
-                <span className="block text-[10px] font-semibold text-amber-700 mb-1">
-                  موضع المطابقة في المتن
-                </span>
-                <p className="text-sm leading-relaxed text-gray-700">
-                  {r.snippet.map((part, i) => (
-                    <span key={i}>
-                      {i > 0 ? ' ' : ''}
-                      {part.hit ? (
-                        <mark className="rounded bg-amber-200 px-0.5 font-semibold text-amber-900">
-                          {part.t}
-                        </mark>
-                      ) : (
-                        part.t
-                      )}
-                    </span>
-                  ))}
-                </p>
-              </div>
-            )}
+            <MatnMatchLine parts={r.snippet} />
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               {(r.part_num > 0 || r.page_num > 0) && (
                 <span className="text-xs text-gray-400">

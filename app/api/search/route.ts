@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import { ANY_GRADE, gradeExistsClause, gradeHintCase, normalizeGrade } from '@/lib/searchGrades'
+import { attachMatnSnippets, snipColumns } from '@/lib/matnSnippet'
 
 export const dynamic = 'force-dynamic'
 
@@ -202,152 +203,6 @@ export async function GET(req: Request) {
   const useBoolean = booleanTerms.length > 1
     || (booleanTerms.length === 1 && (booleanTerms[0].regex !== null || booleanTerms[0].conn === 'NOT'))
 
-  // ---------------------------------------------------------------------------
-  // Match lines for the result list
-  // ---------------------------------------------------------------------------
-  // The result card only had the tarf, so a match buried in a long matn was invisible. Each row now
-  // carries a concordance-style line: the opening words, then every place the query matches with a
-  // couple of words either side, elided with '…'.
-  type SnipPart = { t: string; hit: boolean }
-  type SnipNeedle = { words: string[]; regex: RegExp | null }
-
-  // Readable matn text, capped: the match line never needs the whole matn, and the two arrays below
-  // must be built from the *same* truncated string so index i is the same word in both.
-  //
-  // The stored matn carries inline metadata — paragraph ids, page references, and the hadith's own
-  // numbers (<رقم_حديث نوع="حرف">1881</رقم_حديث>) — which read as noise in a match line. They are
-  // dropped here so the line reads as matn. This affects display only: matching keeps using
-  // visibleText, which retains them, so the verified result sets cannot move.
-  const snipClean = (alias: string): string =>
-    `regexp_replace(` +
-    `regexp_replace(` +
-    `regexp_replace(coalesce(${alias}, ''), '<رقم_حديث[^>]*>[^<]*</رقم_حديث>', ' ', 'g'), ` +
-    `'<(رقم_الفقرة|الصفحات|نه|تخريج)[^>]*/>', ' ', 'g'), ` +
-    `'<[^>]*>', ' ', 'g')`
-  const snipSrc = (alias: string): string => `left(${snipClean(alias)}, 6000)`
-
-  // Comparison form of a word: surrounding punctuation removed, so a needle finds 'الوسوسة' inside
-  // 'الوسوسة.' — unlike the search index, these arrays keep punctuation attached to the word.
-  const cleanWord = (w: string): string => w.replace(/^[^\p{L}\p{N}\p{M}]+|[^\p{L}\p{N}\p{M}]+$/gu, '')
-  // The stored matn also carries HTML entities; unescaped for display only.
-  const decodeEntities = (w: string): string =>
-    w.replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-
-  // The needles are normalised by the database's own normalise function, so the comparison uses
-  // exactly the same normalisation as the indexed text — no second implementation to drift.
-  async function snippetNeedles(terms: BoolTerm[]): Promise<SnipNeedle[]> {
-    const texts = terms.map(t => (t.term || '').trim()).filter(Boolean)
-    if (!texts.length) return []
-    const { rows } = await pool.query(
-      `SELECT ${texts.map((_, i) => `normalize_hadith($${i + 1}) AS n${i}`).join(', ')}`,
-      texts
-    )
-    const needles: SnipNeedle[] = []
-    terms.forEach((t, i) => {
-      const norm = String(rows[0]?.[`n${i}`] ?? '').trim()
-      if (!norm) return
-      if (t.regex) {
-        // 'صلا*' / 'الصل?' — the same word-scoped reading the matcher uses, one word at a time
-        const body = norm.split('').map(ch => (ch === '*' ? '.*' : ch === '?' ? '.' : escapeRx(ch))).join('')
-        needles.push({ words: [], regex: new RegExp(`^${body}$`) })
-      } else {
-        needles.push({ words: norm.split(/\s+/).map(cleanWord).filter(Boolean), regex: null })
-      }
-    })
-    return needles
-  }
-
-  function buildSnippet(disp: string[], norm: string[], needles: SnipNeedle[]): SnipPart[] | null {
-    if (!disp.length || disp.length !== norm.length || !needles.length) return null
-    const ranges: [number, number][] = []
-    for (let i = 0; i < norm.length; i++) {
-      if (!norm[i]) continue
-      for (const nd of needles) {
-        if (nd.regex) {
-          if (nd.regex.test(norm[i])) { ranges.push([i, 1]); break }
-          continue
-        }
-        if (!nd.words.length || i + nd.words.length > norm.length) continue
-        let ok = true
-        for (let k = 0; k < nd.words.length; k++) {
-          if (norm[i + k] !== nd.words[k]) { ok = false; break }
-        }
-        if (ok) { ranges.push([i, nd.words.length]); break }
-      }
-    }
-    if (!ranges.length) return null
-
-    const merged: [number, number][] = []
-    for (const [s, len] of ranges) {
-      const last = merged[merged.length - 1]
-      if (last && s <= last[0] + last[1]) last[1] = Math.max(last[1], s + len - last[0])
-      else merged.push([s, len])
-    }
-
-    const parts: SnipPart[] = []
-    const push = (t: string, hit = false) => parts.push({ t, hit })
-    // A window opened for one hit usually contains the others too, so mark by membership in all the
-    // merged ranges rather than only the range that opened the window.
-    const hitIdx = new Set<number>()
-    for (const [s, len] of merged) for (let i = s; i < s + len; i++) hitIdx.add(i)
-    // Marks the word's letters only: the punctuation stays outside the highlight, so the text is
-    // still exactly what the matn holds ('فضل [الزكاة].' rather than '[الزكاة.]').
-    const pushWord = (i: number) => {
-      const w = disp[i]
-      if (!hitIdx.has(i)) { push(w); return }
-      const m = w.match(/^([^\p{L}\p{N}\p{M}]*)([\s\S]*?)([^\p{L}\p{N}\p{M}]*)$/u)
-      if (!m || !m[2]) { push(w); return }
-      if (m[1]) push(m[1])
-      push(m[2], true)
-      if (m[3]) push(m[3])
-    }
-    // The opening words first (the reader needs to know which hadith this is), but never words the
-    // first window is about to show anyway.
-    const headEnd = Math.min(3, merged[0][0])
-    for (let i = 0; i < headEnd; i++) pushWord(i)
-    if (merged[0][0] > headEnd) push('…')
-
-    let shown = headEnd
-    let windows = 0
-    for (const [s, len] of merged) {
-      if (windows >= 3) break
-      const from = Math.max(shown, s - 2)
-      const to = Math.min(disp.length - 1, s + len - 1 + 2)
-      if (from > shown) push('…')
-      for (let i = from; i <= to; i++) pushWord(i)
-      shown = to + 1
-      windows++
-    }
-    if (shown < disp.length) push('…')
-    // Collapse neighbouring ellipses ('… …' reads as a mistake, not an elision).
-    return parts.filter((p, i) => !(p.t === '…' && parts[i - 1]?.t === '…'))
-  }
-
-  function escapeRx(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  }
-
-  async function attachSnippets<T extends Record<string, any>>(rows: T[], terms: BoolTerm[]): Promise<any[]> {
-    if (!rows.length || !terms.length) return rows
-    const needles = await snippetNeedles(terms)
-    return rows.map(r => {
-      const disp: string[] = Array.isArray(r.snip_disp) ? r.snip_disp : []
-      const norm: string[] = Array.isArray(r.snip_norm) ? r.snip_norm : []
-      delete r.snip_disp
-      delete r.snip_norm
-      const words = disp
-        .map((w, i) => ({ w: decodeEntities(w), n: cleanWord(norm[i] ?? '') }))
-        .filter(p => p.w !== '' && p.n !== '')
-      return {
-        ...r,
-        snippet: needles.length && words.length
-          ? buildSnippet(words.map(p => p.w), words.map(p => p.n), needles)
-          : null,
-      }
-    })
-  }
-
   // Helper: build the text-match SQL expression based on scope and match mode.
   // Scope `both` stays an OR of the two tsvector predicates so the planner can combine
   // idx_hadith_toc_tarf_norm with the stripped-content index (a concatenated document would
@@ -378,8 +233,7 @@ export async function GET(req: Request) {
         `SELECT DISTINCT ht.main_id, ht.book_id, b.title as book_name, ht.tarf,
                 ht.section_text, ht.chapter_text, ht.part_num, ht.page_num,
                 ht.tarqeem_harf, ht.tarqeem_matboa1,
-                regexp_split_to_array(btrim(${snipSrc('ht.content')}), '\\s+') AS snip_disp,
-                regexp_split_to_array(btrim(normalize_hadith(${snipSrc('ht.content')})), '\\s+') AS snip_norm,
+                ${snipColumns('ht.content')},
                 jg.grade_hint
          FROM isnad_hadiths iha
          JOIN isnad_chains ic ON iha.isnad_id = ic.id
@@ -418,7 +272,7 @@ export async function GET(req: Request) {
       ),
     ])
     return NextResponse.json({
-      results: await attachSnippets(hadithsRes.rows, booleanTerms),
+      results: await attachMatnSnippets(hadithsRes.rows, booleanTerms.map(t => t.term)),
       total: parseInt(countRes.rows[0]?.cnt || '0'),
       page,
       limit,
@@ -532,8 +386,7 @@ export async function GET(req: Request) {
     `SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf,
             h.section_text, h.chapter_text, h.part_num, h.page_num,
             h.tarqeem_harf, h.tarqeem_matboa1,
-            regexp_split_to_array(btrim(${snipSrc('h.content')}), '\\s+') AS snip_disp,
-            regexp_split_to_array(btrim(normalize_hadith(${snipSrc('h.content')})), '\\s+') AS snip_norm,
+            ${snipColumns('h.content')},
             ts_rank(to_tsvector('simple', normalize_hadith(${rankDoc('h.tarf', 'h.content')})),
                     ${queryExpr('$1')}) AS rank,
             jg.grade_hint,
@@ -613,7 +466,7 @@ export async function GET(req: Request) {
   )
 
   return NextResponse.json({
-    results: await attachSnippets(rows, booleanTerms),
+    results: await attachMatnSnippets(rows, booleanTerms.map(t => t.term)),
     total: countResult.rows[0].total,
     // The original app's result list shows hadith rows only — rows without a printed hadith
     // number (book introductions and the like) are matched but never listed. `total` counts
