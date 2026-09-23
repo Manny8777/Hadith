@@ -31,7 +31,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       [mainId]
     ),
     pool.query(
-      `SELECT j.say_text, j.scientist_id,
+      `SELECT j.id as say_id, j.legacy_say_id, j.say_text, j.scientist_id,
               n.name as scientist_name, n.abb_name,
               n.death_year_num, n.martaba_ibn_hajar,
               CASE
@@ -48,18 +48,17 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       [mainId]
     ),
     pool.query(
-      `SELECT DISTINCT ON (n.id, hjl.service_main_id)
-              n.id as scientist_id,
+      // The original prints each saying together with the source it is linked to (SayLink →
+      // ServiceMainID). hadith_judgment_links holds exactly those links, per saying, so the book no
+      // longer has to be guessed from a death year or a ربط attribute and then assigned positionally.
+      `SELECT DISTINCT ON (jh.say_id)
+              jh.say_id,
               hjl.service_main_id, hsc.book_name, hsc.part_num, hsc.page_num
-       FROM (SELECT DISTINCT j.scientist_id FROM hadith_judgments j WHERE j.hadith_id = $1 AND j.scientist_id IS NOT NULL) jd
-       JOIN narrators n ON n.id = jd.scientist_id
-       JOIN hadith_judgment_hits jh ON jh.hadith_id = $1
+       FROM hadith_judgment_hits jh
        JOIN hadith_judgment_links hjl ON hjl.say_id = jh.say_id AND hjl.is_book_toc = false
        JOIN hadith_service_content hsc ON hsc.id = hjl.service_main_id
-       JOIN books b ON b.id = hsc.book_id
-       WHERE (b.takhrij_death = n.death_year_num
-              OR hsc.content LIKE '%ربط="' || n.id::text || '"%')
-       ORDER BY n.id, hjl.service_main_id`,
+       WHERE jh.hadith_id = $1
+       ORDER BY jh.say_id, hjl.service_main_id`,
       [mainId]
     ),
     pool.query(
@@ -275,26 +274,17 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const takhrijSummary = takhrijSummaryRes as { mutabaatCount: number; shawahidCount: number }
   const subjects = (subjectsRes as { rows: Array<{ id: number; title: string }> }).rows
   const relatedHadiths = (relatedRes as { rows: Array<{ main_id: number; tarf: string | null; book_title: string }> }).rows
-  // Build per-scientist source list (all distinct sources for each scientist on this hadith)
-  type SrcRow = { scientist_id: number; service_main_id: number; book_name: string; part_num: number; page_num: number }
-  const sourcesMap = new Map<number, SrcRow[]>()
+  // Each saying's source is its own link row (keyed by say_id), so a saying can no longer be shown
+  // under a book it is not linked to and the same text can no longer print under three books.
+  type SrcRow = { say_id: number; service_main_id: number; book_name: string; part_num: number; page_num: number }
+  const sourcesMap = new Map<number, SrcRow>()
   for (const src of (sourcesRes as { rows: SrcRow[] }).rows) {
-    const k = Number(src.scientist_id)
-    if (!sourcesMap.has(k)) sourcesMap.set(k, [])
-    sourcesMap.get(k)!.push(src)
+    sourcesMap.set(Number(src.say_id), src)
   }
-  // Cycle counter: assigns a different source to each successive judgment for the same scientist
-  const srcCursor = new Map<number, number>()
 
   const judgments = judgmentsRes.rows.map(j => {
     const sciId = j.scientist_id != null ? Number(j.scientist_id) : null
-    let src: SrcRow | null = null
-    if (sciId != null) {
-      const srcs = sourcesMap.get(sciId) || []
-      const idx = srcCursor.get(sciId) ?? 0
-      src = srcs[idx] ?? srcs[0] ?? null
-      srcCursor.set(sciId, idx + 1)
-    }
+    const src: SrcRow | null = j.legacy_say_id != null ? (sourcesMap.get(Number(j.legacy_say_id)) ?? null) : null
     return {
       say_text: j.say_text as string,
       scientist_id: sciId,
