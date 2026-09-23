@@ -1,6 +1,6 @@
 """
 seed.py — loads extracted JSON into Railway PostgreSQL
-Usage: DATABASE_URL="postgresql://..." python3 seed.py
+Usage: DATABASE_URL="$DATABASE_URL" python3 seed.py
 
 Uses streaming JSON for large tables (BookTOC_Hadith, etc.)
 """

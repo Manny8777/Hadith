@@ -1,5 +1,5 @@
 ﻿const {Client}=require('pg');
-const c=new Client({connectionString:'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',ssl:{rejectUnauthorized:false}});
+const c=new Client({connectionString:require('./db/dbenv.js').url(),ssl:{rejectUnauthorized:false}});
 c.connect().then(async ()=>{
   // Check if hadith_service_content has type linking to controversial tree
   const r1 = await c.query("SELECT COUNT(*) FROM hadith_services WHERE mokhtalaf=true");

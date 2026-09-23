@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const p = new Pool({ connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway', ssl: { rejectUnauthorized: false } });
+const p = new Pool({ connectionString: require('./dbenv.js').url(), ssl: { rejectUnauthorized: false } });
 
 async function run() {
   // Get ALL columns for narrator 822

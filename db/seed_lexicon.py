@@ -2,6 +2,9 @@
 seed_lexicon.py — seeds lexicon tables from JSON data files
 Usage: python3 seed_lexicon.py
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import json
 import sys
 import psycopg2
@@ -9,7 +12,7 @@ import psycopg2.extras
 from pathlib import Path
 
 DATA = Path(r"C:\HadithProg\railway\extract\data_named")
-DB   = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB   = dbenv.url()
 BATCH = 500
 
 conn = psycopg2.connect(DB, connect_timeout=30)

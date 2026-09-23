@@ -6,10 +6,13 @@ sample. Parses docs/ilal/Book/musnad.db, text-matches each entry to a railway
 hadith_toc.main_id (edition-proof bridge → IsnadTree via takhrij.group_id),
 and inserts companion + entries + takhrij + ilal + refs.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import sqlite3, re, unicodedata, psycopg2
 
 MUSNAD = r"C:\HadithProg\docs\ilal\Book\musnad.db"
-PG = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+PG = dbenv.url()
 
 AR = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'}
 def ar2i(s):

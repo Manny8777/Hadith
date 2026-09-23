@@ -6,8 +6,11 @@ Backfill narrator links into the ilal_* tables (post-extraction):
   2. ilal_ilal.narrator_id        ← the criticized narrator, constrained to the
                                      entry's matched chain narrators (reliable).
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import re, unicodedata, psycopg2
-PG = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+PG = dbenv.url()
 
 def st(s): return ''.join(c for c in unicodedata.normalize('NFC',s or '') if unicodedata.category(c)!='Mn')
 def toks(s):

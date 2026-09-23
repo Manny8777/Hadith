@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Seed narrator_grading_terms and narrator_scientists tables from JSON source files."""
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 
 import json
 import sys
@@ -8,7 +11,7 @@ import os
 import psycopg2
 from psycopg2.extras import execute_values
 
-DB_URL = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB_URL = dbenv.url()
 DATA_DIR = r"C:\HadithProg\railway\extract\data_named"
 SCHEMA_FILE = r"C:\HadithProg\railway\db\schema_narrator_grading.sql"
 BATCH = 1000

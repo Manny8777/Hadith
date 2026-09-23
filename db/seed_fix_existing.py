@@ -11,13 +11,16 @@ Field order from Catalog.xml:
     Medicine(f12), Feqh(f13), Asbab(f14), Mokhtalaf(f15), Amthal(f16), Kerat(f17), ProperName(f18),
     Countries(f19), MatnComparison(f20), Modrag(f21), Motawater(f22)
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 
 import json, time, sys
 import psycopg2, psycopg2.extras
 from pathlib import Path
 
 DATA = Path(r"C:\HadithProg\railway\extract\data")
-DB = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB = dbenv.url()
 BATCH = 2000
 
 conn = psycopg2.connect(DB, sslmode="require", connect_timeout=30)

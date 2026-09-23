@@ -1,6 +1,7 @@
 import pg from 'pg'
+import dbenv from './db/dbenv.js'
 const { Pool } = pg
-const pool = new Pool({ connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway' })
+const pool = new Pool({ connectionString: dbenv.url() })
 
 // الدارقطني = scientist_id 12982
 // What are the hadith_judgments rows for hadith 89841?

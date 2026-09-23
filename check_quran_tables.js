@@ -1,5 +1,5 @@
 ﻿const {Client}=require('pg');
-const c=new Client({connectionString:'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',ssl:{rejectUnauthorized:false}});
+const c=new Client({connectionString:require('./db/dbenv.js').url(),ssl:{rejectUnauthorized:false}});
 c.connect().then(async ()=>{
   // Check for quran-like and hadith-extra tables
   const checks = [

@@ -1,6 +1,6 @@
 const {Client} = require('pg');
 const c = new Client({
-  connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',
+  connectionString: require('./db/dbenv.js').url(),
   ssl: {rejectUnauthorized: false}
 });
 

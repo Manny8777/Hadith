@@ -2,12 +2,15 @@
 seed_takhrij.py — loads HTakhreeg.json into takhrij table
 Batch size 1000, ON CONFLICT DO NOTHING
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import json, time, sys
 import psycopg2
 import psycopg2.extras
 from pathlib import Path
 
-DB = 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway'
+DB = dbenv.url()
 DATA_FILE = Path(r"C:\HadithProg\railway\extract\data_named\HTakhreeg.json")
 
 print("Loading HTakhreeg.json ...", flush=True)

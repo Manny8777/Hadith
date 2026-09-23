@@ -2,10 +2,13 @@
 seed_matn_comparison.py — creates matn_comparison table and loads pairs
 from HMatnComparisonFiltered3.json (per-hadith comparison descriptions)
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import json, re, time, psycopg2, psycopg2.extras
 from pathlib import Path
 
-DB = 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway'
+DB = dbenv.url()
 DATA_FILE = Path(r'C:\HadithProg\railway\extract\data_named\HMatnComparisonFiltered3.json')
 SCHEMA_FILE = Path(r'C:\HadithProg\railway\db\schema_matn_comparison.sql')
 

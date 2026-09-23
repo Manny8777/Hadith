@@ -1,6 +1,7 @@
 import pg from 'pg'
+import dbenv from './db/dbenv.js'
 const { Pool } = pg
-const pool = new Pool({ connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway' })
+const pool = new Pool({ connectionString: dbenv.url() })
 
 // The two الدارقطني judgment texts for hadith 89841:
 // 155401: "ذكر أن الحسين بن عيسى تفرد بهذا الحديث عن الحكم بن أبان"

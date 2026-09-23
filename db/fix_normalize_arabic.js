@@ -1,7 +1,7 @@
 // Fix the normalize_arabic function — إ was incorrectly mapped to و
 const { Pool } = require('pg');
 const pool = new Pool({
-  connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',
+  connectionString: require('./dbenv.js').url(),
   ssl: { rejectUnauthorized: false }
 });
 

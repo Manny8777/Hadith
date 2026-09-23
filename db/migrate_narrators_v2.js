@@ -1,6 +1,6 @@
 const { Pool } = require('pg');
 const fs = require('fs');
-const DB = 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway';
+const DB = require('./dbenv.js').url();
 const p = new Pool({ connectionString: DB, ssl: { rejectUnauthorized: false } });
 
 async function run() {

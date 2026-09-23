@@ -1,6 +1,7 @@
 import pg from 'pg'
+import dbenv from './db/dbenv.js'
 const { Pool } = pg
-const pool = new Pool({ connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway' })
+const pool = new Pool({ connectionString: dbenv.url() })
 const [a, b, c] = await Promise.all([
   pool.query("SELECT id, title FROM books WHERE title LIKE '%البدور%'"),
   pool.query("SELECT book_name, COUNT(*) as cnt FROM hadith_service_content WHERE book_name LIKE '%البدور%' GROUP BY book_name"),

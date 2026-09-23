@@ -7,11 +7,14 @@ to edition numbering differences).
 
 Usage: python db/ilal_extract_all.py [--limit N]   (N = first N companions, for testing)
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import sqlite3, re, sys, unicodedata, psycopg2
 from psycopg2.extras import execute_values
 
 MUSNAD = r"C:\HadithProg\docs\ilal\Book\musnad.db"
-PG = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+PG = dbenv.url()
 LIMIT = None
 if "--limit" in sys.argv: LIMIT = int(sys.argv[sys.argv.index("--limit")+1])
 

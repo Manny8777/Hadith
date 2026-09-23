@@ -2,7 +2,7 @@
 // Normalizes: أ إ آ → ا, ة → ه, ى → ي
 const { Pool } = require('pg');
 const pool = new Pool({
-  connectionString: 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',
+  connectionString: require('./dbenv.js').url(),
   ssl: { rejectUnauthorized: false }
 });
 

@@ -2,11 +2,14 @@
 Seed hadith_service_links from HadithsServices.json (919,929 rows)
 Links hadiths to their commentary entries in hadith_service_content.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import json, sys, time
 import psycopg2
 from psycopg2.extras import execute_values
 
-DB_URL = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB_URL = dbenv.url()
 FILE = r"C:\HadithProg\railway\extract\data_named\HadithsServices.json"
 BATCH = 2000
 

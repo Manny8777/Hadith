@@ -16,6 +16,9 @@ Fields (from Catalog.xml):
   QuranReaders:  ID, ReaderName, ParentID, IsLeaf, LeftValue, RightValue, NodeID, IsColored
   QuranReadersAyat: ReaderID, AyaID
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 
 import json, time, sys
 import psycopg2, psycopg2.extras
@@ -24,7 +27,7 @@ from pathlib import Path
 DATA_NAMED = Path(r"C:\HadithProg\railway\extract\data_named")
 DATA_RAW   = Path(r"C:\HadithProg\railway\extract\data")
 
-DB = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB = dbenv.url()
 BATCH = 1000
 
 conn = psycopg2.connect(DB, sslmode="require", connect_timeout=30)

@@ -1,5 +1,5 @@
 ﻿const {Client}=require('pg');
-const c=new Client({connectionString:'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway',ssl:{rejectUnauthorized:false}});
+const c=new Client({connectionString:require('./db/dbenv.js').url(),ssl:{rejectUnauthorized:false}});
 c.connect().then(async ()=>{
   // Check hadith_service_links (may be HadithServicesState) 
   const r1 = await c.query("SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='hadith_service_links' ORDER BY ordinal_position");

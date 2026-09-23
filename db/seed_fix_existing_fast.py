@@ -4,12 +4,15 @@ Fast version using temp table + single UPDATE FROM:
 1. isnad_hadiths: add sanad_tahdeth_id
 2. hadith_services: add countries/modrag/kerat/proper_name/matn_comparison
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import json, time, sys
 import psycopg2, psycopg2.extras
 from pathlib import Path
 
 DATA = Path(r"C:\HadithProg\railway\extract\data")
-DB = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB = dbenv.url()
 BATCH = 5000
 
 conn = psycopg2.connect(DB, sslmode="require", connect_timeout=60)

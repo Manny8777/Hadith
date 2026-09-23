@@ -10,6 +10,9 @@ Tables seeded in order:
 Usage:
   python "C:\\HadithProg\\railway\\db\\seed_isnad_tables.py"
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 
 import json, time, sys
 import psycopg2
@@ -17,7 +20,7 @@ import psycopg2.extras
 from pathlib import Path
 
 DATA = Path(r"C:\HadithProg\railway\extract\data_named")
-DB   = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB   = dbenv.url()
 BATCH = 1000
 
 conn = psycopg2.connect(DB, sslmode="require", connect_timeout=30)

@@ -2,6 +2,9 @@
 seed_services.py — streams HadithServicesState.json into hadith_services table
 Uses ijson for streaming (large file), batch size 500, ON CONFLICT DO NOTHING
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import time, sys
 import ijson
 import psycopg2
@@ -9,7 +12,7 @@ import psycopg2.extras
 from pathlib import Path
 
 DATA = Path(r'C:\HadithProg\railway\extract\data_named')
-DB = 'postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway'
+DB = dbenv.url()
 
 print("Connecting to database ...", flush=True)
 conn = psycopg2.connect(DB, connect_timeout=30, sslmode='require')

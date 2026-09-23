@@ -12,6 +12,9 @@ JSON fields -> DB columns mapping:
   IsMobham     -> is_mobham      (boolean)
   JourneyDate  -> journey_date   (text)
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 
 import json
 import sys
@@ -19,7 +22,7 @@ import time
 import psycopg2
 import psycopg2.extras
 
-DB_URL = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB_URL = dbenv.url()
 JSON_PATH = r"C:\HadithProg\railway\extract\data_named\Nouns.json"
 BATCH_SIZE = 1000
 PROGRESS_EVERY = 20000

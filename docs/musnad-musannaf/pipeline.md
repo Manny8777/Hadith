@@ -25,7 +25,7 @@ A SQLite database of the printed book, pre-parsed into pages.
 Paths/connection are **hardcoded at the top of the script**:
 ```python
 MUSNAD = r"C:\HadithProg\docs\ilal\Book\musnad.db"
-PG     = "postgresql://postgres:…@tramway.proxy.rlwy.net:39193/railway"
+PG     = "$DATABASE_URL"
 ```
 
 ---

@@ -2,11 +2,14 @@
 Seed hadith_service_content from BookTOC_Services.json (1.05 GB, 597,197 records)
 Using line-by-line streaming to avoid loading 1GB into memory.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 import json, sys, time
 import psycopg2
 from psycopg2.extras import execute_values
 
-DB_URL = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB_URL = dbenv.url()
 FILE = r"C:\HadithProg\railway\extract\data\BookTOC_Services.json"
 BATCH = 1000
 

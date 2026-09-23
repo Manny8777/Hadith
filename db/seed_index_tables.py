@@ -3,12 +3,15 @@
 Seed hadith_index_categories and hadith_index_items tables
 from Index.json and IndexItem.json
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import dbenv
 
 import json
 import psycopg2
 from psycopg2.extras import execute_values
 
-DB_URL = "postgresql://postgres:bJmkMzZQLqhzYltMNDwentYAPFUAppSq@tramway.proxy.rlwy.net:39193/railway"
+DB_URL = dbenv.url()
 
 INDEX_JSON = r"C:\HadithProg\railway\extract\data_named\Index.json"
 INDEX_ITEM_JSON = r"C:\HadithProg\railway\extract\data_named\IndexItem.json"
