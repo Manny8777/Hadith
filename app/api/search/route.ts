@@ -8,7 +8,10 @@ type MatchMode = 'all' | 'any' | 'phrase'
 
 function parseMatch(raw: string | null): MatchMode {
   const m = (raw ?? '').trim().toLowerCase()
-  return m === 'any' || m === 'phrase' ? m : 'all'
+  // Default = the original search dialog's default: متتالية, i.e. the same words adjacent and in
+  // order. Verified against the legacy engine (legacy-audit/09-search-parity-a1.md): this mode and
+  // the original's bare `field = '<phrase>'` agree exactly — 'الحمد لله' -> 1,207 rows on both.
+  return m === 'any' || m === 'all' ? m : 'phrase'
 }
 
 export async function GET(req: Request) {
