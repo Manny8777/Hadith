@@ -1,0 +1,15 @@
+# Keep the Railway image build context small and prevent local secrets from entering Docker layers.
+**
+!app/
+!app/**
+!lib/
+!lib/**
+!public/
+!public/**
+!package.json
+!package-lock.json
+!next.config.ts
+!next-env.d.ts
+!tsconfig.json
+!postcss.config.mjs
+!Dockerfile

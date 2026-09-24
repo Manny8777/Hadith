@@ -12,6 +12,7 @@ interface TakhrijGroup {
   grades: string | null
   books: string
   sample_hadith_id: number
+  total_groups: number
 }
 
 interface TakhrijBook {
@@ -34,46 +35,133 @@ export default async function TakhrijSpreadPage({
   const pageSize = 20
   const offset = (page - 1) * pageSize
 
+  async function queryTakhrijGroups(sql: string, params: any[]) {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      // The spread report deliberately uses a large grouped aggregate. Keep its
+      // sort/hash work bounded so small Railway databases do not exhaust shared memory.
+      await client.query("SET LOCAL max_parallel_workers_per_gather = 0")
+      await client.query("SET LOCAL work_mem = '4MB'")
+      const result = await client.query<TakhrijGroup>(sql, params)
+      await client.query('COMMIT')
+      return result
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined)
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
   const [groupsRes, booksRes] = await Promise.all([
-    pool.query<TakhrijGroup>(
-      `SELECT
-         t.group_id,
-         LEFT(MIN(ht.tarf), 200) AS sample_text,
-         COUNT(DISTINCT ht.book_id)::int AS book_count,
-         COUNT(DISTINCT ic.id)::int AS chain_count,
-         COUNT(DISTINCT ic.narrator_id_array[1])
-           FILTER (WHERE (SELECT n.is_companion FROM narrators n WHERE n.id = ic.narrator_id_array[1]))::int AS companion_count,
-         STRING_AGG(DISTINCT
-           CASE
-             WHEN hj.say_text ~* 'صحيح' THEN 'صحيح'
-             WHEN hj.say_text ~* 'حسن' THEN 'حسن'
-             WHEN hj.say_text ~* 'ضعيف' THEN 'ضعيف'
-             ELSE NULL
-           END, '/' ORDER BY
-           CASE WHEN hj.say_text ~* 'صحيح' THEN 1 WHEN hj.say_text ~* 'حسن' THEN 2 ELSE 3 END
-         ) AS grades,
-         STRING_AGG(DISTINCT b.title, '، ' ORDER BY b.title) AS books,
-         MIN(ht.main_id) AS sample_hadith_id
-       FROM hadith_toc ht
-       JOIN takhrij t ON t.hadith_id = ht.main_id
-       JOIN books b ON b.id = ht.book_id
-       LEFT JOIN isnad_chains ic ON ic.id IN (
-         SELECT ih.isnad_id FROM isnad_hadiths ih WHERE ih.hadith_id = ht.main_id LIMIT 5
+    queryTakhrijGroups(
+      `WITH group_stats AS (
+         SELECT t.group_id,
+                MIN(t.hadith_id)::int AS seed_hadith_id,
+                COUNT(DISTINCT ht.book_id)::int AS book_count,
+                COUNT(DISTINCT ic.id)::int AS chain_count,
+                COUNT(DISTINCT ic.narrator_id_array[1])
+                  FILTER (WHERE n.is_companion)::int AS companion_count
+         FROM takhrij t
+         JOIN hadith_toc ht
+           ON ht.main_id = t.hadith_id AND ht.is_leaf = true AND ht.is_paragraph = true
+         LEFT JOIN isnad_hadiths ih ON ih.hadith_id = ht.main_id
+         LEFT JOIN isnad_chains ic ON ic.id = ih.isnad_id
+         LEFT JOIN narrators n ON n.id = ic.narrator_id_array[1]
+         WHERE ($1 = '' OR EXISTS (
+           SELECT 1
+           FROM hadith_judgments j
+           WHERE j.hadith_id = ht.main_id
+             AND CASE
+               WHEN j.say_text ~* 'صحيح' THEN 'صحيح'
+               WHEN j.say_text ~* 'حسن' THEN 'حسن'
+               WHEN j.say_text ~* 'ضعيف' THEN 'ضعيف'
+               ELSE ''
+             END = $1
+         ))
+         GROUP BY t.group_id
+         HAVING COUNT(DISTINCT ht.book_id) >= $2
+       ), paged_groups AS (
+         SELECT gs.*, COUNT(*) OVER()::int AS total_groups
+         FROM group_stats gs
+         ORDER BY gs.book_count DESC, gs.chain_count DESC, gs.group_id
+         LIMIT $3 OFFSET $4
+       ), ranked_members AS (
+         SELECT pg.*, m.hadith_id, m.book_id, m.book_name, m.book_death,
+                m.chapter_text, m.hadith_text, m.member_rank
+         FROM paged_groups pg
+         CROSS JOIN LATERAL (
+           SELECT
+             t.hadith_id,
+             t.book_id,
+             b.title AS book_name,
+             b.takhrij_death AS book_death,
+             ht.chapter_text,
+             LEFT(regexp_replace(COALESCE(ht.tarf, ''), '<[^>]+>', ' ', 'g'), 200) AS hadith_text,
+             ROW_NUMBER() OVER (
+               ORDER BY
+                 (t.hadith_id = pg.seed_hadith_id) DESC,
+                 b.takhrij_death ASC NULLS LAST,
+                 t.hadith_id
+             ) AS member_rank
+           FROM takhrij t
+           JOIN hadith_toc ht
+             ON ht.main_id = t.hadith_id
+            AND ht.is_leaf = true
+            AND ht.is_paragraph = true
+           JOIN books b ON b.id = t.book_id
+           WHERE t.group_id = pg.group_id
+           ORDER BY
+             (t.hadith_id = pg.seed_hadith_id) DESC,
+             b.takhrij_death ASC NULLS LAST,
+             t.hadith_id
+           LIMIT 12
+         ) m
        )
-       LEFT JOIN hadith_judgments hj ON hj.hadith_id = ht.main_id
-       WHERE ($1 = '' OR
-           (SELECT STRING_AGG(DISTINCT CASE WHEN j.say_text ~* 'صحيح' THEN 'صحيح' WHEN j.say_text ~* 'حسن' THEN 'حسن' WHEN j.say_text ~* 'ضعيف' THEN 'ضعيف' ELSE '' END, '')
-            FROM hadith_judgments j WHERE j.hadith_id = ht.main_id) ~* $1
-         )
-       GROUP BY t.group_id
-       HAVING COUNT(DISTINCT ht.book_id) >= $2
-       ORDER BY COUNT(DISTINCT ht.book_id) DESC, COUNT(DISTINCT ic.id) DESC
-       LIMIT $3 OFFSET $4`,
-      [gradeFilter || '', minBooks, pageSize, offset]
-    ).catch(() => ({ rows: [] as TakhrijGroup[] })),
+       SELECT p.group_id, p.book_count, p.chain_count, p.companion_count, p.total_groups,
+         COALESCE((
+           SELECT LEFT(regexp_replace(COALESCE(ht2.tarf, ''), '<[^>]+>', ' ', 'g'), 200)
+           FROM takhrij t2
+           JOIN hadith_toc ht2 ON ht2.main_id = t2.hadith_id AND ht2.is_leaf = true AND ht2.is_paragraph = true
+           WHERE t2.group_id = p.group_id
+           ORDER BY ht2.main_id
+           LIMIT 1
+         ), '') AS sample_text,
+         (
+           SELECT string_agg(DISTINCT b2.title, '، ' ORDER BY b2.title)
+           FROM takhrij t2
+           JOIN books b2 ON b2.id = t2.book_id
+           WHERE t2.group_id = p.group_id
+         ) AS books,
+         (
+           SELECT string_agg(g.grade, '/' ORDER BY g.grade)
+           FROM (
+             SELECT DISTINCT CASE
+               WHEN hj.say_text ~* 'صحيح' THEN 'صحيح'
+               WHEN hj.say_text ~* 'حسن' THEN 'حسن'
+               WHEN hj.say_text ~* 'ضعيف' THEN 'ضعيف'
+               ELSE NULL
+             END AS grade
+             FROM takhrij t2
+             JOIN hadith_judgments hj ON hj.hadith_id = t2.hadith_id
+             WHERE t2.group_id = p.group_id
+           ) g
+           WHERE g.grade IS NOT NULL
+         ) AS grades,
+         (
+           SELECT MIN(t2.hadith_id)
+           FROM takhrij t2
+           JOIN hadith_toc ht2 ON ht2.main_id = t2.hadith_id AND ht2.is_paragraph = true
+           WHERE t2.group_id = p.group_id
+         ) AS sample_hadith_id
+       FROM ranked_members p
+       ORDER BY p.book_count DESC, p.chain_count DESC, p.group_id`,
+      [gradeFilter, minBooks, pageSize, offset]
+    ),
 
     selectedId ? pool.query<TakhrijBook>(
-      `SELECT
+      `SELECT DISTINCT ON (ht.main_id)
          b.title AS book_name,
          ht.main_id AS hadith_id,
          (SELECT hj.say_text FROM hadith_judgments hj WHERE hj.hadith_id = ht.main_id LIMIT 1) AS judgment_text,
@@ -83,12 +171,14 @@ export default async function TakhrijSpreadPage({
        JOIN takhrij t ON t.hadith_id = ht.main_id
        JOIN books b ON b.id = ht.book_id
        WHERE t.group_id = $1
-       ORDER BY ht.book_id`,
+       ORDER BY ht.main_id, ht.book_id`,
       [selectedId]
     ).catch(() => ({ rows: [] as TakhrijBook[] })) : Promise.resolve({ rows: [] as TakhrijBook[] }),
   ])
 
   const groups = groupsRes.rows
+  const totalGroups = Number(groups[0]?.total_groups || 0)
+  const totalPages = Math.max(1, Math.ceil(totalGroups / pageSize))
   const takhrijBooks = booksRes.rows
 
   const selected = selectedId ? groups.find(g => g.group_id === selectedId) : null
@@ -169,14 +259,14 @@ export default async function TakhrijSpreadPage({
             </div>
           )}
 
-          {(groups.length === pageSize || page > 1) && (
+          {totalPages > 1 && (
             <div className="flex gap-2 pt-2 justify-center">
               {page > 1 && (
                 <a href={`/hadiths/takhrij-spread?minBooks=${minBooks}&grade=${gradeFilter}&page=${page - 1}`}
                   className="text-sm bg-white border border-gray-200 px-4 py-2 rounded-lg hover:border-green-300">← السابق</a>
               )}
-              <span className="text-sm text-gray-400 self-center">صفحة {page.toLocaleString('ar-EG')}</span>
-              {groups.length === pageSize && (
+              <span className="text-sm text-gray-400 self-center">صفحة {page.toLocaleString('ar-EG')} من {totalPages.toLocaleString('ar-EG')}</span>
+              {page < totalPages && (
                 <a href={`/hadiths/takhrij-spread?minBooks=${minBooks}&grade=${gradeFilter}&page=${page + 1}`}
                   className="text-sm bg-white border border-gray-200 px-4 py-2 rounded-lg hover:border-green-300">التالي →</a>
               )}

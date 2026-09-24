@@ -4,23 +4,6 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'خدمات الحديث النبوي — جامع خادم الحرمين' }
 
-interface ServiceStats {
-  takhreg: string
-  ghareeb: string
-  sharh: string
-  feqh: string
-  medicine: string
-  mokhtalaf: string
-  subjects: string
-  biography: string
-  asbab: string
-  tafsser: string
-  amthal: string
-  asnad: string
-  shawahed: string
-  total: string
-}
-
 interface TopHadith {
   hadith_id: number
   tarf_clean: string
@@ -28,24 +11,52 @@ interface TopHadith {
   service_count: number
 }
 
-// Service metadata: key, Arabic name, color group, icon label
-const SERVICES = [
-  { key: 'takhreg',      name: 'التخريج',            group: 'blue',   desc: 'تخريج الحديث وعزوه' },
-  { key: 'asnad',        name: 'الأسانيد',            group: 'blue',   desc: 'دراسة سلاسل الإسناد' },
-  { key: 'shawahed',     name: 'الشواهد والمتابعات',  group: 'blue',   desc: 'الطرق والشواهد الأخرى' },
-  { key: 'sharh',        name: 'الشرح',              group: 'green',  desc: 'شرح ألفاظ الحديث ومعانيه' },
-  { key: 'ghareeb',      name: 'غريب الحديث',        group: 'green',  desc: 'بيان الألفاظ الغريبة' },
-  { key: 'subjects',     name: 'الموضوعات',          group: 'amber',  desc: 'تصنيف الحديث موضوعياً' },
-  { key: 'feqh',         name: 'الفقه',              group: 'amber',  desc: 'الأحكام الفقهية المستنبطة' },
-  { key: 'asbab',        name: 'أسباب الورود',       group: 'amber',  desc: 'سياق وأسباب ورود الحديث' },
-  { key: 'tafsser',      name: 'التفسير',            group: 'amber',  desc: 'علاقة الحديث بالتفسير' },
-  { key: 'amthal',       name: 'الأمثال',            group: 'amber',  desc: 'أمثال من الحديث النبوي' },
-  { key: 'biography',    name: 'التراجم',            group: 'red',    desc: 'تراجم رواة الحديث' },
-  { key: 'mokhtalaf',    name: 'مختلف الحديث',       group: 'red',    desc: 'توجيه الأحاديث المشكلة' },
-  { key: 'medicine',     name: 'الطب النبوي',        group: 'red',    desc: 'الجانب الطبي في الحديث' },
-] as const
+interface CanonicalServiceType {
+  id: number
+  name: string
+  column_key: string | null
+}
 
-type ServiceKey = (typeof SERVICES)[number]['key']
+type ServiceKey =
+  | 'takhreg' | 'compound_matn' | 'rwah' | 'asnad' | 'shawahed'
+  | 'ghareeb' | 'degree' | 'sharh' | 'subjects' | 'tafsser'
+  | 'biography' | 'medicine' | 'feqh' | 'asbab' | 'mokhtalaf'
+  | 'amthal' | 'motawater' | 'countries' | 'modrag' | 'kerat'
+  | 'proper_name' | 'matn_comparison'
+
+type ServiceGroup = 'blue' | 'green' | 'amber' | 'red'
+
+const SERVICE_DEFINITIONS: Array<{
+  key: ServiceKey
+  fallbackName: string
+  group: ServiceGroup
+  desc: string
+}> = [
+  { key: 'takhreg', fallbackName: 'التخريج', group: 'blue', desc: 'تخريج الحديث وعزوه' },
+  { key: 'compound_matn', fallbackName: 'تخريج الشروح', group: 'blue', desc: 'المتون الواردة في كتب التخريج' },
+  { key: 'rwah', fallbackName: 'تخريج الرواة', group: 'blue', desc: 'الروايات الواردة في كتب التخريج' },
+  { key: 'asnad', fallbackName: 'أصل', group: 'blue', desc: 'الأصل الإسنادي والروايات المرتبطة' },
+  { key: 'shawahed', fallbackName: 'الشواهد والمتابعات', group: 'blue', desc: 'الطرق والشواهد الأخرى' },
+  { key: 'ghareeb', fallbackName: 'غريب الحديث', group: 'green', desc: 'بيان الألفاظ الغريبة' },
+  { key: 'degree', fallbackName: 'الدرجة', group: 'green', desc: 'حكم الحديث ودرجته' },
+  { key: 'sharh', fallbackName: 'الشروح', group: 'green', desc: 'شرح ألفاظ الحديث ومعانيه' },
+  { key: 'motawater', fallbackName: 'التواتر', group: 'green', desc: 'ما ورد مواتراً في السنن' },
+  { key: 'subjects', fallbackName: 'الموضوعات', group: 'amber', desc: 'تصنيف الحديث موضوعياً' },
+  { key: 'feqh', fallbackName: 'استدلال فقهي', group: 'amber', desc: 'الأحكام الفقهية المستنبطة' },
+  { key: 'asbab', fallbackName: 'أسباب الورود', group: 'amber', desc: 'سياق وأسباب ورود الحديث' },
+  { key: 'tafsser', fallbackName: 'تفسير بالمأثور', group: 'amber', desc: 'الآيات والتفسير المأثور المرتبط' },
+  { key: 'amthal', fallbackName: 'أمثال الحديث', group: 'amber', desc: 'أمثال من الحديث النبوي' },
+  { key: 'kerat', fallbackName: 'القراءات', group: 'amber', desc: 'قراءات الحديث وروابطها' },
+  { key: 'biography', fallbackName: 'سيرة', group: 'red', desc: 'سيرة وتراجم رواة الحديث' },
+  { key: 'mokhtalaf', fallbackName: 'مخالف', group: 'red', desc: 'توجيه الأحاديث المخالفة' },
+  { key: 'medicine', fallbackName: 'الطب النبوي', group: 'red', desc: 'الجانب الطبي في الحديث' },
+  { key: 'countries', fallbackName: 'الروايات بالبلدان', group: 'red', desc: 'انتقال الرواية بين البلدان' },
+  { key: 'modrag', fallbackName: 'الإدراج', group: 'red', desc: 'ما أُدرج في متن الحديث' },
+  { key: 'proper_name', fallbackName: 'أسماء الأعلام', group: 'red', desc: 'الأعلام المترجمة داخل الحديث' },
+  { key: 'matn_comparison', fallbackName: 'مقارنة المتون', group: 'red', desc: 'سياقات المقارنة بين المتون' },
+]
+
+const SERVICE_KEYS = SERVICE_DEFINITIONS.map(service => service.key)
 
 const GROUP_STYLES: Record<string, { card: string; bar: string; badge: string; label: string }> = {
   blue: {
@@ -101,67 +112,61 @@ function serviceCount(n: number) {
 }
 
 export default async function ServicesIndexPage() {
-  const [statsRes, topRes] = await Promise.all([
-    pool.query<ServiceStats>(`
-      SELECT
-        COUNT(*) FILTER (WHERE takhreg)        AS takhreg,
-        COUNT(*) FILTER (WHERE ghareeb)        AS ghareeb,
-        COUNT(*) FILTER (WHERE sharh)          AS sharh,
-        COUNT(*) FILTER (WHERE feqh)           AS feqh,
-        COUNT(*) FILTER (WHERE medicine)       AS medicine,
-        COUNT(*) FILTER (WHERE mokhtalaf)      AS mokhtalaf,
-        COUNT(*) FILTER (WHERE subjects)       AS subjects,
-        COUNT(*) FILTER (WHERE biography)      AS biography,
-        COUNT(*) FILTER (WHERE asbab)          AS asbab,
-        COUNT(*) FILTER (WHERE tafsser)        AS tafsser,
-        COUNT(*) FILTER (WHERE amthal)         AS amthal,
-        COUNT(*) FILTER (WHERE asnad)          AS asnad,
-        COUNT(*) FILTER (WHERE shawahed)       AS shawahed,
-        COUNT(*)                               AS total
-      FROM hadith_services
-    `).catch(() => ({ rows: [] as ServiceStats[] })),
+  const statsColumns = SERVICE_KEYS
+    .map(key => `COUNT(*) FILTER (WHERE ${key})::bigint AS "${key}"`)
+    .join(',\n')
+  const serviceExpression = SERVICE_KEYS
+    .map(key => `COALESCE(hs.${key}::int, 0)`)
+    .join(' + ')
 
-    pool.query<TopHadith>(`
-      SELECT hs.hadith_id,
-        regexp_replace(ht.tarf, '<[^>]+>', ' ', 'g') AS tarf_clean,
-        b.title AS book_title,
-        (hs.takhreg::int + hs.ghareeb::int + hs.sharh::int + hs.feqh::int +
-         hs.medicine::int + hs.mokhtalaf::int + hs.subjects::int + hs.biography::int +
-         hs.asbab::int + hs.tafsser::int + hs.amthal::int +
-         hs.asnad::int + hs.shawahed::int) AS service_count
-      FROM hadith_services hs
-      JOIN hadith_toc ht ON ht.main_id = hs.hadith_id
-      JOIN books b ON b.id = ht.book_id
-      WHERE ht.is_leaf = true AND ht.is_paragraph = true
-      ORDER BY service_count DESC
-      LIMIT 10
-    `).catch(() => ({ rows: [] as TopHadith[] })),
+  const [statsRes, topRes, typeRes] = await Promise.all([
+    pool.query<Record<string, string>>(
+      `SELECT
+         ${statsColumns},
+         COUNT(*)::bigint AS total
+       FROM hadith_services`
+    ).catch(() => ({ rows: [] as Record<string, string>[] })),
+
+    pool.query<TopHadith>(
+      `SELECT hs.hadith_id,
+         regexp_replace(ht.tarf, '<[^>]+>', ' ', 'g') AS tarf_clean,
+         b.title AS book_title,
+         (${serviceExpression}) AS service_count
+       FROM hadith_services hs
+       JOIN hadith_toc ht ON ht.main_id = hs.hadith_id
+       JOIN books b ON b.id = ht.book_id
+       WHERE ht.is_leaf = true AND ht.is_paragraph = true
+       ORDER BY service_count DESC
+       LIMIT 10`
+    ).catch(() => ({ rows: [] as TopHadith[] })),
+
+    pool.query<CanonicalServiceType>(
+      'SELECT id, name, column_key FROM hadith_service_types ORDER BY id'
+    ).catch(() => ({ rows: [] as CanonicalServiceType[] })),
   ])
 
   const stats = statsRes.rows[0]
   const topHadiths = topRes.rows
-  const total = stats ? parseInt(stats.total) : 0
-
-  // Build a map for easy lookup
-  const countMap: Record<string, number> = {}
-  if (stats) {
-    SERVICES.forEach(s => {
-      countMap[s.key] = parseInt((stats as unknown as Record<string, string>)[s.key] || '0')
-    })
-  }
-
-  // Group services
-  const groups = ['blue', 'green', 'amber', 'red']
-
-  // Total services provided (sum of all boolean counts)
-  const totalServicesProvided = Object.values(countMap).reduce((a, b) => a + b, 0)
+  const canonicalTypes = typeRes.rows
+  const canonicalNameByKey = new Map(
+    canonicalTypes
+      .filter(type => type.column_key)
+      .map(type => [type.column_key as string, type.name])
+  )
+  const services = SERVICE_DEFINITIONS.map(definition => ({
+    ...definition,
+    name: canonicalNameByKey.get(definition.key) || definition.fallbackName,
+    count: Number(stats?.[definition.key] || 0),
+  }))
+  const countMap = Object.fromEntries(services.map(service => [service.key, service.count]))
+  const total = Number(stats?.total || 0)
+  const groups: ServiceGroup[] = ['blue', 'green', 'amber', 'red']
+  const totalServicesProvided = SERVICE_KEYS.reduce((sum, key) => sum + (countMap[key] || 0), 0)
   const avgServicesPerHadith = total > 0 ? (totalServicesProvided / total).toFixed(1) : '0'
-
-  // Most and least covered service
-  const sorted = SERVICES.map(s => ({ ...s, count: countMap[s.key] || 0 }))
-    .sort((a, b) => b.count - a.count)
+  const sorted = [...services].sort((a, b) => b.count - a.count)
   const mostCovered = sorted[0]
   const leastCovered = sorted[sorted.length - 1]
+  const unmappedCanonicalTypes = canonicalTypes.filter(type => !type.column_key)
 
   return (
     <div dir="rtl" className="min-h-screen bg-stone-50">
@@ -190,8 +195,8 @@ export default async function ServicesIndexPage() {
             <div className="text-xs text-gray-500 mt-1">إجمالي الأحاديث في قاعدة الخدمات</div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
-            <div className="text-3xl font-bold text-blue-700">{(14).toLocaleString('ar-EG')}</div>
-            <div className="text-xs text-gray-500 mt-1">نوعاً من خدمات الحديث</div>
+            <div className="text-3xl font-bold text-blue-700">{canonicalTypes.length.toLocaleString('ar-EG')}</div>
+            <div className="text-xs text-gray-500 mt-1">نوعاً أصلياً في جدول الخدمات</div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
             <div className="text-3xl font-bold text-amber-700">{avgServicesPerHadith}</div>
@@ -201,6 +206,18 @@ export default async function ServicesIndexPage() {
             <div className="text-3xl font-bold text-purple-700">{totalServicesProvided.toLocaleString('ar-EG')}</div>
             <div className="text-xs text-gray-500 mt-1">مجموع الخدمات المتاحة</div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-900">
+          يوجد {services.length.toLocaleString('ar-EG')} مؤشراً قابلاً للقياس في جدول
+          <span dir="ltr" className="mx-1 font-mono">hadith_services</span>.
+          الأسماء القابلة للقياس مأخوذة من جدول الأنواع الأصلي، لا من قائمة ثابتة.
+          {unmappedCanonicalTypes.length > 0 && (
+            <div className="mt-1">
+              أنواع أصلية بلا عمود مستقل: {unmappedCanonicalTypes.map(type => type.name).join('، ')}؛
+              لذلك لا تظهر كبطاقات قابلة للقياس.
+            </div>
+          )}
         </div>
 
         {/* Quick insights bar */}
@@ -235,7 +252,7 @@ export default async function ServicesIndexPage() {
 
         {/* Service cards grouped by type */}
         {groups.map(group => {
-          const groupServices = SERVICES.filter(s => s.group === group)
+          const groupServices = services.filter(s => s.group === group)
           const style = GROUP_STYLES[group]
           return (
             <section key={group}>

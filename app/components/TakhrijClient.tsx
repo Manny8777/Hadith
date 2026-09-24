@@ -888,7 +888,7 @@ export default function TakhrijClient({
 
       {truncated && (
         <p className="text-xs text-gray-400 mt-2 text-center">
-          يُعرض أول 120 رواية — لمزيد من الطرق انظر{' '}
+          يُعرض أول 500 رواية من أصل {totalBooks.toLocaleString('ar-EG')} — لمزيد من الطرق انظر{' '}
           <a href="#adawat" className="text-green-600 hover:underline">صفحة الشواهد الكاملة</a>
         </p>
       )}

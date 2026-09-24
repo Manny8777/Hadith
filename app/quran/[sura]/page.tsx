@@ -82,7 +82,8 @@ export default async function SuraPage({ params }: { params: Promise<{ sura: str
         {ayat.map(aya => (
           <div
             key={aya.id}
-            className={`rounded-xl border p-4 transition-all ${
+            id={`aya-${aya.aya_num}`}
+            className={`scroll-mt-32 rounded-xl border p-4 transition-all ${
               aya.has_tafsser || aya.service_main_id
                 ? 'bg-white border-amber-200 hover:shadow-sm'
                 : 'bg-gray-50 border-gray-100'

@@ -84,8 +84,8 @@ export default async function ServiceBooksPage({
   const centuries: Record<string | number, typeof annotated> = {}
   if (groupByCentury) {
     for (const b of filtered) {
-      const key = b.takhrij_death != null
-        ? Math.floor(b.takhrij_death / 100) * 100
+      const key = Number(b.takhrij_death) > 0
+        ? Math.floor(Number(b.takhrij_death) / 100) * 100
         : 'undated'
       if (!centuries[key]) centuries[key] = []
       centuries[key].push(b)
@@ -97,7 +97,7 @@ export default async function ServiceBooksPage({
 
   // Stats
   const totalHadiths = filtered.reduce((s, b) => s + (b.hadith_count || 0), 0)
-  const datedCount = filtered.filter(b => b.takhrij_death != null).length
+  const datedCount = filtered.filter(b => Number(b.takhrij_death) > 0).length
 
   function buildUrl(overrides: Record<string, string>) {
     const p = new URLSearchParams()
@@ -121,7 +121,7 @@ export default async function ServiceBooksPage({
         <p className="text-sm text-gray-500 max-w-2xl leading-relaxed">
           هي المصنفات التي تخدم علم الحديث دون أن تكون مجاميع حديثية أولية — تشمل الشروح، وكتب الرجال والتراجم،
           والتواريخ، وكتب مصطلح الحديث، والمعاجم الجغرافية، وسائر المراجع المساعدة في التخريج والتحقيق.
-          تتميز عن الكتب الأصلية بأن ترتيبها وقوتها وشهرتها تساوي صفراً في المنظومة.
+          تُكتشف من وجود مادة خدمة أو ترجمة أو شرح فيها، وتُجمَّع هنا بصرف النظر عن قيم ترتيبها أو قوتها في المنظومة.
         </p>
       </div>
 
@@ -160,10 +160,9 @@ export default async function ServiceBooksPage({
       {/* Info box */}
       <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5 text-xs text-amber-800 leading-relaxed">
         <strong>ملاحظة منهجية: </strong>
-        يُميَّز الكتاب الخدمي عن الحديثي الأصيل بأن قيم الترتيب والقوة والشهرة تساوي جميعاً صفراً —
-        فالكتب الأصلية (البخاري، مسلم … إلخ) مرتبة من 1 إلى 33 حسب مكانتها، بينما تبقى الكتب الخدمية
-        خارج هذا السلم الهرمي.
-        التصنيف الوارد أمام كل كتاب استُنبط من عنوانه فقط وقد لا يكون دقيقاً في كل حالة.
+        هذا الفهرس يعرض الكتب التي تحوي مادة خدمة أو ترجمة أو شرحاً. ولا تعتمد قراءته على أن قيم القوة والترتيب
+        والشهرة تساوي صفراً: بعض هذه الكتب له تاريخ تراثي صحيح، وبعض قيمها غير مسجلة. الكتاب غير المؤرخ
+        أو صفّر تاريخه يوضع في مجموعة «غير مؤرخ» بدلاً من القرن الأول. التصنيف أمام كل عنوان استُنبط من العنوان وقد يحتاج مراجعة.
       </div>
 
       {/* Controls */}
@@ -306,12 +305,12 @@ function BookCard({
       </p>
 
       {/* Author + death */}
-      {(book.takhrij_author || book.takhrij_death) && (
+      {(book.takhrij_author || Number(book.takhrij_death) > 0) && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {book.takhrij_author && (
             <span className="text-xs text-gray-600">{book.takhrij_author}</span>
           )}
-          {book.takhrij_death && (
+          {Number(book.takhrij_death) > 0 && (
             <span className="text-xs text-gray-400">(ت {book.takhrij_death} هـ)</span>
           )}
         </div>

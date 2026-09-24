@@ -29,14 +29,15 @@ export default async function HadithWitnessesPage({ params }: { params: Promise<
     pool.query(
       `SELECT ht.main_id,
               regexp_replace(coalesce(ht.tarf,''), '<[^>]+>', ' ', 'g') AS tarf,
-              b.title AS book_title, b.takhrij_author
+              b.title AS book_title, b.takhrij_author,
+              EXISTS (SELECT 1 FROM hadith_shawahed hs WHERE hs.hadith_main_id = ht.main_id) AS has_witness_flag
        FROM hadith_toc ht
        JOIN books b ON b.id = ht.book_id
        WHERE ht.main_id = $1`,
       [hadithId]
     ),
     pool.query<{ group_id: number }>(
-      `SELECT group_id FROM takhrij WHERE hadith_id = $1 AND group_id IS NOT NULL LIMIT 1`,
+      `SELECT group_id FROM takhrij WHERE hadith_id = $1 AND group_id IS NOT NULL ORDER BY group_id`,
       [hadithId]
     ),
   ])
@@ -44,8 +45,8 @@ export default async function HadithWitnessesPage({ params }: { params: Promise<
   const hadith = hadithRes.rows[0]
   if (!hadith) notFound()
 
-  const groupId = groupRes.rows[0]?.group_id
-  if (!groupId) {
+  const groupIds = groupRes.rows.map(row => Number(row.group_id))
+  if (groupIds.length === 0) {
     return (
       <div dir="rtl">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
@@ -57,7 +58,9 @@ export default async function HadithWitnessesPage({ params }: { params: Promise<
         </div>
         <h1 className="text-xl font-bold text-green-900 mb-3">الشواهد والمتابعات</h1>
         <div className="bg-gray-50 rounded-xl border border-gray-100 p-8 text-center text-gray-500">
-          لم يُعثر على تخريج مشترك لهذا الحديث في قاعدة البيانات
+          {hadith.has_witness_flag
+            ? 'المصدر يشير إلى وجود شواهد لهذا الحديث، لكن علاقات المجموعة التي تربطها بالروايات الأخرى غير مخزنة في الجداول الحالية.'
+            : 'لم يُعثر على تخريج مشترك لهذا الحديث في قاعدة البيانات'}
         </div>
         <div className="mt-4">
           <Link href={`/hadith/${hadithId}`} className="text-green-700 hover:underline text-sm">← عودة للحديث</Link>
@@ -85,9 +88,9 @@ export default async function HadithWitnessesPage({ params }: { params: Promise<
      LEFT JOIN isnad_hadiths ih2 ON ih2.hadith_id = t2.hadith_id
      LEFT JOIN isnad_chains ic2 ON ic2.id = ih2.isnad_id
      LEFT JOIN narrators comp ON comp.id = ic2.narrator_id_array[1] AND comp.is_companion = true
-     WHERE t2.group_id = $1 AND t2.hadith_id != $2
+     WHERE t2.group_id = ANY($1::int[]) AND t2.hadith_id != $2
      ORDER BY COALESCE(comp.id::text, t2.hadith_id::text), b.takhrij_death ASC NULLS LAST`,
-    [groupId, hadithId]
+    [groupIds, hadithId]
   ).catch(() => ({ rows: [] as WitnessHadith[] }))
 
   const witnesses = witnessesRes.rows
@@ -140,8 +143,8 @@ export default async function HadithWitnessesPage({ params }: { params: Promise<
               <div className="text-xs opacity-80">مجموعة</div>
             </div>
             <div className="bg-indigo-700 text-white rounded-xl p-3 text-center">
-              <div className="text-xl font-bold">{groupId}</div>
-              <div className="text-xs opacity-80">رقم المجموعة</div>
+              <div className="text-xl font-bold">{groupIds.length.toLocaleString('ar-EG')}</div>
+              <div className="text-xs opacity-80">عدد المجموعات</div>
             </div>
           </div>
 

@@ -35,7 +35,7 @@ export default async function AcrossBooksPage({ params }: { params: Promise<{ id
       [hadithId]
     ),
     pool.query<{ group_id: number }>(
-      `SELECT group_id FROM takhrij WHERE hadith_id = $1 AND group_id IS NOT NULL LIMIT 1`,
+      `SELECT group_id FROM takhrij WHERE hadith_id = $1 AND group_id IS NOT NULL ORDER BY group_id`,
       [hadithId]
     ),
   ])
@@ -43,9 +43,9 @@ export default async function AcrossBooksPage({ params }: { params: Promise<{ id
   const hadith = hadithRes.rows[0]
   if (!hadith) notFound()
 
-  const groupId = groupRes.rows[0]?.group_id
+  const groupIds = groupRes.rows.map(row => Number(row.group_id))
 
-  if (!groupId) {
+  if (groupIds.length === 0) {
     return (
       <div dir="rtl">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
@@ -60,7 +60,7 @@ export default async function AcrossBooksPage({ params }: { params: Promise<{ id
   }
 
   const versionsRes = await pool.query<ParallelVersion>(
-    `SELECT DISTINCT ON (b.id)
+    `SELECT DISTINCT ON (t.hadith_id)
            t.hadith_id AS parallel_id,
            b.id AS book_id, b.title AS book_title, b.takhrij_author, b.takhrij_death,
            ht.tarqeem_harf AS hadith_number,
@@ -73,9 +73,9 @@ export default async function AcrossBooksPage({ params }: { params: Promise<{ id
      FROM takhrij t
      JOIN books b ON b.id = t.book_id
      JOIN hadith_toc ht ON ht.main_id = t.hadith_id AND ht.is_leaf = true AND ht.is_paragraph = true
-     WHERE t.group_id = $1
-     ORDER BY b.id, b.takhrij_death ASC NULLS LAST`,
-    [groupId]
+     WHERE t.group_id = ANY($1::int[])
+     ORDER BY t.hadith_id, b.takhrij_death ASC NULLS LAST`,
+    [groupIds]
   ).catch(() => ({ rows: [] as ParallelVersion[] }))
 
   const versions = versionsRes.rows.sort((a, b) =>
@@ -125,8 +125,8 @@ export default async function AcrossBooksPage({ params }: { params: Promise<{ id
           <div className="text-xs opacity-80">أقدم مصدر</div>
         </div>
         <div className="bg-amber-600 text-white rounded-xl p-3 text-center">
-          <div className="text-xl font-bold">{groupId}</div>
-          <div className="text-xs opacity-80">رقم المجموعة</div>
+          <div className="text-xl font-bold">{groupIds.length.toLocaleString('ar-EG')}</div>
+          <div className="text-xs opacity-80">عدد المجموعات</div>
         </div>
       </div>
 

@@ -11,19 +11,20 @@ export async function GET(
   const mainId = parseInt(id)
   if (isNaN(mainId)) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
 
-  // 1. Get the group_id for this hadith
+  // A hadith may belong to several independent takhrij groups. The web table preserves all
+  // memberships, so the route must not silently choose whichever group happened to come first.
   const groupRes = await pool.query(
-    `SELECT group_id FROM takhrij WHERE hadith_id = $1`,
+    `SELECT group_id FROM takhrij
+     WHERE hadith_id = $1 AND group_id IS NOT NULL
+     ORDER BY group_id`,
     [mainId]
   )
 
-  if (!groupRes.rows[0]) return NextResponse.json([])
+  if (groupRes.rows.length === 0) return NextResponse.json([])
 
-  const groupId = groupRes.rows[0].group_id
-
-  // 2. Find all other hadiths with the same group_id, join with hadith_toc and books
+  const groupIds = groupRes.rows.map(row => Number(row.group_id))
   const result = await pool.query(
-    `SELECT
+    `SELECT DISTINCT ON (t.hadith_id)
        t.hadith_id  AS main_id,
        t.book_id,
        b.title      AS book_name,
@@ -34,11 +35,11 @@ export async function GET(
      FROM takhrij t
      JOIN hadith_toc h ON h.main_id = t.hadith_id
      JOIN books b ON b.id = t.book_id
-     WHERE t.group_id = $1
+     WHERE t.group_id = ANY($1::int[])
        AND t.hadith_id != $2
-     ORDER BY t.book_id, t.hadith_id
-     LIMIT 50`,
-    [groupId, mainId]
+     ORDER BY t.hadith_id, t.book_id, t.hadith_id
+     LIMIT 500`,
+    [groupIds, mainId]
   )
 
   return NextResponse.json(result.rows)

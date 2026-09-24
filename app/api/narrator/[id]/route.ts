@@ -29,10 +29,14 @@ export async function GET(
 
     // Books this narrator appears in
     const booksRes = await pool.query(
-      `SELECT b.id, b.title
+      `SELECT b.id, b.title, COUNT(DISTINCT ht.main_id)::int AS hadith_count
        FROM narrator_books nb
        JOIN books b ON b.id = nb.book_id
+       LEFT JOIN isnad_chains ic ON ic.narrator_id_array @> ARRAY[nb.narrator_id]
+       LEFT JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+       LEFT JOIN hadith_toc ht ON ht.main_id = ih.hadith_id AND ht.book_id = b.id AND ht.is_leaf = true
        WHERE nb.narrator_id = $1
+       GROUP BY b.id, b.title
        ORDER BY b.title`,
       [narratorId]
     )
@@ -40,11 +44,11 @@ export async function GET(
     // Teachers (شيوخه): is_sheikh=true means second_id IS the sheikh.
     // So first_id=narrator is the student, second_id are his teachers.
     const teachersRes = await pool.query(
-      `SELECT n.id, n.name
-       FROM narrator_relations nr
-       JOIN narrators n ON n.id = nr.second_id
-       WHERE nr.first_id = $1 AND nr.is_sheikh = true
-       ORDER BY n.name
+      `SELECT n.id, n.name, COALESCE(nt.hadiths_count, 0)::int AS hadith_count
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.shyoukh_id
+       WHERE nt.rawy_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
        LIMIT 100`,
       [narratorId]
     )
@@ -52,11 +56,11 @@ export async function GET(
     // Students (تلاميذه): is_sheikh=true means second_id IS the sheikh.
     // So second_id=narrator is the teacher, first_id are his students.
     const studentsRes = await pool.query(
-      `SELECT n.id, n.name
-       FROM narrator_relations nr
-       JOIN narrators n ON n.id = nr.first_id
-       WHERE nr.second_id = $1 AND nr.is_sheikh = true
-       ORDER BY n.name
+      `SELECT n.id, n.name, COALESCE(nt.hadiths_count, 0)::int AS hadith_count
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.rawy_id
+       WHERE nt.shyoukh_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
        LIMIT 100`,
       [narratorId]
     )
@@ -88,21 +92,29 @@ export async function GET(
 
     // Biography from classical books, deduplicated by main_id
     const biographyRes = await pool.query(
-      `SELECT DISTINCT ON (main_id) book_name, book_id, title, content
-       FROM narrator_biography WHERE narrator_id = $1
-       ORDER BY main_id, book_name`,
+      `SELECT DISTINCT ON (nb.main_id) nb.book_name, nb.book_id, nb.title, nb.content,
+              hsc.part_num, hsc.page_num
+       FROM narrator_biography nb
+       LEFT JOIN hadith_service_content hsc ON hsc.id = nb.main_id
+       WHERE nb.narrator_id = $1
+       ORDER BY nb.main_id, nb.book_name`,
       [narratorId]
     )
 
     // Group biography by book
-    const bioMap: Record<string, { book_id: number; entries: { title: string; content: string }[] }> = {}
+    const bioMap: Record<string, { book_id: number; entries: { title: string; content: string; part_num: number | null; page_num: number | null }[] }> = {}
     for (const row of biographyRes.rows) {
       const bname = row.book_name || 'غير معروف'
       if (!bioMap[bname]) bioMap[bname] = { book_id: row.book_id, entries: [] }
       const content = (row.content || '').trim()
       if (!content || content.length < 10) continue
       const already = bioMap[bname].entries.some(e => e.content === content)
-      if (!already) bioMap[bname].entries.push({ title: row.title || '', content })
+      if (!already) bioMap[bname].entries.push({
+        title: row.title || '',
+        content,
+        part_num: row.part_num ?? null,
+        page_num: row.page_num ?? null,
+      })
     }
     const biography = Object.entries(bioMap)
       .filter(([, v]) => v.entries.length > 0)

@@ -7,22 +7,27 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'محرك التخريج — جامع خادم الحرمين' }
 
 interface VersionRow {
+  group_id: number
+  group_size: number
+  matched_count: number
+  seed_hadith_id: number
+  is_seed: boolean
   hadith_id: number
   book_id: number
   book_name: string
   book_death: number | null
   chapter_name: string | null
   hadith_text: string
-  // match line, attached by attachMatnSnippets (lib/matnSnippet.ts)
-  snippet?: SnipPart[] | null
   chain_count: number
-  takhrij_id: number | null
+  judgment_text: string | null
+  search_total: number
+  snip_disp?: string[]
+  snip_norm?: string[]
+  snippet?: SnipPart[] | null
 }
 
-interface JudgmentRow {
-  hadith_id: number
-  judgment_text: string
-  scientist_name: string
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export default async function TakhrijPage({
@@ -32,79 +37,121 @@ export default async function TakhrijPage({
 }) {
   const sp = await searchParams
   const query = (sp.q || '').trim()
-  const method = sp.method || 'text'
+  const method = sp.method === 'exact' ? 'exact' : 'text'
 
   let results: VersionRow[] = []
-  let judgments: JudgmentRow[] = []
-  let groupedByTakhrij: Map<number | null, VersionRow[]> = new Map()
+  let groupedByTakhrij = new Map<number, VersionRow[]>()
 
-  if (query.length >= 5) {
-    // normalize_hadith strips diacritics and normalises hamza/ta-marbuta so user can
-    // search without diacritics (e.g. "إنما الأعمال" matches "إِنَّمَا الْأَعْمَالُ")
-    const searchPattern = method === 'exact' ? query : query.replace(/\s+/g, '.*')
+  if (query.length >= 3) {
+    const terms = query.split(/\s+/).filter(Boolean)
+    const searchPattern = method === 'exact'
+      ? terms.map(escapeRegex).join('\\s+')
+      : terms.map(escapeRegex).join('\\s+.*\\s+')
 
-    const [searchRes, judgmentsRes] = await Promise.all([
-      pool.query<VersionRow>(
-        `SELECT DISTINCT ON (ht.main_id)
-                ht.main_id AS hadith_id,
-                ht.book_id,
-                b.title AS book_name,
-                b.takhrij_death AS book_death,
-                ht.chapter_text AS chapter_name,
-                LEFT(regexp_replace(COALESCE(ht.tarf, ''), '<[^>]+>', ' ', 'g'), 350) AS hadith_text,
-                ${snipColumns('ht.tarf')},
-                tk.group_id AS takhrij_id,
-                (SELECT COUNT(DISTINCT ic.id)::int
-                 FROM isnad_chains ic
-                 JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
-                 WHERE ih.hadith_id = ht.main_id) AS chain_count
+    const searchRes = await pool.query<VersionRow>(
+      `WITH search_hits AS MATERIALIZED (
+         SELECT ht.main_id AS hadith_id
          FROM hadith_toc ht
          JOIN books b ON b.id = ht.book_id
-         LEFT JOIN takhrij tk ON tk.hadith_id = ht.main_id
          WHERE ht.is_leaf = true
            AND ht.is_paragraph = true
            AND normalize_hadith(ht.tarf) ~* normalize_hadith($1)
-         ORDER BY ht.main_id, b.takhrij_death ASC NULLS LAST
-         LIMIT 100`,
-        [searchPattern]
-      ).catch(err => {
-        console.error('takhrij search failed:', err)
-        return { rows: [] as VersionRow[] }
-      }),
-
-      pool.query<JudgmentRow>(
-        `SELECT DISTINCT ON (hj.hadith_id)
-                hj.hadith_id,
-                hj.say_text AS judgment_text,
-                n.name AS scientist_name
-         FROM hadith_judgments hj
-         LEFT JOIN narrators n ON n.id = hj.scientist_id
-         WHERE hj.hadith_id IN (
-           SELECT ht2.main_id FROM hadith_toc ht2
-           WHERE ht2.is_leaf = true AND ht2.is_paragraph = true
-             AND normalize_hadith(ht2.tarf) ~* normalize_hadith($1)
-           LIMIT 100
-         )
-         ORDER BY hj.hadith_id`,
-        [searchPattern]
-      ).catch(() => ({ rows: [] })),
-    ])
+         ORDER BY b.takhrij_death ASC NULLS LAST, ht.main_id
+         LIMIT 100
+       ),
+       matched_groups AS MATERIALIZED (
+         SELECT DISTINCT t.group_id, sh.hadith_id AS seed_hadith_id
+         FROM takhrij t
+         JOIN search_hits sh ON sh.hadith_id = t.hadith_id
+         WHERE t.group_id IS NOT NULL
+       ),
+       group_stats AS (
+         SELECT
+           mg.group_id,
+           MIN(mg.seed_hadith_id)::int AS seed_hadith_id,
+           COUNT(DISTINCT t.hadith_id)::int AS group_size,
+           COUNT(DISTINCT mg.seed_hadith_id)::int AS matched_count
+         FROM matched_groups mg
+         JOIN takhrij t ON t.group_id = mg.group_id
+         GROUP BY mg.group_id
+       ),
+       ranked_members AS (
+         SELECT
+           gs.*,
+           t.hadith_id,
+           t.book_id,
+           b.title AS book_name,
+           b.takhrij_death,
+           ht.chapter_text AS chapter_name,
+           LEFT(regexp_replace(COALESCE(ht.tarf, ''), '<[^>]+>', ' ', 'g'), 350) AS hadith_text,
+           ${snipColumns('ht.content')},
+           ROW_NUMBER() OVER (
+             PARTITION BY gs.group_id
+             ORDER BY
+               (t.hadith_id = gs.seed_hadith_id) DESC,
+               b.takhrij_death ASC NULLS LAST,
+               t.hadith_id
+           ) AS member_rank
+         FROM group_stats gs
+         JOIN takhrij t ON t.group_id = gs.group_id
+         JOIN hadith_toc ht
+           ON ht.main_id = t.hadith_id
+          AND ht.is_leaf = true
+          AND ht.is_paragraph = true
+         JOIN books b ON b.id = t.book_id
+       )
+       SELECT
+         rm.group_id,
+         rm.group_size,
+         rm.matched_count,
+         rm.seed_hadith_id,
+         (rm.member_rank = 1) AS is_seed,
+         rm.hadith_id,
+         rm.book_id,
+         rm.book_name,
+         rm.takhrij_death AS book_death,
+         rm.chapter_name,
+         rm.hadith_text,
+         rm.snip_disp,
+         rm.snip_norm,
+         (
+           SELECT COUNT(DISTINCT ih.isnad_id)::int
+           FROM isnad_hadiths ih
+           WHERE ih.hadith_id = rm.hadith_id
+         ) AS chain_count,
+         (
+           SELECT hj.say_text
+           FROM hadith_judgments hj
+           WHERE hj.hadith_id = rm.hadith_id
+           ORDER BY hj.id
+           LIMIT 1
+         ) AS judgment_text,
+         (SELECT COUNT(*)::int FROM search_hits) AS search_total
+       FROM ranked_members rm
+       WHERE rm.member_rank <= 12
+       ORDER BY
+         rm.group_size DESC,
+         rm.matched_count DESC,
+         rm.group_id,
+         rm.member_rank`,
+      [searchPattern]
+    ).catch(error => {
+      console.error('takhrij search failed:', error)
+      return { rows: [] as VersionRow[] }
+    })
 
     results = await attachMatnSnippets(searchRes.rows, [query])
-    judgments = judgmentsRes.rows
-
-    // Group by takhrij_id
     for (const row of results) {
-      const key = row.takhrij_id
-      if (!groupedByTakhrij.has(key)) groupedByTakhrij.set(key, [])
-      groupedByTakhrij.get(key)!.push(row)
+      const group = groupedByTakhrij.get(row.group_id) || []
+      group.push(row)
+      groupedByTakhrij.set(row.group_id, group)
     }
   }
 
-  const judgmentMap = new Map(judgments.map(j => [j.hadith_id, j]))
   const groupCount = groupedByTakhrij.size
+  const searchTotal = Number(results[0]?.search_total || 0)
 
-  function gradeClass(text: string | undefined): string {
+  function gradeClass(text: string | null | undefined): string {
     if (!text) return 'bg-gray-50 border-gray-100'
     if (/صحيح/.test(text)) return 'bg-green-50 border-green-200'
     if (/حسن/.test(text)) return 'bg-blue-50 border-blue-200'
@@ -113,8 +160,7 @@ export default async function TakhrijPage({
     return 'bg-gray-50 border-gray-100'
   }
 
-  function gradeBadge(text: string | undefined): string {
-    if (!text) return 'bg-gray-100 text-gray-500'
+  function gradeBadge(text: string): string {
     if (/صحيح/.test(text)) return 'bg-green-100 text-green-800'
     if (/حسن/.test(text)) return 'bg-blue-100 text-blue-800'
     if (/ضعيف/.test(text)) return 'bg-red-100 text-red-700'
@@ -127,24 +173,27 @@ export default async function TakhrijPage({
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-green-900 mb-1">محرك التخريج</h1>
         <p className="text-sm text-gray-500 mb-3">
-          أدخل نصاً أو جزءاً من حديث لاستخراج جميع رواياته الموازية مصنَّفةً بمجموعات التخريج —
-          مع أسانيدها وأحكام العلماء
+          أدخل نصاً أو جزءاً من حديث لاستخراج الروايات الموازية مصنفةً بمجموعات التخريج، مع الأسانيد والأحكام.
         </p>
 
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4 text-xs text-amber-900">
           <span className="font-semibold">كيفية الاستخدام: </span>
-          اكتب جزءاً مميزاً من الحديث (يُفضَّل 5 كلمات أو أكثر). ستجد جميع الروايات الموازية مجموعةً
-          بحسب مجموعات التخريج، مع عدد الأسانيد والأحكام. كل مجموعة = متابعات وشواهد لبعضها.
+          اكتب جزءاً مميزاً من الحديث. تُعرض كل عضوية تخريج محفوظة للحديث، لا أول مجموعة فقط، ويُحسب عدد المجموعة كاملاً.
         </div>
 
         <form action="/takhrij" method="get" className="mb-4">
           <div className="flex gap-2 mb-2">
-            <input name="q" defaultValue={query}
+            <input
+              name="q"
+              defaultValue={query}
               placeholder="مثال: إنما الأعمال بالنيات..."
               className="flex-1 text-sm border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 shadow-sm"
-              dir="rtl" />
-            <button type="submit"
-              className="bg-green-800 text-white px-5 py-2 rounded-xl hover:bg-green-700 transition-colors font-medium">
+              dir="rtl"
+            />
+            <button
+              type="submit"
+              className="bg-green-800 text-white px-5 py-2 rounded-xl hover:bg-green-700 transition-colors font-medium"
+            >
               استخرج
             </button>
           </div>
@@ -152,16 +201,15 @@ export default async function TakhrijPage({
             <span>طريقة البحث:</span>
             <label className="flex items-center gap-1 cursor-pointer">
               <input type="radio" name="method" value="text" defaultChecked={method === 'text'} />
-              <span>مرن (الكلمات بأي ترتيب)</span>
+              <span>مرن (الكلمات مرتبة مع فواصل)</span>
             </label>
             <label className="flex items-center gap-1 cursor-pointer">
               <input type="radio" name="method" value="exact" defaultChecked={method === 'exact'} />
-              <span>دقيق (النص كما هو)</span>
+              <span>دقيق (الكلمات متصلة)</span>
             </label>
           </div>
         </form>
 
-        {/* Quick examples */}
         <div className="flex flex-wrap gap-2 mb-4 text-xs">
           <span className="text-gray-400">أمثلة سريعة:</span>
           {[
@@ -171,11 +219,13 @@ export default async function TakhrijPage({
             'بني الإسلام على خمس',
             'لا ضرر ولا ضرار',
             'الدين النصيحة',
-          ].map(ex => (
-            <Link key={ex}
-              href={`/takhrij?q=${encodeURIComponent(ex)}`}
-              className="text-green-700 hover:underline bg-green-50 px-2 py-1 rounded-lg border border-green-100">
-              {ex}
+          ].map(example => (
+            <Link
+              key={example}
+              href={`/takhrij?q=${encodeURIComponent(example)}`}
+              className="text-green-700 hover:underline bg-green-50 px-2 py-1 rounded-lg border border-green-100"
+            >
+              {example}
             </Link>
           ))}
         </div>
@@ -183,93 +233,112 @@ export default async function TakhrijPage({
 
       {query && (
         <div className="mb-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="text-sm font-bold text-green-900">
-              نتائج التخريج: "{query}"
-            </div>
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <div className="text-sm font-bold text-green-900">نتائج التخريج: «{query}»</div>
             <span className="text-xs text-gray-500">
-              {results.length} رواية في {groupCount} مجموعة تخريج
+              {searchTotal > 0
+                ? `${searchTotal.toLocaleString('ar-EG')} حديث مطابق في ${groupCount.toLocaleString('ar-EG')} مجموعة تخريج`
+                : 'لا توجد نتائج'}
             </span>
           </div>
 
-          {results.length === 0 && (
+          {results.length === 0 ? (
             <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500">
-              <p>لم يُعثر على الحديث في قاعدة البيانات</p>
-              <p className="text-xs mt-1 text-gray-400">جرب كلمات أقل أو أدقَّ</p>
+              <p>لم يُعثر على حديث مطابق في قاعدة البيانات</p>
+              <p className="text-xs mt-1 text-gray-400">جرّب كلمات أقل، أو بدّل طريقة البحث.</p>
             </div>
-          )}
+          ) : (
+            <div className="space-y-4">
+              {Array.from(groupedByTakhrij.entries()).map(([groupId, versions], groupIndex) => {
+                const groupSize = Number(versions[0]?.group_size || versions.length)
+                const matchedCount = Number(versions[0]?.matched_count || 1)
+                const seedHadithId = Number(versions[0]?.seed_hadith_id || versions[0]?.hadith_id)
+                const bestJudgment = versions.map(version => version.judgment_text).find(Boolean)
+                const sortedVersions = [...versions].sort((a, b) => {
+                  if (a.is_seed !== b.is_seed) return a.is_seed ? -1 : 1
+                  return (a.book_death || 9999) - (b.book_death || 9999)
+                })
 
-          <div className="space-y-4">
-            {Array.from(groupedByTakhrij.entries()).map(([takhrij_id, versions], groupIdx) => {
-              const bestJudgment = versions
-                .map(v => judgmentMap.get(v.hadith_id))
-                .find(j => j !== undefined)
-              const totalChains = versions.reduce((s, v) => s + v.chain_count, 0)
-              const sortedVersions = [...versions].sort((a, b) =>
-                (a.book_death || 9999) - (b.book_death || 9999)
-              )
-
-              return (
-                <div key={takhrij_id ?? `no-group-${groupIdx}`}
-                  className={`rounded-xl border p-4 ${gradeClass(bestJudgment?.judgment_text)}`}>
-                  <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-gray-500">
-                        مجموعة {(groupIdx + 1).toLocaleString('ar-EG')}
-                      </span>
-                      <span className="text-xs bg-white/80 text-gray-600 border px-1.5 py-0.5 rounded-full">
-                        {versions.length} رواية — {totalChains} سند
-                      </span>
-                      {bestJudgment && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${gradeBadge(bestJudgment.judgment_text)}`}>
-                          {bestJudgment.judgment_text}
+                return (
+                  <section
+                    key={groupId}
+                    className={`rounded-xl border p-4 ${gradeClass(bestJudgment)}`}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-gray-500">
+                          مجموعة {(groupIndex + 1).toLocaleString('ar-EG')} · #{groupId.toLocaleString('ar-EG')}
                         </span>
+                        <span className="text-xs bg-white/80 text-gray-600 border px-1.5 py-0.5 rounded-full">
+                          {groupSize.toLocaleString('ar-EG')} رواية · {matchedCount.toLocaleString('ar-EG')} مطابقة
+                        </span>
+                        {bestJudgment && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${gradeBadge(bestJudgment)}`}>
+                            {bestJudgment.slice(0, 90)}
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/hadith/${seedHadithId}/across-books`}
+                        className="text-xs text-green-700 hover:underline shrink-0"
+                      >
+                        مقارنة كل الروايات ←
+                      </Link>
+                    </div>
+
+                    <div className="space-y-2">
+                      {sortedVersions.slice(0, 4).map(version => (
+                        <div
+                          key={`${groupId}-${version.hadith_id}`}
+                          className="bg-white/70 rounded-lg p-2.5 border border-white/80"
+                        >
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Link
+                              href={`/books/${version.book_id}`}
+                              className="text-xs font-bold text-green-800 hover:underline"
+                            >
+                              {version.book_name}
+                            </Link>
+                            {version.book_death && (
+                              <span className="text-xs text-gray-400">ت {version.book_death}هـ</span>
+                            )}
+                            {version.chain_count > 0 && (
+                              <span className="text-xs text-gray-400">{version.chain_count.toLocaleString('ar-EG')} سند</span>
+                            )}
+                            {version.is_seed && (
+                              <span className="text-[10px] rounded-full bg-green-100 px-2 py-0.5 text-green-800">
+                                مطابق للاستعلام
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-800 leading-relaxed line-clamp-2">
+                            {version.hadith_text}
+                            {version.hadith_text.length >= 350 ? '...' : ''}
+                          </p>
+                          {version.is_seed && <MatnMatchLine parts={version.snippet} />}
+                          <Link
+                            href={`/hadith/${version.hadith_id}`}
+                            className="text-xs text-green-700 hover:underline mt-1 inline-block"
+                          >
+                            الحديث بأسانيده ←
+                          </Link>
+                        </div>
+                      ))}
+
+                      {groupSize > 4 && (
+                        <Link
+                          href={`/hadith/${seedHadithId}/across-books`}
+                          className="block text-xs text-green-700 hover:underline text-center py-1"
+                        >
+                          +${(groupSize - 4).toLocaleString('ar-EG')} روايات أخرى — عرض المجموعة كاملة
+                        </Link>
                       )}
                     </div>
-                    {takhrij_id && (
-                      <Link href={`/hadith/${versions[0].hadith_id}/across-books`}
-                        className="text-xs text-green-700 hover:underline shrink-0">
-                        مقارنة الروايات ←
-                      </Link>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {sortedVersions.slice(0, 4).map(v => (
-                      <div key={v.hadith_id}
-                        className="bg-white/70 rounded-lg p-2.5 border border-white/80">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <Link href={`/books/${v.book_id}`}
-                            className="text-xs font-bold text-green-800 hover:underline">
-                            {v.book_name}
-                          </Link>
-                          {v.book_death && (
-                            <span className="text-xs text-gray-400">ت {v.book_death}هـ</span>
-                          )}
-                          {v.chain_count > 0 && (
-                            <span className="text-xs text-gray-400">{v.chain_count} سند</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-800 leading-relaxed line-clamp-2">
-                          {v.hadith_text}{v.hadith_text?.length >= 350 ? '...' : ''}
-                        </p>
-                        <MatnMatchLine parts={v.snippet} />
-                        <Link href={`/hadith/${v.hadith_id}`}
-                          className="text-xs text-green-700 hover:underline mt-1 inline-block">
-                          الحديث بأسانيده ←
-                        </Link>
-                      </div>
-                    ))}
-                    {versions.length > 4 && (
-                      <div className="text-xs text-gray-400 text-center py-1">
-                        + {(versions.length - 4).toLocaleString('ar-EG')} روايات أخرى
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                  </section>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -278,17 +347,10 @@ export default async function TakhrijPage({
           <div className="text-4xl mb-3">📜</div>
           <h2 className="text-lg font-bold text-green-900 mb-2">محرك التخريج الحديثي</h2>
           <p className="text-sm text-gray-500 max-w-lg mx-auto">
-            أداة لاستخراج جميع روايات حديث ما وتصنيفها بمجموعات التخريج —
-            تعادل ما يفعله الباحث يدوياً من تتبع الحديث في كتب السنة وجمع طرقه وأسانيده
+            أداة لاستخراج روايات الحديث وتصنيفها بمجموعات التخريج، مع إظهار العدد الحقيقي لكل مجموعة.
           </p>
         </div>
       )}
-
-      <div className="mt-6 flex items-center gap-4 text-sm flex-wrap">
-        <Link href="/search" className="text-green-700 hover:underline">← البحث المتقدم</Link>
-        <Link href="/hadiths/most-attested" className="text-green-700 hover:underline">← الأوسع انتشاراً</Link>
-        <Link href="/matn-compare" className="text-green-700 hover:underline">← مقارنة المتون</Link>
-      </div>
     </div>
   )
 }

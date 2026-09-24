@@ -59,14 +59,15 @@ export default async function TopicItemPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ page?: string; grade?: string; q?: string }>
+  searchParams: Promise<{ page?: string; grade?: string; q?: string; view?: string }>
 }) {
   const { id }   = await params
-  const { page: pageParam, grade: gradeParam, q: qParam } = await searchParams
+  const { page: pageParam, grade: gradeParam, q: qParam, view: viewParam } = await searchParams
   const itemId = parseInt(id)
   const page   = Math.max(1, parseInt(pageParam || '1'))
   const grade  = gradeParam || ''
   const q      = (qParam || '').trim()
+  const requestedView = viewParam === 'hadiths' ? 'hadiths' : 'children'
   const limit  = 20
   const offset = (page - 1) * limit
 
@@ -124,27 +125,40 @@ export default async function TopicItemPage({
   const gradeStats: GradeStat[] = gradeStatsRes.rows
   const topCompanions: TopCompanion[] = topCompanionsRes.rows
 
-  // Check if has children
-  const { rows: children } = await pool.query<ChildItem>(
-    `SELECT si.id, si.title, si.is_leaf, si.left_value,
-            COUNT(DISTINCT hs.paragraph_main_id) AS hadith_count
-     FROM subject_items si
-     LEFT JOIN hadith_subjects hs ON hs.subject_id = si.id
-     WHERE si.parent_id = $1
-     GROUP BY si.id
-     ORDER BY si.left_value
-     LIMIT $2 OFFSET $3`,
-    [itemId, limit, offset]
+  // A topic branch can itself own hadiths as well as having child topics. The old page hid those
+  // direct hadiths, making thousands of records unreachable. Keep both surfaces behind an explicit view.
+  const { rows: topicMeta } = await pool.query<{ has_children: boolean; child_count: number; direct_hadiths: number }>(
+    `SELECT
+       EXISTS (SELECT 1 FROM subject_items child WHERE child.parent_id = $1) AS has_children,
+       (SELECT COUNT(*)::int FROM subject_items WHERE parent_id = $1) AS child_count,
+       (SELECT COUNT(DISTINCT paragraph_main_id) FROM hadith_subjects WHERE subject_id = $1)::int AS direct_hadiths`,
+    [itemId]
   )
+  const hasChildren = Boolean(topicMeta[0]?.has_children)
+  const childTotal = Number(topicMeta[0]?.child_count || 0)
+  const directHadithTotal = Number(topicMeta[0]?.direct_hadiths || 0)
+  const view = hasChildren ? requestedView : 'hadiths'
 
-  const hasChildren = children.length > 0
+  const { rows: children } = hasChildren && view === 'children'
+    ? await pool.query<ChildItem>(
+        `SELECT si.id, si.title, si.is_leaf, si.left_value,
+                COUNT(DISTINCT hs.paragraph_main_id) AS hadith_count
+         FROM subject_items si
+         LEFT JOIN hadith_subjects hs ON hs.subject_id = si.id
+         WHERE si.parent_id = $1
+         GROUP BY si.id
+         ORDER BY si.left_value
+         LIMIT $2 OFFSET $3`,
+        [itemId, limit, offset]
+      )
+    : { rows: [] as ChildItem[] }
 
-  // Get hadiths if this is a leaf or has no children
+  // Get hadiths for leaves and for the explicit direct-hadiths view of a branch
   let hadiths: HadithRow[] = []
   let total = 0
   let pages = 0
 
-  if (hasChildren) {
+  if (hasChildren && view === 'children') {
     const { rows: countRows } = await pool.query(
       `SELECT COUNT(*) FROM subject_items WHERE parent_id = $1`,
       [itemId]
@@ -264,19 +278,45 @@ export default async function TopicItemPage({
           <div>
             <h1 className="text-2xl font-bold text-green-900 mb-1">{item.title}</h1>
             <p className="text-gray-500 text-sm">
-              {hasChildren
-                ? `${total.toLocaleString('ar-SA')} موضوع فرعي`
-                : `${total.toLocaleString('ar-SA')} حديث`}
+              {directHadithTotal.toLocaleString('ar-SA')} حديث مرتبط مباشرة
+              {hasChildren && ` · ${childTotal.toLocaleString('ar-SA')} موضوع فرعي`}
             </p>
           </div>
-          {!hasChildren && total > 0 && (
+          {directHadithTotal > 0 && (
             <TopicExport topicId={itemId} topicTitle={item.title} />
           )}
         </div>
       </div>
 
-      {/* Sub-items (non-leaf node) */}
       {hasChildren && (
+        <nav className="mb-5 flex flex-wrap gap-2 border-b border-gray-200 pb-3" aria-label="عرض الموضوع">
+          <Link
+            href={`/topics/item/${itemId}?view=children`}
+            className={`rounded-full px-4 py-2 text-sm font-medium ${
+              view === 'children'
+                ? 'bg-green-900 text-white'
+                : 'bg-white text-green-800 border border-green-200 hover:bg-green-50'
+            }`}
+          >
+            الموضوعات الفرعية ({childTotal.toLocaleString('ar-EG')})
+          </Link>
+          {directHadithTotal > 0 && (
+            <Link
+              href={`/topics/item/${itemId}?view=hadiths`}
+              className={`rounded-full px-4 py-2 text-sm font-medium ${
+                view === 'hadiths'
+                  ? 'bg-green-900 text-white'
+                  : 'bg-white text-green-800 border border-green-200 hover:bg-green-50'
+              }`}
+            >
+              الأحاديث المرتبطة مباشرة ({directHadithTotal.toLocaleString('ar-EG')})
+            </Link>
+          )}
+        </nav>
+      )}
+
+      {/* Sub-items (non-leaf node) */}
+      {hasChildren && view === 'children' && (
         <div className="grid gap-2">
           {children.map(child => {
             const hadithCount = parseInt(child.hadith_count)
@@ -308,8 +348,8 @@ export default async function TopicItemPage({
         </div>
       )}
 
-      {/* Hadiths (leaf node) */}
-      {!hasChildren && (
+      {/* Hadiths (leaf node or direct links on a branch) */}
+      {view === 'hadiths' && (
         <>
           {/* Grade distribution summary */}
           {gradeStats.length > 0 && (
@@ -353,6 +393,7 @@ export default async function TopicItemPage({
           {/* Text search within topic */}
           <form method="GET" action={`/topics/item/${itemId}`} className="mb-4">
             {grade && <input type="hidden" name="grade" value={grade} />}
+            {hasChildren && <input type="hidden" name="view" value="hadiths" />}
             <div className="flex gap-2">
               <input
                 type="text"
@@ -370,7 +411,7 @@ export default async function TopicItemPage({
               </button>
               {q && (
                 <Link
-                  href={`/topics/item/${itemId}${grade ? `?grade=${grade}` : ''}`}
+                  href={`/topics/item/${itemId}?view=hadiths${grade ? `&grade=${grade}` : ''}`}
                   className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   مسح
@@ -389,7 +430,7 @@ export default async function TopicItemPage({
             ].map(g => (
               <Link
                 key={g.key}
-                href={`/topics/item/${itemId}?${g.key ? `grade=${g.key}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                href={`/topics/item/${itemId}?view=hadiths${g.key ? `&grade=${g.key}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
                 className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${g.cls}`}
               >
                 {g.label}
@@ -473,7 +514,7 @@ export default async function TopicItemPage({
         <div className="flex items-center justify-center gap-2 mt-8">
           {page > 1 && (
             <Link
-              href={`/topics/item/${itemId}?page=${page - 1}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              href={`/topics/item/${itemId}?page=${page - 1}${hasChildren ? `&view=${view}` : ''}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-green-700 hover:bg-green-50 transition-colors"
             >
               → السابق
@@ -484,7 +525,7 @@ export default async function TopicItemPage({
           </span>
           {page < pages && (
             <Link
-              href={`/topics/item/${itemId}?page=${page + 1}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              href={`/topics/item/${itemId}?page=${page + 1}${hasChildren ? `&view=${view}` : ''}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-green-700 hover:bg-green-50 transition-colors"
             >
               ← التالي

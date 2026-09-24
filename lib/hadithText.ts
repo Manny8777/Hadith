@@ -37,6 +37,40 @@ export function stripXmlKeepEdges(xml: string): string {
   return cleanXmlTags(xml)
 }
 
+/**
+ * Render the legacy document furniture that the old XSL displayed in place:
+ * printed hadith numbers, part/page markers, footnote references and line breaks.
+ * Search/snippet helpers stay text-only; this helper is for the document reader.
+ */
+export function renderHadithInlineText(xml: string): string {
+  const marked = (xml || '')
+    .replace(/<سند_مخفي[\s\S]*?<\/سند_مخفي>/g, '')
+    .replace(/<Margin[^>]*>[\s\S]*?<\/Margin>/g, ' ')
+    .replace(/<FootNote[^>]*>[\s\S]*?<\/FootNote>/g, ' ')
+    .replace(/<هامش\b[^>]*\bID="([^"]+)"[^>]*\/?>(?:\s*<\/هامش>)?/g, ' ($1) ')
+    .replace(/<الصفحات\b([^>]*)\/?>/g, (_full, attrs: string) => {
+      const part = attrs.match(/\bجزء="([^"]*)"/)?.[1] || '—'
+      const page = attrs.match(/\bصفحة="([^"]*)"/)?.[1] || '—'
+      return ` [${part}/${page}] `
+    })
+    .replace(/<رقم_حديث\b([^>]*)>([\s\S]*?)<\/رقم_حديث>/g,
+      (_full, attrs: string, value: string) => {
+        const kind = attrs.match(/\bنوع="([^"]*)"/)?.[1]
+        const number = decodeEntities(value).trim()
+        return kind === 'مطبوع' && number ? ` (${number}) ` : ' '
+      })
+    .replace(/<رقم_الفقرة\b[^>]*\/?>/g, ' ')
+    .replace(/<نه\s*\/>/g, '\n')
+    .replace(/<[^>]+>/g, ' ')
+
+  return decodeEntities(marked)
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 export interface HadithTail {
   text: string
   footnotes: { id: string; text: string }[]
@@ -63,22 +97,14 @@ export function renderHadithTail(tailRaw: string): HadithTail {
     footnotes.push({ id: m[1], text: stripXmlToVerbatim(m[2]) })
   }
 
-  const marked = raw
-    .replace(/<Margin[^>]*>[\s\S]*?<\/Margin>/g, ' ')
-    .replace(/<FootNote[\s\S]*?<\/FootNote>/g, ' ')
-    .replace(/<هامش[^>]*ID="(\d+)"[^>]*\/?>(?:\s*<\/هامش>)?/g, ' ($1)')
-    .replace(/<الصفحات[^>]*جزء="([^"]*)"[^>]*صفحة="([^"]*)"[^>]*\/?>/g, ' [$1/$2] ')
-    .replace(/<رقم_حديث[^>]*نوع="([^"]*)"[^>]*>([\s\S]*?)<\/رقم_حديث>/g,
-      (_s: string, kind: string, n: string) => (kind === 'مطبوع' ? ` (${n.trim()}) ` : ' '))
-
-  return { text: stripXmlToVerbatim(marked), footnotes }
+  return { text: renderHadithInlineText(raw), footnotes }
 }
 
 export function splitSanadMatn(xml: string): { sanad: string; matn: string; tail: string; footnotes: { id: string; text: string }[] } {
   const raw = xml || ''
   const matnStart = raw.search(/<متن[\s>]/)
   if (matnStart === -1) {
-    return { sanad: '', matn: stripXmlToVerbatim(raw), tail: '', footnotes: [] }
+    return { sanad: '', matn: renderHadithInlineText(raw), tail: '', footnotes: [] }
   }
 
   const matnRe = /<متن[^>]*>([\s\S]*?)<\/متن>/g
@@ -93,8 +119,8 @@ export function splitSanadMatn(xml: string): { sanad: string; matn: string; tail
   const { text: tail, footnotes } = renderHadithTail(lastEnd >= 0 ? raw.slice(lastEnd) : '')
 
   return {
-    sanad: stripXmlToVerbatim(raw.slice(0, matnStart)),
-    matn: stripXmlToVerbatim(matnParts.join(' ')),
+    sanad: renderHadithInlineText(raw.slice(0, matnStart)),
+    matn: renderHadithInlineText(matnParts.join(' ')),
     tail,
     footnotes,
   }

@@ -1,6 +1,6 @@
 {
-  "name": "tmp-app",
-  "version": "0.1.1",
+  "name": "hadith-encyclopedia",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke/production-smoke.mjs"
   },
   "dependencies": {
     "@types/dagre": "^0.7.54",

@@ -87,9 +87,9 @@ export default async function ScholarProfilePage({
 
     pool.query<{ cnt: number; sahih_cnt: number; hasan_cnt: number; daif_cnt: number }>(
       `SELECT COUNT(*)::int AS cnt,
-              SUM(CASE WHEN say_text ~* 'صحيح' THEN 1 ELSE 0 END)::int AS sahih_cnt,
-              SUM(CASE WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 1 ELSE 0 END)::int AS hasan_cnt,
-              SUM(CASE WHEN say_text ~* 'ضعيف|منكر|لا يصح|باطل|موضوع' THEN 1 ELSE 0 END)::int AS daif_cnt
+              COALESCE(SUM(CASE WHEN say_text ~* 'صحيح' THEN 1 ELSE 0 END), 0)::int AS sahih_cnt,
+              COALESCE(SUM(CASE WHEN say_text ~* 'إسناده حسن|حديث حسن|سنده حسن' AND say_text !~* 'صحيح' THEN 1 ELSE 0 END), 0)::int AS hasan_cnt,
+              COALESCE(SUM(CASE WHEN say_text ~* 'ضعيف|منكر|لا يصح|باطل|موضوع' THEN 1 ELSE 0 END), 0)::int AS daif_cnt
        FROM hadith_judgments WHERE scientist_id = $1`,
       [scholarId]
     ).catch(() => ({ rows: [{ cnt: 0, sahih_cnt: 0, hasan_cnt: 0, daif_cnt: 0 }] })),
@@ -119,8 +119,14 @@ export default async function ScholarProfilePage({
   const scholar = scholarRes.rows[0]
   if (!scholar) notFound()
 
-  const stats = judgmentsTotalRes.rows[0] || { cnt: 0, sahih_cnt: 0, hasan_cnt: 0, daif_cnt: 0 }
-  const assessmentCount = statsRes.rows[0]?.assessments_cnt || 0
+  const rawStats = judgmentsTotalRes.rows[0]
+  const stats = {
+    cnt: Number(rawStats?.cnt || 0),
+    sahih_cnt: Number(rawStats?.sahih_cnt || 0),
+    hasan_cnt: Number(rawStats?.hasan_cnt || 0),
+    daif_cnt: Number(rawStats?.daif_cnt || 0),
+  }
+  const assessmentCount = Number(statsRes.rows[0]?.assessments_cnt || 0)
   const judgementsTotal = stats.cnt
   const judgementsPages = Math.ceil(judgementsTotal / limit)
   const assessmentsTotal = assessmentCount

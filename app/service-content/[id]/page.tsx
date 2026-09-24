@@ -1,6 +1,7 @@
-﻿import pool from '@/lib/db'
+import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ServiceContentRenderer from '@/app/components/ServiceContentRenderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,19 +37,6 @@ interface ChildNode {
   page_num: number | null
 }
 
-function parseContent(raw: string): string {
-  return raw
-    .replace(/<نه\/>/g, '\n')
-    .replace(/<آية[^>]*>([^<]*)<\/آية>/g, '\u{FD3E}$1\u{FD3F}')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-}
-
 export default async function ServiceContentPage({
   params,
 }: {
@@ -58,7 +46,7 @@ export default async function ServiceContentPage({
   const nodeId = parseInt(id)
   if (isNaN(nodeId)) notFound()
 
-  const [nodeRes, quranRes, childrenRes, parentRes] = await Promise.all([
+  const [nodeRes, quranRes, suraRes, childrenRes, parentRes] = await Promise.all([
     pool.query<ServiceNode>(
       `SELECT id, book_id, book_name, parent_id, section_text, part_text,
               is_leaf, is_paragraph, part_num, page_num, content, tarf
@@ -73,6 +61,7 @@ export default async function ServiceContentPage({
        WHERE q.service_main_id = $1`,
       [nodeId]
     ),
+    pool.query<{ id: number; name: string }>('SELECT id, name FROM quran_suras'),
     pool.query<ChildNode>(
       `SELECT id, section_text, part_text, tarf, is_leaf, part_num, page_num
        FROM hadith_service_content WHERE parent_id = $1
@@ -94,8 +83,7 @@ export default async function ServiceContentPage({
   const children = childrenRes.rows
   const parent = parentRes.rows[0] ?? null
 
-  const parsedContent = node.content ? parseContent(node.content) : null
-  const paragraphs = parsedContent ? parsedContent.split('\n').filter(p => p.trim()) : []
+  const suraByName = Object.fromEntries(suraRes.rows.map(s => [s.name, Number(s.id)]))
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8" dir="rtl">
@@ -195,24 +183,18 @@ export default async function ServiceContentPage({
         </div>
       )}
 
-      {parsedContent && node.is_leaf && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+      {node.content && node.is_leaf && (
+        <article className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
             <div className="w-1 h-6 bg-amber-400 rounded" />
-            <h3 className="text-sm font-semibold text-gray-600">{'النص'}</h3>
+            <h3 className="text-sm font-semibold text-gray-600">النص</h3>
           </div>
-          <div className="space-y-3">
-            {paragraphs.map((para, i) => (
-              <p
-                key={i}
-                className="font-arabic text-gray-800 leading-9 text-base"
-                style={{ textAlign: 'justify' }}
-              >
-                {para}
-              </p>
-            ))}
-          </div>
-        </div>
+          <ServiceContentRenderer
+            content={node.content}
+            suraByName={suraByName}
+            className="text-base leading-9"
+          />
+        </article>
       )}
 
       {children.length > 0 && node.is_paragraph && (

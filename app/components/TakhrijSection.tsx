@@ -13,12 +13,19 @@ async function fetchTakhrij(hadithId: number): Promise<{
   baseText: string | null
 }> {
   const groupRes = await pool.query(
-    `SELECT group_id, compound_matn_id FROM takhrij WHERE hadith_id = $1 LIMIT 1`,
+    `SELECT group_id, compound_matn_id
+     FROM takhrij
+     WHERE hadith_id = $1 AND group_id IS NOT NULL
+     ORDER BY group_id`,
     [hadithId]
   )
-  if (!groupRes.rows[0]) return { rows: [], otherSources: [], sourceId: hadithId, currentCompanionId: null, totalBooks: 0, truncated: false, baseText: null }
-  const groupId = groupRes.rows[0].group_id
-  const refCompoundId: number | null = groupRes.rows[0].compound_matn_id ?? null
+  if (groupRes.rows.length === 0) {
+    return { rows: [], otherSources: [], sourceId: hadithId, currentCompanionId: null, totalBooks: 0, truncated: false, baseText: null }
+  }
+  const groupIds = groupRes.rows.map(row => Number(row.group_id))
+  const refCompoundIds = groupRes.rows
+    .map(row => row.compound_matn_id == null ? null : Number(row.compound_matn_id))
+    .filter((value): value is number => Number.isFinite(value))
 
   const currentCompRes = await pool.query(
     `SELECT ic.narrator_id_array[1] as companion_id
@@ -29,7 +36,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
   const currentCompanionId: number | null = currentCompRes.rows[0]?.companion_id ?? null
 
   const result = await pool.query(
-    `SELECT
+    `SELECT DISTINCT ON (t.hadith_id)
        t.hadith_id          AS main_id,
        t.book_id,
        b.title              AS book_title,
@@ -51,7 +58,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
      JOIN hadith_toc h ON h.main_id = t.hadith_id
      JOIN books b ON b.id = t.book_id
      LEFT JOIN matn_comparison mc ON
-       mc.master_compound_id = $3
+       mc.master_compound_id = ANY($3::int[])
        AND mc.slave_hadith_id = t.hadith_id
      LEFT JOIN LATERAL (
        SELECT ic.narrator_id_array[1] as companion_id
@@ -73,21 +80,22 @@ async function fetchTakhrij(hadithId: number): Promise<{
          ELSE 3 END
        LIMIT 1
      ) jg ON true
-     WHERE t.group_id = $1
+     WHERE t.group_id = ANY($1::int[])
      ORDER BY
+       t.hadith_id,
        CASE WHEN t.hadith_id = $2 THEN 0 ELSE 1 END,
        b.strong ASC NULLS LAST,
-       t.hadith_id
-     LIMIT 121`,
-    [groupId, hadithId, refCompoundId]
+       b.takhrij_death ASC NULLS LAST
+     LIMIT 501`,
+    [groupIds, hadithId, refCompoundIds]
   )
 
   const allRows = result.rows as Array<typeof result.rows[0] & {
     companion_id: number | null
   }>
 
-  const truncated = allRows.length > 120
-  const sliced = truncated ? allRows.slice(0, 120) : allRows
+  const truncated = allRows.length > 500
+  const sliced = truncated ? allRows.slice(0, 500) : allRows
 
   const classified: TakhrijRow[] = sliced.map(r => ({
     main_id: Number(r.main_id),
@@ -113,7 +121,14 @@ async function fetchTakhrij(hadithId: number): Promise<{
         : 'shahid',
   }))
 
-  const totalBooks = new Set(classified.map(r => r.book_id)).size
+  const totalBooksRes = await pool.query<{ total_books: number }>(
+    `SELECT COUNT(DISTINCT t.hadith_id)::int AS total_books
+     FROM takhrij t
+     JOIN hadith_toc ht ON ht.main_id = t.hadith_id AND ht.is_leaf = true AND ht.is_paragraph = true
+     WHERE t.group_id = ANY($1::int[])` ,
+    [groupIds]
+  )
+  const totalBooks = Number(totalBooksRes.rows[0]?.total_books || classified.length)
 
   const baseContentRes = await pool.query(
     `SELECT content FROM hadith_toc WHERE main_id = $1`,

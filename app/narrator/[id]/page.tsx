@@ -39,12 +39,12 @@ interface Narrator {
   user_comments: string | null
 }
 
-interface Book { id: number; title: string }
-interface NarratorLink { id: number; name: string; martaba_ibn_hajar: string | null; martaba_zahabi: string | null; is_companion: boolean }
+interface Book { id: number; title: string; hadith_count: number }
+interface NarratorLink { id: number; name: string; martaba_ibn_hajar: string | null; martaba_zahabi: string | null; is_companion: boolean; hadith_count: number }
 interface PeerNarrator { id: number; name: string; martaba_ibn_hajar: string | null; martaba_zahabi: string | null; shared_count: string }
 interface CriticismEntry { text: string; garh_label: string | null }
 interface Criticism { scientist_name: string; scientist_noun_id: number | null; entries: CriticismEntry[] }
-interface Biography { book_name: string; book_id: number; entries: { title: string; content: string }[] }
+interface Biography { book_name: string; book_id: number; entries: { title: string; content: string; part_num: number | null; page_num: number | null }[] }
 
 function gradingColor(grade: string | null) {
   if (!grade) return 'bg-gray-100 text-gray-600 border-gray-200'
@@ -76,29 +76,37 @@ export default async function NarratorPage({
       [narratorId]
     ),
     pool.query<Book>(
-      `SELECT b.id, b.title
+      `SELECT b.id, b.title, COUNT(DISTINCT ht.main_id)::int AS hadith_count
        FROM narrator_books nb
        JOIN books b ON b.id = nb.book_id
+       LEFT JOIN isnad_chains ic ON ic.narrator_id_array @> ARRAY[nb.narrator_id]
+       LEFT JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+       LEFT JOIN hadith_toc ht ON ht.main_id = ih.hadith_id AND ht.book_id = b.id AND ht.is_leaf = true
        WHERE nb.narrator_id = $1
+       GROUP BY b.id, b.title
        ORDER BY b.title`,
       [narratorId]
     ),
     // Teachers (شيوخه): first_id=narrator, second_id=sheikh
     pool.query<NarratorLink>(
-      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.is_companion
-       FROM narrator_relations nr
-       JOIN narrators n ON n.id = nr.second_id
-       WHERE nr.first_id = $1 AND nr.is_sheikh = true
-       ORDER BY n.name LIMIT 200`,
+      `SELECT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.is_companion,
+              COALESCE(nt.hadiths_count, 0)::int AS hadith_count
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.shyoukh_id
+       WHERE nt.rawy_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
+       LIMIT 200`,
       [narratorId]
     ),
     // Students (تلاميذه): second_id=narrator is teacher, first_id are students
     pool.query<NarratorLink>(
-      `SELECT DISTINCT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.is_companion
-       FROM narrator_relations nr
-       JOIN narrators n ON n.id = nr.first_id
-       WHERE nr.second_id = $1 AND nr.is_sheikh = true
-       ORDER BY n.name LIMIT 200`,
+      `SELECT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.is_companion,
+              COALESCE(nt.hadiths_count, 0)::int AS hadith_count
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.rawy_id
+       WHERE nt.shyoukh_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
+       LIMIT 200`,
       [narratorId]
     ),
     // جرح وتعديل — all criticism from all scholars
@@ -114,11 +122,13 @@ export default async function NarratorPage({
       [narratorId]
     ),
     // ترجمة الراوي — biography from classical books, deduplicated by main_id
-    pool.query<{ book_name: string; book_id: number; title: string; content: string }>(
-      `SELECT DISTINCT ON (main_id) book_name, book_id, title, content
-       FROM narrator_biography
-       WHERE narrator_id = $1
-       ORDER BY main_id, book_name`,
+    pool.query<{ book_name: string; book_id: number; title: string; content: string; part_num: number | null; page_num: number | null }>(
+      `SELECT DISTINCT ON (nb.main_id) nb.book_name, nb.book_id, nb.title, nb.content,
+              hsc.part_num, hsc.page_num
+       FROM narrator_biography nb
+       LEFT JOIN hadith_service_content hsc ON hsc.id = nb.main_id
+       WHERE nb.narrator_id = $1
+       ORDER BY nb.main_id, nb.book_name`,
       [narratorId]
     ),
     // Grade consensus from NounsGarh labels
@@ -140,7 +150,7 @@ export default async function NarratorPage({
        JOIN narrator_relation_types nrt ON nrt.id = nr.relation_type
        JOIN narrators n ON n.id = CASE WHEN nr.first_id = $1 THEN nr.second_id ELSE nr.first_id END
        WHERE (nr.first_id = $1 OR nr.second_id = $1)
-         AND nr.relation_type IN (2, 3, 4, 5, 7, 8, 16, 17, 18)
+         AND nr.relation_type IN (2, 3, 4, 5, 7, 8, 15, 16, 17, 18, 19)
        ORDER BY nrt.id, n.name
        LIMIT 100`,
       [narratorId]
@@ -173,7 +183,7 @@ export default async function NarratorPage({
        WHERE nr1.first_id = $1 AND nr1.is_sheikh = true
        GROUP BY n.id, n.name, n.martaba_ibn_hajar
        ORDER BY COUNT(DISTINCT nr1.second_id) DESC
-       LIMIT 20`,
+       LIMIT 6`,
       [narratorId]
     ).catch(() => ({ rows: [] })),
     // Chain position distribution — at what rank does this narrator appear in chains?
@@ -188,12 +198,11 @@ export default async function NarratorPage({
        LIMIT 20`,
       [narratorId]
     ).catch(() => ({ rows: [] })),
-    pool.query<{ rawy_text: string; frequency: number }>(
-      `SELECT rawy_text, frequency
+    pool.query<{ rawy_text: string }>(
+      `SELECT DISTINCT rawy_text_shape AS rawy_text
        FROM narrator_name_forms
-       WHERE rawy_id = $1
-       ORDER BY frequency DESC
-       LIMIT 12`,
+       WHERE rawy_id = $1 AND rawy_text_shape IS NOT NULL
+       ORDER BY rawy_text_shape`,
       [narratorId]
     ).catch(() => ({ rows: [] })),
   ])
@@ -247,7 +256,7 @@ export default async function NarratorPage({
     // Avoid exact duplicate within same book
     const alreadyHas = bioMap[bname].entries.some(e => e.content === content)
     if (!alreadyHas) {
-      bioMap[bname].entries.push({ title, content })
+      bioMap[bname].entries.push({ title, content, part_num: row.part_num, page_num: row.page_num })
     }
   }
   const biographies: Biography[] = Object.values(bioMap).filter(b => b.entries.length > 0)
@@ -419,7 +428,10 @@ export default async function NarratorPage({
             {narrator.tabaqa && narrator.tabaqa.trim() && (
               <div className="flex gap-2 col-span-2">
                 <span className="text-gray-400 min-w-24">الطبقة</span>
-                <span className="text-gray-800 font-medium">{narrator.tabaqa}</span>
+                <span className="text-gray-800 font-medium">
+                  {narrator.tabaqa}
+                  {narrator.tabaqa_num != null && narrator.tabaqa_num > 0 && ` (الرقم ${narrator.tabaqa_num})`}
+                </span>
               </div>
             )}
             {narrator.martaba_ibn_hajar && narrator.martaba_ibn_hajar.trim() && (
@@ -496,9 +508,6 @@ export default async function NarratorPage({
                   {nameForms.map((f, i) => (
                     <span key={i} className="text-xs bg-green-50 border border-green-200 text-green-800 px-2 py-0.5 rounded-full font-arabic">
                       {f.rawy_text}
-                      {f.frequency > 1 && (
-                        <span className="opacity-50 mr-1">×{f.frequency}</span>
-                      )}
                     </span>
                   ))}
                 </div>
@@ -527,6 +536,13 @@ export default async function NarratorPage({
                       <div key={j} className="bg-white rounded-lg p-4 border border-amber-100">
                         {entry.title && entry.title !== bio.book_name && (
                           <p className="text-xs text-amber-700 font-medium mb-2 leading-relaxed">{entry.title}</p>
+                        )}
+                        {(entry.part_num != null || entry.page_num != null) && (
+                          <p className="mb-2 text-[11px] text-gray-400">
+                            {entry.part_num != null && `الجزء ${entry.part_num}`}
+                            {entry.part_num != null && entry.page_num != null && ' · '}
+                            {entry.page_num != null && `الصفحة ${entry.page_num}`}
+                          </p>
                         )}
                         <p className="text-sm text-gray-800 leading-8 whitespace-pre-line">{entry.content}</p>
                       </div>
@@ -663,6 +679,7 @@ export default async function NarratorPage({
                     className="inline-block bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-sm px-3 py-1.5 rounded-lg transition-colors"
                   >
                     {book.title}
+                    <span className="mr-1.5 text-[11px] text-gray-400">({book.hadith_count.toLocaleString('ar-EG')})</span>
                   </Link>
                 </li>
               ))}
@@ -686,6 +703,7 @@ export default async function NarratorPage({
                       {t.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
                       {t.name}
                     </Link>
+                    <span className="text-[11px] text-gray-400">{t.hadith_count.toLocaleString('ar-EG')} رواية</span>
                   </li>
                 ))}
               </ul>
@@ -710,6 +728,7 @@ export default async function NarratorPage({
                       {s.is_companion && <span className="text-amber-500 text-xs ml-1">ص</span>}
                       {s.name}
                     </Link>
+                    <span className="text-[11px] text-gray-400">{s.hadith_count.toLocaleString('ar-EG')} رواية</span>
                   </li>
                 ))}
               </ul>

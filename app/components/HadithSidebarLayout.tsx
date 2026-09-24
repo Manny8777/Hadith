@@ -435,7 +435,7 @@ export default function HadithSidebarLayout({
                       className="hadith-sanad"
                     />
                   ) : (
-                    <p className="hadith-sanad" dir="rtl">
+                    <p className="hadith-sanad whitespace-pre-wrap" dir="rtl">
                       {applyTashkeel(sanad)}
                     </p>
                   )}
@@ -456,12 +456,12 @@ export default function HadithSidebarLayout({
                     className="hadith-matn"
                   />
                 ) : (
-                  <p className="hadith-matn" dir="rtl">
+                  <p className="hadith-matn whitespace-pre-wrap" dir="rtl">
                     {applyTashkeel(matnText)}
                   </p>
                 )}
                 {tail && (
-                  <div className="mt-4 pt-4 border-t border-border text-sm text-gray-700 leading-loose" dir="rtl">
+                  <div className="mt-4 pt-4 border-t border-border text-sm text-gray-700 leading-loose whitespace-pre-wrap" dir="rtl">
                     {applyTashkeel(tail)}
                   </div>
                 )}

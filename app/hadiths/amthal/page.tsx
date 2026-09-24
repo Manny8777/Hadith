@@ -7,19 +7,31 @@ export const metadata = { title: 'أمثال الحديث النبوي — جا�
 interface AmthalRow {
   id: number
   text: string
-  main_id: number | null
-  chapter_name: string | null
+  hadith_ids: number[]
+  chapter_names: string[]
 }
 
 export default async function AmthalPage() {
   const { rows } = await pool.query<AmthalRow>(
-    `SELECT
+    `WITH proverb_links AS (
+       SELECT DISTINCT
+              hsl.hadith_id,
+              m.match[1]::int AS proverb_id,
+              ht.chapter_text
+       FROM hadith_service_links hsl
+       JOIN hadith_service_content hsc ON hsc.id = hsl.service_content_id
+       JOIN hadith_toc ht ON ht.main_id = hsl.hadith_id
+       CROSS JOIN LATERAL regexp_matches(hsc.content, 'ربط="(77[0-9]+)"', 'g') AS m(match)
+       WHERE hsl.type_id = 4
+     )
+     SELECT
        a.id,
        a.text,
-       ht.main_id,
-       ht.chapter_text AS chapter_name
+       COALESCE(array_agg(DISTINCT pl.hadith_id) FILTER (WHERE pl.hadith_id IS NOT NULL), '{}') AS hadith_ids,
+       COALESCE(array_agg(DISTINCT pl.chapter_text) FILTER (WHERE pl.chapter_text IS NOT NULL), '{}') AS chapter_names
      FROM amthal a
-     LEFT JOIN hadith_toc ht ON ht.main_id = a.id
+     LEFT JOIN proverb_links pl ON pl.proverb_id = a.id
+     GROUP BY a.id, a.text
      ORDER BY a.id ASC`
   ).catch(() => ({ rows: [] as AmthalRow[] }))
 
@@ -36,7 +48,7 @@ export default async function AmthalPage() {
             إجمالي الأمثال: <span className="font-bold">{rows.length.toLocaleString('ar-EG')}</span>
           </span>
           <span className="text-green-700">
-            {rows.filter(r => r.main_id !== null).length.toLocaleString('ar-EG')} مثل مرتبط بحديث
+            {rows.filter(r => r.hadith_ids.length > 0).length.toLocaleString('ar-EG')} مثل مرتبط بحديث
           </span>
         </div>
       </div>
@@ -57,18 +69,39 @@ export default async function AmthalPage() {
                   {row.text}
                 </p>
 
-                {row.main_id !== null && (
-                  <div className="mt-3 flex items-center gap-3 flex-wrap">
-                    <Link
-                      href={`/hadith/${row.main_id}`}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full hover:bg-green-100 hover:border-green-300 transition-all"
-                    >
-                      عرض الحديث
-                      <span className="text-green-500">←</span>
-                    </Link>
-                    {row.chapter_name && (
-                      <span className="text-xs text-gray-400 truncate max-w-xs">
-                        {row.chapter_name}
+                {row.hadith_ids.length > 0 && (
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    {row.hadith_ids.slice(0, 3).map((hadithId, index) => (
+                      <Link
+                        key={hadithId}
+                        href={`/hadith/${hadithId}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 transition-all hover:border-green-300 hover:bg-green-100"
+                      >
+                        حديث {index + 1}
+                        <span className="text-green-500">←</span>
+                      </Link>
+                    ))}
+                    {row.hadith_ids.length > 3 && (
+                      <details className="text-xs text-gray-500">
+                        <summary className="cursor-pointer text-green-700 hover:underline">
+                          عرض كل الروايات ({row.hadith_ids.length.toLocaleString('ar-EG')})
+                        </summary>
+                        <div className="mt-2 flex max-h-64 flex-wrap gap-1.5 overflow-y-auto rounded-lg border border-gray-100 bg-gray-50 p-2">
+                          {row.hadith_ids.map((hadithId) => (
+                            <Link
+                              key={hadithId}
+                              href={`/hadith/${hadithId}`}
+                              className="rounded border border-green-100 bg-white px-2 py-1 text-green-700 hover:bg-green-50"
+                            >
+                              {hadithId.toLocaleString('ar-EG')}
+                            </Link>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                    {row.chapter_names[0] && (
+                      <span className="max-w-sm truncate text-xs text-gray-400">
+                        {row.chapter_names[0]}
                       </span>
                     )}
                   </div>
