@@ -53,3 +53,41 @@ The differ was re-run after every repair; the "after" figures below are its outp
   Run it as a background process, and do not verify through a temp table created with
   `ON COMMIT DROP` — `COMMIT` drops it before the check runs, so the write looks like it failed.
 - A failed repair leaves nothing behind: the map load and the `UPDATE` share one transaction.
+
+# Membership repairs: restoring rows a key or a filter threw away
+
+Two relations were losing rows rather than corrupting values. Both are now loaded from the
+original's own table; the differ reports zero absent rows on either side.
+
+| table | before | after |
+|---|---|---|
+| `takhrij` | 273,698 rows; `PRIMARY KEY (hadith_id)` keeps one membership per hadith, so 6,606 rows (6,561 distinct memberships) were missing. Truncated groups: 105860 664/675, 105903 429/434, 110212 345/347, 110213 301/308, 107884 300/304. | **280,259 rows** = every distinct membership the original holds (it has 281,541 rows / 280,259 distinct; the other 1,282 are rows duplicating another row exactly) |
+| `narrator_relations` | 7,989 rows; the loader dropped every row whose `SecondRawyID = 0` (6,100 rows, 3,529 distinct keys) and dropped `SayID` | **11,518 rows** = the original's distinct relations, with `legacy_say_id` set on all of them and the 3,529 `second_id = 0` rows restored |
+
+## Why these were dropped
+
+- `takhrij` was keyed `PRIMARY KEY (hadith_id)` — a schema defect, not a load bug. It is now keyed
+  `UNIQUE (hadith_id, group_id, compound_matn_id)`, with `idx_takhrij_hadith` added because several
+  routes filter on `hadith_id` and would otherwise lose their index (`db/schema_takhrij.sql`).
+- `narrator_relations` was loaded with a filter on the second narrator. The restored rows have
+  `second_id = 0`, which never joins to a narrator, so the teachers/students lists are unchanged.
+
+## What is deliberately not restored
+
+The original's remaining same-key rows: 13,851 positive-second relation rows collapse to 7,989
+distinct `(first, second, type)` keys. Inserting them would repeat names in
+`app/api/narrator/[id]/route.ts`, which selects those lists without `DISTINCT`. The relation *set*
+is complete without them, and `legacy_say_id` carries the provenance (for a key the original repeats,
+the lowest `SayID` is recorded).
+
+## Verification
+
+```
+bash legacy-audit/harness/cmp/run.sh legacy-audit/harness/cmp/probe_sets_after.py
+```
+
+prints, for each table, legacy rows vs distinct keys vs the migrated row count, plus the absent
+counts in both directions: `takhrij` legacy rows absent 0 / web rows absent 0, `narrator_relations`
+legacy-only 0 / web-only 0. Per-group counts were checked against the original's *distinct*
+memberships (`probe_group_dups.py`), which is what separates a real shortfall from the original's
+own duplicate rows.

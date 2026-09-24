@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS narrator_relations (
     second_id INTEGER NOT NULL,
     relation_type INTEGER,
     is_sheikh BOOLEAN DEFAULT FALSE,
+    -- the original keys each relation to the saying that evidences it (NounsRelations.SayID);
+    -- the column was dropped by the first load
+    legacy_say_id INTEGER,
     PRIMARY KEY (first_id, second_id, relation_type)
 );
 CREATE TABLE IF NOT EXISTS narrator_relation_types (
