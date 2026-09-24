@@ -264,12 +264,12 @@ export default async function NarratorPage({
   return (
     <div dir="rtl" className="min-h-screen bg-amber-50">
       <header className="bg-green-900 text-white shadow-lg">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
           <Link href="/narrators" className="text-amber-200 hover:text-white text-sm transition-colors">
             ← قائمة الرواة
           </Link>
           <h1 className="text-lg font-bold text-amber-100">موسوعة الحديث الشريف</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 sm:w-auto sm:flex-none">
             <Link href={`/narrators/chain-filter?seed=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
               تتبع الإسناد
             </Link>

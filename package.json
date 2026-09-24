@@ -15,6 +15,7 @@
     "check:topic-export": "node scripts/checks/topic-export-safety.mjs",
     "check:performance-baseline": "node scripts/performance/route-baseline-self-check.mjs",
     "check:report-export": "node tests/reports/report-export-static.mjs",
+    "check:narrator-responsive": "node tests/ui/narrator-responsive-static.mjs",
     "check:audit": "node tests/audit/audit-self-check.mjs",
     "audit:readonly": "node db/audit_data_readonly.js",
     "smoke": "node scripts/smoke/production-smoke.mjs",
