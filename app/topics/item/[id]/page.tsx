@@ -7,6 +7,8 @@ import MatnMatchLine from '@/app/components/MatnMatchLine'
 import { notFound } from 'next/navigation'
 import TopicExport from '@/app/components/TopicExport'
 import HadithNumber from '@/app/components/HadithNumber'
+import TopicSearchForm from '@/app/components/TopicSearchForm'
+import { buildTopicUrl, parseTopicUrl, type SearchGrade, type TopicUrlPatch, type TopicView } from '@/lib/urlState'
 
 interface SubjectItem {
   id: number
@@ -59,19 +61,25 @@ export default async function TopicItemPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ page?: string; grade?: string; q?: string; view?: string }>
+  searchParams: Promise<{ page?: string; grade?: string; q?: string; view?: string; [key: string]: string | string[] | undefined }>
 }) {
   const { id }   = await params
-  const { page: pageParam, grade: gradeParam, q: qParam, view: viewParam } = await searchParams
-  const itemId = parseInt(id)
-  const page   = Math.max(1, parseInt(pageParam || '1'))
-  const grade  = gradeParam || ''
-  const q      = (qParam || '').trim()
-  const requestedView = viewParam === 'hadiths' ? 'hadiths' : 'children'
+  const rawSearchParams = await searchParams
+  const itemId = parseInt(id, 10)
+  if (!Number.isSafeInteger(itemId) || itemId <= 0) notFound()
+
+  const queryString = new URLSearchParams()
+  for (const [key, value] of Object.entries(rawSearchParams)) {
+    if (Array.isArray(value)) value.forEach(item => queryString.append(key, item))
+    else if (value !== undefined) queryString.set(key, value)
+  }
+  const urlState = parseTopicUrl(queryString)
+  const { page, grade, q, view: requestedView } = urlState
   const limit  = 20
   const offset = (page - 1) * limit
-
-  if (isNaN(itemId)) notFound()
+  const topicHref = (patch: TopicUrlPatch = {}) => buildTopicUrl(itemId, queryString, patch)
+  const topicViewHref = (nextView: TopicView) => topicHref({ view: nextView })
+  const topicGradeHref = (nextGrade: SearchGrade) => topicHref({ grade: nextGrade })
 
   const itemRes = await pool.query<SubjectItem>(
     `SELECT id, title, parent_id, is_leaf FROM subject_items WHERE id = $1`,
@@ -291,7 +299,8 @@ export default async function TopicItemPage({
       {hasChildren && (
         <nav className="mb-5 flex flex-wrap gap-2 border-b border-gray-200 pb-3" aria-label="عرض الموضوع">
           <Link
-            href={`/topics/item/${itemId}?view=children`}
+            href={topicViewHref('children')}
+            aria-current={view === 'children' ? 'page' : undefined}
             className={`rounded-full px-4 py-2 text-sm font-medium ${
               view === 'children'
                 ? 'bg-green-900 text-white'
@@ -302,7 +311,8 @@ export default async function TopicItemPage({
           </Link>
           {directHadithTotal > 0 && (
             <Link
-              href={`/topics/item/${itemId}?view=hadiths`}
+              href={topicViewHref('hadiths')}
+              aria-current={view === 'hadiths' ? 'page' : undefined}
               className={`rounded-full px-4 py-2 text-sm font-medium ${
                 view === 'hadiths'
                   ? 'bg-green-900 text-white'
@@ -391,34 +401,11 @@ export default async function TopicItemPage({
           )}
 
           {/* Text search within topic */}
-          <form method="GET" action={`/topics/item/${itemId}`} className="mb-4">
-            {grade && <input type="hidden" name="grade" value={grade} />}
-            {hasChildren && <input type="hidden" name="view" value="hadiths" />}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                name="q"
-                defaultValue={q}
-                placeholder="ابحث في أحاديث هذا الموضوع..."
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-700"
-                dir="rtl"
-              />
-              <button
-                type="submit"
-                className="bg-green-900 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors text-sm font-medium"
-              >
-                بحث
-              </button>
-              {q && (
-                <Link
-                  href={`/topics/item/${itemId}?view=hadiths${grade ? `&grade=${grade}` : ''}`}
-                  className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  مسح
-                </Link>
-              )}
-            </div>
-          </form>
+          <TopicSearchForm
+            itemId={itemId}
+            currentQuery={queryString.toString()}
+            initialQuery={q}
+          />
 
           {/* Grade filter */}
           <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -430,7 +417,8 @@ export default async function TopicItemPage({
             ].map(g => (
               <Link
                 key={g.key}
-                href={`/topics/item/${itemId}?view=hadiths${g.key ? `&grade=${g.key}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                href={topicGradeHref(g.key as SearchGrade)}
+                aria-current={grade === g.key ? 'true' : undefined}
                 className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${g.cls}`}
               >
                 {g.label}
@@ -514,7 +502,7 @@ export default async function TopicItemPage({
         <div className="flex items-center justify-center gap-2 mt-8">
           {page > 1 && (
             <Link
-              href={`/topics/item/${itemId}?page=${page - 1}${hasChildren ? `&view=${view}` : ''}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              href={topicHref({ page: page - 1 })}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-green-700 hover:bg-green-50 transition-colors"
             >
               → السابق
@@ -525,7 +513,7 @@ export default async function TopicItemPage({
           </span>
           {page < pages && (
             <Link
-              href={`/topics/item/${itemId}?page=${page + 1}${hasChildren ? `&view=${view}` : ''}${grade ? `&grade=${grade}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+              href={topicHref({ page: page + 1 })}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-green-700 hover:bg-green-50 transition-colors"
             >
               ← التالي

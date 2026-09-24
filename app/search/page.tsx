@@ -1,11 +1,20 @@
 'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import HadithNumber from '@/app/components/HadithNumber'
 import SaveHadith from '@/app/components/SaveHadith'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
+import {
+  buildSearchApiUrl,
+  buildSearchUrl,
+  parseSearchUrl,
+  type BookSource,
+  type MatchMode,
+  type SearchScope,
+  type SearchUrlPatch,
+} from '@/lib/urlState'
 
 interface SearchResult {
   main_id: number
@@ -31,13 +40,7 @@ interface SearchResult {
 interface Book { id: number; title: string }
 interface SubjectCat { id: number; title: string }
 
-// search_scope: 'both' = بحث في المتن كاملاً، 'tarf' = بحث في الأطراف فقط
-type SearchScope = 'both' | 'tarf'
-// match: 'phrase' = متتالية (the original's default), 'all' = كل الكلمات, 'any' = أي من الكلمات
-type MatchMode = 'phrase' | 'all' | 'any'
-// src: the original's two catalogues — كتب الحديث (hadiths, hadith_toc) and الكتب الخدمية
-// (شروح/تراجم/جرح وتعديل/أماكن, hadith_service_content, 212 books)
-type BookSource = 'hadith' | 'service'
+// search_scope, match, and src are normalized and URL-built in lib/urlState.ts.
 
 function stripTags(html: string) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -46,38 +49,51 @@ function stripTags(html: string) {
 function SearchInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const initialQ = searchParams.get('q') || ''
-  const initialBookId = searchParams.get('book_id') || ''
-  const narratorIdParam = searchParams.get('narrator_id') || ''
-  const narratorNameParam = searchParams.get('narrator_name') || ''
+  const searchParamsString = searchParams.toString()
+  const urlState = useMemo(
+    () => parseSearchUrl(searchParamsString),
+    [searchParamsString]
+  )
+  const {
+    q: urlQ,
+    bookId,
+    grade: gradeFilter,
+    subjectCatId,
+    maxDepth,
+    searchScope,
+    matchMode,
+    bookSource,
+    narratorId: narratorIdParam,
+    narratorName: narratorNameParam,
+    page,
+  } = urlState
 
-  const [q, setQ] = useState(initialQ)
-  const [bookId, setBookId] = useState(initialBookId)
-  const [gradeFilter, setGradeFilter] = useState(searchParams.get('grade') || '')
-  const [subjectCatId, setSubjectCatId] = useState(searchParams.get('subject_cat_id') || '')
-  const [maxDepth, setMaxDepth] = useState(searchParams.get('max_depth') || '')
-  const [searchScope, setSearchScope] = useState<SearchScope>(
-    (searchParams.get('search_scope') as SearchScope) || 'both'
-  )
-  const [matchMode, setMatchMode] = useState<MatchMode>(
-    (searchParams.get('match') as MatchMode) || 'phrase'
-  )
-  const [bookSource, setBookSource] = useState<BookSource>(
-    searchParams.get('src') === 'service' ? 'service' : 'hadith'
-  )
-
-  // The search box shows connectives as blocked-out tokens behind the text, so the reader can see
-  // which words are operators and which are words — و and أو are also letters inside ordinary words.
+  // The URL is authoritative for every committed search. The input keeps a local draft so typing
+  // does not add a history entry, and follows the URL again on submit, back, and forward. In
+  // narrator mode the current text remains the committed search; an empty box means narrator-only.
+  const [q, setQ] = useState(urlQ)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const highlightRef = useRef<HTMLDivElement | null>(null)
   const [books, setBooks] = useState<Book[]>([])
   const [subjectCats, setSubjectCats] = useState<SubjectCat[]>([])
   const [results, setResults] = useState<SearchResult[]>([])
   const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [mode, setMode] = useState<string>('text')
+  const isNarratorMode = !!narratorIdParam
+
+  useEffect(() => {
+    setQ(urlQ)
+  }, [urlQ])
+
+  // Keep shared links canonical even when they were hand-edited (invalid values, blank defaults,
+  // duplicate known parameters, or defaults that carry no meaning).
+  useEffect(() => {
+    const current = `/search${searchParamsString ? `?${searchParamsString}` : ''}`
+    const canonical = buildSearchUrl(searchParamsString)
+    if (canonical !== current) router.replace(canonical, { scroll: false })
+  }, [router, searchParamsString])
 
   useEffect(() => {
     fetch('/api/books?src=' + bookSource)
@@ -90,102 +106,71 @@ function SearchInner() {
       .catch(() => {})
   }, [bookSource])
 
-  const doSearch = useCallback(async (
-    query: string,
-    bId: string,
-    pg = 1,
-    nid = '',
-    scope: SearchScope = searchScope,
-    src: BookSource = bookSource
-  ) => {
+  useEffect(() => {
+    if (!isNarratorMode && urlQ.trim().length < 2) {
+      setResults([])
+      setTotal(0)
+      setSearched(false)
+      setMode('text')
+      setLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
     setLoading(true)
     setSearched(true)
-    try {
-      let url: string
-      if (nid && query.trim().length >= 2) {
-        // Combined narrator + text search
-        url = `/api/search?narrator_id=${encodeURIComponent(nid)}&q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}${matchMode !== 'phrase' ? `&match=${matchMode}` : ''}`
-        if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
-      } else if (nid) {
-        // Narrator-only: all hadiths in chain
-        url = `/api/search?narrator_id=${encodeURIComponent(nid)}&page=${pg}`
-        if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
-      } else {
-        if (query.trim().length < 2) { setLoading(false); return }
-        url = `/api/search?q=${encodeURIComponent(query)}&page=${pg}&search_scope=${scope}${matchMode !== 'phrase' ? `&match=${matchMode}` : ''}${src === 'service' ? '&src=service' : ''}`
-        if (bId) url += `&book_id=${encodeURIComponent(bId)}`
-        if (gradeFilter) url += `&grade=${encodeURIComponent(gradeFilter)}`
-        if (subjectCatId) url += `&subject_cat_id=${encodeURIComponent(subjectCatId)}`
-        if (maxDepth) url += `&max_depth=${encodeURIComponent(maxDepth)}`
-      }
-      const res = await fetch(url)
-      const data = await res.json()
-      setResults(data.results || [])
-      setTotal(data.total || 0)
-      setPage(pg)
-      setMode(data.mode || 'text')
-    } catch {
-      setResults([])
-    } finally {
-      setLoading(false)
-    }
-  }, [gradeFilter, subjectCatId, maxDepth, searchScope, matchMode, bookSource])
 
-  useEffect(() => {
-    if (narratorIdParam) {
-      doSearch(initialQ, '', 1, narratorIdParam)
-    } else if (initialQ.length >= 2) {
-      doSearch(initialQ, initialBookId)
-    }
-  }, [narratorIdParam, initialQ, initialBookId, doSearch])
+    fetch(buildSearchApiUrl(urlState), { signal: controller.signal })
+      .then(async res => {
+        if (!res.ok) throw new Error(`Search request failed (${res.status})`)
+        return res.json()
+      })
+      .then(data => {
+        setResults(Array.isArray(data.results) ? data.results : [])
+        setTotal(Number(data.total) || 0)
+        setMode(typeof data.mode === 'string' ? data.mode : 'text')
+      })
+      .catch(error => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setResults([])
+        setTotal(0)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
 
-  const isNarratorMode = !!narratorIdParam
+    return () => controller.abort()
+  }, [isNarratorMode, urlState])
+
+  const navigate = useCallback((patch: SearchUrlPatch) => {
+    // A committed control change also discards any unsubmitted text draft, keeping the visible
+    // input and canonical URL aligned until the reader explicitly submits a new query. Empty q
+    // is preserved in narrator mode because it is the canonical narrator-only search state.
+    const nextQuery = patch.q === undefined ? urlQ : patch.q.trim()
+    setQ(nextQuery)
+    const current = `/search${searchParamsString ? `?${searchParamsString}` : ''}`
+    const next = buildSearchUrl(searchParamsString, patch)
+    if (next !== current) router.push(next, { scroll: false })
+  }, [router, searchParamsString, urlQ])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = q.trim()
-    if (isNarratorMode) {
-      let url = `/search?narrator_id=${encodeURIComponent(narratorIdParam)}`
-      if (narratorNameParam) url += `&narrator_name=${encodeURIComponent(narratorNameParam)}`
-      if (trimmed) url += `&q=${encodeURIComponent(trimmed)}`
-      if (searchScope !== 'both') url += `&search_scope=${searchScope}`
-      if (matchMode !== 'phrase') url += `&match=${matchMode}`
-      router.push(url)
-      doSearch(trimmed, '', 1, narratorIdParam, searchScope)
-    } else {
-      let url = `/search?q=${encodeURIComponent(trimmed)}`
-      if (bookId) url += `&book_id=${encodeURIComponent(bookId)}`
-      if (searchScope !== 'both') url += `&search_scope=${searchScope}`
-      if (matchMode !== 'phrase') url += `&match=${matchMode}`
-      if (bookSource === 'service') url += `&src=service`
-      router.push(url)
-      doSearch(trimmed, bookId, 1, '', searchScope, bookSource)
-    }
+    navigate({ q: q.trim() })
   }
 
+
   function handleScopeChange(newScope: SearchScope) {
-    setSearchScope(newScope)
-    // Re-run search immediately with new scope if we already have results
-    if (searched && (q.trim().length >= 2 || isNarratorMode)) {
-      doSearch(q, bookId, 1, narratorIdParam, newScope)
-    }
+    if (newScope !== searchScope) navigate({ searchScope: newScope })
   }
 
   function handleSourceChange(newSource: BookSource) {
-    setBookSource(newSource)
+    if (newSource === bookSource) return
     // The two catalogues share no book, so a book filter would silently return nothing: drop it.
-    setBookId('')
-    if (searched && q.trim().length >= 2 && !isNarratorMode) {
-      doSearch(q, '', 1, '', searchScope, newSource)
-    }
+    navigate({ bookSource: newSource, bookId: '' })
   }
 
   function handleMatchChange(newMatch: MatchMode) {
-    setMatchMode(newMatch)
-    // Re-run immediately, like the scope toggle does.
-    if (searched && (q.trim().length >= 2 || isNarratorMode)) {
-      doSearch(q, bookId, 1, narratorIdParam, searchScope)
-    }
+    if (newMatch !== matchMode) navigate({ matchMode: newMatch })
   }
 
   // The original dialog composes its WHERE clause from operators (' AND ', ' OR ', ' NOT ', ' XOR ')
@@ -247,8 +232,8 @@ function SearchInner() {
             <Link href={`/narrator/${narratorIdParam}`} className="font-bold text-green-800 hover:underline mr-2">
               {narratorNameParam}
             </Link>
-            {mode === 'narrator+text' && q && (
-              <span className="text-amber-700 mr-2">— يحتوي على: <strong>{q}</strong></span>
+            {mode === 'narrator+text' && urlQ && (
+              <span className="text-amber-700 mr-2">— يحتوي على: <strong>{urlQ}</strong></span>
             )}
           </div>
           <Link href="/search" className="text-xs text-gray-400 hover:text-gray-600">
@@ -258,7 +243,7 @@ function SearchInner() {
       )}
 
       {/* Search form — always visible */}
-      <form onSubmit={handleSubmit} className="mb-8">
+      <form onSubmit={handleSubmit} className="mb-8" role="search" aria-label="البحث في الأحاديث والكتاب الخدمي">
         <div className="flex gap-3 mb-3">
           <div className="relative flex-1 rounded-lg border border-gray-300 bg-white shadow-sm focus-within:ring-2 focus-within:ring-green-700">
             {/* Highlight layer, behind the text. Invisible except for the connector tokens, and
@@ -282,9 +267,11 @@ function SearchInner() {
                 )
               )}
             </div>
+            <label htmlFor="search-query" className="sr-only">نص البحث</label>
             <input
               ref={inputRef}
-              type="text"
+              id="search-query"
+              type="search"
               value={q}
               onChange={e => { setQ(e.target.value); syncHighlight(e.target) }}
               onScroll={e => syncHighlight(e.currentTarget)}
@@ -306,11 +293,12 @@ function SearchInner() {
 
         {/* Search scope toggle — نوع البحث */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-gray-500 shrink-0">نوع البحث:</span>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+          <span id="search-scope-label" className="text-xs text-gray-500 shrink-0">نوع البحث:</span>
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-labelledby="search-scope-label">
             <button
               type="button"
               onClick={() => handleScopeChange('both')}
+              aria-pressed={searchScope === 'both'}
               className={`px-3 py-1.5 transition-colors ${
                 searchScope === 'both'
                   ? 'bg-green-800 text-white'
@@ -322,6 +310,7 @@ function SearchInner() {
             <button
               type="button"
               onClick={() => handleScopeChange('tarf')}
+              aria-pressed={searchScope === 'tarf'}
               className={`px-3 py-1.5 border-r border-gray-200 transition-colors ${
                 searchScope === 'tarf'
                   ? 'bg-green-800 text-white'
@@ -347,14 +336,15 @@ function SearchInner() {
             operators its dialog composes the WHERE clause from, offered in Arabic words (و / أو / ليس)
             that the API accepts as connectives. */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="text-xs text-gray-500 shrink-0">طريقة المطابقة:</span>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+          <span id="search-match-label" className="text-xs text-gray-500 shrink-0">طريقة المطابقة:</span>
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-labelledby="search-match-label">
             {([['phrase', 'متتالية'], ['all', 'كل الكلمات'], ['any', 'أي من الكلمات']] as [MatchMode, string][]).map(
               ([value, label], i) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => handleMatchChange(value)}
+                  aria-pressed={matchMode === value}
                   className={`px-3 py-1.5 transition-colors ${i > 0 ? 'border-r border-gray-200 ' : ''}${
                     matchMode === value
                       ? 'bg-green-800 text-white'
@@ -367,8 +357,8 @@ function SearchInner() {
             )}
           </div>
 
-          <span className="text-xs text-gray-500 shrink-0 mr-1">ربط الشروط:</span>
-          <div className="flex gap-1">
+            <span id="query-operators-label" className="text-xs text-gray-500 shrink-0 mr-1">ربط الشروط:</span>
+          <div className="flex gap-1" role="group" aria-labelledby="query-operators-label">
             {([
               ['AND', 'و', 'وأيضاً: لا بدّ أن توجد الكلمة الأخرى أيضاً'],
               ['OR', 'أو', 'إحدى الكلمتين: أيّهما وُجد في الحديث'],
@@ -386,8 +376,8 @@ function SearchInner() {
             ))}
           </div>
 
-          <span className="text-xs text-gray-500 shrink-0 mr-1">حروف ناقصة:</span>
-          <div className="flex gap-1">
+          <span id="query-wildcards-label" className="text-xs text-gray-500 shrink-0 mr-1">حروف ناقصة:</span>
+          <div className="flex gap-1" role="group" aria-labelledby="query-wildcards-label">
             {([
               ['*', 'أيّ عدد من الحروف *', 'مثال: صلا* تجد كل كلمة تبدأ بـ صلا'],
               ['?', 'حرف واحد ناقص ?', 'مثال: الصل? تجد الصلاة — حرف واحد لا تعرفه'],
@@ -421,11 +411,12 @@ function SearchInner() {
         {!isNarratorMode && (
           <div className="space-y-2">
             <div className="flex gap-3 items-center flex-wrap">
-              <label className="text-sm text-gray-600 shrink-0 min-w-24">نطاق الكتب:</label>
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+              <label id="search-source-label" className="text-sm text-gray-600 shrink-0 min-w-24">نطاق الكتب:</label>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-labelledby="search-source-label">
                 <button
                   type="button"
                   onClick={() => handleSourceChange('hadith')}
+                  aria-pressed={bookSource === 'hadith'}
                   className={`px-3 py-1.5 transition-colors ${
                     bookSource === 'hadith' ? 'bg-green-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                   }`}
@@ -435,6 +426,7 @@ function SearchInner() {
                 <button
                   type="button"
                   onClick={() => handleSourceChange('service')}
+                  aria-pressed={bookSource === 'service'}
                   className={`px-3 py-1.5 border-r border-gray-200 transition-colors ${
                     bookSource === 'service' ? 'bg-green-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                   }`}
@@ -449,10 +441,11 @@ function SearchInner() {
               )}
             </div>
             <div className="flex gap-3 items-center">
-              <label className="text-sm text-gray-600 shrink-0 min-w-24">حسب الكتاب:</label>
+              <label htmlFor="search-book" className="text-sm text-gray-600 shrink-0 min-w-24">حسب الكتاب:</label>
               <select
+                id="search-book"
                 value={bookId}
-                onChange={e => setBookId(e.target.value)}
+                onChange={e => navigate({ bookId: e.target.value })}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                 dir="rtl"
               >
@@ -463,11 +456,12 @@ function SearchInner() {
               </select>
             </div>
             <div className="flex gap-3 items-center">
-              <label className="text-sm text-gray-600 shrink-0 min-w-24">درجة الحديث:</label>
+              <label htmlFor="search-grade" className="text-sm text-gray-600 shrink-0 min-w-24">درجة الحديث:</label>
               <select
+                id="search-grade"
                 value={gradeFilter}
                 disabled={bookSource === 'service'}
-                onChange={e => setGradeFilter(e.target.value)}
+                onChange={e => navigate({ grade: e.target.value as typeof gradeFilter })}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                 dir="rtl"
               >
@@ -479,13 +473,12 @@ function SearchInner() {
               {(bookId || gradeFilter || subjectCatId || maxDepth) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setBookId('')
-                    setGradeFilter('')
-                    setSubjectCatId('')
-                    setMaxDepth('')
-                    doSearch(q, '', 1, '', searchScope)
-                  }}
+                  onClick={() => navigate({
+                    bookId: '',
+                    grade: '',
+                    subjectCatId: '',
+                    maxDepth: '',
+                  })}
                   className="text-sm text-gray-500 hover:text-red-600 transition-colors shrink-0"
                 >
                   مسح الفلاتر
@@ -494,11 +487,12 @@ function SearchInner() {
             </div>
             {subjectCats.length > 0 && (
               <div className="flex gap-3 items-center">
-                <label className="text-sm text-gray-600 shrink-0 min-w-24">حسب الموضوع:</label>
+                <label htmlFor="search-subject" className="text-sm text-gray-600 shrink-0 min-w-24">حسب الموضوع:</label>
                 <select
+                  id="search-subject"
                   value={subjectCatId}
                   disabled={bookSource === 'service'}
-                  onChange={e => setSubjectCatId(e.target.value)}
+                  onChange={e => navigate({ subjectCatId: e.target.value })}
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                   dir="rtl"
                 >
@@ -510,11 +504,12 @@ function SearchInner() {
               </div>
             )}
             <div className="flex gap-3 items-center">
-              <label className="text-sm text-gray-600 shrink-0 min-w-24">علو الإسناد:</label>
+              <label htmlFor="search-depth" className="text-sm text-gray-600 shrink-0 min-w-24">علو الإسناد:</label>
               <select
+                id="search-depth"
                 value={maxDepth}
                 disabled={bookSource === 'service'}
-                onChange={e => setMaxDepth(e.target.value)}
+                onChange={e => navigate({ maxDepth: e.target.value })}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
                 dir="rtl"
               >
@@ -530,8 +525,8 @@ function SearchInner() {
 
         {/* Grade filter chips for narrator mode */}
         {isNarratorMode && (
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="text-xs text-gray-500">درجة الحديث:</span>
+          <div className="flex items-center gap-2 mt-2 flex-wrap" role="group" aria-labelledby="narrator-grade-label">
+            <span id="narrator-grade-label" className="text-xs text-gray-500">درجة الحديث:</span>
             {[
               { key: '', label: 'الكل' },
               { key: 'sahih', label: 'صحيح' },
@@ -541,7 +536,8 @@ function SearchInner() {
               <button
                 key={g.key}
                 type="button"
-                onClick={() => { setGradeFilter(g.key); doSearch(q, '', 1, narratorIdParam, searchScope) }}
+                aria-pressed={gradeFilter === g.key}
+                onClick={() => navigate({ grade: g.key as typeof gradeFilter })}
                 className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                   gradeFilter === g.key
                     ? (g.key === '' ? 'bg-gray-700 text-white border-gray-700' :
@@ -557,13 +553,10 @@ function SearchInner() {
           </div>
         )}
         {/* Clear narrator text filter */}
-        {isNarratorMode && q && (
+        {isNarratorMode && urlQ && (
           <button
             type="button"
-            onClick={() => {
-              setQ('')
-              doSearch('', '', 1, narratorIdParam, searchScope)
-            }}
+            onClick={() => navigate({ q: '' })}
             className="text-xs text-gray-400 hover:text-gray-600 underline mt-1"
           >
             عرض جميع أحاديث الراوي
@@ -571,7 +564,19 @@ function SearchInner() {
         )}
       </form>
 
-      {loading && <p className="text-gray-500 text-center py-8">جاري البحث...</p>}
+      <div
+        aria-live="polite"
+        aria-busy={loading}
+        aria-atomic="true"
+        className={loading ? 'text-gray-500 text-center py-8' : 'sr-only'}
+      >
+        {loading
+          ? 'جاري البحث...'
+          : searched
+            ? `اكتمل البحث: ${total.toLocaleString('ar-EG')} ${bookSource === 'service' ? 'مادة' : 'حديث'}`
+            : ''
+        }
+      </div>
 
       {!loading && searched && (
         <p className="text-gray-600 mb-4">
@@ -675,7 +680,8 @@ function SearchInner() {
         <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
           {page > 1 && (
             <button
-              onClick={() => doSearch(q, bookId, page - 1, narratorIdParam, searchScope)}
+              type="button"
+              onClick={() => navigate({ page: page - 1 })}
               className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-green-800 hover:border-green-300 text-sm"
             >
               السابق
@@ -690,7 +696,9 @@ function SearchInner() {
             return (
               <button
                 key={pg}
-                onClick={() => doSearch(q, bookId, pg, narratorIdParam, searchScope)}
+                type="button"
+                aria-current={pg === page ? 'page' : undefined}
+                onClick={() => navigate({ page: pg })}
                 className={`px-4 py-2 rounded-lg border text-sm ${
                   pg === page
                     ? 'bg-green-800 text-white border-green-800'
@@ -703,7 +711,8 @@ function SearchInner() {
           })}
           {page < totalPages && (
             <button
-              onClick={() => doSearch(q, bookId, page + 1, narratorIdParam, searchScope)}
+              type="button"
+              onClick={() => navigate({ page: page + 1 })}
               className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-green-800 hover:border-green-300 text-sm"
             >
               التالي

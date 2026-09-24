@@ -39,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </NumeralProvider>
         </NumberingProvider>
         </ThemeProvider>
+        <div id="report-print-root" className="report-print-root" />
         <footer className="text-center text-xs text-gray-500 font-sans py-6 border-t border-gray-200 mt-12">
           برنامج خادم الحرمين الشريفين – موسوعة الحديث النبوي الشريف
         </footer>

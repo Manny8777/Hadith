@@ -353,6 +353,11 @@ html.dark {
   --color-purple-50:#1C1530; --color-purple-100:#281C46; --color-purple-200:#382663; --color-purple-300:#4D348C; --color-purple-400:#6A4AB8; --color-purple-500:#8C68DB; --color-purple-600:#B68CFF; --color-purple-700:#C7A6FF; --color-purple-800:#D6BCFF; --color-purple-900:#E5D3FF; --color-purple-950:#F2EAFF;
 }
 
+/* Generated reports are portaled here so print output can exclude the app shell. */
+.report-print-root {
+  display: none;
+}
+
 @media print {
   nav, footer, .no-print { display: none !important; }
   body { background: white; font-size: 12pt; line-height: 1.6; }
@@ -360,4 +365,60 @@ html.dark {
   a { color: inherit; text-decoration: none; }
   button { display: none !important; }
   .shadow-sm, .shadow-md { box-shadow: none !important; }
+
+  body.report-print-active {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  body.report-print-active > :not(.report-print-root) {
+    display: none !important;
+  }
+
+  body.report-print-active > .report-print-root {
+    display: block !important;
+  }
+
+  .report-print-document {
+    box-sizing: border-box;
+    width: 100%;
+    color: #000 !important;
+    background: #fff !important;
+    font-family: var(--font-serif);
+  }
+
+  .report-print-heading {
+    margin: 0 0 4mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid #777;
+    text-align: center;
+  }
+
+  .report-print-heading h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 20pt;
+    line-height: 1.6;
+    font-weight: 700;
+  }
+
+  .report-print-heading p {
+    margin: 2mm 0 0;
+    font-family: var(--font-sans);
+    font-size: 9pt;
+    color: #444 !important;
+  }
+
+  .report-print-text {
+    margin: 0;
+    direction: rtl;
+    text-align: start;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    font-family: var(--font-serif);
+    font-size: 11pt;
+    line-height: 1.9;
+    color: #000 !important;
+  }
 }

@@ -1,0 +1,788 @@
+{
+  "manifestVersion": 1,
+  "description": "Static source-to-web mapping contract for the phase-1 read-only data audit. Counts under sourceEvidence are assessment baselines, not fresh source scans; the runner records the evidence status with every finding.",
+  "allowedClassifications": [
+    "exact_parity",
+    "duplicate_collapse",
+    "intentional_source_sentinel_or_dangling_reference",
+    "missing_valid_data",
+    "genuine_application_defect",
+    "unknown"
+  ],
+  "allowedTags": [
+    "ambiguous",
+    "legacy_sentinel",
+    "legacy_sentinel_candidate",
+    "mixed_namespace",
+    "polymorphic_namespace",
+    "provenance_unverified",
+    "source_unavailable",
+    "unresolved_lineage"
+  ],
+  "bookCountSemantics": {
+    "catalogTotal": 245,
+    "meaning": "Book/ books is the complete 245-book catalog. Hadith-bearing and service-bearing book ID sets are overlapping projections, not 245 + 245 rows and not additive totals.",
+    "webMeasurements": "The runner reports books, distinct hadith_toc.book_id, distinct hadith_service_content.book_id, and the union of those two sets."
+  },
+  "duplicateCollapseDecisions": [
+    {
+      "area": "isnad_hadith_links",
+      "key": ["HadithMainID", "SanadID"],
+      "decision": "Preserve one web row per key; repeated source rows collapse to the same destination key."
+    },
+    {
+      "area": "service_links",
+      "key": ["HadithMainID", "ServiceMainID"],
+      "decision": "Compare the web primary-key set to distinct source keys, never to source raw rows."
+    },
+    {
+      "area": "judgment_hits",
+      "key": ["SayID", "HadithMainID"],
+      "decision": "Repeated SayID/HadithMainID source rows collapse to one destination row."
+    },
+    {
+      "area": "narrator_relations",
+      "key": ["FirstRawyID", "SecondRawyID", "RelationType"],
+      "decision": "Use the completed assessment's set comparison after duplicate collapse; 6,100 raw zero-SecondRawyID rows are collapsed by relation key and remain source sentinels, not invented narrators."
+    },
+    {
+      "area": "takhrij_memberships",
+      "key": ["HadithMainID", "GroupID", "CompoundMatnID"],
+      "decision": "Use the completed assessment's set comparison after duplicate collapse; null CompoundMatnID values are compared as one key value."
+    },
+    {
+      "area": "matn_hadith_comparisons",
+      "key": ["MasterMatnID", "SlaveMatnID"],
+      "decision": "Duplicate source keys collapse globally, then only keys with both components in 1..341616 are admitted. Invalid source values remain excluded sentinels."
+    }
+  ],
+  "mappings": [
+    {
+      "id": "book_catalog",
+      "roadmapArea": "hadith_and_book_counts",
+      "sourceTable": "Book",
+      "webTables": ["books"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "The complete book catalog, not a hadith/service partition."
+      },
+      "checkId": "books",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 245,
+        "distinctKeys": 245,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical report records a 245-row catalog. Fresh source-set comparison requires the unavailable legacy source.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT (SELECT count(*)::bigint FROM books) AS raw_rows, (SELECT count(DISTINCT id)::bigint FROM books) AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT id)::bigint FROM books) AS duplicate_rows, (SELECT count(DISTINCT h.book_id)::bigint FROM hadith_toc h) AS hadith_book_ids, (SELECT count(DISTINCT s.book_id)::bigint FROM hadith_service_content s) AS service_book_ids, (SELECT count(*)::bigint FROM books b WHERE b.id IN (SELECT h.book_id FROM hadith_toc h UNION ALL SELECT s.book_id FROM hadith_service_content s)) AS hadith_or_service_book_ids, (SELECT count(*)::bigint FROM hadith_toc) AS hadith_toc_rows, (SELECT count(DISTINCT main_id)::bigint FROM hadith_toc) AS hadith_toc_distinct_keys, (SELECT count(*)::bigint - count(DISTINCT main_id)::bigint FROM hadith_toc) AS hadith_toc_duplicate_rows, (SELECT count(*)::bigint FROM books b WHERE NOT EXISTS (SELECT 1 FROM authors a WHERE a.id = b.author_id)) AS books_with_missing_or_null_author_id;"
+    },
+    {
+      "id": "hadith_toc",
+      "roadmapArea": "hadith_and_book_counts",
+      "sourceTable": "BookTOC_Hadith",
+      "webTables": ["hadith_toc"],
+      "keySemantics": {
+        "source": ["MainID"],
+        "web": ["main_id"],
+        "description": "One global hadith-tree row per source MainID; nested-set values are source ordering, not an extra key."
+      },
+      "checkId": "books",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 339607,
+        "distinctKeys": 339607,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical report records exact row and MainID counts; the current web invariant is rechecked without asserting a fresh source scan.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT main_id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT main_id)::bigint AS duplicate_rows FROM hadith_toc;"
+    },
+    {
+      "id": "service_content",
+      "roadmapArea": "service_content_and_links",
+      "sourceTable": "BookTOC_Services",
+      "webTables": ["hadith_service_content"],
+      "keySemantics": {
+        "source": ["MainID"],
+        "web": ["id"],
+        "description": "The service-content node namespace. parent_id, next_id, and prev_id are retained source graph values and are not assumed to be ordinary self foreign keys."
+      },
+      "checkId": "service_content",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 600575,
+        "distinctKeys": 600575,
+        "missingValidKeys": null,
+        "extraWebKeys": null,
+        "note": "The historical report's 3,380-row gap predates later audit work; this manifest does not treat it as current without a source fingerprint."
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "Current web counts and graph observations are rechecked, but legacy source keys are unavailable and the stale historical delta is not asserted.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM books b WHERE b.id = h.book_id))::bigint AS missing_book_ids, count(*) FILTER (WHERE parent_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hadith_service_content p WHERE p.id = h.parent_id))::bigint AS unresolved_parent_ids, count(*) FILTER (WHERE parent_id <= 0)::bigint AS nonpositive_parent_sentinels FROM hadith_service_content h;"
+    },
+    {
+      "id": "service_links",
+      "roadmapArea": "service_content_and_links",
+      "sourceTable": "HadithsServices",
+      "webTables": ["hadith_service_links"],
+      "keySemantics": {
+        "source": ["HadithMainID", "ServiceMainID"],
+        "web": ["hadith_id", "service_content_id"],
+        "description": "The two-column membership key. TypeID and reserve are payload, not part of identity."
+      },
+      "checkId": "service_links",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 919929,
+        "distinctKeys": 687459,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "duplicate_collapse",
+      "reason": "The historical set comparison is 687,459 after duplicate collapse; the current web primary key is rechecked, but the source set cannot be freshly read.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (hadith_id, service_content_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (hadith_id, service_content_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = l.hadith_id))::bigint AS unresolved_hadith_ids, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_service_content c WHERE c.id = l.service_content_id))::bigint AS unresolved_service_ids FROM hadith_service_links l;"
+    },
+    {
+      "id": "service_types",
+      "roadmapArea": "service_content_and_links",
+      "sourceTable": "HadithsServicesTypes",
+      "webTables": ["hadith_service_types"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Sparse source IDs 1..12, 15..17. Type 15 has no invented boolean column key."
+      },
+      "checkId": "service_types",
+      "expectedWeb": {
+        "rawRows": 15,
+        "distinctKeys": 15,
+        "ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17],
+        "columnKeys": ["feqh", "modrag", "medicine", "amthal", "motawater", "sharh", "asbab", "takhreg", "rwah", "compound_matn", "asnad", "mokhtalaf", null, "tafsser", "biography"],
+        "type15LinkRows": 0
+      },
+      "sourceEvidence": {
+        "status": "completed_assessment_verified",
+        "reference": "Verified audit fact supplied for phase 1",
+        "rawRows": 15,
+        "distinctKeys": 15,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0,
+        "expectedWebRawRows": 15,
+        "expectedType15LinkRows": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The completed assessment verified the exact sparse service-type lookup; the runner rechecks every ID, name column key, and zero TypeID 15 link count.",
+      "tags": [],
+      "verificationQuery": "SELECT (SELECT count(*)::bigint FROM hadith_service_types) AS raw_rows, (SELECT count(DISTINCT id)::bigint FROM hadith_service_types) AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT id)::bigint FROM hadith_service_types) AS duplicate_rows, (SELECT count(*)::bigint FROM hadith_service_links WHERE type_id = 15) AS type_15_link_rows, (SELECT coalesce(jsonb_agg(jsonb_build_object('id', expected.id, 'name', expected.name, 'column_key', expected.column_key) ORDER BY expected.id) = jsonb_agg(jsonb_build_object('id', actual.id, 'name', actual.name, 'column_key', actual.column_key) ORDER BY actual.id), false) FROM (VALUES (1, 'استدلال فقهي', 'feqh'), (2, 'الإدراج', 'modrag'), (3, 'الطب النبوي', 'medicine'), (4, 'أمثال الحديث', 'amthal'), (5, 'التواتر', 'motawater'), (6, 'الشروح', 'sharh'), (7, 'أسباب الورود', 'asbab'), (8, 'تخريج كتب التخريج والعلل', 'takhreg'), (9, 'تخريج رواة', 'rwah'), (10, 'تخريج شروح', 'compound_matn'), (11, 'أصل', 'asnad'), (12, 'مخالف', 'mokhtalaf'), (15, 'شبهات', NULL::text), (16, 'تفسير بالمأثور', 'tafsser'), (17, 'سيرة', 'biography')) AS expected(id, name, column_key) CROSS JOIN LATERAL (SELECT id, name, column_key FROM hadith_service_types) actual) AS exact_expected_lookup;"
+    },
+    {
+      "id": "service_state",
+      "roadmapArea": "service_content_and_links",
+      "sourceTable": "HadithServicesState",
+      "webTables": ["hadith_services"],
+      "keySemantics": {
+        "source": ["HadithMainID"],
+        "web": ["hadith_id"],
+        "description": "One state-vector row per hadith. The source table is distinct from the service-content and service-link tables."
+      },
+      "checkId": "service_state",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 277396,
+        "distinctKeys": 277396,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical baseline says 277,396 hadith state rows; this is separate from the 245-book catalog and from service links.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT hadith_id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT hadith_id)::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = s.hadith_id))::bigint AS unresolved_hadith_ids FROM hadith_services s;"
+    },
+    {
+      "id": "narrator_core",
+      "roadmapArea": "narrator_data",
+      "sourceTable": "Nouns",
+      "webTables": ["narrators"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Narrator identity; descriptive fields are payload and do not change the key."
+      },
+      "checkId": "narrator_core",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 30087,
+        "distinctKeys": 30087,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical report records exact identity counts; no fresh source extraction is claimed.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows FROM narrators;"
+    },
+    {
+      "id": "narrator_biography_provenance",
+      "roadmapArea": "narrator_biography",
+      "sourceTable": "NounsTranslation",
+      "webTables": ["narrator_translation", "narrator_biography"],
+      "keySemantics": {
+        "source": ["unknown"],
+        "web": ["unknown"],
+        "description": "The derivation from NounsTranslation service nodes to narrator_biography is not proven. main_id, book_id, service_main_id, and link_id namespaces must not be collapsed into an assumed foreign key."
+      },
+      "checkId": "narrator_biography",
+      "sourceEvidence": {
+        "status": "ambiguous",
+        "reference": "Completed assessment unresolved area",
+        "rawRows": 92095,
+        "distinctKeys": null,
+        "missingValidKeys": null,
+        "extraWebKeys": null
+      },
+      "expectedClassification": "unknown",
+      "reason": "Narrator biography derivation from NounsTranslation is unresolved. Current web tables and direct-join observations are reported, but no source key parity or repair is claimed.",
+      "tags": ["ambiguous", "provenance_unverified", "polymorphic_namespace"],
+      "verificationQuery": "SELECT (SELECT count(*)::bigint FROM narrator_biography) AS raw_rows, (SELECT count(DISTINCT id)::bigint FROM narrator_biography) AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT id)::bigint FROM narrator_biography) AS duplicate_rows, (SELECT count(*)::bigint FROM narrator_translation) AS translation_rows, (SELECT count(DISTINCT (noun_id, service_main_id))::bigint FROM narrator_translation) AS translation_distinct_keys, (SELECT count(DISTINCT narrator_id)::bigint FROM narrator_biography) AS biography_narrators, (SELECT count(*)::bigint FROM narrator_biography b WHERE b.narrator_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = b.narrator_id)) AS unresolved_narrators, (SELECT count(*)::bigint FROM narrator_biography b WHERE b.main_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = b.main_id)) AS main_ids_not_hadith_namespace, (SELECT count(*)::bigint FROM narrator_biography b WHERE b.main_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = b.main_id)) AS main_ids_not_service_namespace;"
+    },
+    {
+      "id": "narrator_grading_terms",
+      "roadmapArea": "narrator_grading",
+      "sourceTable": "NounsGarh",
+      "webTables": ["narrator_grading"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Canonical grading-term identity. narrator_grading_terms is reported separately as an unexplained same-sized projection, not silently treated as a second source table."
+      },
+      "checkId": "narrator_grading",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 5745,
+        "distinctKeys": 5745,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical NounsGarh-to-narrator_grading identity counts match; the current table and related links are bounded checks.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows, (SELECT count(*)::bigint FROM narrator_grading_terms) AS unexplained_grading_terms_rows FROM narrator_grading;"
+    },
+    {
+      "id": "narrator_grading_links",
+      "roadmapArea": "narrator_grading",
+      "sourceTable": "NounsGarhLinks",
+      "webTables": ["narrator_grading_links"],
+      "keySemantics": {
+        "source": ["RawyID", "GarhID", "SayID"],
+        "web": ["rawy_id", "garh_id", "say_id"],
+        "description": "The full three-column membership key; grh ID and say ID are not assumed to be service-content foreign keys."
+      },
+      "checkId": "narrator_grading",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 139636,
+        "distinctKeys": null,
+        "missingValidKeys": null,
+        "extraWebKeys": null
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical raw count matches, but the source distinct-key set is not available for a fresh set comparison.",
+      "tags": ["source_unavailable", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (rawy_id, garh_id, say_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (rawy_id, garh_id, say_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE rawy_id > 0 AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = l.rawy_id))::bigint AS unresolved_positive_narrators, count(*) FILTER (WHERE garh_id > 0 AND NOT EXISTS (SELECT 1 FROM narrator_grading g WHERE g.id = l.garh_id))::bigint AS unresolved_positive_grades FROM narrator_grading_links l;"
+    },
+    {
+      "id": "narrator_criticism",
+      "roadmapArea": "narrator_criticism",
+      "sourceTable": "NounsScientistsSays",
+      "webTables": ["narrator_criticism", "narrator_criticism_links"],
+      "keySemantics": {
+        "source": ["unknown"],
+        "web": ["unknown"],
+        "description": "The web criticism row uses a serial id and does not retain the source SayID. The separate link table's say_id namespace has not been proven to identify narrator_criticism.id."
+      },
+      "checkId": "narrator_criticism",
+      "sourceEvidence": {
+        "status": "ambiguous",
+        "reference": "Completed assessment unresolved lineage/duplicate-source-ID area",
+        "rawRows": 171526,
+        "distinctKeys": null,
+        "missingValidKeys": null,
+        "extraWebKeys": null
+      },
+      "expectedClassification": "unknown",
+      "reason": "Narrator criticism lineage and duplicate source IDs are unresolved. Semantic duplicate observations are not promoted to a key, and the historical 300-row delta is not called a repairable missing set.",
+      "tags": ["ambiguous", "unresolved_lineage", "provenance_unverified", "polymorphic_namespace"],
+      "verificationQuery": "SELECT (SELECT count(*)::bigint FROM narrator_criticism) AS raw_rows, NULL::bigint AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT (narrator_id, scientist_noun_id, say_text, say_sort))::bigint FROM narrator_criticism) AS semantic_duplicate_rows, (SELECT count(*)::bigint FROM narrator_criticism_links) AS link_rows, (SELECT count(DISTINCT (say_id, service_main_id, link_id, is_book_toc_hadith))::bigint FROM narrator_criticism_links) AS link_distinct_keys FROM narrator_criticism c;"
+    },
+    {
+      "id": "narrator_teacher_students",
+      "roadmapArea": "teacher_student_relations",
+      "sourceTable": "NounsShyoukhTalamize",
+      "webTables": ["narrator_teachers"],
+      "keySemantics": {
+        "source": ["RawyID", "ShyoukhID"],
+        "web": ["rawy_id", "shyoukh_id"],
+        "description": "Directed narrator-to-teacher membership. hadiths_count is payload, and IDs <= 0 are reported rather than fabricated."
+      },
+      "checkId": "narrator_teachers",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 147895,
+        "distinctKeys": null,
+        "missingValidKeys": null,
+        "extraWebKeys": null
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical raw count matches, but the legacy directed membership set is unavailable for a fresh set comparison.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (rawy_id, shyoukh_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (rawy_id, shyoukh_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE rawy_id > 0 AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = t.rawy_id))::bigint AS unresolved_positive_narrators, count(*) FILTER (WHERE shyoukh_id > 0 AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = t.shyoukh_id))::bigint AS unresolved_positive_teachers, count(*) FILTER (WHERE rawy_id <= 0 OR shyoukh_id <= 0)::bigint AS nonpositive_sentinels FROM narrator_teachers t;"
+    },
+    {
+      "id": "narrator_relations",
+      "roadmapArea": "teacher_student_relations",
+      "sourceTable": "NounsRelations",
+      "webTables": ["narrator_relations"],
+      "keySemantics": {
+        "source": ["FirstRawyID", "SecondRawyID", "RelationType"],
+        "web": ["first_id", "second_id", "relation_type"],
+        "description": "Ordered relation plus type. SayID is retained as legacy_say_id evidence but is not part of web identity. SecondRawyID=0 is a known legacy sentinel; 17 positive SecondRawyID values are the separate NounsScientistsSays.ID namespace and are intentionally not direct narrator IDs."
+      },
+      "checkId": "narrator_relations",
+      "sourceEvidence": {
+        "status": "completed_assessment_verified",
+        "reference": "Verified audit fact supplied for phase 1",
+        "rawRows": 19951,
+        "distinctKeys": 11518,
+        "duplicateRows": 8433,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0,
+        "legacySentinelRawRows": 6100,
+        "expectedWebRawRows": 11518,
+        "expectedPolymorphicSecondIds": 17
+      },
+      "expectedClassification": "duplicate_collapse",
+      "reason": "The completed assessment verified matching source/web relation sets after duplicate collapse. The 6,100 raw second_id=0 source sentinel rows are collapsed by relation key; 17 positive SecondRawyID values are NounsScientistsSays.ID values in a separate source namespace, not unresolved web narrator IDs.",
+      "tags": ["legacy_sentinel", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (first_id, second_id, relation_type))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (first_id, second_id, relation_type))::bigint AS duplicate_rows, count(*) FILTER (WHERE second_id = 0)::bigint AS second_id_zero_sentinels, count(*) FILTER (WHERE first_id <= 0 OR (second_id < 0))::bigint AS other_nonpositive_sentinels, count(*) FILTER (WHERE first_id > 0 AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = r.first_id))::bigint AS unresolved_positive_first_ids, count(*) FILTER (WHERE second_id > 0 AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = r.second_id))::bigint AS unresolved_positive_second_ids FROM narrator_relations r;"
+    },
+    {
+      "id": "takhrij_memberships",
+      "roadmapArea": "takhrij_groups_and_memberships",
+      "sourceTable": "HTakhreeg",
+      "webTables": ["takhrij"],
+      "keySemantics": {
+        "source": ["HadithMainID", "GroupID", "CompoundMatnID"],
+        "web": ["hadith_id", "group_id", "compound_matn_id"],
+        "description": "One membership per hadith/group/compound-matn tuple. NULL is one logical key value for distinct counting. GroupID is not assumed to reference books or another ordinary table."
+      },
+      "checkId": "takhrij",
+      "sourceEvidence": {
+        "status": "completed_assessment_verified",
+        "reference": "Verified audit fact supplied for phase 1",
+        "rawRows": 281541,
+        "distinctKeys": 280259,
+        "duplicateRows": 1282,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0,
+        "expectedWebRawRows": 280259
+      },
+      "expectedClassification": "duplicate_collapse",
+      "reason": "The completed assessment verified identical source and web membership sets after duplicate collapse; the runner rechecks destination counts and direct hadith references.",
+      "tags": ["polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (hadith_id, group_id, compound_matn_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (hadith_id, group_id, compound_matn_id))::bigint AS duplicate_rows, count(DISTINCT group_id)::bigint AS distinct_groups, count(*) FILTER (WHERE hadith_id <= 0 OR group_id <= 0)::bigint AS nonpositive_hadith_or_group_sentinels, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = t.hadith_id))::bigint AS unresolved_hadith_ids FROM takhrij t;"
+    },
+    {
+      "id": "matn_hadith_comparisons",
+      "roadmapArea": "matn_comparisons",
+      "sourceTable": "HMatnComparison1..33",
+      "webTables": ["matn_comparison_hadith"],
+      "keySemantics": {
+        "source": ["MasterMatnID", "SlaveMatnID"],
+        "web": ["master_hadith_id", "slave_hadith_id"],
+        "description": "Global duplicate collapse across 33 shards, then admit only 1..341616 in both components. The historical compound-matn namespace is not substituted for this hadith namespace."
+      },
+      "checkId": "matn",
+      "sourceEvidence": {
+        "status": "completed_assessment_verified",
+        "reference": "Verified audit fact and docs/parity-resolution.md",
+        "rawRows": 8028203,
+        "distinctKeys": 7820551,
+        "duplicateRows": 207652,
+        "validDistinctKeys": 7820313,
+        "invalidDistinctKeys": 238,
+        "invalidNonpositiveKeys": 105,
+        "invalidOutOfRangeKeys": 133,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0,
+        "expectedWebRawRows": 7820313,
+        "expectedInvalidWebRows": 0
+      },
+      "expectedClassification": "intentional_source_sentinel_or_dangling_reference",
+      "reason": "The completed assessment verified 7,820,313 valid pairs on both sides after global duplicate collapse. The remaining 238 distinct source keys are invalid legacy sentinels and were deliberately not loaded.",
+      "tags": ["legacy_sentinel"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (master_hadith_id, slave_hadith_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (master_hadith_id, slave_hadith_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE master_hadith_id <= 0 OR slave_hadith_id <= 0)::bigint AS nonpositive_rows, count(*) FILTER (WHERE master_hadith_id > 341616 OR slave_hadith_id > 341616)::bigint AS out_of_range_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = m.master_hadith_id) OR NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = m.slave_hadith_id))::bigint AS unresolved_hadith_ids FROM matn_comparison_hadith m;"
+    },
+    {
+      "id": "lexicon_items",
+      "roadmapArea": "lexicon_references",
+      "sourceTable": "LexiconItems",
+      "webTables": ["lexicon_items"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Lexicon item identity; the historical 1-based web allocation must be considered when comparing references."
+      },
+      "checkId": "lexicon",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 13399,
+        "distinctKeys": 13399,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical lexicon-item identity counts match; the current web item set is rechecked.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows, min(id)::int AS min_id, max(id)::int AS max_id FROM lexicon_items;"
+    },
+    {
+      "id": "lexicon_hadith_references",
+      "roadmapArea": "lexicon_references",
+      "sourceTable": "LexiconDescrp",
+      "webTables": ["lexicon_hadith"],
+      "keySemantics": {
+        "source": ["LexiconItemID", "DescrpMainID"],
+        "web": ["lexicon_item_id", "hadith_id"],
+        "description": "The web column named hadith_id carries BookTOC_Services MainID, not hadith_toc MainID. Composite (80000481+) and out-of-range source values are source namespace/sentinel candidates, not ordinary hadith IDs."
+      },
+      "checkId": "lexicon",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md correction",
+        "rawRows": 19306,
+        "distinctKeys": 19306,
+        "validJoinableKeys": 15596,
+        "excludedSourceKeys": 3710,
+        "excludedOutOfRangeItemKeys": 3052,
+        "excludedCompositeKeys": 658,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "intentional_source_sentinel_or_dangling_reference",
+      "reason": "The completed correction documented 15,596 joinable source keys and the same 15,596 web keys. The other 3,710 source keys are excluded namespace/sentinel candidates, not silently loaded as hadith IDs.",
+      "tags": ["legacy_sentinel_candidate", "ambiguous"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (lexicon_item_id, hadith_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (lexicon_item_id, hadith_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM lexicon_items i WHERE i.id = h.lexicon_item_id))::bigint AS unresolved_lexicon_items, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = h.hadith_id))::bigint AS service_namespace_matches, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM hadith_toc t WHERE t.main_id = h.hadith_id))::bigint AS hadith_namespace_matches FROM lexicon_hadith h;"
+    },
+    {
+      "id": "subject_tree_projections",
+      "roadmapArea": "topics_and_subject_links",
+      "sourceTable": "Subject",
+      "webTables": ["subject_categories", "subject_items"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "The source subject tree is projected into two web tables with the same ID namespace. Counts are overlapping copies, not additive source rows."
+      },
+      "checkId": "topics",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 21994,
+        "distinctKeys": 21994,
+        "missingValidKeys": null,
+        "extraWebKeys": null
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "Both web projections have the historical source count, but a current source ID set is unavailable and their sum must not be compared to 21,994.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT (SELECT count(*)::bigint FROM subject_categories) AS raw_rows, (SELECT count(DISTINCT id)::bigint FROM subject_categories) AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT id)::bigint FROM subject_categories) AS duplicate_rows, (SELECT count(*)::bigint FROM subject_items) AS projected_item_rows, (SELECT count(DISTINCT id)::bigint FROM subject_items) AS projected_item_keys;"
+    },
+    {
+      "id": "subject_hadith_links",
+      "roadmapArea": "topics_and_subject_links",
+      "sourceTable": "SubjectHit",
+      "webTables": ["hadith_subjects"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Link-row identity. subject_id is known to reference subject_items; paragraph_main_id is checked in the hadith_toc paragraph namespace without assuming every graph edge is a declared FK."
+      },
+      "checkId": "topics",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 1349213,
+        "distinctKeys": 1349213,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical link identity counts match; direct web reference observations are rechecked.",
+      "tags": ["source_unavailable", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM subject_items i WHERE i.id = h.subject_id))::bigint AS unresolved_subject_ids, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc t WHERE t.main_id = h.paragraph_main_id))::bigint AS unresolved_paragraph_main_ids, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM hadith_toc t WHERE t.main_id = h.paragraph_main_id AND t.is_paragraph IS NOT TRUE))::bigint AS main_ids_not_paragraph_rows FROM hadith_subjects h;"
+    },
+    {
+      "id": "quran_ayat",
+      "roadmapArea": "quran_references",
+      "sourceTable": "QuranAyat",
+      "webTables": ["quran_ayat"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Quran verse identity. sura_id and aya_num are payload, not an alternate key."
+      },
+      "checkId": "quran",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 6236,
+        "distinctKeys": 6236,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical identity count matches; the current Quran destination is rechecked.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows FROM quran_ayat;"
+    },
+    {
+      "id": "quran_ayat_services",
+      "roadmapArea": "quran_references",
+      "sourceTable": "QuranAyatDescrp",
+      "webTables": ["quran_ayat_services"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Quran service-row identity. service_main_id points at the service-content namespace, not hadith_toc."
+      },
+      "checkId": "quran",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 6236,
+        "distinctKeys": 6236,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical row identities match; direct service references are reported separately.",
+      "tags": ["source_unavailable", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = q.service_main_id))::bigint AS unresolved_service_ids FROM quran_ayat_services q;"
+    },
+    {
+      "id": "quran_ayat_qiraat",
+      "roadmapArea": "quran_references",
+      "sourceTable": "QuranAyatKerat",
+      "webTables": ["quran_ayat_qiraat"],
+      "keySemantics": {
+        "source": ["AyaID", "ServiceMainID"],
+        "web": ["aya_id", "service_main_id"],
+        "description": "Two-column Quran/service membership. service_main_id is not a hadith namespace reference."
+      },
+      "checkId": "quran",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 5031,
+        "distinctKeys": null,
+        "missingValidKeys": null,
+        "extraWebKeys": null
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical raw count matches; current distinct destination keys and direct references are measured.",
+      "tags": ["source_unavailable", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (aya_id, service_main_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (aya_id, service_main_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM quran_ayat a WHERE a.id = q.aya_id))::bigint AS unresolved_aya_ids, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = q.service_main_id))::bigint AS unresolved_service_ids FROM quran_ayat_qiraat q;"
+    },
+    {
+      "id": "quran_readers",
+      "roadmapArea": "quran_references",
+      "sourceTable": "QuranReaders",
+      "webTables": ["quran_readers"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Quran reader-tree identity."
+      },
+      "checkId": "quran",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 30,
+        "distinctKeys": 30,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical identity count matches.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows FROM quran_readers;"
+    },
+    {
+      "id": "quran_reader_ayat_namespaces",
+      "roadmapArea": "quran_references",
+      "sourceTable": "QuranReadersAyat",
+      "webTables": ["quran_readers_ayat"],
+      "keySemantics": {
+        "source": ["ReaderID", "AyaID"],
+        "web": ["reader_id", "aya_id"],
+        "description": "Membership key is known, but aya_id is not proven to share quran_ayat.id. Direct joins are observations only."
+      },
+      "checkId": "quran",
+      "sourceEvidence": {
+        "status": "ambiguous",
+        "reference": "Completed assessment unresolved namespace area",
+        "rawRows": 423,
+        "distinctKeys": 423,
+        "missingValidKeys": null,
+        "extraWebKeys": null,
+        "knownDirectQuranAyaJoinFailures": 423
+      },
+      "expectedClassification": "unknown",
+      "reason": "All 423 aya_id values fail a direct quran_ayat.id join in the completed assessment. The alternate namespace is unresolved, so the rows are neither declared valid nor loaded into a guessed mapping.",
+      "tags": ["ambiguous", "mixed_namespace", "unresolved_lineage"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (reader_id, aya_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (reader_id, aya_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM quran_ayat a WHERE a.id = q.aya_id))::bigint AS direct_aya_join_failures, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM quran_readers r WHERE r.id = q.reader_id))::bigint AS unresolved_reader_ids FROM quran_readers_ayat q;"
+    },
+    {
+      "id": "isnad_hadith_links",
+      "roadmapArea": "hadith_and_isnad",
+      "sourceTable": "AsanedHadiths",
+      "webTables": ["isnad_hadiths"],
+      "keySemantics": {
+        "source": ["HadithMainID", "SanadID"],
+        "web": ["hadith_id", "isnad_id"],
+        "description": "The two-column link key. sanad_tahdeth_id is retained payload and is checked separately."
+      },
+      "checkId": "isnad",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 341289,
+        "distinctKeys": 341187,
+        "duplicateRows": 102,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "duplicate_collapse",
+      "reason": "The historical source set equals the web primary key after 102 duplicate source rows collapse; current references are rechecked.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (hadith_id, isnad_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (hadith_id, isnad_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = i.hadith_id))::bigint AS unresolved_hadith_ids, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM isnad_chains c WHERE c.id = i.isnad_id))::bigint AS unresolved_chain_ids, count(*) FILTER (WHERE sanad_tahdeth_id > 0 AND NOT EXISTS (SELECT 1 FROM isnad_tahdeth t WHERE t.id = i.sanad_tahdeth_id))::bigint AS unresolved_positive_tahdeth_ids FROM isnad_hadiths i;"
+    },
+    {
+      "id": "judgment_hits",
+      "roadmapArea": "hadith_judgments",
+      "sourceTable": "HadithJudgmentHits",
+      "webTables": ["hadith_judgment_hits"],
+      "keySemantics": {
+        "source": ["SayID", "HadithMainID"],
+        "web": ["say_id", "hadith_id"],
+        "description": "Two-column hit key. SayID has no separately keyed web saying table in this mapping, so only hadith_id is checked as a direct reference."
+      },
+      "checkId": "judgments",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 236933,
+        "distinctKeys": 236065,
+        "duplicateRows": 868,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "duplicate_collapse",
+      "reason": "The historical source key set equals the web primary key after 868 duplicate rows collapse; hadith_judgments is a denormalized projection and is reported separately.",
+      "tags": ["source_unavailable", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (say_id, hadith_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (say_id, hadith_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = j.hadith_id))::bigint AS unresolved_hadith_ids FROM hadith_judgment_hits j;"
+    },
+    {
+      "id": "judgment_links",
+      "roadmapArea": "hadith_judgments",
+      "sourceTable": "HadithJudgmentLinks",
+      "webTables": ["hadith_judgment_links"],
+      "keySemantics": {
+        "source": ["SayID", "ServiceMainID"],
+        "web": ["say_id", "service_main_id"],
+        "description": "The key excludes is_book_toc. service_main_id is polymorphic: is_book_toc chooses a namespace, so direct joins are observations and no single FK is assumed."
+      },
+      "checkId": "judgments",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 75439,
+        "distinctKeys": 75439,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical identity counts match; the namespace flag distributions and direct observations are rechecked without treating the polymorphic column as a normal foreign key.",
+      "tags": ["source_unavailable", "polymorphic_namespace"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (say_id, service_main_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (say_id, service_main_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE is_book_toc)::bigint AS is_book_toc_true_rows, count(*) FILTER (WHERE NOT is_book_toc)::bigint AS is_book_toc_false_rows, count(*) FILTER (WHERE is_book_toc AND NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = l.service_main_id))::bigint AS hadith_namespace_failures, count(*) FILTER (WHERE NOT is_book_toc AND NOT EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = l.service_main_id))::bigint AS service_namespace_failures FROM hadith_judgment_links l;"
+    },
+    {
+      "id": "controversy_tree",
+      "roadmapArea": "controversy_trees",
+      "sourceTable": "HadithControversialTree",
+      "webTables": ["hadith_controversial_tree"],
+      "keySemantics": {
+        "source": ["ID"],
+        "web": ["id"],
+        "description": "Controversy tree identity; the legacy source name is HadithControversialTree."
+      },
+      "checkId": "controversy",
+      "sourceEvidence": {
+        "status": "historical_report_only",
+        "reference": "legacy-audit/07-data-count-parity.md",
+        "rawRows": 1189,
+        "distinctKeys": 1189,
+        "missingValidKeys": 0,
+        "extraWebKeys": 0
+      },
+      "expectedClassification": "exact_parity",
+      "reason": "The historical tree identity count matches.",
+      "tags": ["source_unavailable"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT id)::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT id)::bigint AS duplicate_rows FROM hadith_controversial_tree;"
+    },
+    {
+      "id": "controversy_description_namespaces",
+      "roadmapArea": "controversy_trees",
+      "sourceTable": "HadithControverialDescrp",
+      "webTables": ["hadith_controversial_descriptions"],
+      "keySemantics": {
+        "source": ["NodeID", "ServiceMainID"],
+        "web": ["node_id", "service_main_id"],
+        "description": "The row key is known, but 22 node_id values use a mixed namespace. A failed direct tree.id join is not by itself a repair instruction."
+      },
+      "checkId": "controversy",
+      "sourceEvidence": {
+        "status": "ambiguous",
+        "reference": "Completed assessment unresolved mixed namespace",
+        "rawRows": 1165,
+        "distinctKeys": 1165,
+        "missingValidKeys": null,
+        "extraWebKeys": null,
+        "knownMixedNamespaceNodeIds": 22
+      },
+      "expectedClassification": "unknown",
+      "reason": "Twenty-two controversy description node IDs do not share the tree.id namespace in the completed assessment. Their alternate namespace is not proven, so no key remap or repair is claimed.",
+      "tags": ["ambiguous", "mixed_namespace", "unresolved_lineage"],
+      "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (node_id, service_main_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (node_id, service_main_id))::bigint AS duplicate_rows, count(DISTINCT node_id)::bigint AS distinct_node_ids, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_controversial_tree t WHERE t.id = d.node_id))::bigint AS direct_tree_namespace_failures, count(DISTINCT node_id) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_controversial_tree t WHERE t.id = d.node_id))::bigint AS direct_tree_namespace_failed_node_ids, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = d.node_id))::bigint AS service_namespace_observations FROM hadith_controversial_descriptions d;"
+    }
+  ]
+}

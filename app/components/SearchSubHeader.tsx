@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { buildSearchUrl } from '@/lib/urlState'
 
 export default function SearchSubHeader() {
   const router = useRouter()
@@ -20,15 +21,22 @@ export default function SearchSubHeader() {
     e.preventDefault()
     const trimmed = q.trim()
     if (trimmed.length < 2) return
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
+    // On /search, commit only q: existing source, narrator, grade, subject, depth, scope,
+    // matching, catalogue, and pagination state stays in the shareable URL.
+    const href = pathname === '/search'
+      ? buildSearchUrl(searchParams.toString(), { q: trimmed })
+      : `/search?q=${encodeURIComponent(trimmed)}`
+    router.push(href, { scroll: false })
   }
 
   return (
     <div className="relative z-10 bg-white border-b border-gray-200 font-sans" dir="rtl">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2">
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <form onSubmit={handleSubmit} className="flex flex-1 min-w-0 gap-2">
+          <form onSubmit={handleSubmit} className="flex flex-1 min-w-0 gap-2" role="search">
+            <label htmlFor="global-search" className="sr-only">البحث النصي في الأحاديث</label>
             <input
+              id="global-search"
               type="search"
               value={q}
               onChange={e => setQ(e.target.value)}

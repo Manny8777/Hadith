@@ -7,6 +7,51 @@ export const dynamic = 'force-dynamic'
 
 type MatchMode = 'all' | 'any' | 'phrase'
 
+const MIN_QUERY_LENGTH = 2
+const MAX_PAGE_SIZE = 100
+const POSTGRES_INT_MAX = 2_147_483_647
+
+// Requiring a Unicode letter or number keeps punctuation-only and wildcard-only requests out of
+// FTS/regex SQL. Normalization cannot turn punctuation or a wildcard into searchable text, so this
+// guard deliberately does not duplicate the database's normalize_hadith() implementation.
+function hasSearchableText(value: string): boolean {
+  return /[\p{L}\p{N}]/u.test(value)
+}
+
+// Keep wildcard literals expression-identical to normalize_hadith(): tashkeel is removed first, then
+// أ/إ/آ, ة, and ى are folded to ا, ه, and ي. Wildcard characters stay intact until regex expansion.
+function normalizeForWildcard(term: string): string {
+  return term
+    .replace(/[\u064B-\u065F\u0670\u0671]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+}
+
+// Unknown/blank/malformed numeric values are ignored. Pagination accepts only complete integer text
+// and is then clamped by the caller; filter IDs must additionally be positive.
+function parseIntParam(
+  raw: string | null,
+  { positive = false }: { positive?: boolean } = {},
+): number | null {
+  const value = raw?.trim() ?? ''
+  if (!value || !/^[+-]?\d+$/.test(value)) return null
+  const n = Number(value)
+  if (!Number.isSafeInteger(n) || Math.abs(n) > POSTGRES_INT_MAX) return null
+  return positive && n <= 0 ? null : n
+}
+
+// '*' = any run of characters, '?' = one character, matched against whole words of normalized text.
+// Normalize literal characters before escaping so regex terms use the same Arabic forms as indexed
+// text; keep * and ? intact until wildcard expansion.
+function wildcardToRegex(term: string): string | null {
+  if (!/[*?]/.test(term)) return null
+  const normalized = normalizeForWildcard(term)
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, (ch) => (ch === '*' || ch === '?' ? ch : `\\${ch}`))
+  const body = escaped.replace(/\*/g, '[^ ]*').replace(/\?/g, '.')
+  return `(^| )${body}( |$)`
+}
+
 function parseMatch(raw: string | null): MatchMode {
   const m = (raw ?? '').trim().toLowerCase()
   // Default = the original search dialog's default: متتالية, i.e. the same words adjacent and in
@@ -17,24 +62,14 @@ function parseMatch(raw: string | null): MatchMode {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const q = searchParams.get('q')?.trim()
+  const q = searchParams.get('q')?.trim() ?? ''
 
-  // All params are parsed through one tolerant helper: unknown/blank/non-numeric values
-  // become null instead of NaN (previously `book_id=abc` or `page=` produced NaN and the
-  // filter silently vanished).
-  const intParam = (name: string): number | null => {
-    const raw = searchParams.get(name)
-    if (raw === null || raw.trim() === '') return null
-    const n = parseInt(raw, 10)
-    return Number.isFinite(n) ? n : null
-  }
-
-  const page = Math.max(1, intParam('page') ?? 1)
-  const limit = Math.min(100, Math.max(1, intParam('limit') ?? 20))
-  const bookId = intParam('book_id')
-  const narratorId = intParam('narrator_id')
-  const subjectCatId = intParam('subject_cat_id')
-  const maxDepth = intParam('max_depth')
+  const page = Math.max(1, parseIntParam(searchParams.get('page')) ?? 1)
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseIntParam(searchParams.get('limit')) ?? 20))
+  const bookId = parseIntParam(searchParams.get('book_id'), { positive: true })
+  const narratorId = parseIntParam(searchParams.get('narrator_id'), { positive: true })
+  const subjectCatId = parseIntParam(searchParams.get('subject_cat_id'), { positive: true })
+  const maxDepth = parseIntParam(searchParams.get('max_depth'), { positive: true })
   const gradeFilter = normalizeGrade(searchParams.get('grade') as string | null)
   // search_scope: 'tarf' = أطراف فقط, 'both' (default) = متن + أطراف
   const searchScope = (searchParams.get('search_scope') ?? '').trim().toLowerCase() === 'tarf' ? 'tarf' : 'both'
@@ -44,6 +79,18 @@ export async function GET(req: Request) {
   // both catalogues from the same dialog; the web only ever searched the 33 hadith books.
   const bookSource = (searchParams.get('src') ?? '').trim().toLowerCase() === 'service' ? 'service' : 'hadith'
   const offset = (page - 1) * limit
+  const emptyMode = narratorId !== null ? 'narrator+text' : bookSource === 'service' ? 'service' : 'text'
+  const emptySearchResponse = () => NextResponse.json({
+    results: [],
+    total: 0,
+    total_hadiths: 0,
+    page,
+    limit,
+    mode: emptyMode,
+    ...(bookSource === 'service' ? { source: 'service' } : {}),
+    search_scope: searchScope,
+    match: matchMode,
+  })
 
   // The stored `content` is marked-up text (<متن>, <سند>, <رقم_حديث نوع="مطبوع">, hidden
   // matn in attributes such as نص="…"). The legacy engine indexes element text only — tag
@@ -56,11 +103,13 @@ export async function GET(req: Request) {
   const visibleMatch = (contentAlias: string, param: string): string =>
     `to_tsvector('simple', normalize_hadith(${visibleText(contentAlias)})) @@ ${queryExpr(param)}`
 
-  // Document used only for ranking (computed for the matched rows, not for the scan).
-  const rankDoc = (tarfAlias: string, contentAlias: string): string =>
-    searchScope === 'tarf'
-      ? `coalesce(${tarfAlias},'')`
-      : `(coalesce(${tarfAlias},'') || ' ' || ${visibleText(contentAlias)})`
+  // Ranking uses the short tarf document rather than rebuilding tarf+content for
+  // every matching row. The GIN predicates below still search the full visible text,
+  // so result membership and exact totals are unchanged; this only makes ordering
+  // deterministic and avoids turning ranking into a second full-text scan. The
+  // service corpus showed the difference clearly: ranking concatenated documents
+  // measured 16.5s for one page, while tarf-only ranking measured under 1s.
+  const searchRankDoc = (tarfAlias: string): string => `coalesce(${tarfAlias},'')`
 
   // Normalised + punctuation-stripped query text, whitespace-trimmed. Used by `any`, where the
   // words are re-joined with `|` — splitting on whitespace yields empty elements for leading,
@@ -149,22 +198,13 @@ export async function GET(req: Request) {
     return out
   }
 
-  // '*' = any run of characters, '?' = one character, matched against whole words of the normalised
-  // text — the same reading the engine's wildcards have ('صلا*' finds words starting with صلا).
-  function wildcardToRegex(term: string): string | null {
-    if (!/[*?]/.test(term)) return null
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, (ch) => (ch === '*' || ch === '?' ? ch : `\\${ch}`))
-    const body = escaped.replace(/\*/g, '[^ ]*').replace(/\?/g, '.')
-    return `(^| )${body}( |$)`
-  }
-
   // One term's match expression. A trailing-only wildcard ('صلا*') can go through the tsquery
   // prefix operator, which the GIN index serves; any other position falls back to a regex over the
   // normalised text (no index — noted in the audit as the cost of mid-word wildcards).
   function termMatchExpr(t: BoolTerm, tarfAlias: string, contentAlias: string): string {
-    const trailingOnly = t.regex !== null && /^[^*?]*\*$/.test(t.term)
+    const prefix = normalizeForWildcard(t.term.slice(0, -1).trim())
+    const trailingOnly = t.regex !== null && /^[^*?]*\*$/.test(t.term) && hasSearchableText(prefix)
     if (trailingOnly) {
-      const prefix = t.term.slice(0, -1).trim()
       const q = `to_tsquery('simple', normalize_hadith(${sqlLit(prefix)}) || ':*')`
       if (searchScope === 'tarf')
         return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
@@ -187,6 +227,10 @@ export async function GET(req: Request) {
     )`
   }
 
+  // Supported Boolean grammar: whitespace-delimited connectives are applied strictly left to right;
+  // there are deliberately no precedence rules or user parentheses. XOR means exactly one of its
+  // current left-hand result and the next term. Keep this behavior stable until legacy evidence
+  // supports a different grammar.
   function composeBooleanExpr(terms: BoolTerm[], tarfAlias: string, contentAlias: string): string {
     let expr = ''
     terms.forEach((t, i) => {
@@ -202,7 +246,16 @@ export async function GET(req: Request) {
     return expr
   }
 
+  // The existing left-to-right composer intentionally defines the supported grammar; this route does
+  // not add precedence or parentheses. Validate parsed search terms, rather than the whole raw string,
+  // so a query such as `* OR *` is still recognized as wildcard-only. With no searchable term (for
+  // example `*`, `**`, `!?`, or punctuation-only text), return the documented empty shape before any
+  // SQL is built. One-character Arabic/English terms retain the existing two-character minimum.
   const booleanTerms = q ? parseQueryTerms(q) : []
+  const hasSearchableTextQuery = booleanTerms.some(t => hasSearchableText(t.term))
+  const hasValidTextQuery = hasSearchableTextQuery && q.length >= MIN_QUERY_LENGTH
+  if (q && !hasSearchableTextQuery) return emptySearchResponse()
+
   const useBoolean = booleanTerms.length > 1
     || (booleanTerms.length === 1 && (booleanTerms[0].regex !== null || booleanTerms[0].conn === 'NOT'))
 
@@ -228,19 +281,30 @@ export async function GET(req: Request) {
   }
 
   // Combined narrator + text search
-  if (narratorId !== null && q && q.length >= 2) {
+  if (narratorId !== null && hasValidTextQuery) {
     const gradeExistsClause2 = gradeExistsClause(gradeFilter, 'ht.main_id')
 
     const [hadithsRes, countRes] = await Promise.all([
       pool.query(
-        `SELECT DISTINCT ht.main_id, ht.book_id, b.title as book_name, ht.tarf,
+        `WITH paged_narrator_hadiths AS MATERIALIZED (
+           SELECT DISTINCT ht.main_id, ht.book_id
+           FROM isnad_hadiths iha
+           JOIN isnad_chains ic ON iha.isnad_id = ic.id
+           JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+           WHERE ic.narrator_id_array @> ARRAY[$1::integer]
+             AND ht.is_leaf = true
+             AND ${textMatchExpr('ht.tarf', 'ht.content', '$2')}
+             ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}
+           ORDER BY ht.book_id, ht.main_id
+           LIMIT $3 OFFSET $4
+         )
+         SELECT page.main_id, ht.book_id, b.title as book_name, ht.tarf,
                 ht.section_text, ht.chapter_text, ht.part_num, ht.page_num,
                 ht.tarqeem_harf, ht.tarqeem_matboa1,
                 ${snipColumns('ht.content')},
                 jg.grade_hint
-         FROM isnad_hadiths iha
-         JOIN isnad_chains ic ON iha.isnad_id = ic.id
-         JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+         FROM paged_narrator_hadiths page
+         JOIN hadith_toc ht ON ht.main_id = page.main_id
          JOIN books b ON b.id = ht.book_id
          LEFT JOIN LATERAL (
            SELECT ${gradeHintCase('say_text')} as grade_hint
@@ -254,12 +318,7 @@ export async function GET(req: Request) {
              ELSE 4 END
            LIMIT 1
          ) jg ON true
-         WHERE ic.narrator_id_array @> ARRAY[$1::integer]
-           AND ht.is_leaf = true
-           AND ${textMatchExpr('ht.tarf', 'ht.content', '$2')}
-           ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}
-         ORDER BY ht.book_id, ht.main_id
-         LIMIT $3 OFFSET $4`,
+         ORDER BY ht.book_id, page.main_id`,
         [narratorId, q, limit, offset]
       ),
       pool.query(
@@ -285,19 +344,30 @@ export async function GET(req: Request) {
     })
   }
 
-  // Narrator-only isnad search mode
+  // Narrator-only isnad search mode. A supplied but invalid narrator ID is ignored rather than
+  // passed to integer SQL; the established no-query empty response is preserved.
   if (narratorId !== null) {
     const gradeExists = gradeExistsClause(gradeFilter, 'ht.main_id')
 
     const [hadithsRes, countRes] = await Promise.all([
       pool.query(
-        `SELECT DISTINCT ht.main_id, ht.book_id, b.title as book_name, ht.tarf,
+        `WITH paged_narrator_hadiths AS MATERIALIZED (
+           SELECT DISTINCT ht.main_id, ht.book_id
+           FROM isnad_hadiths iha
+           JOIN isnad_chains ic ON iha.isnad_id = ic.id
+           JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+           WHERE ic.narrator_id_array @> ARRAY[$1::integer]
+             AND ht.is_leaf = true
+             ${gradeExists ? 'AND ' + gradeExists : ''}
+           ORDER BY ht.book_id, ht.main_id
+           LIMIT $2 OFFSET $3
+         )
+         SELECT page.main_id, ht.book_id, b.title as book_name, ht.tarf,
                 ht.section_text, ht.chapter_text, ht.part_num, ht.page_num,
                 ht.tarqeem_harf, ht.tarqeem_matboa1,
                 jg.grade_hint
-         FROM isnad_hadiths iha
-         JOIN isnad_chains ic ON iha.isnad_id = ic.id
-         JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
+         FROM paged_narrator_hadiths page
+         JOIN hadith_toc ht ON ht.main_id = page.main_id
          JOIN books b ON b.id = ht.book_id
          LEFT JOIN LATERAL (
            SELECT ${gradeHintCase('say_text')} as grade_hint
@@ -311,11 +381,7 @@ export async function GET(req: Request) {
              ELSE 4 END
            LIMIT 1
          ) jg ON true
-         WHERE ic.narrator_id_array @> ARRAY[$1::integer]
-           AND ht.is_leaf = true
-           ${gradeExists ? 'AND ' + gradeExists : ''}
-         ORDER BY ht.book_id, ht.main_id
-         LIMIT $2 OFFSET $3`,
+         ORDER BY ht.book_id, page.main_id`,
         [narratorId, limit, offset]
       ),
       pool.query(
@@ -338,7 +404,7 @@ export async function GET(req: Request) {
     })
   }
 
-  if (!q || q.length < 2) return NextResponse.json({ results: [], total: 0 })
+  if (!hasValidTextQuery) return emptySearchResponse()
 
   // ---- الكتب الخدمية (service books) -----------------------------------------------------------
   // Shuruh, biographies, jarh wa-ta'dil, place names: 212 books, 600,575 leaf rows, searched from the
@@ -346,6 +412,10 @@ export async function GET(req: Request) {
   // books are in the picker but every search returned nothing. The predicates are shared with the
   // hadith branch verbatim by aliasing the table as h; chain, grade and subject filters do not apply.
   if (bookSource === 'service') {
+    // Ranking and LIMIT require reading the matching service rows, but snippets should only be built
+    // for the requested page. The materialized CTE is the intentional planner boundary: expensive
+    // rank/order work finishes before any display text is selected.
+
     const conditions = ['h.is_leaf = true', textMatchExpr('h.tarf', 'h.content')]
     const serviceParams: (string | number)[] = [q, limit, offset]
     let serviceParamIdx = 4
@@ -364,16 +434,23 @@ export async function GET(req: Request) {
 
     const [serviceRes, serviceCountRes] = await Promise.all([
       pool.query(
-        `SELECT h.id AS main_id, h.book_id, h.book_name, h.tarf, h.section_text,
+        `WITH paged_service_content AS MATERIALIZED (
+           SELECT h.id, h.book_id,
+                  ts_rank(to_tsvector('simple', normalize_hadith(${searchRankDoc('h.tarf')})),
+                          ${queryExpr('$1')}) AS rank
+           FROM hadith_service_content h
+           WHERE ${conditions.join(' AND ')}
+           ORDER BY rank DESC, h.book_id, h.id
+           LIMIT $2 OFFSET $3
+         )
+         SELECT page.id AS main_id, h.book_id, h.book_name, h.tarf, h.section_text,
                 h.part_num, h.page_num,
                 ${snipColumns('h.content')},
                 'service' AS result_kind,
-                ts_rank(to_tsvector('simple', normalize_hadith(${rankDoc('h.tarf', 'h.content')})),
-                        ${queryExpr('$1')}) AS rank
-         FROM hadith_service_content h
-         WHERE ${conditions.join(' AND ')}
-         ORDER BY rank DESC, h.book_id, h.id
-         LIMIT $2 OFFSET $3`,
+                page.rank
+         FROM paged_service_content page
+         JOIN hadith_service_content h ON h.id = page.id
+         ORDER BY page.rank DESC, page.book_id, page.id`,
         serviceParams
       ),
       pool.query(
@@ -440,16 +517,27 @@ export async function GET(req: Request) {
 
   const whereClause = conditions.join(' AND ')
 
-  const { rows } = await pool.query(
-    `SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf,
+  // Do not let the optimizer pull snippets or lateral enrichment back into the matching stage.
+  // MATERIALIZED makes the ID/rank boundary explicit, so only LIMIT-sized rows are enriched.
+  const dataQuery = pool.query(
+    `WITH paged_hadiths AS MATERIALIZED (
+       SELECT h.main_id,
+              ts_rank(to_tsvector('simple', normalize_hadith(${searchRankDoc('h.tarf')})),
+                      ${queryExpr('$1')}) AS rank
+       FROM hadith_toc h
+       WHERE ${whereClause}
+       ORDER BY rank DESC, h.main_id ASC
+       LIMIT $2 OFFSET $3
+     )
+     SELECT h.main_id, h.book_id, b.title AS book_name, h.tarf,
             h.section_text, h.chapter_text, h.part_num, h.page_num,
             h.tarqeem_harf, h.tarqeem_matboa1,
             ${snipColumns('h.content')},
-            ts_rank(to_tsvector('simple', normalize_hadith(${rankDoc('h.tarf', 'h.content')})),
-                    ${queryExpr('$1')}) AS rank,
+            page.rank,
             jg.grade_hint,
             par.parallel_count
-     FROM hadith_toc h
+     FROM paged_hadiths page
+     JOIN hadith_toc h ON h.main_id = page.main_id
      JOIN books b ON b.id = h.book_id
      LEFT JOIN LATERAL (
        SELECT COUNT(DISTINCT t2.hadith_id)::int - 1 AS parallel_count
@@ -469,9 +557,7 @@ export async function GET(req: Request) {
          ELSE 4 END
        LIMIT 1
      ) jg ON true
-     WHERE ${whereClause}
-     ORDER BY rank DESC, h.main_id ASC
-     LIMIT $2 OFFSET $3`,
+     ORDER BY page.rank DESC, page.main_id ASC`,
     params
   )
 
@@ -516,12 +602,18 @@ export async function GET(req: Request) {
   const countGradeCondition = gradeExistsClause(gradeFilter, 'main_id')
   if (countGradeCondition) countConditions.push(countGradeCondition)
 
-  const countResult = await pool.query(
+  const countQuery = pool.query(
     `SELECT COUNT(*)::int AS total,
             COUNT(*) FILTER (WHERE btrim(coalesce(tarqeem_matboa1, '')) <> '')::int AS hadiths
      FROM hadith_toc WHERE ${countConditions.join(' AND ')}`,
     countParams
   )
+
+  // Keep the independent exact data/count statements concurrent. No safe pool-pressure reduction was
+  // measurable locally, so the pool maximum and existing 30-second database timeout remain unchanged;
+  // count errors still fail the request rather than returning an invented total. A post-deploy
+  // production smoke must confirm latency and pool headroom before changing this concurrency choice.
+  const [{ rows }, countResult] = await Promise.all([dataQuery, countQuery])
 
   return NextResponse.json({
     results: await attachMatnSnippets(rows, booleanTerms.map(t => t.term)),
