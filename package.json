@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "smoke": "node scripts/smoke/production-smoke.mjs"
+    "smoke": "node scripts/smoke/production-smoke.mjs",
+    "verify:parity": "node db/verify_matn_comparison_hadith.js && node db/repair_service_types.js --check"
   },
   "dependencies": {
     "@types/dagre": "^0.7.54",
