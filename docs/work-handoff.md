@@ -111,4 +111,12 @@ npm.cmd run smoke -- https://hadith-web-production.up.railway.app
 
 ## Deployment record
 
-This section is intentionally left for the commit and Railway deployment identifier after the final release commit. The application must not be called live-current until that deployment and its post-deploy smoke checks are recorded here.
+- Main release commit: `3dd0932` (`Harden search, reports, audit, and release validation`).
+- Follow-up mobile fix commit: `ec60653` (`Fix narrator mobile navigation overflow`).
+- Validated Railway deployment: `2b51d3c7-ffaa-4bb3-99c8-11ae130badde`; service online at [https://hadith-web-production.up.railway.app](https://hadith-web-production.up.railway.app).
+- Railway build completed with Next.js `16.3.6`, `npm ci` audit reporting 0 vulnerabilities, and a healthy container start.
+- Post-deploy production smoke: 18/18 routes passed.
+- Post-deploy production API contracts: 19/19 passed.
+- Post-deploy production route baseline: 8/8 routes passed; report is under ignored `db-backup/performance/production-2026-09-25/`.
+- Post-deploy browser check: production narrator page at 390px has `scrollWidth == innerWidth`, RTL direction, working copy/TXT/print controls, and no application error. Production hadith and service search pages rendered their Arabic results and counts.
+- A documentation-only follow-up commit may trigger another Railway deployment with identical application code; the validated application deployment above is the one used for the final production checks.
