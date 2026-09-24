@@ -15,6 +15,8 @@ interface CanonicalServiceType {
   id: number
   name: string
   column_key: string | null
+  link_count: number
+  hadith_count: number
 }
 
 type ServiceKey =
@@ -141,7 +143,15 @@ export default async function ServicesIndexPage() {
     ).catch(() => ({ rows: [] as TopHadith[] })),
 
     pool.query<CanonicalServiceType>(
-      'SELECT id, name, column_key FROM hadith_service_types ORDER BY id'
+      `SELECT t.id,
+              t.name,
+              t.column_key,
+              COUNT(l.hadith_id)::int AS link_count,
+              COUNT(DISTINCT l.hadith_id)::int AS hadith_count
+         FROM hadith_service_types t
+         LEFT JOIN hadith_service_links l ON l.type_id = t.id
+        GROUP BY t.id, t.name, t.column_key
+        ORDER BY t.id`
     ).catch(() => ({ rows: [] as CanonicalServiceType[] })),
   ])
 
@@ -166,7 +176,7 @@ export default async function ServicesIndexPage() {
   const sorted = [...services].sort((a, b) => b.count - a.count)
   const mostCovered = sorted[0]
   const leastCovered = sorted[sorted.length - 1]
-  const unmappedCanonicalTypes = canonicalTypes.filter(type => !type.column_key)
+  const columnlessCanonicalTypes = canonicalTypes.filter(type => !type.column_key)
 
   return (
     <div dir="rtl" className="min-h-screen bg-stone-50">
@@ -212,13 +222,36 @@ export default async function ServicesIndexPage() {
           يوجد {services.length.toLocaleString('ar-EG')} مؤشراً قابلاً للقياس في جدول
           <span dir="ltr" className="mx-1 font-mono">hadith_services</span>.
           الأسماء القابلة للقياس مأخوذة من جدول الأنواع الأصلي، لا من قائمة ثابتة.
-          {unmappedCanonicalTypes.length > 0 && (
+          {columnlessCanonicalTypes.length > 0 && (
             <div className="mt-1">
-              أنواع أصلية بلا عمود مستقل: {unmappedCanonicalTypes.map(type => type.name).join('، ')}؛
-              لذلك لا تظهر كبطاقات قابلة للقياس.
+              أنواع المصدر التي لا تملك عمود state مستقلاً: {columnlessCanonicalTypes.map(type => type.name).join('، ')}؛
+              لا تُحتسب من hadith_services دون اختراع بيانات غير موجودة في المصدر.
             </div>
           )}
         </div>
+
+        {columnlessCanonicalTypes.length > 0 && (
+          <section className="rounded-2xl border border-amber-100 bg-amber-50 p-5">
+            <h2 className="font-bold text-amber-900 text-base mb-1">أنواع خدمة من المصدر دون عمود state</h2>
+            <p className="text-xs text-amber-800 leading-6 mb-4">
+              هذه الأنواع موجودة في جدول HadithsServicesTypes الأصلي، لكن لا تملك عموداً مستقلاً في
+              HadithServicesState. لذلك نعرضها من جدول الروابط الأصلي ولا نضيف لها boolean مختلقة.
+            </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {columnlessCanonicalTypes.map(type => (
+                <div key={type.id} className="rounded-xl border border-amber-200 bg-white/70 px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-amber-900">{type.name}</span>
+                    <span className="text-[11px] text-gray-400">TypeID {type.id}</span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {type.hadith_count.toLocaleString('ar-EG')} حديث مرتبط · {type.link_count.toLocaleString('ar-EG')} رابط
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Quick insights bar */}
         {mostCovered && leastCovered && (

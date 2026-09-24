@@ -21,6 +21,7 @@ const ROOT = path.join(__dirname, '..')
 const DEFAULT_ROWS = path.join(ROOT, 'legacy-audit', 'harness', 'matn_hadith_export.jsonl.gz')
 const DEFAULT_LABELS = path.join(ROOT, 'legacy-audit', 'harness', 'matn_comparison_labels.json')
 const BATCH = 5000
+const MAX_HADITH_ID = 341616
 
 async function main() {
   const rowsFile = process.argv[2] || DEFAULT_ROWS
@@ -48,9 +49,10 @@ async function main() {
   await client.query(`CREATE TABLE IF NOT EXISTS matn_comparison_hadith (
       master_hadith_id integer NOT NULL, slave_hadith_id integer NOT NULL,
       match_sort smallint NOT NULL DEFAULT 0, label_id smallint REFERENCES matn_comparison_labels(id),
-      PRIMARY KEY (master_hadith_id, slave_hadith_id))`)
+      PRIMARY KEY (master_hadith_id, slave_hadith_id),
+      CONSTRAINT matn_cmp_hadith_positive CHECK (master_hadith_id > 0 AND slave_hadith_id > 0))`)
 
-  let batch = [], read = 0, inserted = 0
+  let batch = [], read = 0, inserted = 0, rejected = 0
   const flush = async () => {
     if (!batch.length) return
     const placeholders = batch.map((_, i) => `($${i * 4 + 1},$${i * 4 + 2},$${i * 4 + 3},$${i * 4 + 4})`).join(',')
@@ -69,6 +71,11 @@ async function main() {
     let r
     try { r = JSON.parse(line) } catch { continue }
     read++
+    if (!Number.isInteger(r.m) || !Number.isInteger(r.s) ||
+        r.m <= 0 || r.s <= 0 || r.m > MAX_HADITH_ID || r.s > MAX_HADITH_ID) {
+      rejected++
+      continue
+    }
     batch.push(r)
     if (batch.length >= BATCH) {
       await flush()
@@ -80,7 +87,7 @@ async function main() {
   const { rows } = await client.query(
     `SELECT count(*)::int rows, count(DISTINCT master_hadith_id)::int masters,
             count(DISTINCT slave_hadith_id)::int slaves FROM matn_comparison_hadith`)
-  console.log(`\nread ${read.toLocaleString()} | inserted ${inserted.toLocaleString()} | already present ${(read - inserted).toLocaleString()}`)
+  console.log(`\nread ${read.toLocaleString()} | inserted ${inserted.toLocaleString()} | already present ${(read - inserted - rejected).toLocaleString()} | rejected invalid IDs ${rejected.toLocaleString()}`)
   console.log(`matn_comparison_hadith now: ${rows[0].rows.toLocaleString()} rows, ${rows[0].masters.toLocaleString()} masters, ${rows[0].slaves.toLocaleString()} slaves`)
 
   client.release()

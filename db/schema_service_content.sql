@@ -35,13 +35,15 @@ CREATE TABLE IF NOT EXISTS hadith_service_links (
 CREATE INDEX IF NOT EXISTS idx_hsl_hadith_id ON hadith_service_links(hadith_id);
 CREATE INDEX IF NOT EXISTS idx_hsl_type_id ON hadith_service_links(type_id);
 
--- Service type lookup (1-indexed from HadithsServicesTypes.json)
+-- Service type lookup (sparse IDs preserved from HadithsServicesTypes)
 CREATE TABLE IF NOT EXISTS hadith_service_types (
     id SMALLINT PRIMARY KEY,
     name TEXT NOT NULL,
     column_key TEXT
 );
 
+-- IDs are the sparse IDs from the legacy HadithsServicesTypes table:
+-- 1..12, then 15..17. Do not renumber them as a contiguous lookup list.
 INSERT INTO hadith_service_types (id, name, column_key) VALUES
 (1,  'استدلال فقهي',                   'feqh'),
 (2,  'الإدراج',                        'modrag'),
@@ -55,7 +57,9 @@ INSERT INTO hadith_service_types (id, name, column_key) VALUES
 (10, 'تخريج شروح',                     'compound_matn'),
 (11, 'أصل',                            'asnad'),
 (12, 'مخالف',                          'mokhtalaf'),
-(13, 'شبهات',                          NULL),
-(14, 'تفسير بالمأثور',                 'tafsser'),
-(15, 'سيرة',                           'biography')
-ON CONFLICT DO NOTHING;
+(15, 'شبهات',                          NULL),
+(16, 'تفسير بالمأثور',                 'tafsser'),
+(17, 'سيرة',                           'biography')
+ON CONFLICT (id) DO UPDATE
+  SET name = EXCLUDED.name,
+      column_key = EXCLUDED.column_key;

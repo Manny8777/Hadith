@@ -48,6 +48,15 @@ The 2026-09 takhrij and narrator-relation repairs are already represented in the
 - `takhrij`: 280,259 distinct memberships
 - `narrator_relations`: 11,518 distinct relations, all with `legacy_say_id`
 
+The remaining matn/service-type reconciliation is documented in [parity-resolution.md](parity-resolution.md). Use the read-only checks before any future data repair:
+
+```powershell
+node db/verify_matn_comparison_hadith.js
+node db/repair_service_types.js --check
+```
+
+`شبهات` is source service type 15 with no `HadithServicesState` boolean and no legacy `HadithsServices` links. The repair restores the sparse source IDs; it does not fabricate a flag or links. The small lookup repair is transactional and its local rollback snapshot is kept under ignored `db-backup/`.
+
 ## Railway operations
 
 ```powershell

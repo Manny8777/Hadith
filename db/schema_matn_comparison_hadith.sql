@@ -19,12 +19,17 @@ CREATE TABLE IF NOT EXISTS matn_comparison_hadith (
   slave_hadith_id  integer  NOT NULL,   -- the hadith it was compared against
   match_sort       smallint NOT NULL DEFAULT 0,
   label_id         smallint REFERENCES matn_comparison_labels(id),
-  PRIMARY KEY (master_hadith_id, slave_hadith_id)
+  PRIMARY KEY (master_hadith_id, slave_hadith_id),
+  CONSTRAINT matn_cmp_hadith_positive CHECK (master_hadith_id > 0 AND slave_hadith_id > 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_matn_cmp_hadith_slave ON matn_comparison_hadith (slave_hadith_id);
 CREATE INDEX IF NOT EXISTS idx_matn_cmp_hadith_label ON matn_comparison_hadith (label_id);
 
+-- The independent legacy audit found 7,820,551 distinct raw keys: 7,820,313 valid hadith pairs
+-- and 238 invalid placeholder/corrupt keys (105 non-positive and 133 out-of-range). Only the
+-- valid pairs are loaded; the rejected keys must never be treated as hadith IDs.
+--
 -- What the app queries: the original's own comparison pairs for a hadith, with their wording.
 CREATE OR REPLACE VIEW matn_comparison_hadith_v AS
 SELECT m.master_hadith_id,
