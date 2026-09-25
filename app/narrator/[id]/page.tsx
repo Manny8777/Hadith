@@ -264,39 +264,39 @@ export default async function NarratorPage({
   const biographies: Biography[] = Object.values(bioMap).filter(b => b.entries.length > 0)
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#fbfaf6] dark:bg-[#050607]">
-      <header className="bg-[#123b32] text-white shadow-[0_10px_30px_rgba(18,59,50,0.12)] border-b border-[#b28a43]/40">
+    <div dir="rtl" className="min-h-screen bg-[#F8F1E4] dark:bg-[#101513]">
+      <header className="bg-[#0F3D2E] text-[#F8F1E4] shadow-[0_10px_30px_rgba(15,61,46,0.12)] border-b border-[#C9A96B]/40">
         <div className="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-          <Link href="/narrators" className="inline-flex items-center gap-1.5 text-[#f3e8c9] hover:text-white text-sm transition-colors">
+          <Link href="/narrators" className="inline-flex items-center gap-1.5 text-[#F8F1E4] hover:text-[#E6C77A] text-sm transition-colors">
             <UiIcon name="arrow" size={15} /> قائمة الرواة
           </Link>
           <div className="flex items-center gap-2">
             <BrandMark size={28} />
-            <h1 className="text-lg font-bold text-[#f3e8c9]">موسوعة الحديث الشريف</h1>
+            <h1 className="text-lg font-bold text-[#F8F1E4]">موسوعة الحديث الشريف</h1>
           </div>
           <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 sm:w-auto sm:flex-none">
-            <Link href={`/narrators/chain-filter?seed=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/narrators/chain-filter?seed=${narratorId}`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               تتبع الإسناد
             </Link>
-            <Link href={`/compare?a=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/compare?a=${narratorId}`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               مقارنة
             </Link>
-            <Link href={`/narrator/${narratorId}/statistics`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/narrator/${narratorId}/statistics`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               إحصاءات
             </Link>
-            <Link href={`/narrator/${narratorId}/reliability`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/narrator/${narratorId}/reliability`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               الموثوقية
             </Link>
-            <Link href={`/narrator/${narratorId}/teachers-list`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/narrator/${narratorId}/teachers-list`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               الشيوخ
             </Link>
-            <Link href={`/narrator/${narratorId}/students-list`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/narrator/${narratorId}/students-list`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               التلاميذ
             </Link>
-            <Link href={`/narrator/${narratorId}/peer-network`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/narrator/${narratorId}/peer-network`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               الشبكة
             </Link>
-            <Link href={`/scholar/${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
+            <Link href={`/scholar/${narratorId}`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               أحكامه
             </Link>
           </div>

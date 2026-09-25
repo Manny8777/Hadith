@@ -126,25 +126,25 @@
   --font-display: 'ThmanyahSerifDisplay', 'Traditional Arabic', serif;
 
   /* ─────────── Light palette — warm paper / scholarly book page ─────────── */
-  --color-paper: #F7F2E8;          /* main reading background (warm paper, never pure white) */
-  --color-surface: #FFFDF7;        /* page cards (soft off-white) */
-  --color-surface-sunken: #F0E8D8; /* elevated/tinted panels — sanad block, info boxes, nav */
-  --color-border: #D8CDBA;         /* subtle warm divider */
-  --color-ink: #201B14;            /* primary reading text — dark ink brown */
-  --color-muted: #6F6558;          /* muted text */
-  --color-primary: #0F8F6A;        /* emerald */
-  --color-primary-soft: #DDF4EC;   /* emerald soft */
-  --color-accent-gold: #B8872F;    /* gold */
-  --color-white: #FFFDF7;          /* kill pure white — bg-white/text-white become soft off-white */
+  --color-paper: #F8F1E4;          /* handoff parchment page background */
+  --color-surface: #FFFDF7;        /* handoff ivory card surface */
+  --color-surface-sunken: #F0E8D8; /* warm elevated panels, sanad blocks, nav */
+  --color-border: #E4DFD2;         /* handoff soft border */
+  --color-ink: #17201D;            /* handoff deep ink */
+  --color-muted: #747873;          /* handoff muted text */
+  --color-primary: #0F3D2E;        /* handoff deep emerald */
+  --color-primary-soft: #E2EEE7;   /* quiet emerald tint */
+  --color-accent-gold: #C9A96B;    /* handoff antique gold */
+  --color-white: #FFFDF7;          /* ivory, never harsh pure white */
 
   /* Emerald — narrator chains, active links, selected states, primary actions, صحيح/مرفوع */
-  --color-green-50:#DDF4EC; --color-green-100:#C3EBDD; --color-green-200:#9EDCC8; --color-green-300:#6FC9AD; --color-green-400:#3DAE8C; --color-green-500:#1A9A75; --color-green-600:#0F8F6A; --color-green-700:#0C7757; --color-green-800:#0A5F46; --color-green-900:#084836; --color-green-950:#042B20;
+  --color-green-50:#E5EEE8; --color-green-100:#D0E2D7; --color-green-200:#B6D1C1; --color-green-300:#8FB9A3; --color-green-400:#6B9D83; --color-green-500:#4E8068; --color-green-600:#3B6B55; --color-green-700:#2D5945; --color-green-800:#214735; --color-green-900:#163629; --color-green-950:#0F3D2E;
 
   /* Warm gray — text hierarchy, borders, subtle fills (soft text ≈ 400, muted ≈ 500, ink ≈ 900) */
-  --color-gray-50:#F4EEE1; --color-gray-100:#ECE3D2; --color-gray-200:#D8CDBA; --color-gray-300:#BFB199; --color-gray-400:#8A7C6A; --color-gray-500:#6F6558; --color-gray-600:#564D41; --color-gray-700:#413931; --color-gray-800:#2D2820; --color-gray-900:#201B14; --color-gray-950:#15110B;
+  --color-gray-50:#F4EEE1; --color-gray-100:#ECE3D2; --color-gray-200:#D9C9A8; --color-gray-300:#BEB29A; --color-gray-400:#8A8A80; --color-gray-500:#747873; --color-gray-600:#59635D; --color-gray-700:#3D4741; --color-gray-800:#29332E; --color-gray-900:#17201D; --color-gray-950:#101513;
 
   /* Gold — references, badges, hadith/volume/page numbers, scholarly highlights, موقوف */
-  --color-amber-50:#FBF3DF; --color-amber-100:#F5E8C8; --color-amber-200:#EAD3A0; --color-amber-300:#DCBB74; --color-amber-400:#CFA552; --color-amber-500:#C0913A; --color-amber-600:#B8872F; --color-amber-700:#9C7026; --color-amber-800:#7C591E; --color-amber-900:#5E4316; --color-amber-950:#38280C;
+  --color-amber-50:#FBF3DF; --color-amber-100:#F5E8C8; --color-amber-200:#EAD3A0; --color-amber-300:#DDC58F; --color-amber-400:#C9A96B; --color-amber-500:#B28F50; --color-amber-600:#A8894F; --color-amber-700:#8F703F; --color-amber-800:#72572F; --color-amber-900:#55411F; --color-amber-950:#342712;
 
   /* Blue — citations, source links, clickable references, حسن/مرسل */
   --color-blue-50:#DCEFFF; --color-blue-100:#BFE0FB; --color-blue-200:#93C9F4; --color-blue-300:#5FACEA; --color-blue-400:#2E8FD8; --color-blue-500:#1A82C8; --color-blue-600:#1378B8; --color-blue-700:#105F92; --color-blue-800:#0E4D75; --color-blue-900:#0B3A58; --color-blue-950:#082A41;
@@ -182,6 +182,10 @@
   --foreground: var(--color-ink);
   --text-prose: 0.9375rem;
   --leading-prose: 2.2;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
 }
 
 body {
@@ -197,13 +201,16 @@ body {
 /* ── Reusable UI utilities ── */
 @layer components {
   .ui-card {
-    @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(23, 32, 29, .04), 0 8px 24px rgba(23, 32, 29, .04);
     transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
   }
 
   .ui-card:hover {
-    border-color: var(--color-accent-gold);
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-primary) 10%, transparent);
+    border-color: color-mix(in srgb, var(--color-accent-gold) 72%, var(--color-border));
+    box-shadow: 0 1px 2px rgba(23, 32, 29, .05), 0 12px 30px rgba(23, 32, 29, .06);
   }
 
   .ui-icon-tile {
@@ -216,6 +223,14 @@ body {
   .ui-ornament-rule {
     height: 1px;
     background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent-gold) 52%, transparent), transparent);
+  }
+
+  .theme-texture {
+    background-color: #0F3D2E;
+    background-image: linear-gradient(rgba(15, 61, 46, .88), rgba(15, 61, 46, .88)), url('/assets/hadith-pattern.svg');
+    background-size: auto, 720px 180px;
+    background-repeat: no-repeat, repeat-x;
+    background-position: center, center top;
   }
 
   .ui-section-head {
@@ -235,7 +250,10 @@ body {
   }
 
   .ui-segmented {
-    @apply inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-gray-100 border border-gray-200 max-w-full;
+    @apply inline-flex items-center gap-0.5 p-0.5 max-w-full;
+    background: var(--color-paper);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
   }
 
   .ui-segmented-fill {
@@ -279,7 +297,11 @@ body {
   }
 
   .ui-prose-block {
-    @apply text-sm sm:text-base leading-[2.1] text-gray-900 font-serif bg-white border border-gray-200 rounded-xl p-4 sm:p-5 break-words;
+    @apply text-sm sm:text-base leading-[2.1] font-serif p-4 sm:p-5 break-words;
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
   }
 
   .ui-controls-row {
@@ -337,31 +359,31 @@ body {
 html.dark {
   color-scheme: dark;
 
-  --background: #050607;
-  --foreground: #ECE6DA;
+  --background: #101513;
+  --foreground: #F4F0E5;
 
   /* Dark palette — near-black premium surfaces, warm off-white text.
      Only the core scales are overridden; the @theme aliases (emerald/sky/violet/…)
      reference these vars, so they adapt to dark automatically. */
-  --color-paper: #050607;          /* main reading background */
-  --color-surface: #151A21;        /* elevated cards */
-  --color-surface-sunken: #0E1116; /* nav / panels / sanad block */
-  --color-border: #2A313A;
-  --color-ink: #ECE6DA;            /* primary text — warm off-white, never harsh white */
-  --color-muted: #A7A094;
-  --color-primary: #2596BE;        /* emerald */
-  --color-primary-soft: #0E2A22;
-  --color-accent-gold: #D9AD5B;
-  --color-white: #151A21;          /* bg-white → elevated card; text-white → dark ink on light accents */
+  --color-paper: #101513;          /* handoff scholarly dark page */
+  --color-surface: #171D1A;        /* handoff dark ivory-equivalent surface */
+  --color-surface-sunken: #121815; /* nav / panels / sanad block */
+  --color-border: #29332E;
+  --color-ink: #F4F0E5;            /* primary text */
+  --color-muted: #A6AAA5;
+  --color-primary: #72A991;        /* handoff dark-mode emerald */
+  --color-primary-soft: #1D3229;
+  --color-accent-gold: #C7AA70;
+  --color-white: #171D1A;          /* bg-white → elevated card */
 
   /* Warm gray — surfaces dark, text light (muted ≈ 500, ink ≈ 900) */
-  --color-gray-50:#0E1116; --color-gray-100:#151A21; --color-gray-200:#2A313A; --color-gray-300:#3A424D; --color-gray-400:#6E6A62; --color-gray-500:#A7A094; --color-gray-600:#BEB7AB; --color-gray-700:#D1CABE; --color-gray-800:#E0DACE; --color-gray-900:#ECE6DA; --color-gray-950:#F5F1E8;
+  --color-gray-50:#121815; --color-gray-100:#171D1A; --color-gray-200:#29332E; --color-gray-300:#3A463F; --color-gray-400:#707A72; --color-gray-500:#A6AAA5; --color-gray-600:#C4C8C0; --color-gray-700:#DDE0D8; --color-gray-800:#ECEEE7; --color-gray-900:#F4F0E5; --color-gray-950:#FFFDF7;
 
   /* Emerald */
-  --color-green-50:#0E2A22; --color-green-100:#133A2F; --color-green-200:#1A4F40; --color-green-300:#246A56; --color-green-400:#348F74; --color-green-500:#45AD8D; --color-green-600:#58C7A2; --color-green-700:#2596BE; --color-green-800:#4EBA65; --color-green-900:#B0EDD6; --color-green-950:#D8F6EC;
+  --color-green-50:#15221D; --color-green-100:#1A3027; --color-green-200:#214336; --color-green-300:#2D5B49; --color-green-400:#3D7B62; --color-green-500:#4E9B78; --color-green-600:#62B18A; --color-green-700:#72A991; --color-green-800:#9BC6B0; --color-green-900:#C2DCCC; --color-green-950:#E5F0E9;
 
   /* Gold */
-  --color-amber-50:#2A2210; --color-amber-100:#3A2F14; --color-amber-200:#50421C; --color-amber-300:#6E5A26; --color-amber-400:#997E36; --color-amber-500:#C09A45; --color-amber-600:#D9AD5B; --color-amber-700:#E5C27E; --color-amber-800:#EED39C; --color-amber-900:#F4E1BC; --color-amber-950:#FBF3DD;
+  --color-amber-50:#2A2418; --color-amber-100:#3A301D; --color-amber-200:#504326; --color-amber-300:#6B5830; --color-amber-400:#8D723E; --color-amber-500:#AA8950; --color-amber-600:#C7AA70; --color-amber-700:#D6BD8E; --color-amber-800:#E6D2AA; --color-amber-900:#F1E4C8; --color-amber-950:#FBF3DD;
 
   /* Cyan / blue link */
   --color-blue-50:#0C2436; --color-blue-100:#103450; --color-blue-200:#16486E; --color-blue-300:#1E6395; --color-blue-400:#2C84C4; --color-blue-500:#3BA0E6; --color-blue-600:#4DB9FF; --color-blue-700:#76CBFF; --color-blue-800:#A0DBFF; --color-blue-900:#C6EAFF; --color-blue-950:#E2F4FF;

@@ -207,11 +207,11 @@ function NumberingToggle() {
     <button
       onClick={toggle}
       title={pref === 'harf' ? 'التبديل الى ترقيم المطبوع' : 'التبديل الى ترقيم حرف'}
-      className="flex items-center gap-1 text-[11px] text-muted hover:text-ink border border-border hover:border-green-300 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
+      className="flex items-center gap-1 text-[11px] text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
     >
-      <span className={pref === 'harf' ? 'text-green-700 font-bold' : 'text-gray-400'}>حرف</span>
-      <UiIcon name="arrow" size={14} className="text-gray-400" />
-      <span className={pref === 'matboa' ? 'text-green-700 font-bold' : 'text-gray-400'}>مطبوع</span>
+      <span className={pref === 'harf' ? 'text-[#E6C77A] font-bold' : 'text-[#F8F1E4]/55'}>حرف</span>
+      <UiIcon name="arrow" size={14} className="text-[#C9A96B]/70" />
+      <span className={pref === 'matboa' ? 'text-[#E6C77A] font-bold' : 'text-[#F8F1E4]/55'}>مطبوع</span>
     </button>
   )
 }
@@ -225,7 +225,7 @@ function ThemeToggle() {
       data-no-convert
       title={dark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
       aria-label="تبديل المظهر"
-      className="flex items-center justify-center w-8 h-8 rounded-md text-muted hover:text-ink border border-border hover:border-green-300 transition-colors shrink-0"
+      className="flex items-center justify-center w-8 h-8 rounded-md text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] transition-colors shrink-0"
     >
       <UiIcon name={dark ? 'sun' : 'moon'} size={16} />
     </button>
@@ -239,11 +239,11 @@ function NumeralToggle() {
       onClick={toggle}
       data-no-convert
       title="تبديل صيغة الأرقام بين الإنجليزية (123) والعربية (١٢٣) — يشمل الموقع كله"
-      className="flex items-center justify-center gap-1 text-[11px] text-muted hover:text-ink border border-border hover:border-green-300 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
+      className="flex items-center justify-center gap-1 text-[11px] text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
     >
-      <span className={pref === 'western' ? 'text-green-700 font-bold' : 'text-gray-400'}>123</span>
-      <UiIcon name="arrow" size={14} className="text-gray-400" />
-      <span className={pref === 'arabic' ? 'text-green-700 font-bold' : 'text-gray-400'}>١٢٣</span>
+      <span className={pref === 'western' ? 'text-[#E6C77A] font-bold' : 'text-[#F8F1E4]/55'}>123</span>
+      <UiIcon name="arrow" size={14} className="text-[#C9A96B]/70" />
+      <span className={pref === 'arabic' ? 'text-[#E6C77A] font-bold' : 'text-[#F8F1E4]/55'}>١٢٣</span>
     </button>
   )
 }
@@ -269,17 +269,17 @@ export default function NavHeader() {
   }
 
   return (
-    <nav ref={navRef} className="relative z-30 bg-surface-sunken/95 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
+    <nav ref={navRef} className="theme-texture relative z-30 bg-[#0F3D2E] text-[#F8F1E4] font-sans border-b border-[#C9A96B]/40" dir="rtl">
       <div className="max-w-7xl mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
-        <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-3 shrink-0 text-[#123b32] transition-colors hover:text-[#8a6726] dark:text-[#ECE6DA]">
+        <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-3 shrink-0 text-[#F8F1E4] transition-colors hover:text-[#E6C77A]">
           <BrandMark size={36} className="shrink-0" />
           <span className="flex flex-col leading-none font-display">
-            <span className="text-[10px] tracking-wide text-[#8a6726] dark:text-[#e6c77a]">موسوعة الحديث</span>
+            <span className="text-[10px] tracking-wide text-[#C9A96B]">موسوعة الحديث</span>
             <span className="mt-0.5 whitespace-nowrap text-sm sm:text-base font-bold">جامع خادم الحرمين</span>
           </span>
         </a>
 
-        <div className="hidden sm:block w-px h-5 bg-border mx-1 shrink-0" />
+        <div className="hidden sm:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
 
         {/* Desktop: inline categories with dropdowns */}
         <div className="hidden sm:flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
@@ -290,8 +290,8 @@ export default function NavHeader() {
                 onClick={() => toggle(cat.id)}
                 className={`flex items-center gap-1 text-sm font-sans px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
-                    ? 'bg-green-700 text-white'
-                    : 'text-ink/75 hover:text-ink hover:bg-green-50'
+                    ? 'bg-[#C9A96B] text-[#0F3D2E]'
+                    : 'text-[#F8F1E4]/80 hover:text-[#FFFDF7] hover:bg-white/10'
                 }`}
               >
                 {cat.label}
@@ -300,7 +300,7 @@ export default function NavHeader() {
 
               {open === cat.id && (
                 <div
-                  className="absolute top-full right-0 mt-1.5 bg-white text-gray-800 rounded-xl shadow-lg border border-gray-200 p-3 z-[100] overflow-y-auto font-sans w-[min(100vw-1.5rem,640px)] max-h-[80vh]"
+                  className="absolute top-full right-0 mt-1.5 bg-[#FFFDF7] text-[#17201D] rounded-xl shadow-[0_8px_30px_rgba(23,32,29,.12)] border border-[#C9A96B]/40 p-3 z-[100] overflow-y-auto font-sans w-[min(100vw-1.5rem,640px)] max-h-[80vh]"
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-0.5">
                     {cat.links.map(link => (
@@ -308,7 +308,7 @@ export default function NavHeader() {
                         key={link.href}
                         href={link.href}
                         onClick={() => setOpen(null)}
-                        className="flex items-center justify-between gap-1 text-sm text-gray-700 hover:text-green-800 hover:bg-green-50 px-2 py-1 rounded transition-colors"
+                        className="flex items-center justify-between gap-1 text-sm text-[#17201D] hover:text-[#0F3D2E] hover:bg-[#F0E8D8] px-2 py-1 rounded transition-colors"
                       >
                         <span className="truncate">{link.label}</span>
                         {link.isNew && (
@@ -342,7 +342,7 @@ export default function NavHeader() {
           onClick={() => { setMobileOpen(v => !v); setOpen(null) }}
           aria-label="القائمة"
           aria-expanded={mobileOpen}
-          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md text-ink border border-border hover:border-green-300 hover:bg-green-50 transition-colors shrink-0"
+          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md text-[#F8F1E4] border border-[#C9A96B]/40 hover:border-[#C9A96B] hover:bg-white/10 transition-colors shrink-0"
         >
           <UiIcon name={mobileOpen ? 'close' : 'menu'} size={18} />
         </button>
@@ -350,14 +350,14 @@ export default function NavHeader() {
 
       {/* Mobile: collapsible category menu (accordion — avoids clipping dropdowns) */}
       {mobileOpen && (
-        <div className="sm:hidden border-t border-border bg-surface max-h-[72vh] overflow-y-auto overscroll-contain">
+        <div className="sm:hidden border-t border-[#C9A96B]/30 bg-[#F8F1E4] text-[#17201D] max-h-[72vh] overflow-y-auto overscroll-contain">
           {CATEGORIES.map(cat => (
             <div key={cat.id} className="border-b border-border/60">
               <button
                 type="button"
                 onClick={() => toggle(cat.id)}
                 className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
-                  open === cat.id ? 'text-green-800 font-semibold bg-green-50' : 'text-ink/85'
+                  open === cat.id ? 'text-[#0F3D2E] font-semibold bg-[#E2EEE7]' : 'text-[#17201D]/85'
                 }`}
               >
                 {cat.label}

@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SearchSubHeader />
               </Suspense>
             </header>
-            <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-7 py-5 sm:py-8">{children}</main>
+            <main className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">{children}</main>
           </NumeralProvider>
         </NumberingProvider>
         </ThemeProvider>

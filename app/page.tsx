@@ -30,33 +30,33 @@ export default async function Home() {
   } catch {}
 
   return (
-    <div dir="rtl" className="min-h-screen -mx-4 -mt-8 bg-[#fbfaf6] dark:bg-[#050607]">
+    <div dir="rtl" className="min-h-screen -mx-4 -mt-8 bg-[#F8F1E4] dark:bg-[#101513]">
       {/* Hero */}
-      <div className="relative overflow-hidden border-b border-[#ded8c7] dark:border-[#2A313A]">
-        <div className="pointer-events-none absolute inset-0 opacity-90 dark:opacity-40" style={{ backgroundImage: "url('/assets/hadith-pattern.svg')", backgroundSize: '720px 180px', backgroundRepeat: 'repeat-x', backgroundPosition: 'center top' }} />
-        <div className="relative max-w-4xl mx-auto px-4 pt-16 pb-12 text-center">
+      <div className="relative overflow-hidden bg-[#0F3D2E] border-b border-[#C9A96B]/40 dark:bg-[#101513]">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.045] dark:opacity-[0.07]" style={{ backgroundImage: "url('/assets/hadith-pattern.svg')", backgroundSize: '720px 180px', backgroundRepeat: 'repeat-x', backgroundPosition: 'center top' }} />
+        <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-14 text-center sm:pt-20 sm:pb-16">
           <div className="flex justify-center mb-5">
             <BrandMark size={64} className="drop-shadow-sm" />
           </div>
-          <div className="inline-flex items-center gap-2 bg-[#123b32] text-[#f2dfad] dark:bg-[#1d4a3c] dark:text-[#f3e8c9] text-[11px] font-sans font-semibold px-3.5 py-1.5 rounded-sm tracking-wide border border-[#b28a43]/50">
+          <div className="inline-flex items-center gap-2 bg-[#0F3D2E] text-[#E6C77A] text-[11px] font-sans font-semibold px-3.5 py-1.5 rounded-sm tracking-wide border border-[#C9A96B]/50">
             <span className="h-1.5 w-1.5 rounded-full bg-[#d8b66a]" />
             برنامج خادم الحرمين الشريفين
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#172d27] mb-4 leading-tight font-display dark:text-[#ECE6DA]">
+          <h1 className="text-4xl md:text-5xl font-bold text-[#F8F1E4] mb-4 leading-tight font-display">
             موسوعة الحديث النبوي الشريف
           </h1>
-          <p className="text-[#52645d] text-lg mb-10 max-w-xl mx-auto font-sans dark:text-[#BEB7AB]">
+          <p className="text-[#D7DDD2] text-lg mb-10 max-w-2xl mx-auto font-sans">
           قاعدة بيانات متكاملة لباحثي الحديث في مراحل الماجستير والدكتوراه
           </p>
 
         <HomeSearch />
 
         {/* Quick examples */}
-        <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-gray-500 font-sans">
+        <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-[#C4C8C0] font-sans">
           <span>جرب:</span>
           {['إنما الأعمال بالنيات', 'من كذب علي', 'الطهور شطر الإيمان'].map(ex => (
             <Link key={ex} href={`/search?q=${encodeURIComponent(ex)}`}
-              className="text-green-800 hover:underline">
+              className="text-[#E6C77A] hover:text-[#FFFDF7] hover:underline">
               {ex}
             </Link>
           ))}
@@ -64,9 +64,13 @@ export default async function Home() {
       </div>
       </div>
 
+      <div className="flex justify-center bg-[#F8F1E4] dark:bg-[#101513] py-2" aria-hidden="true">
+        <img src="/assets/theme-ornament.svg" alt="" className="h-6 w-60 opacity-80 dark:opacity-60" />
+      </div>
+
       {/* Stats banner */}
-      <div className="bg-green-800 text-white dark:bg-surface dark:border-y dark:border-border py-6">
-        <div className="max-w-4xl mx-auto px-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
+      <div className="bg-[#FFFDF7] text-[#17201D] border-b border-[#E4DFD2] dark:bg-[#171D1A] dark:text-[#F4F0E5] dark:border-[#29332E] py-7">
+        <div className="max-w-6xl mx-auto px-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
           {[
             { num: hadiths.toLocaleString('ar-EG'), label: 'حديث' },
             { num: narrators.toLocaleString('ar-EG'), label: 'راوٍ' },
@@ -76,15 +80,15 @@ export default async function Home() {
             { num: criticism.toLocaleString('ar-EG'), label: 'راوٍ مجروح/معدَّل' },
           ].map((s, i) => (
             <div key={i}>
-              <div className="text-2xl font-bold text-amber-300 dark:text-amber-700 font-display">{s.num}</div>
-              <div className="text-xs text-green-200/90 dark:text-muted mt-0.5 font-sans">{s.label}</div>
+              <div className="text-2xl font-bold text-[#0F3D2E] dark:text-[#C7AA70] font-display">{s.num}</div>
+              <div className="text-xs text-[#747873] dark:text-[#A6AAA5] mt-0.5 font-sans">{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Main Nav Cards */}
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
           {[
             { href: '/books', icon: 'books' as IconName, title: 'تصفح الكتب', description: `${books} كتاباً من أمهات المصادر` },
@@ -94,12 +98,12 @@ export default async function Home() {
             { href: '/lexicon', icon: 'lexicon' as IconName, title: 'غريب الحديث', description: `${lexicon.toLocaleString('ar-EG')} لفظة معتمدة` },
             { href: '/narrators?sort=hadiths', icon: 'chart' as IconName, title: 'أكثر الرواة حديثاً', description: 'مرتب حسب عدد الأحاديث' },
           ].map((card) => (
-            <Link key={card.href} href={card.href} className="group relative overflow-hidden rounded-2xl border border-[#ded8c7] bg-white p-5 shadow-[0_1px_0_rgba(18,59,50,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#b28a43] hover:shadow-[0_10px_30px_rgba(18,59,50,0.08)] dark:border-[#2A313A] dark:bg-[#151A21]">
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#b28a43]/35 bg-[#f6f1e4] text-[#123b32] transition-colors group-hover:bg-[#123b32] group-hover:text-[#f3e8c9] dark:bg-[#1D4A3C] dark:text-[#f3e8c9]">
+            <Link key={card.href} href={card.href} className="group relative overflow-hidden rounded-[16px] border border-[#E4DFD2] bg-[#FFFDF7] p-5 shadow-[0_1px_2px_rgba(23,32,29,.04),0_8px_24px_rgba(23,32,29,.04)] transition-all hover:-translate-y-0.5 hover:border-[#C9A96B] hover:shadow-[0_1px_2px_rgba(23,32,29,.05),0_12px_30px_rgba(23,32,29,.06)] dark:border-[#29332E] dark:bg-[#171D1A]">
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#C9A96B]/55 bg-[#F8F1E4] text-[#0F3D2E] transition-colors group-hover:bg-[#0F3D2E] group-hover:text-[#F8F1E4] dark:bg-[#1D3229] dark:text-[#C7AA70]">
                 <UiIcon name={card.icon} size={24} />
               </div>
-              <div className="font-bold text-[#123b32] group-hover:text-[#8a6726] font-display dark:text-[#ECE6DA] dark:group-hover:text-[#E6C77A]">{card.title}</div>
-              <div className="text-sm text-[#6D746E] mt-1 font-sans dark:text-[#A7A094]">{card.description}</div>
+              <div className="font-bold text-[#0F3D2E] group-hover:text-[#A8894F] font-display dark:text-[#F4F0E5] dark:group-hover:text-[#C7AA70]">{card.title}</div>
+              <div className="text-sm text-[#747873] mt-1 font-sans dark:text-[#A6AAA5]">{card.description}</div>
             </Link>
           ))}
         </div>
@@ -109,17 +113,17 @@ export default async function Home() {
           <h2 className="text-base font-bold text-green-900 mb-4 font-display">الكتب الستة والمسانيد الكبرى</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { id: 1, name: 'صحيح البخاري', count: '٧٤١٠', color: 'border-green-200 hover:border-green-400 text-green-800' },
-              { id: 2, name: 'صحيح مسلم', count: '٧٦٦٦', color: 'border-green-200 hover:border-green-400 text-green-800' },
-              { id: 5, name: 'سنن النسائي', count: '٥٧٨٠', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
-              { id: 3, name: 'سنن أبي داود', count: '٥٢٦٠', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
-              { id: 4, name: 'جامع الترمذي', count: '٤٤١٢', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
-              { id: 6, name: 'سنن ابن ماجه', count: '٤٤٦٧', color: 'border-amber-200 hover:border-amber-400 text-amber-800' },
-              { id: 7, name: 'موطأ مالك', count: '١٧٨١', color: 'border-blue-200 hover:border-blue-400 text-blue-800' },
-              { id: 8, name: 'مسند أحمد', count: '٢٨٢٤٥', color: 'border-blue-200 hover:border-blue-400 text-blue-800' },
+              { id: 1, name: 'صحيح البخاري', count: '٧٤١٠', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 2, name: 'صحيح مسلم', count: '٧٦٦٦', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 5, name: 'سنن النسائي', count: '٥٧٨٠', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 3, name: 'سنن أبي داود', count: '٥٢٦٠', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 4, name: 'جامع الترمذي', count: '٤٤١٢', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 6, name: 'سنن ابن ماجه', count: '٤٤٦٧', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 7, name: 'موطأ مالك', count: '١٧٨١', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 8, name: 'مسند أحمد', count: '٢٨٢٤٥', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
             ].map(book => (
               <Link key={book.id} href={`/books/${book.id}`}
-                className={`bg-gray-50 border rounded-xl px-4 py-3 flex flex-col hover:shadow-sm transition-all ${book.color}`}>
+                className={`bg-[#FFFDF7] border rounded-full px-4 py-3 flex flex-col hover:bg-[#F8F1E4] hover:shadow-sm transition-all ${book.color}`}>
                 <span className="font-semibold text-sm leading-snug">{book.name}</span>
                 <span className="text-xs text-gray-400 mt-1">{book.count} حديث</span>
               </Link>
@@ -138,7 +142,7 @@ export default async function Home() {
               </Link>
             ))}
             <Link href="/narrators?sort=death"
-              className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-700 font-medium text-sm hover:border-green-300 hover:shadow-sm transition-all">
+              className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-700 font-medium text-sm hover:border-[#C9A96B] hover:shadow-sm transition-all">
               ترتيب بالوفاة
             </Link>
           </div>
@@ -160,27 +164,27 @@ export default async function Home() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mt-4">
           <h2 className="text-base font-bold text-green-900 mb-4">أدوات بحثية متخصصة</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <Link href="/chains" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/chains" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">علو الإسناد</div>
               <div className="text-xs text-gray-500 mt-1">ثلاثيات ورباعيات وخماسيات الكتب</div>
             </Link>
-            <Link href="/narrator-types" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/narrator-types" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">علل الإسناد</div>
               <div className="text-xs text-gray-500 mt-1">المدلسون والمختلطون وأهل الإرسال</div>
             </Link>
-            <Link href="/bio-search" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/bio-search" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">بحث في التراجم</div>
               <div className="text-xs text-gray-500 mt-1">تهذيب الكمال والكاشف وغيرها</div>
             </Link>
-            <Link href="/narrators/cities" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/cities" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">رواة البلدان</div>
               <div className="text-xs text-gray-500 mt-1">تصفح الرواة حسب المدينة والبلد</div>
             </Link>
-            <Link href="/compare" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/compare" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">مقارنة الرواة</div>
               <div className="text-xs text-gray-500 mt-1">مقارنة الطبقة والشيوخ والتلاميذ</div>
             </Link>
-            <Link href="/narrators/network" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/network" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">محورية الرواة</div>
               <div className="text-xs text-gray-500 mt-1">أكثر الرواة حضوراً في شبكة الأسانيد</div>
             </Link>
@@ -196,19 +200,19 @@ export default async function Home() {
               <div className="font-semibold text-orange-900 text-sm group-hover:text-orange-700">إحصاءات الكتب</div>
               <div className="text-xs text-gray-500 mt-1">توزيع درجات الأحاديث في كل مصدر</div>
             </Link>
-            <Link href="/scholars" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/scholars" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">أحكام المحدثين</div>
               <div className="text-xs text-gray-500 mt-1">تصحيح وتحسين وتضعيف الأحاديث حسب كل عالم</div>
             </Link>
-            <Link href="/saved" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/saved" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">★ المجموعة البحثية</div>
               <div className="text-xs text-gray-500 mt-1">احفظ أحاديث بحثك وصدّرها كمصادر أكاديمية</div>
             </Link>
-            <Link href="/companions" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/companions" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">الصحابة الرواة</div>
               <div className="text-xs text-gray-500 mt-1">كبار الصحابة مرتبين بعدد أحاديثهم مع روابطهم</div>
             </Link>
-            <Link href="/find-by-number" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/find-by-number" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">البحث برقم الحديث</div>
               <div className="text-xs text-gray-500 mt-1">انتقل لحديث بعينه من رقمه في أي كتاب</div>
             </Link>
@@ -224,7 +228,7 @@ export default async function Home() {
               <div className="font-semibold text-emerald-900 text-sm group-hover:text-emerald-700">طبقات الرواة</div>
               <div className="text-xs text-gray-500 mt-1">تصفح الرواة مرتبين بطبقاتهم التاريخية</div>
             </Link>
-            <Link href="/topics/stats" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/topics/stats" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">إحصاء الموضوعات</div>
               <div className="text-xs text-gray-500 mt-1">توزيع درجات الأحاديث على الموضوعات الكبرى</div>
             </Link>
@@ -240,7 +244,7 @@ export default async function Home() {
               <div className="font-semibold text-orange-900 text-sm group-hover:text-orange-700">تاريخية التدوين</div>
               <div className="text-xs text-gray-500 mt-1">نشأة كتب الحديث وتطورها عبر القرون الهجرية</div>
             </Link>
-            <Link href="/chapters" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/chapters" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">بحث في الأبواب</div>
               <div className="text-xs text-gray-500 mt-1">ابحث عن عنوان باب عبر جميع كتب الحديث</div>
             </Link>
@@ -248,23 +252,23 @@ export default async function Home() {
               <div className="font-semibold text-yellow-900 text-sm group-hover:text-yellow-700">الأحاديث الفردة</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث لا نظير لها في سائر المصادر — الغرائب والأفراد</div>
             </Link>
-            <Link href="/books/compare" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/books/compare" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">مقارنة الكتب</div>
               <div className="text-xs text-gray-500 mt-1">مقارنة منهجية بين كتابَين — الدرجات والأسانيد والصحابة</div>
             </Link>
-            <Link href="/hadiths/most-attested" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/most-attested" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الأوسع انتشاراً</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث مروية في أكبر عدد من كتب الحديث — الأكثر تواتراً نسبياً</div>
             </Link>
-            <Link href="/hadiths/tarf-index" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/tarf-index" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">فهرس الأطراف</div>
               <div className="text-xs text-gray-500 mt-1">تصفح أوائل ألفاظ الأحاديث أبجدياً كتحفة الأشراف</div>
             </Link>
-            <Link href="/narrators/sahihayn" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/sahihayn" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">رجال الصحيحين</div>
               <div className="text-xs text-gray-500 mt-1">الرواة الذين احتج بهم البخاري ومسلم في صحيحيهما</div>
             </Link>
-            <Link href="/topics/companions" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/topics/companions" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">الصحابة × الموضوعات</div>
               <div className="text-xs text-gray-500 mt-1">خريطة حرارية: أي الصحابة روى أكثر في كل موضوع</div>
             </Link>
@@ -280,19 +284,19 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">الرواة في مواضع الإسناد</div>
               <div className="text-xs text-gray-500 mt-1">أكثر الرواة ظهوراً في كل موقع من مواضع الإسناد — يكشف "مدار" الحديث</div>
             </Link>
-            <Link href="/hadiths/cross-topics" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/cross-topics" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الأحاديث متعددة المواضيع</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث صُنِّفت في أكثر من موضوع — الأحاديث الجامعة ذات الأثر التشريعي الشامل</div>
             </Link>
-            <Link href="/hadiths/chain-gaps" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/chain-gaps" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">كاشف الانقطاع في الأسانيد</div>
               <div className="text-xs text-gray-500 mt-1">أسانيد بفجوات زمنية كبيرة بين الشيخ والراوي — مؤشر على الانقطاع المحتمل</div>
             </Link>
-            <Link href="/narrators/alpha-index" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/alpha-index" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">الفهرس الأبجدي للرواة</div>
               <div className="text-xs text-gray-500 mt-1">تصفح رواة الحديث أبجدياً من أ إلى ي — كفهارس الكتب الكلاسيكية</div>
             </Link>
-            <Link href="/narrators/kunia-index" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/kunia-index" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">فهرس الكنى</div>
               <div className="text-xs text-gray-500 mt-1">تمييز الرواة بكناهم — أداة للباحث عند ورود الكنية مفردةً في الإسناد</div>
             </Link>
@@ -300,7 +304,7 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">رواة الكتب المتعددة</div>
               <div className="text-xs text-gray-500 mt-1">الرواة الذين أسند عنهم أصحاب أكثر من كتاب — يعكس مدى قبولهم عند المحدثين</div>
             </Link>
-            <Link href="/companions/top-hadiths" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/companions/top-hadiths" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">أشهر أحاديث الصحابة</div>
               <div className="text-xs text-gray-500 mt-1">الحديث الأوسع انتشاراً لكل صحابي — يعكس مساهمته التشريعية في المنظومة الحديثية</div>
             </Link>
@@ -308,7 +312,7 @@ export default async function Home() {
               <div className="font-semibold text-cyan-900 text-sm group-hover:text-cyan-700">مقارنة حديثين</div>
               <div className="text-xs text-gray-500 mt-1">مقارنة حديثين جنباً إلى جنب — المتن والإسناد والأحكام — لتحديد أوجه التوافق والاختلاف</div>
             </Link>
-            <Link href="/hadiths/chain-richness" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/chain-richness" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">الأحاديث متعددة الأسانيد</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث تروى بأكثر الأسانيد المستقلة — مؤشر التواتر المعنوي وقوة الضبط عند المحدثين</div>
             </Link>
@@ -316,7 +320,7 @@ export default async function Home() {
               <div className="font-semibold text-orange-900 text-sm group-hover:text-orange-700">المختلف فيهم من الرواة</div>
               <div className="text-xs text-gray-500 mt-1">رواة جمع فيهم العلماء بين الجرح والتعديل — بيان درجة الخلاف وتوزيع الآراء</div>
             </Link>
-            <Link href="/scholars/activity" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/scholars/activity" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">نشاط علماء الجرح والتعديل</div>
               <div className="text-xs text-gray-500 mt-1">ترتيب المحدثين بعدد آرائهم — يكشف أشد النقاد نشاطاً ومنهجهم بين الجرح والتعديل</div>
             </Link>
@@ -324,11 +328,11 @@ export default async function Home() {
               <div className="font-semibold text-gray-800 text-sm group-hover:text-gray-700">الأحاديث غير المحكوم عليها</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث لم يُسجَّل لها حكم من العلماء — فرصة للبحث والتحقيق في الصحة والضعف</div>
             </Link>
-            <Link href="/companions/isolated-chains" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/companions/isolated-chains" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">الصحابة محدودو الطرق</div>
               <div className="text-xs text-gray-500 mt-1">صحابة لم ينقل عنهم سوى راوٍ أو راويَين — يكشف الأسانيد التي تعتمد على راوٍ بعينه اعتماداً كاملاً</div>
             </Link>
-            <Link href="/narrators/same-name" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/same-name" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">تمييز الأسماء المتشابهة</div>
               <div className="text-xs text-gray-500 mt-1">رواة يتشابهون في الاسم — أداة لتحديد أيّهم المقصود في الإسناد عبر الطبقة والكنية والشيوخ</div>
             </Link>
@@ -336,7 +340,7 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">تفرد الكتب — مؤشر الأصالة</div>
               <div className="text-xs text-gray-500 mt-1">نسبة الأحاديث الفريدة في كل كتاب مقارنةً بالمشتركة — يكشف مدى استقلالية كل مصدر حديثي</div>
             </Link>
-            <Link href="/hadiths/chain-lengths" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/chain-lengths" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">توزيع طول الأسانيد</div>
               <div className="text-xs text-gray-500 mt-1">إحصاء الأسانيد بعدد حلقاتها — يكشف عن مستوى علو أو نزول الأسانيد ومتوسط طولها في كل كتاب</div>
             </Link>
@@ -348,7 +352,7 @@ export default async function Home() {
               <div className="font-semibold text-rose-900 text-sm group-hover:text-rose-700">الضعيف المعتضد بالشواهد</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث ضعيفة لها شواهد موازية — مرشَّحة للترقي إلى "حسن لغيره" بتضافر الطرق</div>
             </Link>
-            <Link href="/hadiths/timeline" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/timeline" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">التسلسل الزمني للتدوين</div>
               <div className="text-xs text-gray-500 mt-1">توزيع الأحاديث بحسب قرن تدوينها — يكشف أي القرون دوَّنت الجزء الأكبر من الموروث الحديثي</div>
             </Link>
@@ -356,7 +360,7 @@ export default async function Home() {
               <div className="font-semibold text-emerald-900 text-sm group-hover:text-emerald-700">جودة أسانيد الكتب</div>
               <div className="text-xs text-gray-500 mt-1">نسبة الأسانيد ذات الثقات فقط في كل كتاب — مقياس كمي لجودة الإسناد العام</div>
             </Link>
-            <Link href="/hadiths/ilal" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/ilal" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">فهرس علل الحديث</div>
               <div className="text-xs text-gray-500 mt-1">أنواع العلل (انقطاع، إرسال، تدليس، اضطراب) مع نماذج من الأحاديث المُعلَّلة</div>
             </Link>
@@ -364,7 +368,7 @@ export default async function Home() {
               <div className="font-semibold text-cyan-900 text-sm group-hover:text-cyan-700">البحث في نصوص الأحكام</div>
               <div className="text-xs text-gray-500 mt-1">ابحث عن مصطلح في جميع أحكام العلماء: "إسناده صحيح"، "على شرط مسلم"، "منقطع"...</div>
             </Link>
-            <Link href="/hadiths/grade-dispute" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/grade-dispute" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">الأحاديث المختلف في درجتها</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث صحَّحها بعض العلماء وضعَّفها آخرون — بوابة دراسة الخلاف المنهجي بين النقاد</div>
             </Link>
@@ -376,11 +380,11 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">أزواج الرواية الأكثر تكراراً</div>
               <div className="text-xs text-gray-500 mt-1">أكثر ثنائيات الشيخ والتلميذ ظهوراً في الأسانيد — خريطة العلاقات العلمية في الرواية الحديثية</div>
             </Link>
-            <Link href="/narrators/severely-criticized" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/severely-criticized" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">المطعون فيهم بالجرح الشديد</div>
               <div className="text-xs text-gray-500 mt-1">الوضاعون والكذابون والمتروكون وأصحاب المناكير — فهرس مصنَّف بأشد مراتب الجرح في علم الرجال</div>
             </Link>
-            <Link href="/hadiths/shaykhayn-standard" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/shaykhayn-standard" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">على شرط الشيخين</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث حكم العلماء بأن رجالها يستوفون شرط البخاري أو مسلم أو كليهما — مصطلح نقدي دقيق الدلالة</div>
             </Link>
@@ -388,7 +392,7 @@ export default async function Home() {
               <div className="font-semibold text-yellow-900 text-sm group-hover:text-yellow-700">الأسانيد الذهبية</div>
               <div className="text-xs text-gray-500 mt-1">أسانيد كل رواتها موثَّقون — تكشف عن أقوى الأسانيد وأصحها بالتحليل التلقائي لدرجات الرواة</div>
             </Link>
-            <Link href="/hadith-terms" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/hadith-terms" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">مصطلح الحديث — الموسوعة الإحصائية</div>
               <div className="text-xs text-gray-500 mt-1">مصطلحات علوم الحديث مع أعداد حقيقية من قاعدة البيانات — صحيح لذاته، حسن لغيره، مرسل، موضوع...</div>
             </Link>
@@ -396,15 +400,15 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">مشكل الحديث</div>
               <div className="text-xs text-gray-500 mt-1">مسائل مشكل الحديث ومختلفه مصنَّفةً في شجرة موضوعية — العقيدة والعبادات والمعاملات والأخلاق مع مصادر علمية</div>
             </Link>
-            <Link href="/hadiths/amthal" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/amthal" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">أمثال الحديث النبوي</div>
               <div className="text-xs text-gray-500 mt-1">الأمثال الواردة في السنة النبوية — جمل حِكمية وتصويرية استعملها النبي ﷺ لتقريب المعاني وإيضاح الحكم الشرعية</div>
             </Link>
-            <Link href="/hadiths/qudsi" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/qudsi" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الأحاديث القدسية</div>
               <div className="text-xs text-gray-500 mt-1">الأحاديث التي فيها "قال الله" أو "يقول ربكم" — مستخرجة بالبحث النصي مع تصنيف الصحابة الرواة لها</div>
             </Link>
-            <Link href="/narrators/tabiin-analysis" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/tabiin-analysis" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">تحليل طبقة التابعين</div>
               <div className="text-xs text-gray-500 mt-1">التابعون مرتَّبون بعدد الصحابة الذين رووا عنهم مباشرةً — يكشف أوسع الجيل الثاني وصلاً بالصحابة</div>
             </Link>
@@ -412,15 +416,15 @@ export default async function Home() {
               <div className="font-semibold text-emerald-900 text-sm group-hover:text-emerald-700">الأحاديث الجامعة للكتب الستة</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث رواها أصحاب الكتب الستة جميعاً — النواة الأصلب في منظومة الحديث النبوي وأعلاها تواتراً</div>
             </Link>
-            <Link href="/narrators/city-century" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/city-century" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">الرواة بالمدن والقرون</div>
               <div className="text-xs text-gray-500 mt-1">خريطة حرارية لتوزيع المحدثين على مدن الإسلام عبر القرون — تكشف تنقُّل مركز الثقل في التحديث</div>
             </Link>
-            <Link href="/narrators/universal" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/universal" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الرواة الشاملون</div>
               <div className="text-xs text-gray-500 mt-1">رواة وردت أسانيدهم في أكبر عدد من الكتب — يكشف من قبلهم المحدثون جميعاً وعدُّوهم أئمة الرواية</div>
             </Link>
-            <Link href="/hadiths/dua" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/dua" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">أحاديث الأدعية والأذكار</div>
               <div className="text-xs text-gray-500 mt-1">فهرس موضوعي للأدعية النبوية مصنَّفةً بأنواعها — اللهم، رب، تسبيح، استغفار، أذكار الصباح...</div>
             </Link>
@@ -432,11 +436,11 @@ export default async function Home() {
               <div className="font-semibold text-amber-300 dark:text-amber-700 text-sm group-hover:text-amber-200">محرك التخريج</div>
               <div className="text-xs text-green-200 dark:text-green-900/80 mt-1">أدخل نص حديث لاستخراج جميع رواياته الموازية مجموعةً بالتخريج — أساس البحث الأكاديمي في توثيق الحديث</div>
             </Link>
-            <Link href="/companions/compare" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/companions/compare" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">مقارنة الصحابة</div>
               <div className="text-xs text-gray-500 mt-1">قارن بين صحابيَّين في عدد الأحاديث والأسانيد والتلاميذ والكتب — أداة لدراسة الحجم الروائي النسبي</div>
             </Link>
-            <Link href="/hadiths/chapters" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/chapters" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">فهرس الأبواب</div>
               <div className="text-xs text-gray-500 mt-1">تصفح أبواب كتب الحديث وعدد الأحاديث — بحث بالموضوع الفقهي عبر جميع الكتب</div>
             </Link>
@@ -444,7 +448,7 @@ export default async function Home() {
               <div className="font-semibold text-emerald-900 text-sm group-hover:text-emerald-700">المتواتر والغريب</div>
               <div className="text-xs text-gray-500 mt-1">تصنيف الأحاديث بعدد الصحابة الرواة — متواتر (10+) ومشهور (3-9) وعزيز (2) وغريب (1)</div>
             </Link>
-            <Link href="/hadiths/mawquf" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/mawquf" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">الموقوف والمقطوع والمرسل</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث حُكم عليها بالوقف أو القطع أو الإرسال أو الانقطاع — أداة لتمييز الأثر عن المرفوع في البحث الفقهي</div>
             </Link>
@@ -452,19 +456,19 @@ export default async function Home() {
               <div className="font-semibold text-amber-300 dark:text-amber-700 text-sm group-hover:text-amber-200">أقوى الأحاديث توثيقاً</div>
               <div className="text-xs text-green-200 dark:text-green-900/80 mt-1">ترتيب مركَّب: الأسانيد الذهبية + تعدد التصحيح + تعدد الكتب — تحديد أعلى الأحاديث درجةً بمعايير موضوعية متعددة</div>
             </Link>
-            <Link href="/hadiths/fiqh-map" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/fiqh-map" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">خريطة الفقه</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث مصنَّفة بالموضوع الفقهي — الطهارة والصلاة والزكاة والحج والبيوع والحدود مع روابط مباشرة للأبواب</div>
             </Link>
-            <Link href="/narrators/chronology" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/chronology" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">تسلسل الرواية عبر القرون</div>
               <div className="text-xs text-gray-500 mt-1">خط زمني للرواة عقداً بعقد — يُظهر أوج كل طبقة ومراكز الثقل في الرواية من الصحابة إلى عصر التدوين</div>
             </Link>
-            <Link href="/companions/musnad" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/companions/musnad" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">مسانيد الصحابة</div>
               <div className="text-xs text-gray-500 mt-1">حديث كل صحابي منظَّماً بالأبواب على نمط مسند الإمام أحمد — مدخل موضوعي لاستعراض روايات كل صحابي</div>
             </Link>
-            <Link href="/narrators/coverage" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/coverage" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">تغطية تراجم الرواة</div>
               <div className="text-xs text-gray-500 mt-1">نسبة الرواة الموثَّقين في كل كتاب — يكشف الثغرات البيوغرافية ويحدد الرواة المجهولين الذين يحتاجون دراسة</div>
             </Link>
@@ -472,7 +476,7 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">مسار نقل الحديث</div>
               <div className="text-xs text-gray-500 mt-1">تتبع مسار الرواية بين راويَين — هل ثبت أن الأول حدَّث الثاني؟ وكم سنداً؟ وعن طريق من؟</div>
             </Link>
-            <Link href="/companions/inter-transmission" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/companions/inter-transmission" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">رواية الصحابة بعضهم عن بعض</div>
               <div className="text-xs text-gray-500 mt-1">أسانيد فيها صحابي يروي عن صحابي — يكشف حركة العلم داخل الجيل الأول وأي الصحابة تلقَّى عن أكثر صحابيٍّ</div>
             </Link>
@@ -480,7 +484,7 @@ export default async function Home() {
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">البحث البحثي المتقدم</div>
               <div className="text-xs text-gray-500 mt-1">جمع المعايير في بحث واحد: النص + الراوي + الباب + الكتاب + الدرجة + عدد الأسانيد — أدق أدوات استرجاع الحديث</div>
             </Link>
-            <Link href="/narrators/prolific-by-century" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/prolific-by-century" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">أبرز رواة كل قرن</div>
               <div className="text-xs text-gray-500 mt-1">ترتيب الرواة داخل كل قرن هجري بعدد الأحاديث — يكشف أعمدة الرواية وأئمتها في كل عصر من عصور الإسلام</div>
             </Link>
@@ -488,11 +492,11 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">تداخل الكتب وتشعب الأسانيد</div>
               <div className="text-xs text-gray-500 mt-1">الأحاديث المشتركة بين المصنَّفات — خريطة تداخل مصادر الحديث وروابطها عبر التخريج المقارن</div>
             </Link>
-            <Link href="/scholars/hadith-grades" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/scholars/hadith-grades" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">أحكام العلماء على الأحاديث</div>
               <div className="text-xs text-gray-500 mt-1">اختر عالماً لترى ما صحَّحه وضعَّفه — ابن حجر، الألباني، الذهبي — مع توزيع إحصائي لأحكامه</div>
             </Link>
-            <Link href="/narrators/hub-analysis" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/hub-analysis" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">مراكز شبكة الرواية</div>
               <div className="text-xs text-gray-500 mt-1">الرواة الأكثر مركزيةً في شبكة الأسانيد — من يجمع أكثر الأحاديث والكتب والصحابة والتلاميذ في مسيرته</div>
             </Link>
@@ -500,15 +504,15 @@ export default async function Home() {
               <div className="font-semibold text-emerald-900 text-sm group-hover:text-emerald-700">مدارس الحديث الجغرافية</div>
               <div className="text-xs text-gray-500 mt-1">مدارس الرواية بالمدن: المدينة والكوفة والبصرة والشام ومصر وخراسان — توزيع الرواة والأحاديث بالمراكز الكبرى</div>
             </Link>
-            <Link href="/hadiths/weakness-catalog" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/weakness-catalog" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">فهرس أنواع الضعف</div>
               <div className="text-xs text-gray-500 mt-1">تصنيف الأحاديث بعلَّتها: انقطاع، إرسال، ضعف راوٍ، اضطراب، تدليس، شذوذ — للدراسة المنهجية في علل الحديث</div>
             </Link>
-            <Link href="/companions/specialties" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/companions/specialties" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">تخصصات الصحابة في الرواية</div>
               <div className="text-xs text-gray-500 mt-1">أبرز الموضوعات الفقهية في روايات كل صحابي — من تخصَّص في الصلاة أو الزكاة أو النكاح أو غيرها</div>
             </Link>
-            <Link href="/books/exclusive-hadiths" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/books/exclusive-hadiths" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">منفردات الكتب</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث لا توجد إلا في كتاب واحد — مادة فريدة تُظهر ما ينفرد به كل مصنَّف دون سائر كتب الحديث</div>
             </Link>
@@ -516,19 +520,19 @@ export default async function Home() {
               <div className="font-semibold text-violet-900 text-sm group-hover:text-violet-700">تطور أحكام الحديث</div>
               <div className="text-xs text-gray-500 mt-1">كيف توزَّعت أحكام العلماء على الأحاديث قرناً بقرن — يكشف ارتفاع أو انخفاض نسبة التصحيح عبر الأجيال</div>
             </Link>
-            <Link href="/narrators/family-transmission" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/family-transmission" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">الرواية العائلية</div>
               <div className="text-xs text-gray-500 mt-1">رواة يشتركون الاسم والنسبة — تعريف أسر الحديث الكبرى ورصد انتقال العلم بين أبناء البيت الواحد</div>
             </Link>
-            <Link href="/books/chain-age" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/books/chain-age" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">عمر الأسانيد بالكتب</div>
               <div className="text-xs text-gray-500 mt-1">متوسط المدى الزمني بين الصحابي والمُصنِّف في أسانيد كل كتاب — مقياس لمدى امتداد الرواية ودرجة العلو</div>
             </Link>
-            <Link href="/hadiths/narrator-bottleneck" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/narrator-bottleneck" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">الراوي الوحيد — نقطة الضعف</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث تمر جميع أسانيدها بشخص واحد — راوٍ منفرد يحمل الحديث في حلقة محورية لا يمكن تجاوزها</div>
             </Link>
-            <Link href="/books/isnad-diversity" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/books/isnad-diversity" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">تنوع المصادر الصحابية</div>
               <div className="text-xs text-gray-500 mt-1">عدد الصحابة الذين يُروى عنهم في كل كتاب — مؤشر شمول الكتاب وتنوع مصادره مقارنةً بسائر المصنَّفات</div>
             </Link>
@@ -540,27 +544,27 @@ export default async function Home() {
               <div className="font-semibold text-emerald-900 text-sm group-hover:text-emerald-700">تشارك الصحابة في الروايات</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث رواها أكثر من صحابي — أداة بحث التواتر والتعدد الصحابي في مسائل الفقه والعقيدة والشريعة</div>
             </Link>
-            <Link href="/scholars/isnad-criteria" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/scholars/isnad-criteria" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">معايير قبول الإسناد بالعلماء</div>
               <div className="text-xs text-gray-500 mt-1">تحليل منهج كل محدث في التصحيح والتضعيف — نسبة القبول ومتوسط طول الأسانيد التي قبلها مع تفاصيل الصيغ</div>
             </Link>
-            <Link href="/hadiths/matn-keywords" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/matn-keywords" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الأحاديث بالموضوع الكلمي</div>
               <div className="text-xs text-gray-500 mt-1">12 موضوعاً كبيراً بكلماتها المفتاحية: النية، الرحمة، التوحيد، الصلاة، الصيام، الزكاة، الحج، العلم، الأخلاق...</div>
             </Link>
-            <Link href="/narrators/sahabi-students" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/sahabi-students" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">شبكة تلاميذ الصحابة</div>
               <div className="text-xs text-gray-500 mt-1">أوسع الصحابة شبكةً من التلاميذ المباشرين — يُظهر مَن نشر السنة في الجيل الثاني وكيف توزَّعت طرق الرواية</div>
             </Link>
-            <Link href="/hadiths/abrogation" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/abrogation" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">فهرس الناسخ والمنسوخ</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث أشار إليها العلماء بالنسخ — ناسخ أو منسوخ أو متقدم ومتأخر — أداة لبحث تاريخ تطور الأحكام الفقهية</div>
             </Link>
-            <Link href="/narrators/mudallis-catalog" className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 hover:border-red-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/mudallis-catalog" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-red-900 text-sm group-hover:text-red-700">فهرس المدلِّسين</div>
               <div className="text-xs text-gray-500 mt-1">رواة وُصفوا بالتدليس مع أحاديثهم — أداة للباحث في تمييز عنعنة المدلِّس وتقييم أثرها على صحة الحديث</div>
             </Link>
-            <Link href="/hadiths/single-companion" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/single-companion" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">أحاديث الآحاد الصحابي</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث لم يرويها إلا صحابي واحد — مصنَّفة بالموضوع الفقهي وعدد الأسانيد — جوهر بحث الغريب والفرد في الحديث</div>
             </Link>
@@ -568,31 +572,31 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">أحاديث الأساليب الشرعية</div>
               <div className="text-xs text-gray-500 mt-1">تصنيف الأحاديث بأسلوبها: الثواب (من فعل فله)، التحذير، الشرط، النهي، الأمر، التعريف — لدراسة أساليب التشريع</div>
             </Link>
-            <Link href="/narrators/prolific-students" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/prolific-students" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">المكثرون من الشيوخ</div>
               <div className="text-xs text-gray-500 mt-1">رواة تتلمذوا على أكبر عدد من الشيوخ — يكشف من كان أوسعهم في طلب العلم وأكثرهم تحملاً من مصادر متعددة</div>
             </Link>
-            <Link href="/hadiths/prophetic-commands" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/prophetic-commands" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">الأوامر والنواهي النبوية</div>
               <div className="text-xs text-gray-500 mt-1">استخراج أحاديث الأوامر الصريحة والنواهي وأحاديث الفعل النبوي (كان يفعل) — أداة لدراسة أساليب التشريع النبوي</div>
             </Link>
-            <Link href="/narrators/death-decade" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/death-decade" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">الرواة حسب عقد الوفاة</div>
               <div className="text-xs text-gray-500 mt-1">خط زمني للمحدثين موزَّعاً على عقود الهجرة — يكشف أوج الطبقات وتركُّز النشاط الحديثي في كل فترة</div>
             </Link>
-            <Link href="/hadiths/divergent-judgments" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/divergent-judgments" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">اختلاف العلماء في التصحيح</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث صحَّحها بعض العلماء وضعَّفها آخرون — لدراسة أسباب الخلاف المنهجية في نقد الحديث</div>
             </Link>
-            <Link href="/narrators/city-network" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/city-network" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">شبكة الرواية بين المدن</div>
               <div className="text-xs text-gray-500 mt-1">مسارات انتقال الحديث بين المدن الإسلامية — تكشف تدفق العلم من مكة والمدينة نحو العراق وخراسان</div>
             </Link>
-            <Link href="/hadiths/opening-variants" className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 hover:border-purple-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/opening-variants" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-purple-900 text-sm group-hover:text-purple-700">الروايات المتشابهة في المتن</div>
               <div className="text-xs text-gray-500 mt-1">يجمع الأحاديث المتشابهة في الفاتحة ليكشف اختلاف ألفاظ الرواية بين الكتب — لدراسة الأداء والضبط</div>
             </Link>
-            <Link href="/hadiths/grade-by-book" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/grade-by-book" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">درجات الأحاديث بالكتاب</div>
               <div className="text-xs text-gray-500 mt-1">نسب الصحيح والحسن والضعيف في كل كتاب — مؤشر إحصائي لموثوقية كل مصنَّف ودراسة تخصصه</div>
             </Link>
@@ -600,11 +604,11 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">ثنائيات الشيخ والتلميذ</div>
               <div className="text-xs text-gray-500 mt-1">الأزواج الأكثر تكراراً من شيخ وتلميذه المباشر — يكشف أهم حلقات الرواية وأعمدة نقل الحديث</div>
             </Link>
-            <Link href="/hadiths/takhrij-spread" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/takhrij-spread" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">انتشار الأحاديث بالتخريج</div>
               <div className="text-xs text-gray-500 mt-1">الأحاديث المُخرَّجة في أكثر من كتاب — يسهل المقارنة بين روايات الكتب ويرصد درجة الشهرة</div>
             </Link>
-            <Link href="/scholars/judgment-phrases" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/scholars/judgment-phrases" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">معجم صيغ الحكم عند العلماء</div>
               <div className="text-xs text-gray-500 mt-1">الصيغ التي استخدمها كل عالم في الحكم على الأحاديث — يكشف المنهج النقدي لكل محدِّث وأسلوبه في التعبير</div>
             </Link>
@@ -616,11 +620,11 @@ export default async function Home() {
               <div className="font-semibold text-indigo-900 text-sm group-hover:text-indigo-700">تنوع الأسانيد في الحديث</div>
               <div className="text-xs text-gray-500 mt-1">لكل حديث: عدد الرواة المختلفين في كل موضع من مواضع السند — يحدد نقاط القوة والضعف الهيكلي</div>
             </Link>
-            <Link href="/narrators/contested" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/contested" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">المختلف فيهم من الرواة</div>
               <div className="text-xs text-gray-500 mt-1">رواة مدحهم بعض العلماء وجرحهم آخرون — لدراسة الخلاف في الجرح والتعديل وموازنة أقوال المحدثين</div>
             </Link>
-            <Link href="/hadiths/text-length" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/text-length" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">توزيع أطوال نصوص الأحاديث</div>
               <div className="text-xs text-gray-500 mt-1">كيف تتوزع الأحاديث حسب طول نصها وأي الكتب تحوي أحاديث مطوَّلة — مؤشر لأسلوب التصنيف</div>
             </Link>
@@ -628,7 +632,7 @@ export default async function Home() {
               <div className="font-semibold text-orange-900 text-sm group-hover:text-orange-700">مصفوفة الكتب والصحابة</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث كل صحابي في كل كتاب — يكشف تخصص كل مصنَّف ومدى تنوع مصادره الصحابية</div>
             </Link>
-            <Link href="/hadiths/unique-to-book" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/unique-to-book" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">انفرادات الكتب</div>
               <div className="text-xs text-gray-500 mt-1">أحاديث موجودة في كتاب واحد فقط — تكشف الخصائص الفريدة لكل مصنَّف وما تميَّز بجمعه</div>
             </Link>
@@ -640,19 +644,19 @@ export default async function Home() {
               <div className="font-semibold text-slate-900 text-sm group-hover:text-slate-700">الملف الإحصائي للكتاب</div>
               <div className="text-xs text-gray-500 mt-1">بصمة كل كتاب: أحاديثه وتنوع صحابته ومتوسط أسانيده ونسب درجاته — مقارنة شاملة بين المصنَّفات</div>
             </Link>
-            <Link href="/narrators/tabiin-ranking" className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/tabiin-ranking" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-teal-900 text-sm group-hover:text-teal-700">ترتيب التابعين — شيوخاً وتلاميذ</div>
               <div className="text-xs text-gray-500 mt-1">التابعون مرتَّبون بمعيار مركَّب: صحابة سمع منهم × تلاميذ × أحاديث — يحدد أعمدة نقل السنة في جيلهم</div>
             </Link>
-            <Link href="/books/chapter-analysis" className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <Link href="/books/chapter-analysis" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-blue-900 text-sm group-hover:text-blue-700">تحليل الأبواب في كل كتاب</div>
               <div className="text-xs text-gray-500 mt-1">فهرس الأبواب لكل كتاب مع عدد أحاديث كل باب ونسب الصحيح والضعيف فيه — للإحاطة بمحتوى الكتاب</div>
             </Link>
-            <Link href="/narrators/companion-last" className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 hover:border-amber-300 hover:shadow-sm transition-all group">
+            <Link href="/narrators/companion-last" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-amber-900 text-sm group-hover:text-amber-700">آخر الصحابة وفاةً</div>
               <div className="text-xs text-gray-500 mt-1">الصحابة الذين أطال الله أعمارهم وأدركهم التابعون المتأخرون — من أهم جسور نقل السنة عبر الأجيال</div>
             </Link>
-            <Link href="/hadiths/chain-quality" className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 hover:border-green-300 hover:shadow-sm transition-all group">
+            <Link href="/hadiths/chain-quality" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
               <div className="font-semibold text-green-900 text-sm group-hover:text-green-700">فلتر جودة الأسانيد</div>
               <div className="text-xs text-gray-500 mt-1">فلتر الأحاديث بمعايير نوعية: كل رواته ثقات، لا ضعيف فيه، ≥5 أسانيد، سند قصير، أو متعدد الصحابة</div>
             </Link>
