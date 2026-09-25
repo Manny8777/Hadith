@@ -17,6 +17,7 @@ import MatnSimilaritySection from './MatnSimilaritySection'
 import PrevNextNav from './PrevNextNav'
 import GhareebMatn from './GhareebMatn'
 import SanadNarrators from './SanadNarrators'
+import CollapsibleSection from './CollapsibleSection'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
 import { stripTashkeel } from '@/lib/ghareeb'
@@ -38,16 +39,6 @@ const MATN_SIZES = [
   'clamp(1.8rem, 1.1rem + 2.8vw, 2.4rem)',     // 4
 ]
 const MATN_SIZE_DEFAULT = 1
-
-function SectionHeader({ label, sub }: { label: string; sub?: string }) {
-  return (
-    <div className="ui-section-head">
-      <h2 className="ui-section-head-title">{label}</h2>
-      {sub && <span className="ui-section-head-sub">{sub}</span>}
-      <div className="ui-section-head-rule" />
-    </div>
-  )
-}
 
 export interface NarratorInChain {
   id: number
@@ -176,6 +167,7 @@ export default function HadithSidebarLayout({
     { id: 'isnad',   label: 'الأسانيد والرواة' },
     ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
+    { id: 'matn-similarity', label: 'مطابقة المتون' },
     ...serviceSections.map(s => ({ id: s.id, label: s.label })),
     { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
     { id: 'adawat',  label: 'أدوات البحث' },
@@ -519,14 +511,13 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
-        <section id="isnad" className="mb-8 scroll-mt-header">
-          <SectionHeader label="الأسانيد والرواة" sub={chains.length > 0 ? (() => {
+        <CollapsibleSection id="isnad" label="الأسانيد والرواة" sub={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)
             const mn = Math.min(...lens), mx = Math.max(...lens)
             const dl = mn === mx ? (dm[mn] || `${mn} رواة`) : `${dm[mn]||mn}–${dm[mx]||mx}`
             return `${dl} · ${chains.length} ${chains.length === 1 ? 'سند' : 'أسانيد'} · ${chains[0].narrators.length} رواة`
-          })() : undefined} />
+          })() : undefined}>
           {chains.length === 0 ? (
             <p className="text-sm text-gray-400 py-4">لا يوجد إسناد مسجل لهذا الحديث</p>
           ) : (
@@ -560,12 +551,11 @@ export default function HadithSidebarLayout({
               )}
             </div>
           )}
-        </section>
+        </CollapsibleSection>
 
         {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
-          <section id="aqwal" className="mb-8 scroll-mt-header">
-            <SectionHeader label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`} />
+          <CollapsibleSection id="aqwal" label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`}>
 
             {(() => {
               const gradeCounts: Record<string, number> = {}
@@ -669,24 +659,24 @@ export default function HadithSidebarLayout({
                 )
               })}
             </div>
-          </section>
+          </CollapsibleSection>
         )}
 
         {/* ── التخريج ── */}
-        <section id="takhrij" className="mb-8 scroll-mt-header">
-          <SectionHeader label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع" />
+        <CollapsibleSection id="takhrij" label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
           {takhrijSlot}
-        </section>
+        </CollapsibleSection>
 
         {/* ── مطابقة المتون (حساب مباشر) ── */}
-        <MatnSimilaritySection hadithId={hadithId} />
+        <CollapsibleSection id="matn-similarity" label="مطابقة المتون" sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
+          <MatnSimilaritySection hadithId={hadithId} bare />
+        </CollapsibleSection>
 
         {/* ── الخدمات العلمية (inline) ── */}
         {serviceSections.map(cfg => (
-          <section key={cfg.id} id={cfg.id} className="mb-8 scroll-mt-header">
-            <SectionHeader label={cfg.label} />
+          <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label}>
             <HadithServiceSection hadithId={hadithId} config={cfg} />
-          </section>
+          </CollapsibleSection>
         ))}
 
         {/* ── مقارنة المتون (group matn) ── */}
@@ -697,8 +687,7 @@ export default function HadithSidebarLayout({
         )}
 
         {relatedHadiths.length > 0 && (
-          <section id="related" className="mb-8 scroll-mt-header">
-            <SectionHeader label="أحاديث ذات صلة" sub="روايات مرتبطة بنفس الموضوع أو الغرض" />
+          <CollapsibleSection id="related" label="أحاديث ذات صلة" sub="روايات مرتبطة بنفس الموضوع أو الغرض">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {relatedHadiths.map((related) => (
                 <Link
@@ -715,23 +704,21 @@ export default function HadithSidebarLayout({
                 </Link>
               ))}
             </div>
-          </section>
+          </CollapsibleSection>
         )}
 
         {/* ── المتن المُجمَّع والاختلافات ── */}
-        <section id="variants" className="mb-8 scroll-mt-header">
-          <SectionHeader label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات" />
+        <CollapsibleSection id="variants" label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات">
           <MatnVariants
             hadithId={hadithId}
             currentTarf={h.tarf}
             currentBookTitle={h.book_title}
             currentDeath={h.takhrij_death}
           />
-        </section>
+        </CollapsibleSection>
 
         {/* ── أدوات البحث ── */}
-        <section id="adawat" className="mb-8 scroll-mt-header">
-          <SectionHeader label="أدوات البحث" />
+        <CollapsibleSection id="adawat" label="أدوات البحث">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { href: `/hadith/${hadithId}/transmission-history`, label: 'تاريخ انتشار الحديث',    desc: 'ترتيب زمني للكتب التي أوردت هذا الحديث حسب وفاة مؤلفيها' },
@@ -751,7 +738,7 @@ export default function HadithSidebarLayout({
               </a>
             ))}
           </div>
-        </section>
+        </CollapsibleSection>
 
         <PrevNextNav
           prevId={h.prev_paragraph_id || null}

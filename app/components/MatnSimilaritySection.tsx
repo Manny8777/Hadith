@@ -39,7 +39,8 @@ function scoreBarClass(score: number): string {
   return 'bg-red-400'
 }
 
-export default function MatnSimilaritySection({ hadithId }: { hadithId: number }) {
+// `bare`: rendered inside a CollapsibleSection that already shows the title and anchor.
+export default function MatnSimilaritySection({ hadithId, bare = false }: { hadithId: number; bare?: boolean }) {
   const [data, setData]             = useState<ApiData | null>(null)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(false)
@@ -112,16 +113,18 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
   const allCount = data?.results.length ?? 0
 
   return (
-    <section id="matn-similarity" className="mb-8 scroll-mt-14" dir="rtl">
+    <section id={bare ? undefined : 'matn-similarity'} className={bare ? '' : 'mb-8 scroll-mt-14'} dir="rtl">
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-base font-bold text-green-900 shrink-0 font-display">
-          مطابقة المتون
-        </h2>
-        <span className="text-xs text-gray-400">حساب مباشر — نسبة تطابق الألفاظ بين المتون</span>
-        <div className="flex-1 h-px bg-green-100" />
-      </div>
+      {!bare && (
+        <div className="flex items-center gap-3 mb-3">
+          <h2 className="text-base font-bold text-green-900 shrink-0 font-display">
+            مطابقة المتون
+          </h2>
+          <span className="text-xs text-gray-400">حساب مباشر — نسبة تطابق الألفاظ بين المتون</span>
+          <div className="flex-1 h-px bg-green-100" />
+        </div>
+      )}
 
       {/* ── Explanation pill ── */}
       <div className="flex flex-wrap gap-2 mb-4 text-[11px]">
