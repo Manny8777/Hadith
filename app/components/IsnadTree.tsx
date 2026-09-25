@@ -21,6 +21,7 @@ import 'reactflow/dist/style.css'
 import dagre from 'dagre'
 import Link from 'next/link'
 import { useTheme } from '@/lib/themeContext'
+import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 import type { Chain, NarratorInChain, CriticismGroup } from './HadithSidebarLayout'
 
 interface Narrator {
@@ -594,6 +595,7 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
   const dark = theme === 'dark'
   const [mode, setMode] = useState<Mode>('single')
   const [fitKey, setFitKey] = useState(0)
+  const touchLock = useFlowTouchLock()
 
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
@@ -759,6 +761,7 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
           style={{ height: mode === 'single' ? 600 : 520 }}
           className="relative w-full border border-gray-100 rounded-xl overflow-hidden bg-surface"
         >
+          <FlowTouchToggle {...touchLock} />
           {picked && (
             <div dir="rtl" className="absolute inset-x-2 top-2 z-10 max-h-[75%] overflow-y-auto rounded-xl border border-border bg-surface shadow-lg p-3 text-right">
               <button
@@ -790,6 +793,7 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
             nodesDraggable={false}
             nodesConnectable={false}
             elementsSelectable={true}
+            {...touchLock.flowProps}
           >
             <Background color={dark ? '#2A313A' : '#e5e7eb'} gap={20} size={1} />
             <Controls position="bottom-right" showInteractive={false} />
