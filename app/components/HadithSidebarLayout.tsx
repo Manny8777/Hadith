@@ -659,11 +659,6 @@ export default function HadithSidebarLayout({
                             {first.death_year_num && (
                               <span className="text-xs text-gray-400">ت {first.death_year_num}هـ</span>
                             )}
-                            {first.martaba_ibn_hajar && (
-                              <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
-                                {first.martaba_ibn_hajar}
-                              </span>
-                            )}
                           </>
                         ) : (
                           <span className="text-xs text-gray-400">غير محدد العالم</span>

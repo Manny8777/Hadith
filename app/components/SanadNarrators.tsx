@@ -20,12 +20,10 @@ function NarratorPopover({
   narrator,
   anchorRect,
   onClose,
-  onEnter,
 }: {
   narrator: SanadNarratorPreview
   anchorRect: DOMRect
   onClose: () => void
-  onEnter: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [style, setStyle] = useState({ top: anchorRect.top, left: anchorRect.left })
@@ -70,9 +68,7 @@ function NarratorPopover({
       dir="rtl"
       className="fixed z-50 w-[min(22rem,calc(100vw-2rem))] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-xl bg-gray-900 text-white shadow-2xl border border-gray-700"
       style={{ top: style.top, left: style.left }}
-      role="tooltip"
-      onMouseEnter={onEnter}
-      onMouseLeave={onClose}
+      role="dialog"
     >
       <div className="px-4 pt-3 pb-2 border-b border-gray-700/80">
         <span className="text-[10px] font-bold tracking-wider text-teal-300 uppercase">
@@ -177,9 +173,7 @@ export default function SanadNarrators({
         nodes.push(
           <span
             key={`nar-${id}-${i}`}
-            className="font-bold text-ink cursor-help rounded-sm px-0.5 underline decoration-green-300 decoration-1 underline-offset-[5px] transition-colors hover:decoration-green-600 hover:text-green-800"
-            onMouseEnter={e => openPopover(id, e.currentTarget)}
-            onMouseLeave={closePopover}
+            className="font-bold text-ink cursor-pointer rounded-sm px-0.5 underline decoration-green-300 decoration-1 underline-offset-[5px] transition-colors hover:decoration-green-600 hover:text-green-800"
             onClick={e => {
               e.stopPropagation()
               if (activeId === id) closePopover()
@@ -221,7 +215,6 @@ export default function SanadNarrators({
           narrator={activeNarrator}
           anchorRect={anchorRect}
           onClose={scheduleClose}
-          onEnter={cancelClose}
         />
       )}
     </>

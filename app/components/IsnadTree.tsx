@@ -21,7 +21,6 @@ import 'reactflow/dist/style.css'
 import dagre from 'dagre'
 import Link from 'next/link'
 import { useTheme } from '@/lib/themeContext'
-import HoverCard from './HoverCard'
 import type { Chain, NarratorInChain, CriticismGroup } from './HadithSidebarLayout'
 
 interface Narrator {
@@ -59,7 +58,7 @@ function graphNodeHeight(text: string, extraLines = 1): number {
   return 14 + nameLines * 15 + extraLines * 13 + 8
 }
 
-// ─── Shared grade / death helpers (mirror IsnadChainTimeline styling) ──────────
+// ─── Shared grade / death helpers ─────────────────────────────────────────────
 
 const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
 function toArabicDigits(value: string | number | null | undefined): string {
@@ -92,27 +91,19 @@ function gradingColor(label: string | null): string {
   return 'bg-gray-100 text-gray-600 border-gray-200'
 }
 
-// جرح وتعديل popover: every critic's saying for one narrator (transparency — no single standard).
+// أقوال النقاد in one narrator, each under the critic who said it. Shown only when the reader
+// clicks the narrator: the encyclopedia presents what each critic said and adopts no single verdict.
 function CriticismPopover({ nar, groups }: { nar: { id: number; name: string; abb_name?: string | null }; groups: CriticismGroup[] }) {
-  const labelCounts: Record<string, number> = {}
-  for (const g of groups) for (const e of g.entries) if (e.garh_label) labelCounts[e.garh_label] = (labelCounts[e.garh_label] ?? 0) + 1
-  const labels = Object.entries(labelCounts).sort((a, b) => b[1] - a[1])
   return (
     <div>
-      <p className="text-xs font-bold text-green-900 mb-2">جرح وتعديل — {nar.abb_name || nar.name}</p>
-      {labels.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2 pb-2 border-b border-border">
-          {labels.map(([l, n]) => (
-            <span key={l} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${gradingColor(l)}`}>
-              {l}{n > 1 ? ` (${n})` : ''}
-            </span>
-          ))}
-        </div>
+      <p className="text-xs font-bold text-green-900 mb-2">أقوال النقاد في {nar.abb_name || nar.name}</p>
+      {groups.length === 0 && (
+        <p className="text-xs text-gray-500">لا توجد أقوال محمّلة لهذا الراوي هنا.</p>
       )}
       <ul className="space-y-2">
         {groups.map((g, i) => (
           <li key={i} className="text-xs">
-            <div className="font-bold text-green-800">{g.scientist_name}</div>
+            <div className="font-bold text-green-800">قال {g.scientist_name}:</div>
             <div className="space-y-1 mt-0.5">
               {g.entries.map((e, j) => (
                 <div key={j} className="flex flex-wrap items-start gap-1.5">
@@ -141,23 +132,21 @@ const RAIL_W = 288
 
 function IsnadRailNode({ data }: NodeProps) {
   const nar = data.nar as NarratorInChain
-  const criticism = (data.criticism as CriticismGroup[] | undefined) || []
   const death = deathLabel(nar)
-  const hasMeta = nar.is_companion || criticism.length > 0 || nar.tabaqa
+  const hasMeta = nar.is_companion || nar.tabaqa
   return (
     <div
       dir="rtl"
       style={{ width: RAIL_W }}
-      className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm text-center"
+      className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm text-center cursor-pointer hover:border-green-400 transition-colors"
     >
       <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-border !border-0" />
-      <Link
-        href={`/narrator/${nar.id}`}
+      <span
         title={nar.name}
         className="block font-bold text-green-800 hover:text-green-600 hover:underline text-[15px] font-serif leading-snug line-clamp-2"
       >
         {nar.abb_name || nar.name}
-      </Link>
+      </span>
       {death && (
         <div className="text-[11px] text-gray-400 font-sans mt-2">ت {death}</div>
       )}
@@ -170,18 +159,6 @@ function IsnadRailNode({ data }: NodeProps) {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> صحابي
             </span>
-          ) : criticism.length > 0 ? (
-            <HoverCard
-              width="25rem"
-              trigger={
-                <span className="inline-flex items-center gap-1 text-[11px] font-sans font-medium text-gray-600 bg-surface-sunken border border-border px-2 py-0.5 rounded-full cursor-help">
-                  جرح وتعديل
-                  <span className="text-gray-400 text-[9px]">▾</span>
-                </span>
-              }
-            >
-              <CriticismPopover nar={nar} groups={criticism} />
-            </HoverCard>
           ) : null}
           {nar.tabaqa && <span className="text-[11px] text-gray-500 font-sans">{nar.tabaqa}</span>}
         </div>
@@ -267,16 +244,15 @@ const EDGE_TYPES = { term: TermEdge }
 
 // ─── Single isnad builder: this hadith's chain(s) as a rich vertical flow ───────
 
-function estimateRailHeight(nar: NarratorInChain, hasCriticism: boolean): number {
-  // Centered, stacked card: name (≤2 lines) · death line · meta line (جرح وتعديل / tabaqa chips).
+function estimateRailHeight(nar: NarratorInChain): number {
+  // Centered, stacked card: name (≤2 lines) · death line · meta line (صحابي / tabaqa).
   const name = nar.abb_name || nar.name || ''
   const nameLines = Math.min(2, Math.max(1, Math.ceil(name.length / 24)))
-  const metaItems = (nar.is_companion || hasCriticism ? 1 : 0) + (nar.tabaqa ? 1 : 0)
-  const metaLines = metaItems === 0 ? 0 : metaItems >= 3 ? 2 : 1
+  const metaLines = nar.is_companion || nar.tabaqa ? 1 : 0
   return 28 + nameLines * 24 + (deathLabel(nar) ? 18 : 0) + metaLines * 18
 }
 
-function buildSingleChain(chains: Chain[], dark: boolean, narratorCriticism: Record<number, CriticismGroup[]>): { nodes: Node[]; edges: Edge[] } {
+function buildSingleChain(chains: Chain[], dark: boolean): { nodes: Node[]; edges: Edge[] } {
   const nodeMap = new Map<string, Node>()
   const edgeSet = new Set<string>()
   const edges: Edge[] = []
@@ -305,16 +281,15 @@ function buildSingleChain(chains: Chain[], dark: boolean, narratorCriticism: Rec
     for (const nar of chain.narrators) {
       const nid = `n-${nar.id}`
       if (!nodeMap.has(nid)) {
-        const criticism = narratorCriticism[nar.id] || []
         nodeMap.set(nid, {
           id: nid,
           type: 'isnadRail',
-          data: { nar, criticism },
+          data: { nar },
           position: { x: 0, y: 0 },
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
           width: RAIL_W,
-          height: estimateRailHeight(nar, criticism.length > 0),
+          height: estimateRailHeight(nar),
         })
       }
       const ek = `${prev}->${nid}`
@@ -499,7 +474,7 @@ function buildGraph(chains: ChainRow[], currentHadithId: number, dark: boolean, 
         const label = (isMadar ? `★ ${baseName}` : baseName) + deathLine
         nodeMap.set(nodeId, {
           id: nodeId,
-          data: { label, narratorId: nar.id },
+          data: { label, narratorId: nar.id, name: nar.name, abbName: nar.abb_name },
           position: { x: 0, y: 0 },
           height: graphNodeHeight(raw, dy ? 1 : 0),
           sourcePosition: Position.Bottom,
@@ -630,7 +605,10 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
   const [tahdethTypes, setTahdethTypes] = useState<Record<number, string>>({})
 
   // Single isnad view — this hadith's chain(s); each link shows its own صيغة (no count).
-  const single = useMemo(() => buildSingleChain(chains, dark, narratorCriticism), [chains, dark, narratorCriticism])
+  const single = useMemo(() => buildSingleChain(chains, dark), [chains, dark])
+
+  // Narrator whose critics' sayings are open (set by clicking a narrator; never shown unasked).
+  const [picked, setPicked] = useState<{ id: number; name: string; abb_name?: string | null } | null>(null)
 
   const graphChains = useMemo(() => {
     const cur = allChains.filter(c => c.hadithId === hadithId)
@@ -701,7 +679,9 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
   }, [hadithId])
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    if (node.data?.narratorId) window.location.href = `/narrator/${node.data.narratorId}`
+    const nar = node.data?.nar as NarratorInChain | undefined
+    if (nar) setPicked({ id: nar.id, name: nar.name, abb_name: nar.abb_name })
+    else if (node.data?.narratorId) setPicked({ id: node.data.narratorId as number, name: node.data.name as string, abb_name: node.data.abbName as string | null })
     else if (node.data?.hadithId) window.location.href = `/hadith/${node.data.hadithId}`
   }, [])
 
@@ -713,11 +693,11 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
     })
   }, [full.edges])
 
-  const onPaneClick = useCallback(() => setSelPath(null), [])
+  const onPaneClick = useCallback(() => { setSelPath(null); setPicked(null) }, [])
 
   // Drop a stale selection when leaving the full tree or loading a different hadith.
   useEffect(() => { if (mode !== 'full') setSelPath(null) }, [mode])
-  useEffect(() => { setSelPath(null) }, [hadithId])
+  useEffect(() => { setSelPath(null); setPicked(null) }, [hadithId])
 
   if (chains.length === 0) return <p className="text-sm text-gray-400">لا يوجد إسناد مسجل لهذا الحديث</p>
 
@@ -746,7 +726,7 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
 
       <p className="text-xs text-gray-400">
         {mode === 'single'
-          ? 'إسناد هذا الحديث — انقر على الراوي لترجمته · اسحب للتنقل'
+          ? 'إسناد هذا الحديث — انقر على الراوي لعرض أقوال النقاد فيه · اسحب للتنقل'
           : (isFullTruncated
               ? `عرض ${graphChains.length} من ${allChains.length} إسناد (أسانيد هذا الحديث أولاً)`
               : 'جميع مسارات الرواية عبر كتب التخريج')
@@ -756,17 +736,13 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
       {mode === 'full' && treePhase === 'done' && madar && (
         <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
           <span className="font-bold text-purple-800 whitespace-nowrap">★ مدار الحديث:</span>
-          <Link href={`/narrator/${madar.id}`} className="font-bold text-purple-900 hover:underline whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => setPicked({ id: madar.id, name: madar.name })}
+            className="font-bold text-purple-900 hover:underline whitespace-nowrap"
+          >
             {madar.name}
-          </Link>
-          {(narratorCriticism[madar.id]?.length ?? 0) > 0 && (
-            <HoverCard
-              width="25rem"
-              trigger={<span className="text-purple-700 underline decoration-dotted underline-offset-2 cursor-help">· جرح وتعديل ▾</span>}
-            >
-              <CriticismPopover nar={{ id: madar.id, name: madar.name }} groups={narratorCriticism[madar.id]} />
-            </HoverCard>
-          )}
+          </button>
           <span className="text-gray-400 ms-auto whitespace-nowrap">تجتمع عنده جميع الطرق</span>
         </div>
       )}
@@ -781,8 +757,21 @@ export default function IsnadTree({ hadithId, chains, narratorCriticism = {} }: 
       {showGraph && (
         <div
           style={{ height: mode === 'single' ? 600 : 520 }}
-          className="w-full border border-gray-100 rounded-xl overflow-hidden bg-surface"
+          className="relative w-full border border-gray-100 rounded-xl overflow-hidden bg-surface"
         >
+          {picked && (
+            <div dir="rtl" className="absolute inset-x-2 top-2 z-10 max-h-[75%] overflow-y-auto rounded-xl border border-border bg-surface shadow-lg p-3 text-right">
+              <button
+                type="button"
+                onClick={() => setPicked(null)}
+                aria-label="إغلاق"
+                className="float-left -mt-1 -ml-1 px-2 text-lg leading-none text-gray-400 hover:text-gray-700"
+              >
+                ×
+              </button>
+              <CriticismPopover nar={picked} groups={narratorCriticism[picked.id] || []} />
+            </div>
+          )}
           <ReactFlow
             key={fitKey}
             nodes={nodes}
