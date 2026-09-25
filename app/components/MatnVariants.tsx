@@ -35,6 +35,7 @@ import ReactFlow, {
   Handle,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -996,6 +997,7 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
   const { theme } = useTheme()
   const dark = theme === 'dark'
   const [nodes, setNodes, onNodesChange] = useNodesState([])
+  const touchLock = useFlowTouchLock()
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const computed = useMemo(() => {
@@ -1024,7 +1026,8 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
           عرض أكثر {computed.numSources} روايةً اختلافًا من أصل {computed.totalSources} — القائمة الكاملة في صفحة «الحديث في كتب الحديث»
         </p>
       )}
-      <div style={{ height }} className="w-full rounded-xl border border-border overflow-hidden bg-surface shadow-sm">
+      <div style={{ height }} className="relative w-full rounded-xl border border-border overflow-hidden bg-surface shadow-sm">
+        <FlowTouchToggle {...touchLock} />
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -1036,6 +1039,7 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
           minZoom={0.2}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
+          {...touchLock.flowProps}
         >
           <Background color={dark ? '#2A313A' : '#e7e5e4'} gap={24} size={1} />
           <Controls showInteractive={false} />

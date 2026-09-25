@@ -12,6 +12,7 @@ import ReactFlow, {
   Position,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 import dagre from 'dagre'
 
 interface NarNode {
@@ -93,6 +94,7 @@ function buildGraph(nodes: NarNode[], edges: NarEdge[]): { nodes: Node[]; edges:
 export default function NarratorNetworkGraph({ limit = 20 }: { limit?: number }) {
   const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [nodes, setNodes, onNodesChange] = useNodesState([])
+  const touchLock = useFlowTouchLock()
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [summary, setSummary] = useState({ narrators: 0, edges: 0 })
 
@@ -171,7 +173,8 @@ export default function NarratorNetworkGraph({ limit = 20 }: { limit?: number })
           </span>
         </div>
       </div>
-      <div style={{ height: 560 }} className="w-full border border-gray-100 rounded-xl overflow-hidden bg-white">
+      <div style={{ height: 560 }} className="relative w-full border border-gray-100 rounded-xl overflow-hidden bg-white">
+        <FlowTouchToggle {...touchLock} />
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -185,6 +188,7 @@ export default function NarratorNetworkGraph({ limit = 20 }: { limit?: number })
           maxZoom={2.5}
           nodesDraggable={true}
           nodesConnectable={false}
+          {...touchLock.flowProps}
         >
           <Background color="#e5e7eb" gap={20} size={1} />
           <Controls position="bottom-right" showInteractive={false} />
