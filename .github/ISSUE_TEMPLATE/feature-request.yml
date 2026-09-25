@@ -1,0 +1,21 @@
+name: اقتراح / Feature request
+description: فكرة لميزة جديدة أو تحسين
+title: "[اقتراح] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: ما الاقتراح؟ / What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: كيف يفيد الباحثين؟ / Who does it help, and how?
+  - type: checkboxes
+    id: help
+    attributes:
+      label: المشاركة / Contributing
+      options:
+        - label: أرغب في المساعدة في تنفيذه / I'd like to help build this

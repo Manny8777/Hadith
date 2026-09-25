@@ -1,0 +1,37 @@
+name: تصحيح علمي / Data correction
+description: خطأ في نص حديث أو تشكيله، أو في ترجمة راوٍ، أو حكم أو تخريج
+title: "[تصحيح] "
+labels: ["data-correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        جزاك الله خيراً. لا يلزمك أي معرفة بالبرمجة لتعبئة هذا النموذج.
+        No coding needed. Thank you for helping improve the data.
+  - type: input
+    id: url
+    attributes:
+      label: رابط الصفحة / Page link
+      placeholder: https://hadith-web-production.up.railway.app/hadith/5
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: ما الخطأ؟ / What is wrong?
+      description: انسخ النص كما يظهر في الموقع
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: الصواب / Correction
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: المصدر / Source
+      description: الكتاب، الطبعة، الجزء والصفحة
+    validations:
+      required: true

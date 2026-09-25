@@ -1,0 +1,35 @@
+name: مشكلة في الموقع / Bug report
+description: صفحة لا تعمل، أو عرض غير سليم، أو بحث يعطي نتائج خاطئة
+title: "[مشكلة] "
+labels: ["bug"]
+body:
+  - type: input
+    id: url
+    attributes:
+      label: رابط الصفحة / Page link
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: ماذا حدث؟ وماذا كنت تتوقع؟ / What happened, and what did you expect?
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: الجهاز / Device
+      options:
+        - حاسوب / Desktop
+        - جوال / Phone
+        - جهاز لوحي / Tablet
+  - type: input
+    id: browser
+    attributes:
+      label: المتصفح / Browser
+      placeholder: Chrome, Safari, Firefox...
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: صورة للشاشة (اختياري) / Screenshot (optional)
+      description: اسحب الصورة إلى هنا
