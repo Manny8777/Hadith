@@ -271,10 +271,12 @@ export default function NavHeader() {
   return (
     <nav ref={navRef} className="relative z-30 bg-surface-sunken/95 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
       <div className="max-w-7xl mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
-        <a href="/" className="flex items-center gap-2 text-sm sm:text-base font-bold text-[#123b32] hover:text-[#8a6726] transition-colors ml-1 sm:ml-3 shrink-0 whitespace-nowrap font-display dark:text-[#ECE6DA]">
-          <BrandMark size={30} />
-          <span className="sm:hidden">الجامع</span>
-          <span className="hidden sm:inline">جامع خادم الحرمين</span>
+        <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-3 shrink-0 text-[#123b32] transition-colors hover:text-[#8a6726] dark:text-[#ECE6DA]">
+          <BrandMark size={36} className="shrink-0" />
+          <span className="flex flex-col leading-none font-display">
+            <span className="text-[10px] tracking-wide text-[#8a6726] dark:text-[#e6c77a]">موسوعة الحديث</span>
+            <span className="mt-0.5 whitespace-nowrap text-sm sm:text-base font-bold">جامع خادم الحرمين</span>
+          </span>
         </a>
 
         <div className="hidden sm:block w-px h-5 bg-border mx-1 shrink-0" />
