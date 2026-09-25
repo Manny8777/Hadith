@@ -3,7 +3,6 @@ import { Suspense } from 'react'
 import './globals.css'
 import NavHeader from './components/NavHeader'
 import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSubHeader'
-import SiteNotice from './components/SiteNotice'
 import NumeralConverter from './components/NumeralConverter'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NumeralProvider>
             <NumeralConverter />
             <header className="sticky top-0 z-50 shadow-sm">
-              <SiteNotice />
               <NavHeader />
               <Suspense fallback={<SearchSubHeaderFallback />}>
                 <SearchSubHeader />

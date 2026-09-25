@@ -106,6 +106,7 @@ test.describe('Hadith core browser journeys', () => {
     expect(response?.status()).toBe(200)
     const payload = await response?.json()
     expect(payload).toMatchObject({ status: 'ok', database: 'reachable' })
+    expect(await page.locator('body').innerText()).not.toContain('الموقع قيد التطوير')
     expect(productionLike || 'local').toBeTruthy()
   })
 })
