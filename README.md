@@ -2,8 +2,10 @@
 
 # موسوعة الحديث الشريف
 
-موسوعة حديثية مفتوحة المصدر على الويب، تنقل برنامج «موسوعة الحديث» من تطبيق سطح مكتب إلى موقع متاح للجميع،
-مع الحفاظ على البيانات كاملة. تضم الموسوعة:
+[English version below ↓](#hadith-encyclopedia)
+
+موسوعة حديثية مفتوحة المصدر على الويب، تنقل «برنامج خادم الحرمين الشريفين الجامع للحديث النبوي» من تطبيق ويندوز إلى موقع متاح للجميع،
+مع الحفاظ على البيانات كاملة؛ إذ واجه كثير من المستخدمين صعوبة في تشغيل البرنامج على أجهزتهم. تضم الموسوعة:
 
 - **245 كتاباً** من كتب السنة ومصادرها
 - **قرابة 340,000 حديث** مرتبة في أبواب وكتب
@@ -63,13 +65,70 @@ npm run dev            # http://localhost:3000
 
 ---
 
-## English
+# Hadith Encyclopedia
 
-An open-source web encyclopedia of hadith: 245 books, ~340,000 hadiths, 30,000+ narrators, isnad
-chains, grading, takhrij and more, with a fully Arabic (RTL) interface. Built with Next.js 16,
-React 19, TypeScript, Tailwind CSS v4 and PostgreSQL.
+An open-source web version of **برنامج خادم الحرمين الشريفين الجامع للحديث النبوي** (the Custodian of
+the Two Holy Mosques' Comprehensive Hadith Program), moved from a Windows desktop application to a
+website anyone can use, with all of its data preserved. It was built because many users had trouble
+running the Windows program. The encyclopedia includes:
 
-**Contributions are very welcome, from developers and from hadith scholars and researchers.**
-All changes go through pull requests and are reviewed before merging. See
-[CONTRIBUTING.md](CONTRIBUTING.md). Code is MIT-licensed; hadith texts and data are not covered by
-the license.
+- **245 books** of hadith and their sources
+- **~340,000 hadiths**, organized into books and chapters
+- **30,000+ narrators**, with biographies, ranks, and the verdicts of the critics (al-jarh wa al-ta'dil)
+- **Isnad chains**, shown as trees and as a narrator network
+- Topics, takhrij, hadith gradings, 'ilal (hidden defects), matn comparison, a lexicon of rare
+  words (gharib al-hadith), and related Quranic verses
+- Full-text search that ignores diacritics (tashkeel)
+
+**Live site:** https://hadith-web-production.up.railway.app
+
+## Call for contributors
+
+This is an open, charitable (waqf) project, and it needs both **developers** and **hadith scholars and
+researchers**. Every contribution is welcome, big or small:
+
+- **Developers:** fix bugs, improve performance and search speed, improve the interface and mobile
+  experience, add features, write tests.
+- **Scholars and researchers:** correct a hadith's text or vocalization, report an error in a
+  narrator's biography, grading or takhrij, review how chapters and topics are organized, suggest new
+  sources.
+
+**All changes are submitted as pull requests** and reviewed by the maintainers before they are merged.
+Nobody can change the project directly, so don't hesitate to try. If you don't code, you can
+[open an issue](../../issues) describing the error or suggestion, **with the source** (book, edition,
+volume and page).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Running locally
+
+Requires Node.js 20+ and a PostgreSQL database loaded with the encyclopedia data.
+
+```bash
+npm install
+echo 'DATABASE_URL=postgresql://postgres:localdev@localhost:5432/railway' > .env
+docker compose up -d   # optional: local PostgreSQL
+npm run dev            # http://localhost:3000
+```
+
+`DATABASE_URL` is the only required setting. Never put it in the code: `.env` files are gitignored,
+and scripts in `db/` read it through `db/dbenv.js`.
+
+## Stack and layout
+
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4
+- PostgreSQL with raw SQL through `pg` (no ORM)
+- Fully Arabic, right-to-left interface
+
+| Folder | Contents |
+|---|---|
+| `app/` | Pages, and API routes in `app/api/` |
+| `lib/` | Database pool and shared helpers |
+| `db/` | Schema, import and maintenance scripts |
+| `scripts/`, `tests/` | Checks and tests (see `package.json`) |
+| `docs/` | Project notes |
+
+## License
+
+The code is released under the [MIT License](LICENSE). The hadith texts and data come from their
+original sources and are not covered by this license.
