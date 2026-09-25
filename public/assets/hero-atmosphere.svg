@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="420" viewBox="0 0 1440 420" fill="none">
+  <defs>
+    <pattern id="p" width="180" height="180" patternUnits="userSpaceOnUse"><g fill="none" stroke="#C9A96B" stroke-width="1" stroke-opacity=".16"><path d="M90 10 103 37 130 27 124 54 151 67 124 80 130 107 103 97 90 124 77 97 50 107 56 80 29 67 56 54 50 27 77 37z"/><path d="M0 90h180M90 0v180" stroke-opacity=".08"/></g></pattern>
+    <linearGradient id="veil" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#C9A96B" stop-opacity="0"/><stop offset=".58" stop-color="#C9A96B" stop-opacity=".18"/><stop offset="1" stop-color="#C9A96B" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="1440" height="420" fill="url(#p)" opacity=".46"/>
+  <path d="M150 420V198c0-74 60-134 134-134s134 60 134 134v222M188 420V204c0-53 43-96 96-96s96 43 96 96v216" stroke="url(#veil)" stroke-width="2"/>
+  <path d="M1240 420V198c0-74 60-134 134-134s134 60 134 134v222M1278 420V204c0-53 43-96 96-96s96 43 96 96v216" stroke="url(#veil)" stroke-width="2"/>
+  <path d="M90 388h1260M120 404h1200" stroke="#C9A96B" stroke-opacity=".10"/>
+  <g stroke="#C9A96B" stroke-opacity=".14" stroke-width="1"><path d="M1080 98v48M1064 122h32M1072 146h16l-8 22-8-22ZM720 82v42M706 103h28M713 124h14l-7 20-7-20Z"/></g>
+</svg>

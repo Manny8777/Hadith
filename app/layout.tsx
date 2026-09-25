@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+        <link rel="icon" href="/assets/hadith-seal.png" type="image/png" />
       </head>
       <body className="bg-paper text-ink min-h-screen font-serif">
         <ThemeProvider>

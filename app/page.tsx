@@ -33,7 +33,7 @@ export default async function Home() {
     <div dir="rtl" className="min-h-screen -mx-4 -mt-8 bg-[#F8F1E4] dark:bg-[#101513]">
       {/* Hero */}
       <div className="relative overflow-hidden bg-[#0F3D2E] border-b border-[#C9A96B]/40 dark:bg-[#101513]">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.045] dark:opacity-[0.07]" style={{ backgroundImage: "url('/assets/hadith-pattern.svg')", backgroundSize: '720px 180px', backgroundRepeat: 'repeat-x', backgroundPosition: 'center top' }} />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.045] dark:opacity-[0.07]" style={{ backgroundImage: "url('/assets/hero-atmosphere.png')", backgroundSize: '1440px 420px', backgroundRepeat: 'no-repeat', backgroundPosition: 'center top' }} />
         <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-14 text-center sm:pt-20 sm:pb-16">
           <div className="flex justify-center mb-5">
             <BrandMark size={64} className="drop-shadow-sm" />
@@ -65,7 +65,7 @@ export default async function Home() {
       </div>
 
       <div className="flex justify-center bg-[#F8F1E4] dark:bg-[#101513] py-2" aria-hidden="true">
-        <img src="/assets/theme-ornament.svg" alt="" className="h-6 w-60 opacity-80 dark:opacity-60" />
+        <img src="/assets/theme-ornament.png" alt="" className="h-6 w-60 opacity-80 dark:opacity-60" />
       </div>
 
       {/* Stats banner */}

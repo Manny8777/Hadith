@@ -227,8 +227,8 @@ body {
 
   .theme-texture {
     background-color: #0F3D2E;
-    background-image: linear-gradient(rgba(15, 61, 46, .88), rgba(15, 61, 46, .88)), url('/assets/hadith-pattern.svg');
-    background-size: auto, 720px 180px;
+    background-image: linear-gradient(rgba(15, 61, 46, .88), rgba(15, 61, 46, .88)), url('/assets/hadith-pattern.png');
+    background-size: auto, 1440px 360px;
     background-repeat: no-repeat, repeat-x;
     background-position: center, center top;
   }
