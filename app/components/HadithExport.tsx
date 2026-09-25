@@ -224,6 +224,7 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
   const [copiedAr, setCopiedAr] = useState(false)
   const [copiedBib, setCopiedBib] = useState(false)
   const [copiedFn, setCopiedFn] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
 
   async function handleCopyArabic() {
     const text = buildCitation(hadith, chain, takhrijBooks, takhrijSummary, judgments)
@@ -258,6 +259,17 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
     }
   }
 
+  async function handleCopyLink() {
+    const url = window.location.href
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2000)
+    } catch {
+      window.prompt('نسخ رابط الحديث:', url)
+    }
+  }
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <button
@@ -279,6 +291,13 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
         title="نسخ مرجع BibTeX للاستخدام في LaTeX"
       >
         {copiedBib ? '✓ Copied' : 'BibTeX'}
+      </button>
+      <button
+        onClick={handleCopyLink}
+        className="text-xs text-gray-700 hover:text-green-800 border border-gray-200 hover:border-green-300 px-3 py-1.5 rounded-lg transition-colors bg-gray-50 hover:bg-green-50"
+        title="نسخ رابط هذا الحديث"
+      >
+        {copiedLink ? '✓ تم نسخ الرابط' : 'نسخ رابط الحديث'}
       </button>
     </div>
   )

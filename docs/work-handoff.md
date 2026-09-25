@@ -10,7 +10,7 @@
 
 The current tree has passed the local release gate, the source-fingerprinted read-only audit, live-local API contracts, route smoke tests, and desktop/mobile RTL browser journeys. No current-tree test, build, browser-console, or contract blocker remains.
 
-The only intentionally unresolved audit classifications are semantic-review unknowns. They are documented below and are not safe to convert into fabricated data or production writes. The previously reported narrator-relation “genuine defect” was resolved as a source-namespace fact: 17 positive `NounsRelations.SecondRawyID` values are `NounsScientistsSays.ID` values in a separate namespace, not missing narrator IDs.
+The four named semantic-review mappings now have reproducible, source-backed closure decisions in `db/audit_semantic_review.py` and `db/audit_manifest.json`. They remain deliberately fail-closed `unknown` classifications for repair purposes: narrator biography is a documented derived expansion, narrator criticism preserves its documented source join/namespace, Quran reader/ayat IDs are preserved as a separate namespace, and 22 controversy description node IDs are preserved without a guessed remap. No production write or fabricated mapping was made. The previously reported narrator-relation “genuine defect” remains resolved as a source-namespace fact.
 
 ## Work completed
 
@@ -33,7 +33,7 @@ The only intentionally unresolved audit classifications are semantic-review unkn
 
 - `db/audit_data_readonly.js` is SELECT-only, read-only transaction guarded, timeout/work-memory bounded, secret-redacted, rollback checked, and fail-closed on invalid manifest evidence.
 - `db/audit_legacy_evidence.py` fingerprints the local Harf source and writes only ignored evidence under `db-backup/`. Its Windows path-stat safety checks were repaired.
-- `db/audit_manifest.json` records 29 mapping contracts, duplicate-collapse decisions, the sparse service-type lookup, and four deliberately retained semantic-review areas.
+- `db/audit_manifest.json` records 29 mapping contracts, duplicate-collapse decisions, the sparse service-type lookup, and the four source-backed semantic-review closure decisions. `db/audit_semantic_review.py` generates the ignored local evidence file for those decisions.
 - `tests/audit/audit-self-check.mjs` validates the manifest, source-unavailable safety, namespace invariant, redaction, and read-only SQL guard.
 
 ## Validation results
@@ -41,6 +41,7 @@ The only intentionally unresolved audit classifications are semantic-review unkn
 All commands below were run against the current working tree unless explicitly marked as a pre-change baseline.
 
 - `npm.cmd run typecheck` — PASS.
+- `npm.cmd run test:browser` — PASS, 13/14 executed with one desktop-only skip; desktop and narrow mobile Chromium journeys include search, saved-search, empty-state, hadith print/share, matn navigation, narrator, service, and health flows with zero collected page/console errors.
 - `npm.cmd run build` — PASS; Next.js `16.3.6`, optimized production build completed.
 - `npm.cmd run test:url-state` — PASS, 9/9.
 - `npm.cmd run test:contracts` with `BASE_URL=http://127.0.0.1:3000` — PASS, 19/19, no skipped tests.
@@ -101,6 +102,8 @@ npm.cmd run test:contracts
 npm.cmd run smoke -- http://127.0.0.1:3000
 npm.cmd run verify:parity
 npm.cmd run check:audit
+npm.cmd run test:browser
+legacy-audit/harness/.cmpvenv/Scripts/python.exe db/audit_semantic_review.py
 ```
 
 For the live release target, use the already approved Railway URL only after deployment:

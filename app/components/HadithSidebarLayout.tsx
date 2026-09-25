@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import PrintButton from './PrintButton'
+import ReportPrintButton from './ReportPrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
 import ChainTimeline from './ChainTimeline'
@@ -140,7 +140,7 @@ const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string 
 
 export default function HadithSidebarLayout({
   hadithId, hadith: h, chains, narratorCriticism = {}, commonNarrators,
-  judgments, subjects, takhrijBooks, takhrijSummary,
+  judgments, subjects, relatedHadiths, takhrijBooks, takhrijSummary,
   hadithServices, isnadType,
   sanadSegments,
   sanadNarrators = {},
@@ -387,7 +387,17 @@ export default function HadithSidebarLayout({
                 أ+
               </button>
             </div>
-            <PrintButton />
+            <ReportPrintButton
+              report={{
+                title: h.book_title,
+                subtitle: h.tarqeem_harf || h.tarqeem_matboa1 ? `رقم ${h.tarqeem_harf || h.tarqeem_matboa1}` : 'حديث نبوي',
+                text: [
+                  cleanHadithContent(h.content || h.tarf || ''),
+                  chains.length > 0 ? `\n\nالسند: ${chains[0].narrators.map((n) => n.name).join(' ← ')}` : '',
+                ].filter(Boolean).join('\n'),
+              }}
+              label="طباعة الحديث"
+            />
             <SaveHadith hadithId={hadithId} />
             <HadithExport
               hadith={{
@@ -692,6 +702,28 @@ export default function HadithSidebarLayout({
           </section>
         )}
 
+        {relatedHadiths.length > 0 && (
+          <section id="related" className="mb-8 scroll-mt-header">
+            <SectionHeader label="أحاديث ذات صلة" sub="روايات مرتبطة بنفس الموضوع أو الغرض" />
+            <div className="grid sm:grid-cols-2 gap-2">
+              {relatedHadiths.map((related) => (
+                <Link
+                  key={related.main_id}
+                  href={`/hadith/${related.main_id}`}
+                  className="ui-card p-3 hover:border-green-300 transition-colors"
+                >
+                  <span className="block text-xs font-medium text-green-900">{related.book_title}</span>
+                  {related.tarf ? (
+                    <span className="block text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                      {applyTashkeel(stripXmlToVerbatim(related.tarf)).slice(0, 180)}
+                    </span>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ── المتن المُجمَّع والاختلافات ── */}
         <section id="variants" className="mb-8 scroll-mt-header">
           <SectionHeader label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات" />
@@ -712,6 +744,7 @@ export default function HadithSidebarLayout({
               { href: `/hadith/${hadithId}/chain-analysis`,       label: 'التحليل الزمني للإسناد', desc: 'رسم زمني لرواة السند مع الفجوات الزمنية' },
               { href: `/hadith/${hadithId}/all-narrators`,        label: 'رجال الحديث',            desc: 'قائمة كاملة بكل رواة هذا الحديث من مجموع الأسانيد' },
               { href: `/hadith/${hadithId}/witnesses`,            label: 'الشواهد والمتابعات',     desc: 'روايات موازية من صحابة آخرين — تُستخدم لتقوية الحديث' },
+              { href: `/hadith/${hadithId}/matn-variants`,        label: 'مقارنة المتون',           desc: 'مقارنة ألفاظ الروايات وتصنيف الاختلافات' },
               { href: `/hadith/${hadithId}/across-books`,         label: 'الحديث في كتب الحديث',   desc: 'مقارنة نص الحديث عبر جميع الكتب التي خرّجته' },
               { href: `/hadith/${hadithId}/pivot`,                label: 'مدار الحديث',            desc: 'الراوي الذي تجتمع عنده جميع أسانيد الحديث' },
               { href: `/hadith/${hadithId}/isnad-ranking`,        label: 'ترتيب الأسانيد قوةً',    desc: 'ترتيب جميع أسانيد الحديث من الأقوى إلى الأضعف' },

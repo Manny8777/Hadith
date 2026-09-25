@@ -19,11 +19,12 @@ export default async function MatnGroupSection({ hadithId }: { hadithId: number 
   if (!groupId) return null
 
   const membersRes = await pool.query<GroupMember>(
-    `SELECT gm.hadith_main_id AS hadith_id, ht.book_name, ht.tarf, ht.part_num, ht.page_num
+    `SELECT DISTINCT ON (gm.hadith_main_id)
+            gm.hadith_main_id AS hadith_id, ht.book_name, ht.tarf, ht.part_num, ht.page_num
      FROM hadith_group_matn gm
      JOIN hadith_toc ht ON ht.main_id = gm.hadith_main_id
      WHERE gm.group_id = $1 AND gm.hadith_main_id != $2
-     ORDER BY ht.book_id, gm.hadith_main_id
+     ORDER BY gm.hadith_main_id, ht.book_id, ht.part_num NULLS LAST, ht.page_num NULLS LAST
      LIMIT 20`,
     [groupId, hadithId]
   ).catch(() => ({ rows: [] }))

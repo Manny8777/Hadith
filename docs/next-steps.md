@@ -303,10 +303,10 @@ Choose one P0 item and one P1 item, implement them behind the existing navigatio
 
 ### Week/sprint 1 — audit and tests
 
-- [ ] Produce the fresh data-audit report.
-- [ ] Classify all remaining differences.
+- [x] Produce the fresh data-audit report.
+- [x] Classify all remaining differences. The four semantic-review mappings are explicitly closed as source-backed preserve/derive decisions; their fail-closed `unknown` classification remains intentional and no guessed production repair was made.
 - [ ] Add API contract checks.
-- [ ] Add the Playwright route journeys.
+- [x] Add the Playwright route journeys (desktop Chromium and narrow mobile Chromium projects; run `npm.cmd run test:browser`).
 - [ ] Add migration dry-run/rollback tests.
 
 ### Sprint 2 — performance
@@ -318,16 +318,16 @@ Choose one P0 item and one P1 item, implement them behind the existing navigatio
 
 ### Sprint 3 — UX P0
 
-- [ ] Print/share hadith view.
+- [x] Print/share hadith view (isolated print portal plus copyable hadith URL).
 - [ ] URL-preserved filters.
-- [ ] Consistent numeral preference.
-- [ ] Mobile RTL layout pass.
+- [x] Consistent numeral preference is already global via `NumeralConverter`/the header toggle; browser journeys verify rendered Arabic output.
+- [x] Mobile RTL layout pass (390px narrator containment regression coverage remains green).
 
 ### Sprint 4 — UX P1
 
-- [ ] Saved searches/bookmarks.
-- [ ] Matn comparison quick navigation.
-- [ ] Arabic text export/copy.
+- [x] Saved searches/bookmarks and recent searches are stored locally in the search page and covered by browser regression.
+- [x] Matn comparison quick navigation and related-hadith links are rendered on hadith pages.
+- [x] Arabic text export/copy is available in the hadith export controls and narrator report.
 - [ ] Narrator/topic report export.
 
 ## Definition of done for this roadmap

@@ -80,7 +80,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       [mainId]
     ).catch(() => ({ rows: [] })),
     pool.query(
-      `SELECT si.id, si.title
+      `SELECT DISTINCT si.id, si.title
        FROM hadith_subjects hs
        JOIN subject_items si ON si.id = hs.subject_id
        WHERE hs.paragraph_main_id = $1

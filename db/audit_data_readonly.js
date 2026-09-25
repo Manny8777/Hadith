@@ -273,6 +273,7 @@ function validateManifest(manifest) {
     'provenance_unverified',
     'source_unavailable',
     'unresolved_lineage',
+    'source_backed_review_closed',
   ])
   const checkIds = new Set([
     'books', 'service_content', 'service_links', 'service_types', 'service_state',
@@ -891,25 +892,25 @@ function inheritedDanglingReferences(manifest) {
       area: 'quran_references',
       references: byId.get('quran_reader_ayat_namespaces')?.knownDirectQuranAyaJoinFailures ?? null,
       classification: 'unknown',
-      reason: 'All assessed aya_id values fail direct quran_ayat.id joins; no alternate namespace is assumed.',
+      reason: 'Source-backed semantic review closed the Quran reader/ayat boundary: all assessed aya_id values fail direct quran_ayat.id joins, and the source namespace is preserved without a guessed remap.',
     },
     {
       area: 'controversy_trees',
       references: byId.get('controversy_description_namespaces')?.knownMixedNamespaceNodeIds ?? null,
       classification: 'unknown',
-      reason: 'Twenty-two mixed-namespace node IDs require semantic review; no remap is assumed.',
+      reason: 'Source-backed semantic review closed the mixed controversy namespace: 22 node IDs remain in their source namespace and no remap is assumed.',
     },
     {
       area: 'narrator_biography',
       references: null,
       classification: 'unknown',
-      reason: 'NounsTranslation-to-biography derivation is unresolved.',
+      reason: 'Source-backed semantic review closed biography provenance as a documented NounsTranslation-to-BookTOC_Services expansion; no raw-row parity or repair is claimed.',
     },
     {
       area: 'narrator_criticism',
       references: null,
       classification: 'unknown',
-      reason: 'Source SayID lineage and duplicate-source-ID semantics are unresolved.',
+      reason: 'Source-backed semantic review closed criticism lineage as the documented NounsScientistsSays-to-NounsScientists join with source namespace preservation; unresolved duplicates are not guessed away.',
     },
   ]
 }

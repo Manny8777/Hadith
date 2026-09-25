@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 import HadithNumber from '@/app/components/HadithNumber'
 import SaveHadith from '@/app/components/SaveHadith'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
+import SearchHistoryPanel from '@/app/components/SearchHistoryPanel'
 import {
   buildSearchApiUrl,
   buildSearchUrl,
@@ -563,6 +564,8 @@ function SearchInner() {
           </button>
         )}
       </form>
+
+      <SearchHistoryPanel currentUrl={buildSearchUrl(searchParamsString)} currentQuery={q} />
 
       <div
         aria-live="polite"

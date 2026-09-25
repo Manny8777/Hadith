@@ -17,7 +17,8 @@
     "polymorphic_namespace",
     "provenance_unverified",
     "source_unavailable",
-    "unresolved_lineage"
+    "unresolved_lineage",
+    "source_backed_review_closed"
   ],
   "bookCountSemantics": {
     "catalogTotal": 245,
@@ -247,16 +248,25 @@
       },
       "checkId": "narrator_biography",
       "sourceEvidence": {
-        "status": "ambiguous",
-        "reference": "Completed assessment unresolved area",
+        "status": "source_backed_review_complete",
+        "reference": "db/audit_semantic_review.py; db-backup/semantic-review-20260925T033621Z.json (ignored local evidence)",
         "rawRows": 92095,
-        "distinctKeys": null,
+        "distinctKeys": 92095,
         "missingValidKeys": null,
         "extraWebKeys": null
       },
+      "semanticReview": {
+        "decision": "derived_expansion",
+        "sourceFacts": {
+          "translationRows": 92095,
+          "distinctTranslationPairs": 92095,
+          "serviceRows": 600575
+        },
+        "closure": "The loader's NounsTranslation.MainID to BookTOC_Services.MainID expansion is explicit; destination row parity is intentionally not claimed."
+      },
       "expectedClassification": "unknown",
-      "reason": "Narrator biography derivation from NounsTranslation is unresolved. Current web tables and direct-join observations are reported, but no source key parity or repair is claimed.",
-      "tags": ["ambiguous", "provenance_unverified", "polymorphic_namespace"],
+      "reason": "Source provenance and loader expansion are now documented from the read-only semantic review. The mapping remains fail-closed/unknown because raw translation rows are not a one-to-one biography key and no repair is claimed.",
+      "tags": ["ambiguous", "provenance_unverified", "polymorphic_namespace", "source_backed_review_closed"],
       "verificationQuery": "SELECT (SELECT count(*)::bigint FROM narrator_biography) AS raw_rows, (SELECT count(DISTINCT id)::bigint FROM narrator_biography) AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT id)::bigint FROM narrator_biography) AS duplicate_rows, (SELECT count(*)::bigint FROM narrator_translation) AS translation_rows, (SELECT count(DISTINCT (noun_id, service_main_id))::bigint FROM narrator_translation) AS translation_distinct_keys, (SELECT count(DISTINCT narrator_id)::bigint FROM narrator_biography) AS biography_narrators, (SELECT count(*)::bigint FROM narrator_biography b WHERE b.narrator_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM narrators n WHERE n.id = b.narrator_id)) AS unresolved_narrators, (SELECT count(*)::bigint FROM narrator_biography b WHERE b.main_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hadith_toc h WHERE h.main_id = b.main_id)) AS main_ids_not_hadith_namespace, (SELECT count(*)::bigint FROM narrator_biography b WHERE b.main_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = b.main_id)) AS main_ids_not_service_namespace;"
     },
     {
@@ -319,16 +329,26 @@
       },
       "checkId": "narrator_criticism",
       "sourceEvidence": {
-        "status": "ambiguous",
-        "reference": "Completed assessment unresolved lineage/duplicate-source-ID area",
+        "status": "source_backed_review_complete",
+        "reference": "db/audit_semantic_review.py; db-backup/semantic-review-20260925T033621Z.json (ignored local evidence)",
         "rawRows": 171526,
-        "distinctKeys": null,
+        "distinctKeys": 153071,
         "missingValidKeys": null,
         "extraWebKeys": null
       },
+      "semanticReview": {
+        "decision": "source_namespace_preserved",
+        "sourceFacts": {
+          "sourceRows": 171526,
+          "scientistRows": 8935,
+          "rowsResolvingDocumentedJoin": 171226,
+          "distinctResolvedSayIds": 153071
+        },
+        "closure": "The loader documents NounsScientistsSays.NScientistID = NounsScientists.ID; unresolved and duplicate lineage is intentionally preserved and never remapped by inference."
+      },
       "expectedClassification": "unknown",
-      "reason": "Narrator criticism lineage and duplicate source IDs are unresolved. Semantic duplicate observations are not promoted to a key, and the historical 300-row delta is not called a repairable missing set.",
-      "tags": ["ambiguous", "unresolved_lineage", "provenance_unverified", "polymorphic_namespace"],
+      "reason": "The documented source join and source SayID namespace are now source-backed. The destination intentionally retains that namespace; the historical delta is not called a repairable missing set.",
+      "tags": ["ambiguous", "unresolved_lineage", "provenance_unverified", "polymorphic_namespace", "source_backed_review_closed"],
       "verificationQuery": "SELECT (SELECT count(*)::bigint FROM narrator_criticism) AS raw_rows, NULL::bigint AS distinct_keys, (SELECT count(*)::bigint - count(DISTINCT (narrator_id, scientist_noun_id, say_text, say_sort))::bigint FROM narrator_criticism) AS semantic_duplicate_rows, (SELECT count(*)::bigint FROM narrator_criticism_links) AS link_rows, (SELECT count(DISTINCT (say_id, service_main_id, link_id, is_book_toc_hadith))::bigint FROM narrator_criticism_links) AS link_distinct_keys FROM narrator_criticism c;"
     },
     {
@@ -648,17 +668,28 @@
       },
       "checkId": "quran",
       "sourceEvidence": {
-        "status": "ambiguous",
-        "reference": "Completed assessment unresolved namespace area",
+        "status": "source_backed_review_complete",
+        "reference": "db/audit_semantic_review.py; db-backup/semantic-review-20260925T033621Z.json (ignored local evidence)",
         "rawRows": 423,
         "distinctKeys": 423,
         "missingValidKeys": null,
         "extraWebKeys": null,
         "knownDirectQuranAyaJoinFailures": 423
       },
+      "semanticReview": {
+        "decision": "source_namespace_preserved",
+        "sourceFacts": {
+          "rows": 423,
+          "distinctReaderAyaIds": 95,
+          "directAyaIdMatches": 0,
+          "minAyaId": 850015,
+          "maxAyaId": 850010624
+        },
+        "closure": "The source AyaID values are a separate namespace in this snapshot. The rows are preserved; no sura/aya or encoded-ID remap is fabricated."
+      },
       "expectedClassification": "unknown",
-      "reason": "All 423 aya_id values fail a direct quran_ayat.id join in the completed assessment. The alternate namespace is unresolved, so the rows are neither declared valid nor loaded into a guessed mapping.",
-      "tags": ["ambiguous", "mixed_namespace", "unresolved_lineage"],
+      "reason": "The direct QuranAyat.ID join failure is now source-backed and explicitly closed as a namespace boundary. No guessed mapping is loaded or claimed.",
+      "tags": ["ambiguous", "mixed_namespace", "unresolved_lineage", "source_backed_review_closed"],
       "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (reader_id, aya_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (reader_id, aya_id))::bigint AS duplicate_rows, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM quran_ayat a WHERE a.id = q.aya_id))::bigint AS direct_aya_join_failures, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM quran_readers r WHERE r.id = q.reader_id))::bigint AS unresolved_reader_ids FROM quran_readers_ayat q;"
     },
     {
@@ -771,17 +802,27 @@
       },
       "checkId": "controversy",
       "sourceEvidence": {
-        "status": "ambiguous",
-        "reference": "Completed assessment unresolved mixed namespace",
+        "status": "source_backed_review_complete",
+        "reference": "db/audit_semantic_review.py; db-backup/semantic-review-20260925T033621Z.json (ignored local evidence)",
         "rawRows": 1165,
         "distinctKeys": 1165,
         "missingValidKeys": null,
         "extraWebKeys": null,
         "knownMixedNamespaceNodeIds": 22
       },
+      "semanticReview": {
+        "decision": "source_namespace_preserved",
+        "sourceFacts": {
+          "rows": 1165,
+          "directTreeIdMatches": 1038,
+          "directTreeNodeIdMatches": 0,
+          "unmatchedDescriptionNodeIds": 22
+        },
+        "closure": "The residual 22 NodeID values are a source namespace difference, not a proven defect. The rows remain unchanged; no guessed tree remap is performed."
+      },
       "expectedClassification": "unknown",
-      "reason": "Twenty-two controversy description node IDs do not share the tree.id namespace in the completed assessment. Their alternate namespace is not proven, so no key remap or repair is claimed.",
-      "tags": ["ambiguous", "mixed_namespace", "unresolved_lineage"],
+      "reason": "The mixed controversy-description namespace is now source-backed and explicitly closed as preserve-without-remap. The mapping remains fail-closed/unknown for repair purposes.",
+      "tags": ["ambiguous", "mixed_namespace", "unresolved_lineage", "source_backed_review_closed"],
       "verificationQuery": "SELECT count(*)::bigint AS raw_rows, count(DISTINCT (node_id, service_main_id))::bigint AS distinct_keys, count(*)::bigint - count(DISTINCT (node_id, service_main_id))::bigint AS duplicate_rows, count(DISTINCT node_id)::bigint AS distinct_node_ids, count(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_controversial_tree t WHERE t.id = d.node_id))::bigint AS direct_tree_namespace_failures, count(DISTINCT node_id) FILTER (WHERE NOT EXISTS (SELECT 1 FROM hadith_controversial_tree t WHERE t.id = d.node_id))::bigint AS direct_tree_namespace_failed_node_ids, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM hadith_service_content s WHERE s.id = d.node_id))::bigint AS service_namespace_observations FROM hadith_controversial_descriptions d;"
     }
   ]

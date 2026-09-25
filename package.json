@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test:url-state": "node --test tests/url-state.test.mjs",
     "test:contracts": "node --test tests/contracts/api-contracts.test.mjs",
+    "test:browser": "playwright test",
+    "test:browser:install": "playwright install chromium",
     "check:topic-export": "node scripts/checks/topic-export-safety.mjs",
     "check:performance-baseline": "node scripts/performance/route-baseline-self-check.mjs",
     "check:report-export": "node tests/reports/report-export-static.mjs",
@@ -32,6 +34,7 @@
     "reactflow": "^11.11.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
