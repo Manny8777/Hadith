@@ -2,6 +2,8 @@
 
 # دليل المساهمة
 
+[English version below ↓](#contributing-guide)
+
 جزاك الله خيراً على رغبتك في المشاركة. هذا المشروع يعتمد على مساهمة المبرمجين وأهل العلم معاً.
 
 ## كيف تُقبل التعديلات؟
@@ -49,3 +51,57 @@
 افتح بلاغاً (Issue) وسنجيبك بإذن الله.
 
 </div>
+
+---
+
+# Contributing Guide
+
+Thank you for wanting to take part. This project depends on developers and scholars working together.
+
+## How are changes accepted?
+
+Nobody can change the repository directly. **Every change is submitted as a pull request**, which the
+maintainers review and then merge or ask you to adjust.
+
+## If you are not a programmer
+
+If you find an error in a hadith's text or vocalization, in a narrator's biography, or in a grading or
+takhrij, or you want to suggest something:
+
+1. Open a [new issue](../../issues/new).
+2. Give the link to the page on the site, where the error is, and the correction **with its source**
+   (book, edition, volume and page).
+
+Citing the source is essential: it is what lets reviewers verify the correction.
+
+## If you are a programmer
+
+1. **Fork** the repository to your account.
+2. Create a branch for your change: `git checkout -b fix/short-description`
+3. Make the change and run the available checks:
+   ```bash
+   npm run typecheck
+   npm run build
+   ```
+4. Push to your fork and open a **pull request** against the `master` branch.
+5. Explain in the pull request what you changed and why, and attach screenshots for interface changes.
+
+### Guidelines
+
+- **Keep each pull request to one topic**; it makes review easier.
+- **Never put a password or database address in the code.** Use the `DATABASE_URL` environment
+  variable only (and `db/dbenv.js` in the `db/` scripts).
+- SQL queries go through `lib/db.ts`, and inputs must be passed as parameters (`$1`, `$2`, ...), never
+  concatenated into the query text.
+- The interface is Arabic and right-to-left; make sure your change also looks right on mobile.
+- Follow the style of the code around your change.
+
+### Data changes
+
+Changes to the database (hadith texts, biographies, gradings, ...) are not made through the code
+directly. Send them as an issue with sources, or as a script in `db/` that describes the change and can
+be reviewed before it is run.
+
+## Questions?
+
+Open an issue and we will answer, in sha' Allah.
