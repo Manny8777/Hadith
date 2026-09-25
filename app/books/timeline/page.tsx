@@ -114,7 +114,7 @@ export default async function BooksTimelinePage() {
                 </div>
               </div>
               <div className="p-4">
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {books.map(b => (
                     <Link
                       key={b.id}
@@ -159,7 +159,7 @@ export default async function BooksTimelinePage() {
             <div className="bg-gray-50 border-b border-gray-100 px-5 py-3">
               <h2 className="font-bold text-gray-700 text-base">كتب غير محددة التاريخ</h2>
             </div>
-            <div className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {undated.rows.map(b => (
                 <Link key={b.id} href={`/books/${b.id}`}
                   className="flex items-start gap-2 p-3 rounded-xl border border-gray-100 hover:border-green-200 hover:shadow-sm transition-all group">

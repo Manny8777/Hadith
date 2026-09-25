@@ -51,7 +51,7 @@ export default function FindByNumberClient({ books }: { books: Book[] }) {
   return (
     <div>
       <form onSubmit={handleSearch} className="ui-card rounded-2xl p-6 mb-6 font-sans">
-        <div className="grid sm:grid-cols-3 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">اختر الكتاب</label>
             <select
@@ -78,7 +78,7 @@ export default function FindByNumberClient({ books }: { books: Book[] }) {
                 value={num}
                 onChange={e => { setNum(e.target.value); setError(''); setResults(null) }}
                 placeholder="مثل: 1 أو 1742"
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300 transition-colors"
+                className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300 transition-colors"
                 dir="ltr"
               />
               <button

@@ -152,7 +152,7 @@ export default async function GradeEvolutionPage({
         </div>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div className="bg-white rounded-xl border border-gray-100 p-4">
           <h2 className="font-bold text-green-900 text-sm mb-3">أنشط علماء الحكم على الأحاديث</h2>
           <div className="space-y-2">

@@ -620,7 +620,7 @@ function SearchInner() {
         </p>
       )}
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {results.map(r => (
           <div key={r.main_id} className="ui-card px-5 py-4 hover:border-green-300 transition-all flex flex-col gap-2">
             <Link

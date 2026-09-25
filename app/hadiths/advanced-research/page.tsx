@@ -177,7 +177,7 @@ export default async function AdvancedResearchPage({
 
       <form action="/hadiths/advanced-research" method="get"
         className="bg-white rounded-xl border border-gray-100 p-5 mb-5">
-        <div className="grid sm:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="text-xs text-gray-500 block mb-1">نص الحديث (جزئي)</label>
             <input type="text" name="text" defaultValue={textQ}

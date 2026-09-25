@@ -196,7 +196,7 @@ export default async function HadithSciencesPage() {
             صنّف العلماء هذه الألفاظ في مراتب دقيقة؛ فمنها ما يدل على الرفعة والإتقان، ومنها ما ينبئ بالضعف والترك.
           </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* تعديل terms */}
             <div>
@@ -354,7 +354,7 @@ export default async function HadithSciencesPage() {
             <span className="w-1 h-6 bg-gray-400 rounded-full inline-block" />
             أمهات كتب علوم الحديث في الجرح والتعديل
           </h2>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {[
               {
                 title: 'الجرح والتعديل',

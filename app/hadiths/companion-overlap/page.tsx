@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import NavigateSelect from '@/app/components/NavigateSelect'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,36 +148,32 @@ export default async function CompanionOverlapPage({
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">الصحابي الأول:</label>
-          <select
+          <NavigateSelect
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            value={c1 || ''}
-            onChange={e => {
-              const v = e.target.value
-              window.location.href = `/hadiths/companion-overlap?c1=${v}&c2=${c2 || ''}&minshared=${minShared}`
-            }}>
+            href={`/hadiths/companion-overlap?c2=${c2 || ''}&minshared=${minShared}`}
+            param="c1"
+            defaultValue={c1}>
             <option value="">— اختر صحابياً —</option>
             {companions.map(c => (
               <option key={c.id} value={c.id}>{c.name} ({c.hadith_count})</option>
             ))}
-          </select>
+          </NavigateSelect>
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">الصحابي الثاني:</label>
-          <select
+          <NavigateSelect
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            value={c2 || ''}
-            onChange={e => {
-              const v = e.target.value
-              window.location.href = `/hadiths/companion-overlap?c1=${c1 || ''}&c2=${v}&minshared=${minShared}`
-            }}>
+            href={`/hadiths/companion-overlap?c1=${c1 || ''}&minshared=${minShared}`}
+            param="c2"
+            defaultValue={c2}>
             <option value="">— اختر صحابياً —</option>
             {companions.map(c => (
               <option key={c.id} value={c.id}>{c.name} ({c.hadith_count})</option>
             ))}
-          </select>
+          </NavigateSelect>
         </div>
       </div>
 

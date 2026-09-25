@@ -123,7 +123,7 @@ export default async function AlphaIndexPage({
       </div>
 
       {/* Narrator list */}
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {narrators.map(n => (
           <Link key={n.id} href={`/narrator/${n.id}`}
             className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 hover:shadow-sm hover:border-green-200 transition-all group">

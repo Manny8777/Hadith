@@ -65,7 +65,7 @@ export default async function TopicsStatsPage() {
         </p>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {rows.map(cat => {
           const totalGraded = cat.sahih_count + cat.hasan_count + cat.daif_count
           const widthPct = maxHadiths > 0 ? Math.round((cat.total_hadiths / maxHadiths) * 100) : 0

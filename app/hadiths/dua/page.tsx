@@ -175,7 +175,7 @@ export default async function DuaPage({
           <div className="flex gap-2">
             <input name="q" defaultValue={customQ}
               placeholder="ابحث في نصوص الدعاء..."
-              className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400"
+              className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400"
               dir="rtl" />
             <input type="hidden" name="type" value={type} />
             <button type="submit"

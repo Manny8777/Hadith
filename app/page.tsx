@@ -30,7 +30,7 @@ export default async function Home() {
   } catch {}
 
   return (
-    <div dir="rtl" className="min-h-screen -mx-4 -mt-8 bg-[#F8F1E4] dark:bg-[#101513]">
+    <div dir="rtl" className="min-h-screen -mx-3 sm:-mx-4 -mt-8 bg-[#F8F1E4] dark:bg-[#101513]">
       {/* Hero */}
       <div className="relative overflow-hidden bg-[#0F3D2E] border-b border-[#C9A96B]/40 dark:bg-[#101513]">
         <div className="pointer-events-none absolute inset-0 opacity-[0.045] dark:opacity-[0.07]" style={{ backgroundImage: "url('/assets/hero-atmosphere.png')", backgroundSize: '1440px 420px', backgroundRepeat: 'no-repeat', backgroundPosition: 'center top' }} />

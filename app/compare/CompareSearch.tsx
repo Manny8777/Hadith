@@ -82,7 +82,7 @@ export default function CompareSearch({ initialA, initialB }: { initialA: string
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5">
       <h2 className="text-sm font-bold text-green-900 mb-4">اختر راويين للمقارنة</h2>
-      <div className="grid md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <NarratorSearchBox
           label="الراوي الأول"
           value={initialA}

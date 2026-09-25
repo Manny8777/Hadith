@@ -147,7 +147,7 @@ export default async function PeerNetworkPage({
       </div>
 
       {/* Direct teachers and students */}
-      <div className="grid sm:grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
           <h2 className="text-sm font-bold text-amber-900 mb-3">
             أبرز الشيوخ المباشرين ({teachers.length})

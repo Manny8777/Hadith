@@ -653,7 +653,7 @@ export default async function NarratorPage({
                       {c.entries.map((entry, j) => (
                         <div key={j} className="flex flex-wrap items-start gap-2">
                           {entry.garh_label && (
-                            <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border ${gradingColor(entry.garh_label)}`}>
+                            <span className={`max-w-full text-xs font-semibold px-2 py-0.5 rounded-full border ${gradingColor(entry.garh_label)}`}>
                               {entry.garh_label}
                             </span>
                           )}
@@ -693,7 +693,7 @@ export default async function NarratorPage({
         )}
 
         {/* Teachers & Students */}
-        <div className="grid sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {teachers.length > 0 && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
@@ -756,12 +756,12 @@ export default async function NarratorPage({
             <p className="text-xs text-gray-400 mb-4 mr-3">
               هؤلاء الرواة تلقوا العلم عن بعض شيوخ {narrator.abb_name || narrator.name} أنفسهم — مما يجعلهم زملاء في الحلقات العلمية
             </p>
-            <ul className="grid sm:grid-cols-2 gap-2">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {peerNarrators.map((peer) => (
-                <li key={peer.id} className="flex items-center gap-2 bg-teal-50 rounded-lg px-3 py-2">
+                <li key={peer.id} className="flex items-center gap-2 bg-teal-50 rounded-lg px-3 py-2 min-w-0">
                   <Link
                     href={`/narrator/${peer.id}`}
-                    className="text-sm text-teal-900 hover:text-teal-700 hover:underline flex-1 truncate"
+                    className="text-sm text-teal-900 hover:text-teal-700 hover:underline flex-1 min-w-0 truncate"
                   >
                     {peer.name}
                   </Link>

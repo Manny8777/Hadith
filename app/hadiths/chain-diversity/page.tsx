@@ -99,7 +99,7 @@ export default async function ChainDiversityPage({
         <form method="get" action="/hadiths/chain-diversity" className="flex gap-2">
           <input type="text" name="q" defaultValue={q}
             placeholder="ابحث عن الحديث بكلمة من نصه..."
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400" dir="rtl" />
+            className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400" dir="rtl" />
           <button type="submit" className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800">بحث</button>
           {(q || hadithId) && (
             <a href="/hadiths/chain-diversity" className="text-sm border border-gray-200 px-3 py-2 rounded-lg text-gray-400">✕</a>

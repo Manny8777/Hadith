@@ -161,7 +161,7 @@ export default async function NarratorStatisticsPage({ params }: { params: Promi
         </Link>
       </div>
 
-      <div className="grid gap-5">
+      <div className="grid grid-cols-1 gap-5">
 
         {/* Book Distribution */}
         {books.length > 0 && (

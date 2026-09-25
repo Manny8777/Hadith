@@ -154,7 +154,7 @@ export default async function WeaknessCatalogPage({
       </div>
 
       {/* Type selector grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {WEAKNESS_TYPES.map(t => {
           const stat = stats.find(s => s.type_key === t.key)
           const c = colorScheme(t.color)

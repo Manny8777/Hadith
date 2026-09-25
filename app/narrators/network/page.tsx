@@ -96,7 +96,7 @@ export default async function NetworkPage({
     if (/ثقة|ثبت|حجة|عدل|صحابي/.test(grade)) cls = 'bg-green-100 text-green-700'
     else if (/صدوق|مقبول|لا بأس/.test(grade)) cls = 'bg-amber-100 text-amber-700'
     else if (/ضعيف|منكر|متروك|كذاب/.test(grade)) cls = 'bg-red-100 text-red-600'
-    return <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${cls}`}>{grade}</span>
+    return <span className={`text-xs px-2 py-0.5 rounded-full max-w-full ${cls}`}>{grade}</span>
   }
 
   const buildHref = (overrides: Record<string, string | undefined>) => {
@@ -168,7 +168,7 @@ export default async function NetworkPage({
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="grid md:grid-cols-[1fr_220px] gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-6">
 
           {/* Main: centrality list */}
           <div className="space-y-4">
@@ -222,7 +222,7 @@ export default async function NetworkPage({
                             <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-48">
                               <div className="bg-green-600 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="text-xs text-gray-400 shrink-0">
+                            <span className="text-xs text-gray-400 min-w-0 truncate">
                               {n.tabaqa ? n.tabaqa.replace(/\.$/, '').trim() : ''}
                               {n.death_year_num && n.death_year_num > 0 ? ` · ت.${n.death_year_num}هـ` : ''}
                             </span>

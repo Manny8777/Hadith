@@ -145,7 +145,7 @@ export default async function BookPage({
           {subChapters.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-500 mb-3">الأبواب الفرعية</h3>
-              <div className="grid sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {subChapters.map(ch => (
                   <Link
                     key={ch.main_id}
@@ -398,7 +398,7 @@ export default async function BookPage({
       <main className="max-w-5xl mx-auto px-4 py-6">
 
         {/* Quick search within this book */}
-        <div className="mb-6 flex gap-3">
+        <div className="mb-6 flex flex-wrap gap-3">
           <Link
             href={`/search?book_id=${bookId}`}
             className="text-sm bg-green-50 text-green-800 border border-green-200 rounded-xl px-4 py-2 hover:bg-green-100 transition-colors"
@@ -572,7 +572,7 @@ export default async function BookPage({
               <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
               فهرس الكتاب
             </h2>
-            <div className="grid sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {topChapters.map(ch => (
                 <Link
                   key={ch.main_id}
@@ -639,7 +639,7 @@ export default async function BookPage({
                   <span className="w-1 h-5 bg-green-500 rounded-full inline-block" />
                   توزيع المحتوى
                 </h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {serviceContentData.typeBreakdown.map(t => (
                     <div key={t.type_id ?? 'null'} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center justify-between">
                       <span className="text-sm text-green-900 font-medium">

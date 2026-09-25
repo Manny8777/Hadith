@@ -327,7 +327,7 @@ export default async function TopicItemPage({
 
       {/* Sub-items (non-leaf node) */}
       {hasChildren && view === 'children' && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {children.map(child => {
             const hadithCount = parseInt(child.hadith_count)
             return (
@@ -431,7 +431,7 @@ export default async function TopicItemPage({
               {grade ? 'لا توجد أحاديث بهذه الدرجة في هذا الموضوع' : 'لا توجد أحاديث مرتبطة بهذا الموضوع'}
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {hadiths.map(h => (
                 <Link
                   key={h.main_id}

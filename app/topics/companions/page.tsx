@@ -206,7 +206,7 @@ export default async function TopicsCompanionsPage({
         </table>
       </div>
 
-      <div className="mt-6 grid sm:grid-cols-2 gap-4">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Legend */}
         <div className="bg-white rounded-xl border border-gray-100 p-4">
           <h3 className="text-sm font-semibold text-green-900 mb-3">دليل الألوان</h3>

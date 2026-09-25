@@ -180,7 +180,7 @@ export default async function SingleCompanionPage({
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="sm:col-span-1">
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden sticky top-20">
             <div className="bg-amber-50 px-3 py-2 border-b border-amber-100 text-xs text-amber-800 font-medium">

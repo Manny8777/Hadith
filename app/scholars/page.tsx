@@ -78,7 +78,7 @@ function ScholarsList() {
           {loading ? (
             <div className="text-center text-gray-400 py-8">تحميل...</div>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {filtered.map(s => {
                 const j = s.total_judgments
                 const sahihPct = j > 0 ? (s.sahih_count / j) * 100 : 0

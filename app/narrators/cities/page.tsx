@@ -117,7 +117,7 @@ export default async function NarratorCitiesPage({
                   رواة {selectedCity}
                 </h2>
                 <p className="text-xs text-gray-400 mb-4">{totalCount.toLocaleString('ar-EG')} راوٍ</p>
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {narrators.map(n => (
                     <Link
                       key={n.id}

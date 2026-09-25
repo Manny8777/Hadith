@@ -205,7 +205,7 @@ export default async function TarfStatsPage() {
                     {(i + 1).toLocaleString('ar-EG')}
                   </span>
                   {/* book name */}
-                  <span className="text-sm text-green-800 min-w-0 shrink-0 w-52 truncate" title={b.title}>
+                  <span className="text-sm text-green-800 min-w-0 shrink-0 w-32 sm:w-52 truncate" title={b.title}>
                     {b.title}
                   </span>
                   {/* bar */}

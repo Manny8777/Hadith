@@ -159,7 +159,7 @@ export default async function BookAnalysisPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Companion sources */}
         {companions.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -231,7 +231,7 @@ export default async function BookAnalysisPage({ params }: { params: Promise<{ i
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
           <h2 className="font-bold text-green-900 mb-1 text-base">أكثر الرواة حضوراً في أسانيد الكتاب</h2>
           <p className="text-xs text-gray-400 mb-4">الرواة غير الصحابة المذكورون في أسانيد الكتاب (باستثناء أصحاب المرتبة الأولى)</p>
-          <div className="grid sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {narrators.map((n, i) => {
               const pct = maxNarCount > 0 ? Math.round((n.appearances / maxNarCount) * 100) : 0
               return (

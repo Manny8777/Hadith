@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import NavigateSelect from '@/app/components/NavigateSelect'
 
 export const dynamic = 'force-dynamic'
 
@@ -133,22 +134,23 @@ export default async function DivergentJudgmentsPage({
           </a>
         ))}
         <span className="text-gray-200 mx-1">|</span>
-        <select
+        <NavigateSelect
+          href={`/hadiths/divergent-judgments?minScholar=${minScholar}`}
+          param="book"
           defaultValue={bookFilter}
-          onChange={() => {}}
           className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white">
           <option value="">كل الكتب</option>
           {books.map(bk => (
             <option key={bk.name} value={bk.name}>{bk.name}</option>
           ))}
-        </select>
+        </NavigateSelect>
         {bookFilter && (
           <a href={`/hadiths/divergent-judgments?minScholar=${minScholar}`}
             className="text-xs text-red-500 hover:underline">× إزالة الفلتر</a>
         )}
       </div>
 
-      <div className="grid sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
         <div className="sm:col-span-3 space-y-2">
           {hadiths.map(h => (
             <a key={h.hadith_id}

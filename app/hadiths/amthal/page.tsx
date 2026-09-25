@@ -53,7 +53,7 @@ export default async function AmthalPage() {
         </div>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {rows.map((row, idx) => (
           <div
             key={row.id}

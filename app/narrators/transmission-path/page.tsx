@@ -120,7 +120,7 @@ export default async function TransmissionPathPage({
       {/* Search form */}
       <form action="/narrators/transmission-path" method="get"
         className="bg-white rounded-xl border border-gray-100 p-4 mb-5">
-        <div className="grid sm:grid-cols-2 gap-4 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
           <div>
             <label className="text-xs text-gray-500 mb-1 block">الراوي الأول (المُعطي — الأعلى في السند)</label>
             {narratorA ? (

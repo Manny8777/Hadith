@@ -141,7 +141,7 @@ export default async function ProlificStudentsPage({
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
         <div className="sm:col-span-3">
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
             <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-xs text-blue-800 font-medium">

@@ -133,7 +133,7 @@ export default function ParallelTexts({ hadithId }: Props) {
               من حديث: {companion}
               <span className="text-amber-500 font-normal">({items.length})</span>
             </div>
-            <div className="grid gap-3 mr-4">
+            <div className="grid grid-cols-1 gap-3 mr-4">
               {items.map(p => {
                 const isExpanded = expanded.has(p.main_id)
                 const text = isExpanded

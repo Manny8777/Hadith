@@ -224,7 +224,7 @@ export default async function TopicAnalysisPage({
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Grade distribution */}
         {gradeRows.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -284,7 +284,7 @@ export default async function TopicAnalysisPage({
         )}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Top companion sources */}
         {companions.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -363,7 +363,7 @@ export default async function TopicAnalysisPage({
       {subjectItems.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm mb-6">
           <h2 className="text-sm font-bold text-green-900 mb-4">أكثر الموضوعات الفرعية أحاديثاً</h2>
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {subjectItems.slice(0, 12).map(si => (
               <div key={si.id} className="flex items-center gap-3">
                 <div className="flex-1">
