@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 export const metadata = {
@@ -309,9 +310,9 @@ export default async function HadithSciencesPage() {
                 const rank = idx + 1
                 let rankBadge = ''
                 let rankColor = 'text-gray-400'
-                if (rank === 1) { rankBadge = '🥇'; rankColor = 'text-yellow-600' }
-                else if (rank === 2) { rankBadge = '🥈'; rankColor = 'text-gray-500' }
-                else if (rank === 3) { rankBadge = '🥉'; rankColor = 'text-amber-700' }
+                if (rank === 1) { rankBadge = 'المركز الأول'; rankColor = 'text-amber-700' }
+                else if (rank === 2) { rankBadge = 'المركز الثاني'; rankColor = 'text-gray-500' }
+                else if (rank === 3) { rankBadge = 'المركز الثالث'; rankColor = 'text-amber-700' }
 
                 return (
                   <div

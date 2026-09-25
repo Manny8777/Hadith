@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import UiIcon from './UiIcon'
 
 const NOTES_KEY = 'hadith_notes'
 
@@ -66,7 +67,8 @@ export default function HadithNote({ hadithId }: Props) {
             : 'bg-white text-gray-500 border-gray-200 hover:border-blue-200 hover:text-blue-600'
         }`}
       >
-        {hasNote ? `📝 ملاحظة (${note.trim().slice(0, 20)}...)` : '📝 إضافة ملاحظة بحثية'}
+        <UiIcon name="pen" size={14} className="inline-block align-[-3px] ml-1" />
+        {hasNote ? `ملاحظة (${note.trim().slice(0, 20)}...)` : 'إضافة ملاحظة بحثية'}
       </button>
 
       {open && (

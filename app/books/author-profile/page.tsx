@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -179,7 +180,7 @@ export default async function AuthorProfilePage({
             </>
           ) : (
             <div className="bg-gray-50 rounded-xl border border-gray-100 p-12 text-center">
-              <div className="text-4xl mb-3">📊</div>
+              <UiIcon name="chart" size={40} className="text-[#b28a43] mb-3" />
               <div className="font-semibold text-gray-700 text-sm mb-2">تحليل الكتاب الإحصائي</div>
               <p className="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
                 اختر أي كتاب من القائمة لعرض ملفه الإحصائي الشامل: أحاديثه وأسانيده وصحابته ونسب درجاته وبصمته المنهجية

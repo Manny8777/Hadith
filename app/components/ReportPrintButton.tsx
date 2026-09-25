@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import UiIcon from './UiIcon'
 
 export interface PrintableReport {
   title: string
@@ -137,6 +138,7 @@ export default function ReportPrintButton({
         aria-label={activeReport ? `${label}: ${activeReport.title}` : label}
         className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 font-sans text-xs text-blue-800 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
+        <UiIcon name="print" size={15} className="ml-1.5" />
         {printing ? 'جاري تجهيز الطباعة...' : label}
       </button>
       {reportNode}

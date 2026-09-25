@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import TopicSearch from './TopicSearch'
+import UiIcon, { type IconName } from '@/app/components/UiIcon'
 
 interface Category {
   id: number
@@ -15,10 +16,10 @@ interface Category {
   hadith_count: string
 }
 
-// Fixed icon set — enough to cover all 13+ top-level categories without repeating
-const ICONS = [
-  '📖', '🕌', '🌙', '🤲', '📜', '⚖️', '🌿', '📿',
-  '🌟', '🏛️', '🌐', '💎', '🔬', '🕋',
+// Fixed icon set — enough to cover all top-level categories without repeating.
+const ICONS: IconName[] = [
+  'lexicon', 'landmark', 'moon', 'handshake', 'scroll', 'scale', 'herb', 'prayer',
+  'spark', 'map', 'globe', 'diamond', 'science', 'kaaba',
 ]
 
 export default async function TopicsPage() {
@@ -92,14 +93,14 @@ export default async function TopicsPage() {
               <Link
                 key={cat.id}
                 href={`/topics/${cat.id}`}
-                className="group block bg-white rounded-xl border border-gray-100 p-6 hover:shadow-md hover:border-green-200 transition-all"
+                className="group block rounded-2xl border border-[#ded8c7] bg-white p-5 shadow-[0_1px_0_rgba(18,59,50,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#b28a43] hover:shadow-[0_10px_30px_rgba(18,59,50,0.08)] dark:border-[#2A313A] dark:bg-[#151A21]"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl mt-0.5 shrink-0" aria-hidden="true">
-                    {ICONS[idx % ICONS.length]}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#b28a43]/30 bg-[#f6f1e4] text-[#123b32] dark:bg-[#1d4a3c] dark:text-[#f3e8c9]">
+                    <UiIcon name={ICONS[idx % ICONS.length]} size={22} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-lg font-bold text-green-900 group-hover:text-green-700 leading-snug">
+                    <h2 className="text-lg font-bold text-[#123b32] group-hover:text-[#8a6726] leading-snug dark:text-[#ECE6DA] dark:group-hover:text-[#E6C77A]">
                       {cat.title}
                     </h2>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
@@ -111,9 +112,7 @@ export default async function TopicsPage() {
                       )}
                     </div>
                   </div>
-                  <span className="text-gray-300 group-hover:text-green-400 text-lg transition-colors shrink-0">
-                    ←
-                  </span>
+                  <UiIcon name="arrow" size={18} className="shrink-0 text-[#b6aa92] transition-colors group-hover:text-[#8a6726] dark:text-[#6d746e] dark:group-hover:text-[#e6c77a]" />
                 </div>
               </Link>
             )

@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import HadithNumber from '@/app/components/HadithNumber'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الأحاديث الفردة — جامع خادم الحرمين' }
@@ -238,7 +239,7 @@ export default async function UniqueHadithsPage({
             </div>
           ) : (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-4">📜</div>
+              <UiIcon name="scroll" size={40} className="text-[#b28a43] mb-4" />
               <h2 className="font-bold text-amber-900 mb-2">اختر كتاباً</h2>
               <p className="text-sm text-amber-700">
                 اختر كتاباً من القائمة لعرض أحاديثه التي لا توجد لها نظائر في سائر المصادر

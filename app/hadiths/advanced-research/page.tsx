@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
+import UiIcon from '@/app/components/UiIcon'
 import { attachMatnSnippets, snipColumns, type SnipPart } from '@/lib/matnSnippet'
 
 export const dynamic = 'force-dynamic'
@@ -294,7 +295,7 @@ export default async function AdvancedResearchPage({
         </div>
       ) : (
         <div className="bg-green-50 border border-green-100 rounded-xl p-10 text-center">
-          <div className="text-4xl mb-3 opacity-60">🔬</div>
+          <UiIcon name="science" size={40} className="text-[#b28a43] mb-3 opacity-75" />
           <p className="text-sm text-green-800 font-medium mb-2">البحث البحثي المتقدم</p>
           <p className="text-xs text-green-600 max-w-sm mx-auto leading-relaxed">
             استخدم أي تركيبة من المعايير أعلاه — يمكنك البحث بالنص فقط، أو بالراوي فقط، أو بأي مجموعة منها

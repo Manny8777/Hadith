@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -236,7 +237,7 @@ export default async function UniqueToBookPage({
             </>
           ) : (
             <div className="bg-gray-50 rounded-xl p-8 text-center">
-              <div className="text-3xl mb-3">📖</div>
+              <UiIcon name="lexicon" size={32} className="text-[#b28a43] mb-3" />
               <div className="font-semibold text-gray-700 text-sm mb-2">انفرادات كل كتاب</div>
               <p className="text-xs text-gray-500 leading-relaxed">
                 اختر كتاباً لاستعراض الأحاديث التي انفرد بروايتها دون غيره من الكتب — مما يُعرِّف الباحث بمنهج الكتاب وما اختصَّ بجمعه

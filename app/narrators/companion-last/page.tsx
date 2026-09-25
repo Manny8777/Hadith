@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -202,7 +203,7 @@ export default async function CompanionLastPage({
             </div>
           ) : (
             <div className="bg-amber-50 rounded-xl border border-amber-100 p-6 text-center">
-              <div className="text-2xl mb-2">🌙</div>
+              <UiIcon name="moon" size={30} className="text-[#b28a43] mb-2" />
               <div className="font-semibold text-amber-900 text-sm mb-2">آخر الصحابة وفاةً</div>
               <p className="text-xs text-amber-700 leading-relaxed">
                 اختر صحابياً لعرض أحاديثه — هؤلاء كانت بقاؤهم نعمةً كبرى إذ أدركهم التابعون في مناطق شتى ونقلوا عنهم مباشرةً

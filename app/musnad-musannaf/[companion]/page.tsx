@@ -4,6 +4,7 @@ import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import IsnadTree from '@/app/components/IsnadTree'
+import UiIcon from '@/app/components/UiIcon'
 import { getChainsForHadith } from '@/lib/isnadChains'
 
 interface Companion { id: number; seq: number; name: string; slug: string; tarjama: string | null; narrator_id: number | null }
@@ -126,7 +127,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>{companion.name} ﵁</h1>
           <div className="flex gap-3 text-xs text-gray-500 mt-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-600 inline-block" />صحابي</span>
-            <span>📚 {totalEntries} أحاديث مسندة</span>
+            <span className="inline-flex items-center gap-1.5"><UiIcon name="books" size={16} /> {totalEntries} أحاديث مسندة</span>
             {totalPages > 1 && <span>صفحة {page} من {totalPages}</span>}
             {companion.narrator_id && <Link href={`/narrator/${companion.narrator_id}`} className="ui-link">ترجمة الراوي ↗</Link>}
           </div>
@@ -210,7 +211,9 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                                 ? <Link href={`/hadith/${t.matched_main_id}`} target="_blank" rel="noopener noreferrer" className="font-bold text-green-800 hover:underline">{t.source_book} ↗</Link>
                                 : <span className="font-bold text-gray-700">{t.source_book}</span>}
                               {edition && (
-                                <span className="inline-block text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded" title={`الرابط يفتح نسخة: ${edition}`}>📖 {edition}</span>
+                                <span className="inline-flex items-center gap-1 text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded" title={`الرابط يفتح نسخة: ${edition}`}>
+                                  <UiIcon name="book-open" size={12} /> {edition}
+                                </span>
                               )}
                               {numDiffers && (
                                 <span className="inline-block text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded" title="ترقيم نسخة الموقع يختلف عن ترقيم المسند المصنف">↩ رقمه في النسخة: {toArabicDigits(rNo)}</span>

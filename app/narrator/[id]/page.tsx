@@ -5,6 +5,8 @@ import NarratorHadiths from '@/app/components/NarratorHadiths'
 import NarratorExport from '@/app/components/NarratorExport'
 import CompareNarratorPicker from '@/app/components/CompareNarratorPicker'
 import NarratorTopics from '@/app/components/NarratorTopics'
+import BrandMark from '@/app/components/BrandMark'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -262,13 +264,16 @@ export default async function NarratorPage({
   const biographies: Biography[] = Object.values(bioMap).filter(b => b.entries.length > 0)
 
   return (
-    <div dir="rtl" className="min-h-screen bg-amber-50">
-      <header className="bg-green-900 text-white shadow-lg">
+    <div dir="rtl" className="min-h-screen bg-[#fbfaf6] dark:bg-[#050607]">
+      <header className="bg-[#123b32] text-white shadow-[0_10px_30px_rgba(18,59,50,0.12)] border-b border-[#b28a43]/40">
         <div className="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-          <Link href="/narrators" className="text-amber-200 hover:text-white text-sm transition-colors">
-            ← قائمة الرواة
+          <Link href="/narrators" className="inline-flex items-center gap-1.5 text-[#f3e8c9] hover:text-white text-sm transition-colors">
+            <UiIcon name="arrow" size={15} /> قائمة الرواة
           </Link>
-          <h1 className="text-lg font-bold text-amber-100">موسوعة الحديث الشريف</h1>
+          <div className="flex items-center gap-2">
+            <BrandMark size={28} />
+            <h1 className="text-lg font-bold text-[#f3e8c9]">موسوعة الحديث الشريف</h1>
+          </div>
           <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 sm:w-auto sm:flex-none">
             <Link href={`/narrators/chain-filter?seed=${narratorId}`} className="text-amber-300 hover:text-white text-xs transition-colors border border-amber-400/40 px-2 py-1 rounded">
               تتبع الإسناد

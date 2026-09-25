@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import HadithNumber from '@/app/components/HadithNumber'
+import UiIcon from '@/app/components/UiIcon'
 
 type NarratorLike = { id: number; name: string; abb_name: string; is_companion?: boolean; death_year_num?: number | null }
 type Narrator = NarratorLike & { hadiths_count?: number }
@@ -277,7 +278,8 @@ export default function SanadBuilderPage() {
                 className="bg-green-700 hover:bg-green-800 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-colors"
                 disabled={resultsLoading}
               >
-                🔎 بحث الأحاديث ({selected.length >= 2 ? 'سند مركّب' : 'راوٍ واحد'})
+                <UiIcon name="search" size={16} className="inline-block align-[-3px] ml-1" />
+                بحث الأحاديث ({selected.length >= 2 ? 'سند مركّب' : 'راوٍ واحد'})
               </button>
               {chainLink && (
                 <button
@@ -288,7 +290,8 @@ export default function SanadBuilderPage() {
                     copied ? 'bg-green-700 text-white border-green-700' : 'bg-white text-green-800 border-green-300 hover:bg-green-50'
                   }`}
                 >
-                  {copied ? '✓ نُسخ' : '📎 نسخ رابط السند'}
+                  <UiIcon name={copied ? 'check' : 'link'} size={15} className="inline-block align-[-3px] ml-1" />
+                  {copied ? 'نُسخ' : 'نسخ رابط السند'}
                 </button>
               )}
               <button type="button" onClick={() => removeAt(selected.length - 1)} className="text-sm text-gray-500 hover:text-green-700 hover:underline">

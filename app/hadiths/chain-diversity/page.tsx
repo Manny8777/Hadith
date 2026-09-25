@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -203,7 +204,7 @@ export default async function ChainDiversityPage({
         </div>
       ) : (
         <div className="bg-blue-50 rounded-xl border border-blue-100 p-8 text-center">
-          <div className="text-3xl mb-3">🌳</div>
+          <UiIcon name="tree" size={34} className="text-[#b28a43] mb-3" />
           <div className="font-semibold text-blue-900 text-sm mb-2">تحليل شجرة الإسناد</div>
           <p className="text-xs text-blue-700 leading-relaxed max-w-sm mx-auto">
             ابحث عن أي حديث واستعرض توزيع رواته في كل موضع من مواضع السند — من الصحابي إلى المصنِّف — لتحديد نقاط القوة والضعف الهيكلي في إسناده

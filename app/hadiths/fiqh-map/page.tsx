@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon, { type IconName } from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'خريطة الفقه — جامع خادم الحرمين' }
@@ -22,84 +23,84 @@ const FIQH_CATEGORIES = [
   {
     key: 'tahara',
     name: 'الطهارة',
-    icon: '💧',
+    icon: 'droplet' as IconName,
     color: 'bg-cyan-50 border-cyan-200 text-cyan-900',
     pattern: 'طهار|وضوء|غسل|تيمم|نجاس|حيض|نفاس|استنج',
   },
   {
     key: 'salah',
     name: 'الصلاة',
-    icon: '🕌',
+    icon: 'landmark' as IconName,
     color: 'bg-green-50 border-green-200 text-green-900',
     pattern: 'صلا|أذان|إقام|قبلة|إمام|جماعة|جمعة|عيد|تسبيح|سجد|ركع|قنوت',
   },
   {
     key: 'zakah',
     name: 'الزكاة',
-    icon: '🌾',
+    icon: 'herb' as IconName,
     color: 'bg-yellow-50 border-yellow-200 text-yellow-900',
     pattern: 'زكا|صدق|فطر|عشر|نصاب',
   },
   {
     key: 'sawm',
     name: 'الصوم',
-    icon: '🌙',
+    icon: 'moon' as IconName,
     color: 'bg-indigo-50 border-indigo-200 text-indigo-900',
     pattern: 'صوم|صيام|رمضان|إفطار|سحور|اعتكاف',
   },
   {
     key: 'hajj',
     name: 'الحج والعمرة',
-    icon: '🕋',
+    icon: 'kaaba' as IconName,
     color: 'bg-amber-50 border-amber-200 text-amber-900',
     pattern: 'حج|عمرة|طواف|سعي|إحرام|مكة|منى|عرفات|مزدلفة',
   },
   {
     key: 'janazah',
     name: 'الجنائز',
-    icon: '🪦',
+    icon: 'grave' as IconName,
     color: 'bg-gray-50 border-gray-300 text-gray-800',
     pattern: 'جناز|ميت|قبر|موت|دفن|كفن|وصي',
   },
   {
     key: 'nikah',
     name: 'النكاح والطلاق',
-    icon: '👫',
+    icon: 'people' as IconName,
     color: 'bg-pink-50 border-pink-200 text-pink-900',
     pattern: 'نكاح|زواج|طلاق|خلع|رضاع|صداق|مهر|نفقة|عدة',
   },
   {
     key: 'buyuu',
     name: 'البيوع والمعاملات',
-    icon: '🤝',
+    icon: 'handshake' as IconName,
     color: 'bg-orange-50 border-orange-200 text-orange-900',
     pattern: 'بيع|شراء|ربا|قرض|إجار|رهن|وكال|شرك|مضارب|وقف|هب',
   },
   {
     key: 'hudud',
     name: 'الحدود والجنايات',
-    icon: '⚖️',
+    icon: 'scale' as IconName,
     color: 'bg-red-50 border-red-200 text-red-900',
     pattern: 'حد|قصاص|دية|سرق|زنا|قتل|جلد|قطع',
   },
   {
     key: 'jihad',
     name: 'الجهاد والسير',
-    icon: '🏹',
+    icon: 'archery' as IconName,
     color: 'bg-red-50 border-red-200 text-red-900',
     pattern: 'جهاد|غزو|سير|خيل|غنيم|فيء|جزية|أسر|معرك',
   },
   {
     key: 'qada',
     name: 'القضاء والشهادات',
-    icon: '🏛️',
+    icon: 'landmark' as IconName,
     color: 'bg-purple-50 border-purple-200 text-purple-900',
     pattern: 'قضاء|شهاد|حكم|قاض|بين|يمين|دعو',
   },
   {
     key: 'adab',
     name: 'الأخلاق والآداب',
-    icon: '🌸',
+    icon: 'flower' as IconName,
     color: 'bg-rose-50 border-rose-200 text-rose-900',
     pattern: 'أدب|أخلاق|حسن|صبر|شكر|توكل|ورع|زهد',
   },
@@ -193,7 +194,9 @@ export default async function FiqhMapPage({
               ${activeCat === cat.key
                 ? `${cat.color} shadow-md ring-2 ring-offset-1 ring-current`
                 : 'bg-white border-gray-100 hover:border-gray-200'}`}>
-            <div className="text-xl mb-1">{cat.icon}</div>
+            <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg border border-current/15 bg-white/45">
+              <UiIcon name={cat.icon} size={20} />
+            </div>
             <div className={`font-bold text-sm mb-1 ${activeCat === cat.key ? '' : 'text-green-900'}`}>
               {cat.name}
             </div>
@@ -212,7 +215,7 @@ export default async function FiqhMapPage({
         <div>
           <div className={`rounded-xl border px-4 py-3 mb-4 ${activeCategory.color}`}>
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{activeCategory.icon}</span>
+              <UiIcon name={activeCategory.icon} size={26} />
               <div>
                 <h2 className="font-bold text-base">{activeCategory.name}</h2>
                 <p className="text-xs opacity-70">

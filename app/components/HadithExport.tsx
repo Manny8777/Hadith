@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import UiIcon from './UiIcon'
 
 interface NarratorInChain {
   id: number
@@ -277,27 +278,27 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
         className="text-xs text-blue-700 hover:text-blue-900 border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded-lg transition-colors bg-blue-50 hover:bg-blue-100"
         title="نسخ توثيق الهامش — الصيغة المختصرة للأطروحات"
       >
-        {copiedFn ? '✓ تم' : 'نسخ الهامش'}
+        <UiIcon name="quote" size={14} className="inline-block align-[-3px] ml-1" />{copiedFn ? 'تم النسخ' : 'نسخ الهامش'}
       </button>
       <button
         onClick={handleCopyArabic}
         className="text-xs text-green-700 hover:text-green-900 border border-green-200 hover:border-green-400 px-3 py-1.5 rounded-lg transition-colors bg-green-50 hover:bg-green-100"
       >
-        {copiedAr ? '✓ تم النسخ' : 'نسخ التوثيق الأكاديمي'}
+        <UiIcon name="document" size={14} className="inline-block align-[-3px] ml-1" />{copiedAr ? 'تم النسخ' : 'نسخ التوثيق الأكاديمي'}
       </button>
       <button
         onClick={handleCopyBibTeX}
         className="text-xs text-purple-700 hover:text-purple-900 border border-purple-200 hover:border-purple-400 px-3 py-1.5 rounded-lg transition-colors bg-purple-50 hover:bg-purple-100 font-mono"
         title="نسخ مرجع BibTeX للاستخدام في LaTeX"
       >
-        {copiedBib ? '✓ Copied' : 'BibTeX'}
+        <UiIcon name="clipboard" size={14} className="inline-block align-[-3px] ml-1" />{copiedBib ? 'Copied' : 'BibTeX'}
       </button>
       <button
         onClick={handleCopyLink}
         className="text-xs text-gray-700 hover:text-green-800 border border-gray-200 hover:border-green-300 px-3 py-1.5 rounded-lg transition-colors bg-gray-50 hover:bg-green-50"
         title="نسخ رابط هذا الحديث"
       >
-        {copiedLink ? '✓ تم نسخ الرابط' : 'نسخ رابط الحديث'}
+        <UiIcon name="link" size={14} className="inline-block align-[-3px] ml-1" />{copiedLink ? 'تم نسخ الرابط' : 'نسخ رابط الحديث'}
       </button>
     </div>
   )

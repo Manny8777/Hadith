@@ -3,6 +3,11 @@
 /* Use a .dark class (toggle-driven) for the dark variant instead of prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-accent-gold);
+  outline-offset: 2px;
+}
+
 /* ── Thmanyah Sans (UI / labels / navigation) ── */
 @font-face {
   font-family: 'ThmanyahSans';
@@ -193,6 +198,24 @@ body {
 @layer components {
   .ui-card {
     @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .ui-card:hover {
+    border-color: var(--color-accent-gold);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .ui-icon-tile {
+    @apply inline-flex items-center justify-center rounded-xl border;
+    background: color-mix(in srgb, var(--color-accent-gold) 10%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--color-accent-gold) 34%, var(--color-border));
+    color: var(--color-primary);
+  }
+
+  .ui-ornament-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent-gold) 52%, transparent), transparent);
   }
 
   .ui-section-head {

@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useNumbering } from '@/lib/numberingContext'
 import { useNumeral } from '@/lib/numeralContext'
 import { useTheme } from '@/lib/themeContext'
+import UiIcon from './UiIcon'
+import BrandMark from './BrandMark'
 
 type NavLink = { href: string; label: string; isNew?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
@@ -208,7 +210,7 @@ function NumberingToggle() {
       className="flex items-center gap-1 text-[11px] text-muted hover:text-ink border border-border hover:border-green-300 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
     >
       <span className={pref === 'harf' ? 'text-green-700 font-bold' : 'text-gray-400'}>حرف</span>
-      <span className="text-gray-300">&#x21C4;</span>
+      <UiIcon name="arrow" size={14} className="text-gray-400" />
       <span className={pref === 'matboa' ? 'text-green-700 font-bold' : 'text-gray-400'}>مطبوع</span>
     </button>
   )
@@ -225,18 +227,7 @@ function ThemeToggle() {
       aria-label="تبديل المظهر"
       className="flex items-center justify-center w-8 h-8 rounded-md text-muted hover:text-ink border border-border hover:border-green-300 transition-colors shrink-0"
     >
-      {dark ? (
-        // sun
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-        </svg>
-      ) : (
-        // moon
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      )}
+      <UiIcon name={dark ? 'sun' : 'moon'} size={16} />
     </button>
   )
 }
@@ -251,7 +242,7 @@ function NumeralToggle() {
       className="flex items-center justify-center gap-1 text-[11px] text-muted hover:text-ink border border-border hover:border-green-300 px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
     >
       <span className={pref === 'western' ? 'text-green-700 font-bold' : 'text-gray-400'}>123</span>
-      <span className="text-gray-300">&#x21C4;</span>
+      <UiIcon name="arrow" size={14} className="text-gray-400" />
       <span className={pref === 'arabic' ? 'text-green-700 font-bold' : 'text-gray-400'}>١٢٣</span>
     </button>
   )
@@ -280,10 +271,8 @@ export default function NavHeader() {
   return (
     <nav ref={navRef} className="relative z-30 bg-surface-sunken/95 backdrop-blur-sm text-ink font-sans border-b border-border" dir="rtl">
       <div className="max-w-7xl mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
-        <a
-          href="/"
-          className="text-sm sm:text-base font-bold text-green-800 hover:text-green-600 transition-colors ml-1 sm:ml-3 shrink-0 whitespace-nowrap font-display"
-        >
+        <a href="/" className="flex items-center gap-2 text-sm sm:text-base font-bold text-[#123b32] hover:text-[#8a6726] transition-colors ml-1 sm:ml-3 shrink-0 whitespace-nowrap font-display dark:text-[#ECE6DA]">
+          <BrandMark size={30} />
           <span className="sm:hidden">الجامع</span>
           <span className="hidden sm:inline">جامع خادم الحرمين</span>
         </a>
@@ -304,7 +293,7 @@ export default function NavHeader() {
                 }`}
               >
                 {cat.label}
-                <span className="text-[10px] opacity-60">{open === cat.id ? '▲' : '▼'}</span>
+                <UiIcon name="chevron" size={13} className={`text-[10px] opacity-60 ${open === cat.id ? 'rotate-90' : '-rotate-90'}`} />
               </button>
 
               {open === cat.id && (
@@ -353,9 +342,7 @@ export default function NavHeader() {
           aria-expanded={mobileOpen}
           className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md text-ink border border-border hover:border-green-300 hover:bg-green-50 transition-colors shrink-0"
         >
-          {mobileOpen
-            ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>}
+          <UiIcon name={mobileOpen ? 'close' : 'menu'} size={18} />
         </button>
       </div>
 
@@ -372,7 +359,7 @@ export default function NavHeader() {
                 }`}
               >
                 {cat.label}
-                <span className="text-[10px] opacity-60">{open === cat.id ? '▲' : '▼'}</span>
+                <UiIcon name="chevron" size={13} className={`text-[10px] opacity-60 ${open === cat.id ? 'rotate-90' : '-rotate-90'}`} />
               </button>
               {open === cat.id && (
                 <div className="px-3 pb-2.5 grid grid-cols-2 gap-x-2 gap-y-0.5">

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -307,7 +308,7 @@ export default async function TakhrijSpreadPage({
             </div>
           ) : (
             <div className="bg-gray-50 rounded-xl p-8 text-center">
-              <div className="text-2xl mb-2">📚</div>
+              <UiIcon name="books" size={30} className="text-[#b28a43] mb-2" />
               <div className="text-sm text-gray-500 font-medium mb-2">مقارنة التخريج بين الكتب</div>
               <p className="text-xs text-gray-400 leading-relaxed">
                 اختر حديثاً لمشاهدة جميع الكتب التي أخرجته — مع حكم كل كتاب وعدد أسانيده

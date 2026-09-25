@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -235,7 +236,7 @@ export default async function TabiinRankingPage({
             </div>
           ) : (
             <div className="bg-teal-50 rounded-xl border border-teal-100 p-6 text-center">
-              <div className="text-2xl mb-2">🕌</div>
+              <UiIcon name="landmark" size={30} className="text-[#b28a43] mb-2" />
               <div className="font-semibold text-teal-900 text-sm mb-2">جيل التابعين</div>
               <p className="text-xs text-teal-700 leading-relaxed">
                 اختر تابعياً لمشاهدة قائمة الصحابة الذين سمع منهم مباشرةً — تُعرِّف الباحث بامتداد روايته وعمق صلته بالجيل الأول

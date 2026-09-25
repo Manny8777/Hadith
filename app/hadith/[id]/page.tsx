@@ -6,6 +6,7 @@ import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain, CriticismGroup } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
+import UiIcon from '@/app/components/UiIcon'
 import {
   parseSanadNarratorSegments,
   sanadSegmentsHaveNarrators,
@@ -350,7 +351,9 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     <>
       {musakaratNodes.length > 0 && (
         <div className="mb-4 flex items-center gap-2 flex-wrap bg-amber-50 border border-amber-200 rounded-xl p-3">
-          <span className="text-sm font-semibold text-amber-800">🔗 يُسار إلى شجرة مختلف الحديث</span>
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+            <UiIcon name="link" size={15} /> يُسار إلى شجرة مختلف الحديث
+          </span>
           {musakaratNodes.map(n => (
             <Link
               key={n.node_id}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="180" viewBox="0 0 720 180" fill="none">
+  <defs>
+    <pattern id="g" width="72" height="72" patternUnits="userSpaceOnUse">
+      <path d="M36 5 44 19 60 16 57 32 68 40 57 48 60 64 44 61 36 75 28 61 12 64 15 48 4 40l11-8-3-16 16 3z" stroke="#B28A43" stroke-opacity=".16" stroke-width="1.2"/>
+      <circle cx="36" cy="40" r="7" stroke="#B28A43" stroke-opacity=".12"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" x2="1"><stop stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="m"><rect width="720" height="180" fill="url(#fade)"/></mask>
+  </defs>
+  <rect width="720" height="180" fill="url(#g)" mask="url(#m)"/>
+</svg>

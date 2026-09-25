@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import pool from '@/lib/db'
 import HomeSearch from '@/app/components/HomeSearch'
+import BrandMark from '@/app/components/BrandMark'
+import UiIcon, { type IconName } from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,19 +30,24 @@ export default async function Home() {
   } catch {}
 
   return (
-    <div dir="rtl" className="min-h-screen -mx-4 -mt-8">
+    <div dir="rtl" className="min-h-screen -mx-4 -mt-8 bg-[#fbfaf6] dark:bg-[#050607]">
       {/* Hero */}
-      <div className="border-b border-gray-100">
-      <div className="max-w-4xl mx-auto px-4 pt-14 pb-10 text-center">
-        <div className="inline-block bg-green-800 text-amber-100 dark:bg-green-100 dark:text-amber-700 text-xs font-sans font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide">
-          برنامج خادم الحرمين الشريفين
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight font-display">
-          موسوعة الحديث النبوي الشريف
-        </h1>
-        <p className="text-gray-700 text-lg mb-10 max-w-xl mx-auto font-sans">
+      <div className="relative overflow-hidden border-b border-[#ded8c7] dark:border-[#2A313A]">
+        <div className="pointer-events-none absolute inset-0 opacity-90 dark:opacity-40" style={{ backgroundImage: "url('/assets/hadith-pattern.svg')", backgroundSize: '720px 180px', backgroundRepeat: 'repeat-x', backgroundPosition: 'center top' }} />
+        <div className="relative max-w-4xl mx-auto px-4 pt-16 pb-12 text-center">
+          <div className="flex justify-center mb-5">
+            <BrandMark size={64} className="drop-shadow-sm" />
+          </div>
+          <div className="inline-flex items-center gap-2 bg-[#123b32] text-[#f2dfad] dark:bg-[#1d4a3c] dark:text-[#f3e8c9] text-[11px] font-sans font-semibold px-3.5 py-1.5 rounded-sm tracking-wide border border-[#b28a43]/50">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#d8b66a]" />
+            برنامج خادم الحرمين الشريفين
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-[#172d27] mb-4 leading-tight font-display dark:text-[#ECE6DA]">
+            موسوعة الحديث النبوي الشريف
+          </h1>
+          <p className="text-[#52645d] text-lg mb-10 max-w-xl mx-auto font-sans dark:text-[#BEB7AB]">
           قاعدة بيانات متكاملة لباحثي الحديث في مراحل الماجستير والدكتوراه
-        </p>
+          </p>
 
         <HomeSearch />
 
@@ -78,37 +85,23 @@ export default async function Home() {
 
       {/* Main Nav Cards */}
       <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
-          <Link href="/books" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
-            <div className="text-3xl mb-3">📚</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700 font-display">تصفح الكتب</div>
-            <div className="text-[15px] text-gray-500 mt-1 font-sans">{books} كتاباً من أمهات المصادر</div>
-          </Link>
-          <Link href="/narrators" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
-            <div className="text-3xl mb-3">👤</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700">علم الرجال</div>
-            <div className="text-sm text-gray-500 mt-1">{narrators.toLocaleString('ar-EG')} راوٍ مع ترجمة وجرح وتعديل</div>
-          </Link>
-          <Link href="/search" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
-            <div className="text-3xl mb-3">🔍</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700">البحث المتقدم</div>
-            <div className="text-sm text-gray-500 mt-1">بحث نصي مع تصفية بالكتاب</div>
-          </Link>
-          <Link href="/topics" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
-            <div className="text-3xl mb-3">🗂</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700">الفهارس الموضوعية</div>
-            <div className="text-sm text-gray-500 mt-1">{topics.toLocaleString('ar-EG')} موضوع مصنَّف</div>
-          </Link>
-          <Link href="/lexicon" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
-            <div className="text-3xl mb-3">📖</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700">غريب الحديث</div>
-            <div className="text-sm text-gray-500 mt-1">{lexicon.toLocaleString('ar-EG')} لفظة معتمدة</div>
-          </Link>
-          <Link href="/narrators?sort=hadiths" className="ui-card rounded-2xl p-6 hover:border-green-300 transition-all group">
-            <div className="text-3xl mb-3">📊</div>
-            <div className="font-bold text-green-900 group-hover:text-green-700">أكثر الرواة حديثاً</div>
-            <div className="text-sm text-gray-500 mt-1">مرتب حسب عدد الأحاديث</div>
-          </Link>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
+          {[
+            { href: '/books', icon: 'books' as IconName, title: 'تصفح الكتب', description: `${books} كتاباً من أمهات المصادر` },
+            { href: '/narrators', icon: 'narrator' as IconName, title: 'علم الرجال', description: `${narrators.toLocaleString('ar-EG')} راوٍ مع ترجمة وجرح وتعديل` },
+            { href: '/search', icon: 'search' as IconName, title: 'البحث المتقدم', description: 'بحث نصي مع تصفية بالكتاب' },
+            { href: '/topics', icon: 'topics' as IconName, title: 'الفهارس الموضوعية', description: `${topics.toLocaleString('ar-EG')} موضوع مصنَّف` },
+            { href: '/lexicon', icon: 'lexicon' as IconName, title: 'غريب الحديث', description: `${lexicon.toLocaleString('ar-EG')} لفظة معتمدة` },
+            { href: '/narrators?sort=hadiths', icon: 'chart' as IconName, title: 'أكثر الرواة حديثاً', description: 'مرتب حسب عدد الأحاديث' },
+          ].map((card) => (
+            <Link key={card.href} href={card.href} className="group relative overflow-hidden rounded-2xl border border-[#ded8c7] bg-white p-5 shadow-[0_1px_0_rgba(18,59,50,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#b28a43] hover:shadow-[0_10px_30px_rgba(18,59,50,0.08)] dark:border-[#2A313A] dark:bg-[#151A21]">
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#b28a43]/35 bg-[#f6f1e4] text-[#123b32] transition-colors group-hover:bg-[#123b32] group-hover:text-[#f3e8c9] dark:bg-[#1D4A3C] dark:text-[#f3e8c9]">
+                <UiIcon name={card.icon} size={24} />
+              </div>
+              <div className="font-bold text-[#123b32] group-hover:text-[#8a6726] font-display dark:text-[#ECE6DA] dark:group-hover:text-[#E6C77A]">{card.title}</div>
+              <div className="text-sm text-[#6D746E] mt-1 font-sans dark:text-[#A7A094]">{card.description}</div>
+            </Link>
+          ))}
         </div>
 
         {/* الكتب الستة quick links */}

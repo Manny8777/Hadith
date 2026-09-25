@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'طبقات الرواة — جامع خادم الحرمين' }
@@ -208,7 +209,7 @@ export default async function GenerationsPage({
             </div>
           ) : (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-4">📚</div>
+              <UiIcon name="books" size={40} className="text-[#b28a43] mb-4" />
               <h2 className="font-bold text-amber-900 mb-2">اختر طبقة</h2>
               <p className="text-sm text-amber-700">
                 اختر طبقة من القائمة على اليسار لعرض رواتها مع درجات التوثيق

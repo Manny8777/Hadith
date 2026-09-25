@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from 'next/link'
 import { attachMatnSnippets, snipColumns, type SnipPart } from '@/lib/matnSnippet'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'محرك التخريج — جامع خادم الحرمين' }
@@ -344,7 +345,7 @@ export default async function TakhrijPage({
 
       {!query && (
         <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
-          <div className="text-4xl mb-3">📜</div>
+          <UiIcon name="scroll" size={40} className="text-[#b28a43] mb-3" />
           <h2 className="text-lg font-bold text-green-900 mb-2">محرك التخريج الحديثي</h2>
           <p className="text-sm text-gray-500 max-w-lg mx-auto">
             أداة لاستخراج روايات الحديث وتصنيفها بمجموعات التخريج، مع إظهار العدد الحقيقي لكل مجموعة.

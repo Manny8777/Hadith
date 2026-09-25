@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import UiIcon from '@/app/components/UiIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -268,7 +269,7 @@ export default async function MostCitedPage({
             </div>
           ) : (
             <div className="bg-indigo-50 rounded-xl border border-indigo-100 p-6 text-center">
-              <div className="text-3xl mb-2 opacity-60">📚</div>
+              <UiIcon name="books" size={32} className="text-[#b28a43] mb-2 opacity-70" />
               <div className="font-semibold text-indigo-900 text-sm mb-2">الانتشار الكتابي</div>
               <p className="text-xs text-indigo-700 leading-relaxed">
                 اختر راوياً لترى في كم كتابٍ رُويت أحاديثه، وفي أي موضع من السند يظهر — الموضع المبكر يعني قرباً من المصدر
