@@ -114,12 +114,13 @@ npm.cmd run smoke -- https://hadith-web-production.up.railway.app
 
 ## Deployment record
 
-- Main release commit: `3dd0932` (`Harden search, reports, audit, and release validation`).
-- Follow-up mobile fix commit: `ec60653` (`Fix narrator mobile navigation overflow`).
-- Validated Railway deployment: `2b51d3c7-ffaa-4bb3-99c8-11ae130badde`; service online at [https://hadith-web-production.up.railway.app](https://hadith-web-production.up.railway.app).
+- Main release commit: `5dcc590` (`Add browser coverage and finish UX roadmap`).
+- Previous release commits: `3dd0932` (`Harden search, reports, audit, and release validation`) and `ec60653` (`Fix narrator mobile navigation overflow`).
+- Validated Railway deployment: `88d4e172-a4dc-4a1b-86c1-4ccff14c14b0`; service online at [https://hadith-web-production.up.railway.app](https://hadith-web-production.up.railway.app).
 - Railway build completed with Next.js `16.3.6`, `npm ci` audit reporting 0 vulnerabilities, and a healthy container start.
 - Post-deploy production smoke: 18/18 routes passed.
 - Post-deploy production API contracts: 19/19 passed.
-- Post-deploy production route baseline: 8/8 routes passed; report is under ignored `db-backup/performance/production-2026-09-25/`.
-- Post-deploy browser check: production narrator page at 390px has `scrollWidth == innerWidth`, RTL direction, working copy/TXT/print controls, and no application error. Production hadith and service search pages rendered their Arabic results and counts.
-- A documentation-only follow-up commit may trigger another Railway deployment with identical application code; the validated application deployment above is the one used for the final production checks.
+- Post-deploy production route baseline: 8/8 routes passed; report is under ignored `db-backup/performance/production-5dcc590-2026-09-25/`.
+- Post-deploy production browser suite: 13 passed, 1 desktop-only skip across Chromium and narrow mobile Chromium; zero collected page/console errors.
+- Post-deploy semantic audit: 29/29 SELECT queries passed, read-only guard and rollback passed; source-backed semantic decisions are recorded in ignored `db-backup/audits/semantic-review-20260925/` and `db-backup/semantic-review-20260925T033621Z.json`.
+- No production database write, migration, repair, or legacy source mutation was performed.

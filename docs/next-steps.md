@@ -305,7 +305,7 @@ Choose one P0 item and one P1 item, implement them behind the existing navigatio
 
 - [x] Produce the fresh data-audit report.
 - [x] Classify all remaining differences. The four semantic-review mappings are explicitly closed as source-backed preserve/derive decisions; their fail-closed `unknown` classification remains intentional and no guessed production repair was made.
-- [ ] Add API contract checks.
+- [x] Add API contract checks (19/19 local and 19/19 live).
 - [x] Add the Playwright route journeys (desktop Chromium and narrow mobile Chromium projects; run `npm.cmd run test:browser`).
 - [ ] Add migration dry-run/rollback tests.
 
@@ -352,4 +352,4 @@ The release-gate portion of this roadmap was completed against the current tree:
 - desktop and 390px RTL browser journeys passed with zero console errors;
 - service-search ranking was reduced from roughly 16.5–17.1 seconds to roughly 0.91–0.95 seconds locally, and hadith search from roughly 3.5–4.6 seconds to roughly 0.59–1.38 seconds.
 
-The four semantic-review unknowns named in the handoff remain intentionally fail-closed: narrator biography provenance, narrator criticism lineage, Quran reader/ayat namespaces, and controversy-description namespaces. They are not release blockers and must not be resolved by guessing lineage or fabricating mappings. The final commit, Railway deployment identifier, and post-deploy smoke results are recorded in [work-handoff.md](work-handoff.md).
+The four named semantic-review mappings are now explicitly closed as source-backed preserve/derive decisions while remaining fail-closed for repair: narrator biography provenance, narrator criticism lineage, Quran reader/ayat namespaces, and controversy-description namespaces. Evidence is reproducible with `db/audit_semantic_review.py`; no guessed lineage or fabricated mapping was loaded. The validated release is commit `5dcc590` / Railway deployment `88d4e172-a4dc-4a1b-86c1-4ccff14c14b0`; live smoke, contracts, baseline, and desktop/mobile browser checks are recorded in [work-handoff.md](work-handoff.md).
