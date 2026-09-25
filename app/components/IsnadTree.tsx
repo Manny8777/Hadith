@@ -143,7 +143,7 @@ function IsnadRailNode({ data }: NodeProps) {
   const nar = data.nar as NarratorInChain
   const criticism = (data.criticism as CriticismGroup[] | undefined) || []
   const death = deathLabel(nar)
-  const hasMeta = nar.is_companion || criticism.length > 0 || nar.tabaqa || nar.mudallis
+  const hasMeta = nar.is_companion || criticism.length > 0 || nar.tabaqa
   return (
     <div
       dir="rtl"
@@ -184,11 +184,6 @@ function IsnadRailNode({ data }: NodeProps) {
             </HoverCard>
           ) : null}
           {nar.tabaqa && <span className="text-[11px] text-gray-500 font-sans">{nar.tabaqa}</span>}
-          {nar.mudallis && (
-            <span className="inline-flex items-center gap-0.5 text-[11px] font-sans font-medium text-red-600" title="ذُكر بالتدليس">
-              <span aria-hidden>⚠</span> التدليس
-            </span>
-          )}
         </div>
       )}
       <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !bg-border !border-0" />
@@ -273,10 +268,10 @@ const EDGE_TYPES = { term: TermEdge }
 // ─── Single isnad builder: this hadith's chain(s) as a rich vertical flow ───────
 
 function estimateRailHeight(nar: NarratorInChain, hasCriticism: boolean): number {
-  // Centered, stacked card: name (≤2 lines) · death line · meta line (جرح وتعديل / tabaqa / tadlis chips).
+  // Centered, stacked card: name (≤2 lines) · death line · meta line (جرح وتعديل / tabaqa chips).
   const name = nar.abb_name || nar.name || ''
   const nameLines = Math.min(2, Math.max(1, Math.ceil(name.length / 24)))
-  const metaItems = (nar.is_companion || hasCriticism ? 1 : 0) + (nar.tabaqa ? 1 : 0) + (nar.mudallis ? 1 : 0)
+  const metaItems = (nar.is_companion || hasCriticism ? 1 : 0) + (nar.tabaqa ? 1 : 0)
   const metaLines = metaItems === 0 ? 0 : metaItems >= 3 ? 2 : 1
   return 28 + nameLines * 24 + (deathLabel(nar) ? 18 : 0) + metaLines * 18
 }

@@ -82,11 +82,6 @@ function ChainRail({ chain }: { chain: Chain }) {
                 {nar.tabaqa && (
                   <span className="text-[11px] text-gray-500 font-sans">{nar.tabaqa}</span>
                 )}
-                {nar.mudallis && (
-                  <span className="inline-flex items-center gap-0.5 text-[11px] font-sans font-medium text-red-600" title="ذُكر بالتدليس">
-                    <span aria-hidden>⚠</span> التدليس
-                  </span>
-                )}
                 {term && (
                   <span className="ms-auto inline-flex items-center text-[11px] font-serif px-2 py-0.5 rounded-full bg-surface-sunken border border-border text-gray-600 whitespace-nowrap">
                     {term}

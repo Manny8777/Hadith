@@ -29,7 +29,7 @@ export async function getChainsForHadith(hadithId: number): Promise<{
       ids.forEach(nid => allIds.add(nid))
     }
     if (allIds.size > 0) {
-      const [narRes, tahdethTypesRes, tadlisRes] = await Promise.all([
+      const [narRes, tahdethTypesRes] = await Promise.all([
         pool.query<NarratorInChain>(
           `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion, tabaqa, death_year_num, death_year
            FROM narrators WHERE id = ANY($1)`,
@@ -37,31 +37,22 @@ export async function getChainsForHadith(hadithId: number): Promise<{
         ),
         pool.query<{ id: number; text: string }>(`SELECT id, text FROM isnad_tahdeth_types LIMIT 2000`)
           .catch(() => ({ rows: [] as Array<{ id: number; text: string }> })),
-        pool.query<{ narrator_id: number }>(
-          `SELECT DISTINCT narrator_id FROM narrator_criticism
-           WHERE narrator_id = ANY($1) AND say_text ~* 'تدليس|مدلس|يدلس|دلّس'`,
-          [Array.from(allIds)]
-        ).catch(() => ({ rows: [] as Array<{ narrator_id: number }> })),
       ])
       const narMap: Record<number, NarratorInChain> = {}
       narRes.rows.forEach(n => { narMap[n.id] = n })
       const tahdethTypesMap: Record<number, string> = {}
       tahdethTypesRes.rows.forEach(r => { tahdethTypesMap[r.id] = r.text })
-      const mudallisSet = new Set<number>(tadlisRes.rows.map(r => Number(r.narrator_id)))
 
       const seenChains = new Set<string>()
       for (const { ids, tahdethTerm: rawTahdeth } of chainRows) {
         const key = ids.join('-')
         if (seenChains.has(key)) continue
         seenChains.add(key)
-        const narrators = ids.map(nid => ({
-          ...(narMap[nid] || {
-            id: nid, name: `[${nid}]`, abb_name: null,
-            martaba_ibn_hajar: null, martaba_zahabi: null,
-            is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
-          }),
-          mudallis: mudallisSet.has(nid),
-        }))
+        const narrators = ids.map(nid => narMap[nid] || {
+          id: nid, name: `[${nid}]`, abb_name: null,
+          martaba_ibn_hajar: null, martaba_zahabi: null,
+          is_companion: false, tabaqa: null, death_year_num: null, death_year: null,
+        })
         let tahdethTerm: string | null = null
         const narratorTerms: Record<number, string> = {}
         if (rawTahdeth) {

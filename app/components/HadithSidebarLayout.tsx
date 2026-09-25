@@ -59,7 +59,6 @@ export interface NarratorInChain {
   tabaqa: string | null
   death_year_num: number | null
   death_year: string | null
-  mudallis?: boolean
 }
 
 export interface Chain {
