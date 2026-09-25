@@ -46,7 +46,7 @@ export default function TopicSearchForm({
           value={query}
           onChange={event => setQuery(event.target.value)}
           placeholder="ابحث في أحاديث هذا الموضوع..."
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-700"
+          className="flex-1 min-w-0 border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-700"
           dir="rtl"
         />
         <button

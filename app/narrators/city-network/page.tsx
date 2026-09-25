@@ -132,7 +132,7 @@ export default async function CityNetworkPage({
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
         <div className="sm:col-span-2">
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden mb-3">
             <div className="bg-green-50 px-4 py-2 border-b border-green-100 text-xs text-green-800 font-medium">

@@ -86,7 +86,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ id: str
             كتبه في الموسوعة
             <span className="text-xs text-gray-400 font-normal">({books.length} كتاب)</span>
           </h2>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {books.map(b => (
               <Link
                 key={b.id}

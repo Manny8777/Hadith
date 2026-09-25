@@ -332,7 +332,7 @@ export default async function ContradictionsPage() {
           </div>
 
           {/* What the full feature will include */}
-          <div className="grid sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             {[
               {
                 icon: (
@@ -412,7 +412,7 @@ export default async function ContradictionsPage() {
       {/* ── Related links ── */}
       <div className="mt-8 bg-white border border-gray-100 rounded-2xl p-5">
         <h2 className="text-sm font-bold text-green-900 mb-3">روابط ذات صلة</h2>
-        <div className="grid sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
             { href: '/topics', label: 'الفهارس الموضوعية الكاملة' },
             { href: '/hadiths/grade-dispute', label: 'الأحاديث المختلف في درجتها' },

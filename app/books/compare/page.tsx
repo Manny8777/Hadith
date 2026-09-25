@@ -196,7 +196,7 @@ export default async function BooksComparePage({
 
       {/* Book selectors */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-        <form method="GET" action="/books/compare" className="grid sm:grid-cols-2 gap-4">
+        <form method="GET" action="/books/compare" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">الكتاب الأول</label>
             <select name="a" defaultValue={sp.a || ''}

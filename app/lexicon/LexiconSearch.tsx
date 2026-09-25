@@ -41,7 +41,7 @@ export default function LexiconSearch() {
           value={q}
           onChange={e => setQ(e.target.value)}
           placeholder="ابحث عن كلمة غريبة..."
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+          className="flex-1 min-w-0 border border-gray-300 rounded-lg px-4 py-3 text-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-700"
           dir="rtl"
         />
         <button

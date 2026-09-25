@@ -124,7 +124,7 @@ export default function HadithComparePage() {
           onChange={e => setId(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleLoad(side)}
           placeholder="رقم الحديث..."
-          className="border border-gray-200 rounded-lg px-2 py-1 text-sm flex-1 focus:outline-none focus:border-green-400"
+          className="border border-gray-200 rounded-lg px-2 py-1 text-sm flex-1 min-w-0 focus:outline-none focus:border-green-400"
           dir="ltr"
         />
         <button onClick={() => handleLoad(side)}

@@ -330,7 +330,7 @@ export default function NavHeader() {
 
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
-          <div className="flex flex-row sm:flex-col items-stretch gap-1">
+          <div className="flex flex-col items-stretch gap-1">
             <NumberingToggle />
             <NumeralToggle />
           </div>

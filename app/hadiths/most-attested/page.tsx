@@ -140,7 +140,7 @@ export default async function MostAttestedPage({
         لكنه مؤشر على شيوع الرواية وكثرة طرقها في المصادر المحدثية.
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {hadiths.map((h, idx) => (
           <Link
             key={h.main_id}

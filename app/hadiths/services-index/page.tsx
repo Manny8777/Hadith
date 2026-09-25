@@ -237,7 +237,7 @@ export default async function ServicesIndexPage() {
               هذه الأنواع موجودة في جدول HadithsServicesTypes الأصلي، لكن لا تملك عموداً مستقلاً في
               HadithServicesState. لذلك نعرضها من جدول الروابط الأصلي ولا نضيف لها boolean مختلقة.
             </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {columnlessCanonicalTypes.map(type => (
                 <div key={type.id} className="rounded-xl border border-amber-200 bg-white/70 px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
@@ -255,7 +255,7 @@ export default async function ServicesIndexPage() {
 
         {/* Quick insights bar */}
         {mostCovered && leastCovered && (
-          <div className="bg-green-900 rounded-2xl p-5 text-white grid sm:grid-cols-2 gap-4">
+          <div className="bg-green-900 rounded-2xl p-5 text-white grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <div className="text-xs text-green-300 mb-1">الخدمة الأوسع تغطيةً</div>
               <div className="font-bold text-amber-200 text-lg">{mostCovered.name}</div>
@@ -295,7 +295,7 @@ export default async function ServicesIndexPage() {
                 </span>
                 <div className="flex-1 h-px bg-gray-100" />
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {groupServices.map(service => {
                   const count = countMap[service.key] || 0
                   const pct = total > 0 ? Math.round((count / total) * 100) : 0

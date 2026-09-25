@@ -135,7 +135,7 @@ export default async function NarratorTypesPage({
               لا يوجد رواة مرتبطون بهذا النوع في البيانات المتاحة
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {narrators.map(n => (
                 <div
                   key={n.id}

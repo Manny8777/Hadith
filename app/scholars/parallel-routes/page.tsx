@@ -159,7 +159,7 @@ export default async function ParallelRoutesPage({
         </p>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {hadiths.map(h => (
           <Link
             key={h.main_id}

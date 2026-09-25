@@ -136,7 +136,7 @@ export default async function JarhTermsPage({
               <div className={`text-xs font-bold px-3 py-1.5 rounded-lg border mb-2 inline-block ${tier.color}`}>
                 {tier.label} — {tier.items.reduce((s, i) => s + i.narrator_count, 0).toLocaleString('ar-EG')} راوٍ
               </div>
-              <div className="grid gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {tier.items.map(g => {
                   const pct = Math.round((g.narrator_count / totalNarrators) * 100 * 10) / 10
                   return (
@@ -189,7 +189,7 @@ export default async function JarhTermsPage({
             تصنيفات مستخلصة من أقوال العلماء في كتب الجرح والتعديل —
             تمثل ألفاظ الحكم الفعلية المسجلة في قاعدة البيانات
           </p>
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {criticismLabels.map(cl => (
               <div key={cl.garh_label}
                 className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">

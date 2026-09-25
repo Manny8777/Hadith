@@ -126,7 +126,7 @@ export default async function UniqueHadithsPage({
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Books list */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -187,7 +187,7 @@ export default async function UniqueHadithsPage({
                 هذه الأحاديث موجودة في {selectedBook.book_title} ولا توجد لها نظائر في أي كتاب آخر من قاعدة التخريج — قد تعكس تفرُّد المصنف في جمع بعض الطرق أو إيراد بعض الألفاظ
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {hadiths.map(h => {
                   return (
                     <Link

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import NavigateSelect from '@/app/components/NavigateSelect'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'تداخل الكتب وتشعب الأسانيد — جامع خادم الحرمين' }
@@ -133,19 +134,16 @@ export default async function TransmissionGenealogyPage({
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center mb-5">
-        <select
-          onChange={() => {}}
-          defaultValue={selectedBook || ''}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-green-400"
-          onInput={(e) => {
-            const v = (e.target as HTMLSelectElement).value
-            window.location.href = `/books/transmission-genealogy?book=${v}&min_shared=${minShared}`
-          }}>
+        <NavigateSelect
+          href={`/books/transmission-genealogy?min_shared=${minShared}`}
+          param="book"
+          defaultValue={selectedBook}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-green-400">
           <option value="">جميع الكتب</option>
           {bookStats.map(b => (
             <option key={b.id} value={b.id}>{b.name}</option>
           ))}
-        </select>
+        </NavigateSelect>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-500 text-xs">حد أدنى:</span>
           {[5, 10, 25, 50, 100].map(n => (

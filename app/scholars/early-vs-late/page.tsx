@@ -168,19 +168,19 @@ export default async function EarlyVsLatePage({
               <a key={era.century}
                 href={`/scholars/early-vs-late?century=${era.century}&sort=${sortBy}`}
                 className={`flex items-start gap-3 group hover:bg-gray-50 rounded-lg px-2 py-2 transition-colors ${isSelected ? 'bg-green-50' : ''}`}>
-                <span className={`text-xs w-40 shrink-0 pt-0.5 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}>
+                <span className={`text-xs w-24 sm:w-40 shrink-0 pt-0.5 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}>
                   {CENTURY_LABELS[era.century] || `ق${era.century}`}
                 </span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 bg-gray-100 rounded-full h-3 max-w-48">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-16 bg-gray-100 rounded-full h-3 max-w-48">
                       <div className={`h-3 rounded-full transition-all ${isSelected ? 'bg-green-500' : 'bg-indigo-300 group-hover:bg-indigo-400'}`}
                         style={{ width: `${barW}%` }} />
                     </div>
                     <span className="text-xs text-gray-500">{era.total_judgments.toLocaleString('ar-EG')} حكم</span>
                     <span className="text-xs text-gray-400">{era.scholar_count} عالم</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1">
                       <div className="w-16 bg-gray-100 rounded-full h-2">
                         <div className="bg-green-400 h-2 rounded-full" style={{ width: `${Math.min(era.avg_sahih_pct || 0, 100)}%` }} />

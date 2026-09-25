@@ -165,7 +165,7 @@ export default async function TransmissionPairsPage({
               </span>
 
               {/* Teacher */}
-              <div className="flex items-center gap-1.5 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                 {r.teacher_companion && (
                   <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full shrink-0">صحابي</span>
                 )}
@@ -174,7 +174,7 @@ export default async function TransmissionPairsPage({
                   {r.teacher_abb || r.teacher_name}
                 </Link>
                 {r.teacher_grade && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${gradeColor(r.teacher_grade, r.teacher_companion)}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full max-w-full ${gradeColor(r.teacher_grade, r.teacher_companion)}`}>
                     {r.teacher_grade}
                   </span>
                 )}
@@ -184,20 +184,20 @@ export default async function TransmissionPairsPage({
               <span className="text-gray-400 shrink-0">←</span>
 
               {/* Student */}
-              <div className="flex items-center gap-1.5 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                 <Link href={`/narrator/${r.student_id}`}
                   className="text-sm font-bold text-indigo-900 hover:underline truncate max-w-[120px]">
                   {r.student_abb || r.student_name}
                 </Link>
                 {r.student_grade && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${gradeColor(r.student_grade, false)}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full max-w-full ${gradeColor(r.student_grade, false)}`}>
                     {r.student_grade}
                   </span>
                 )}
               </div>
 
               {/* Count bar */}
-              <div className="flex-1 flex items-center gap-2 min-w-0">
+              <div className="flex-1 basis-40 flex items-center gap-2 min-w-0">
                 <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div className="bg-indigo-500 h-2 rounded-full"
                     style={{ width: `${(r.pair_count / maxPairs) * 100}%` }} />

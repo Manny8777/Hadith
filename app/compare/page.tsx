@@ -265,7 +265,7 @@ export default async function ComparePage({
 
         {/* Comparison columns */}
         {narratorA || narratorB ? (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               {narratorA ? (
                 <NarratorCard n={narratorA} criticism={criticismA} />
@@ -350,7 +350,7 @@ export default async function ComparePage({
               <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
               التحليل الزمني والطبقي
             </h3>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Tabaqa comparison */}
               {(narratorA.tabaqa_num != null || narratorB.tabaqa_num != null) && (
                 <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">

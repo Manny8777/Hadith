@@ -126,7 +126,7 @@ export default async function IsolatedChainsPage({
         </div>
       </div>
 
-      <div className={`grid gap-4 ${selectedCompanionId ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${selectedCompanionId ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
 
         {/* Companions list */}
         <div>

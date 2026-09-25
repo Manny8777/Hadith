@@ -118,7 +118,7 @@ export default async function JudgmentPhrasesPage({
         <form method="get" action="/scholars/judgment-phrases" className="flex gap-2">
           <input type="text" name="q" defaultValue={q}
             placeholder="ابحث عن عالم..."
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400" dir="rtl" />
+            className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400" dir="rtl" />
           <button type="submit" className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800">بحث</button>
           {q && <a href="/scholars/judgment-phrases" className="text-sm border border-gray-200 px-3 py-2 rounded-lg text-gray-400">✕</a>}
         </form>
@@ -134,7 +134,7 @@ export default async function JudgmentPhrasesPage({
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
         <div className="sm:col-span-2">
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
             <div className="bg-green-50 px-4 py-2 border-b border-green-100 text-xs text-green-800 font-medium">

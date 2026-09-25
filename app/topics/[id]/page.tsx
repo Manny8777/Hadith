@@ -109,7 +109,7 @@ export default async function CategoryPage({
           لا توجد موضوعات في هذا القسم
         </div>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {items.map(item => {
             const hadithCount = parseInt(item.hadith_count)
             return (

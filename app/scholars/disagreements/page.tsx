@@ -170,7 +170,7 @@ export default async function DisagreementsPage({
         استخدم هذه الصفحة كنقطة انطلاق للبحث لا حكماً نهائياً.
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {hadiths.map(h => {
           const total_opinions = h.sahih_count + h.hasan_count + h.daif_count
           const positive = h.sahih_count + h.hasan_count

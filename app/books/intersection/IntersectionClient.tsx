@@ -56,7 +56,7 @@ export default function IntersectionClient({ books }: { books: Book[] }) {
   return (
     <div>
       <form onSubmit={handleSearch} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-        <div className="grid sm:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">الكتاب الأول</label>
             <select
@@ -148,7 +148,7 @@ export default function IntersectionClient({ books }: { books: Book[] }) {
               <p className="text-amber-800">لم يُعثر على أحاديث مشتركة بين هذين الكتابَين في قاعدة التخريج</p>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {result.hadiths.map(h => {
                 return (
                   <Link

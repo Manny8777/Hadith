@@ -69,7 +69,7 @@ function ChaptersInner() {
             value={q}
             onChange={e => setQ(e.target.value)}
             placeholder="ابحث عن عنوان باب... مثال: باب الصيام، فضل الجمعة، الإيمان"
-            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300"
+            className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300"
             dir="rtl"
           />
           <button

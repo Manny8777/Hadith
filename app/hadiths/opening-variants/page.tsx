@@ -132,7 +132,7 @@ export default async function OpeningVariantsPage({
             name="q"
             defaultValue={q}
             placeholder="ابحث بداية الحديث — مثل: إنما الأعمال"
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+            className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400"
             dir="rtl"
           />
           <button type="submit"

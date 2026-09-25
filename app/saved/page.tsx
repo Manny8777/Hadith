@@ -397,7 +397,7 @@ export default function SavedPage() {
             آخر ما اطلعت عليه
             <span className="text-xs text-gray-400 font-normal mr-2">({recentHistory.length})</span>
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {recentHistory.slice(0, 10).map(r => (
               <Link
                 key={r.id}
@@ -459,7 +459,7 @@ export default function SavedPage() {
                     </span>
                     <span className="text-xs text-gray-400">({groupHadiths.length} حديث)</span>
                   </div>
-                  <div className="grid gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     {groupHadiths.map((h, i) => (
                       <HadithCard key={h.main_id} h={h} i={i} tags={tags} notes={notes} parallelSets={parallelSets}
                         removeHadith={removeHadith} editingTagFor={editingTagFor} tagDraft={tagDraft}
@@ -470,7 +470,7 @@ export default function SavedPage() {
               ))}
             </div>
           ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {sortedHadiths.map((h, i) => (
               <HadithCard key={h.main_id} h={h} i={i} tags={tags} notes={notes} parallelSets={parallelSets}
                 removeHadith={removeHadith} editingTagFor={editingTagFor} tagDraft={tagDraft}
@@ -579,7 +579,7 @@ function HadithCard({
             value={tagDraft}
             onChange={e => setTagDraft(e.target.value)}
             placeholder="التصنيف البحثي (مثل: الدليل الأول، دليل مساعد...)"
-            className="flex-1 text-xs border border-blue-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-400"
+            className="flex-1 min-w-0 text-xs border border-blue-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-400"
             dir="rtl"
             autoFocus
             onKeyDown={e => {

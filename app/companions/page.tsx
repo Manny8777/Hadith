@@ -141,7 +141,7 @@ export default async function CompanionsPage() {
             <span className="w-1 h-5 bg-green-500 rounded-full inline-block"></span>
             كبار الصحابة الرواة
           </h2>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {major.map(c => (
               <Link
                 key={c.id}
@@ -180,7 +180,7 @@ export default async function CompanionsPage() {
             سائر الصحابة الرواة
             <span className="text-sm font-normal text-gray-400">({rest.length})</span>
           </h2>
-          <div className="grid sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {rest.map(c => (
               <Link
                 key={c.id}

@@ -216,7 +216,7 @@ export default function MatnSimilaritySection({ hadithId }: { hadithId: number }
                 type="range" min={0} max={100} step={5}
                 value={minScore}
                 onChange={e => setMinScore(Number(e.target.value))}
-                className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer accent-indigo-600"
+                className="flex-1 min-w-0 h-1.5 rounded-full appearance-none cursor-pointer accent-indigo-600"
                 style={{ direction: 'ltr' }}
               />
               <span className="w-10 text-sm font-bold text-indigo-700 text-left shrink-0">

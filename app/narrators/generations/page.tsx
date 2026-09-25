@@ -84,7 +84,7 @@ export default async function GenerationsPage({
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Generations list */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -179,7 +179,7 @@ export default async function GenerationsPage({
                 )
               })()}
 
-              <div className="grid sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {selectedNarrators.map(n => (
                   <Link
                     key={n.id}

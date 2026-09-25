@@ -705,7 +705,7 @@ export default function HadithSidebarLayout({
         {relatedHadiths.length > 0 && (
           <section id="related" className="mb-8 scroll-mt-header">
             <SectionHeader label="أحاديث ذات صلة" sub="روايات مرتبطة بنفس الموضوع أو الغرض" />
-            <div className="grid sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {relatedHadiths.map((related) => (
                 <Link
                   key={related.main_id}
@@ -738,7 +738,7 @@ export default function HadithSidebarLayout({
         {/* ── أدوات البحث ── */}
         <section id="adawat" className="mb-8 scroll-mt-header">
           <SectionHeader label="أدوات البحث" />
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { href: `/hadith/${hadithId}/transmission-history`, label: 'تاريخ انتشار الحديث',    desc: 'ترتيب زمني للكتب التي أوردت هذا الحديث حسب وفاة مؤلفيها' },
               { href: `/hadith/${hadithId}/chain-analysis`,       label: 'التحليل الزمني للإسناد', desc: 'رسم زمني لرواة السند مع الفجوات الزمنية' },

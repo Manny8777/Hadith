@@ -188,7 +188,7 @@ export default async function TakhrijPage({
               name="q"
               defaultValue={query}
               placeholder="مثال: إنما الأعمال بالنيات..."
-              className="flex-1 text-sm border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 shadow-sm"
+              className="flex-1 min-w-0 text-sm border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 shadow-sm"
               dir="rtl"
             />
             <button

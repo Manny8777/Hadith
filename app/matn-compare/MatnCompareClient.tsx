@@ -181,7 +181,7 @@ function MatnCompareInner() {
             onChange={e => { setIdInput(e.target.value); setError('') }}
             onKeyDown={e => e.key === 'Enter' && loadHadith()}
             placeholder="معرف الحديث (main_id)..."
-            className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300"
+            className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-300"
             dir="ltr"
           />
           <button
@@ -216,7 +216,7 @@ function MatnCompareInner() {
           <h2 className="text-sm font-semibold text-gray-700 mb-3">
             الروايات الموازية ({parallels.length}) — اختر رواية للمقارنة:
           </h2>
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {parallels.map(p => (
               <button
                 key={p.main_id}
@@ -296,7 +296,7 @@ function MatnCompareInner() {
           </div>
 
           {/* Side by side comparison */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl border border-green-200 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">الأول</span>
