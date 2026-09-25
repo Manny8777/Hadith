@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div dir="rtl">
 
-## Getting Started
+# موسوعة الحديث الشريف
 
-First, run the development server:
+موسوعة حديثية مفتوحة المصدر على الويب، تنقل برنامج «موسوعة الحديث» من تطبيق سطح مكتب إلى موقع متاح للجميع،
+مع الحفاظ على البيانات كاملة. تضم الموسوعة:
+
+- **245 كتاباً** من كتب السنة ومصادرها
+- **قرابة 340,000 حديث** مرتبة في أبواب وكتب
+- **أكثر من 30,000 راوٍ** مع تراجمهم ومراتبهم وأقوال أئمة الجرح والتعديل فيهم
+- **الأسانيد** وعرضها على شكل شجرة وشبكة للرواة
+- الموضوعات، والتخريج، والأحكام على الأحاديث، والعلل، ومقارنة المتون، والمعجم (غريب الحديث)، والآيات القرآنية المرتبطة
+- بحث في النصوص لا يتأثر بالتشكيل
+
+**الموقع المباشر:** https://hadith-web-production.up.railway.app
+
+## دعوة للمشاركة
+
+هذا مشروع وقفي مفتوح، ونحتاج إلى مشاركة **المبرمجين** و**أهل العلم والباحثين في علوم الحديث**.
+كل إسهام مرحّب به، صغيراً كان أو كبيراً:
+
+- **للمبرمجين:** إصلاح الأخطاء، تحسين الأداء وسرعة البحث، تحسين الواجهة وتجربة الجوال، إضافة ميزات جديدة، كتابة الاختبارات.
+- **لأهل العلم والباحثين:** تصحيح نص حديث أو تشكيله، التنبيه على خطأ في ترجمة راوٍ أو حكم أو تخريج، مراجعة تقسيم الأبواب والموضوعات، اقتراح مصادر جديدة.
+
+**جميع التعديلات تُرسل عبر طلب سحب (Pull Request)** ويراجعها القائمون على المشروع قبل دمجها.
+لا يستطيع أحد تعديل المشروع مباشرة، فلا تتردد في المحاولة. ومن لا يعرف البرمجة يمكنه
+[فتح بلاغ (Issue)](../../issues) يصف فيه الخطأ أو الاقتراح.
+
+اقرأ [دليل المساهمة](CONTRIBUTING.md) للتفاصيل.
+
+## التشغيل محلياً
+
+يتطلب Node.js 20 أو أحدث، وقاعدة بيانات PostgreSQL محمّلة ببيانات الموسوعة.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+echo 'DATABASE_URL=postgresql://postgres:localdev@localhost:5432/railway' > .env
+docker compose up -d   # اختياري: قاعدة PostgreSQL محلية
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+المتغير الوحيد المطلوب هو `DATABASE_URL`. لا تضعه أبداً في الكود: ملفات `.env` مستثناة من git.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## التقنيات وهيكل المشروع
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 16 (App Router)، React 19، TypeScript، Tailwind CSS v4
+- PostgreSQL باستعلامات SQL مباشرة عبر `pg` (بلا ORM)
+- الواجهة عربية من اليمين إلى اليسار بالكامل
 
-## Learn More
+| المجلد | المحتوى |
+|---|---|
+| `app/` | الصفحات، وواجهات البرمجة في `app/api/` |
+| `lib/` | الاتصال بقاعدة البيانات والأدوات المشتركة |
+| `db/` | مخطط قاعدة البيانات وسكربتات الاستيراد والصيانة |
+| `scripts/`، `tests/` | الفحوص والاختبارات (انظر `package.json`) |
+| `docs/` | وثائق المشروع |
 
-To learn more about Next.js, take a look at the following resources:
+## الترخيص
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+الكود البرمجي مرخّص بـ[رخصة MIT](LICENSE). أما نصوص الأحاديث والبيانات فمأخوذة من مصادرها الأصلية ولا تشملها هذه الرخصة.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+</div>
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## English
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+An open-source web encyclopedia of hadith: 245 books, ~340,000 hadiths, 30,000+ narrators, isnad
+chains, grading, takhrij and more, with a fully Arabic (RTL) interface. Built with Next.js 16,
+React 19, TypeScript, Tailwind CSS v4 and PostgreSQL.
+
+**Contributions are very welcome, from developers and from hadith scholars and researchers.**
+All changes go through pull requests and are reviewed before merging. See
+[CONTRIBUTING.md](CONTRIBUTING.md). Code is MIT-licensed; hadith texts and data are not covered by
+the license.
