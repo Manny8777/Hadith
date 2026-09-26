@@ -40,7 +40,10 @@ export const INLINE_SERVICE_CONFIGS: ServiceSectionConfig[] = [
   { key: 'countries', id: 'svc-countries', label: 'الرواية بالبلدان', kind: 'countries' },
   { key: 'modrag', id: 'svc-modrag', label: 'المدرج', kind: 'commentary', commentaryType: 2 },
   { key: 'kerat', id: 'svc-kerat', label: 'القراءات', kind: 'kerat' },
-  { key: 'matn_comparison', id: 'svc-matn-comparison', label: 'مقارنة المتون', kind: 'matn_comparison' },
+  // Disabled: this section rendered under the same name as الروايات الموازية but read from
+  // /api/hadith/[id]/matn-comparison, which groups on hadith_toc.takhrij_id — a column nothing
+  // populates — so it returned zero rows for every hadith and only ever showed its empty state.
+  // { key: 'matn_comparison', id: 'svc-matn-comparison', label: 'مقارنة المتون', kind: 'matn_comparison' },
   { key: 'rwah', id: 'svc-rwah', label: 'تخريج الرواة', kind: 'commentary', commentaryType: 9 },
 ]
 
