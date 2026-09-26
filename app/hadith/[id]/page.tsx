@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain, CriticismGroup } from '@/app/components/HadithSidebarLayout'
-import TakhrijSection from '@/app/components/TakhrijSection'
+import TakhrijSection, { TakhrijBadges } from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
 import UiIcon from '@/app/components/UiIcon'
 import {
@@ -373,6 +373,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         isnadType={dominantIsnadType}
         matngroupSlot={<MatnGroupSection hadithId={mainId} />}
         takhrijSlot={<TakhrijSection hadithId={mainId} />}
+        takhrijBadgesSlot={<TakhrijBadges hadithId={mainId} />}
       />
     </>
   )

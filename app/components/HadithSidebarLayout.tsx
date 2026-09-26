@@ -118,6 +118,7 @@ export interface HadithSidebarLayoutProps {
   sanadNarrators?: Record<number, SanadNarratorPreview>
   matngroupSlot?: ReactNode
   takhrijSlot: ReactNode
+  takhrijBadgesSlot?: ReactNode
 }
 
 const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string }> = {
@@ -135,6 +136,7 @@ export default function HadithSidebarLayout({
   sanadNarrators = {},
   matngroupSlot,
   takhrijSlot,
+  takhrijBadgesSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
@@ -612,7 +614,7 @@ export default function HadithSidebarLayout({
         )}
 
         {/* ── التخريج ── */}
-        <CollapsibleSection id="takhrij" label="التخريج" sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
+        <CollapsibleSection id="takhrij" label="التخريج" badges={takhrijBadgesSlot} sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
           {takhrijSlot}
         </CollapsibleSection>
 

@@ -699,7 +699,8 @@ export default function TakhrijClient({
 
   return (
     <div dir="rtl">
-      {/* Summary bar */}
+      {/* Totals live in the section header (TakhrijBadges); repeat them here only once a filter narrows them */}
+      {filtered.length !== rows.length && (
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <span className="ui-chip">
           {filtered.length} رواية في {visibleBooks} كتاب
@@ -718,6 +719,7 @@ export default function TakhrijClient({
           </span>
         )}
       </div>
+      )}
 
       <div className="ui-segmented ui-segmented-fill mb-4 w-full sm:w-auto">
         {([

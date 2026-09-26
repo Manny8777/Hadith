@@ -1,9 +1,11 @@
+import { cache } from 'react'
 import pool from '@/lib/db'
 import { extractMatnForComparison } from '@/lib/hadithText'
 import TakhrijClient from './TakhrijClient'
 import type { OtherTakhrijSource, TakhrijRow } from './TakhrijClient'
 
-async function fetchTakhrij(hadithId: number): Promise<{
+// cache(): the header badges and the section body both read this within one request.
+const fetchTakhrij = cache(async (hadithId: number): Promise<{
   rows: TakhrijRow[]
   otherSources: OtherTakhrijSource[]
   sourceId: number
@@ -11,7 +13,7 @@ async function fetchTakhrij(hadithId: number): Promise<{
   totalBooks: number
   truncated: boolean
   baseText: string | null
-}> {
+}> => {
   const groupRes = await pool.query(
     `SELECT group_id, compound_matn_id
      FROM takhrij
@@ -170,6 +172,22 @@ async function fetchTakhrij(hadithId: number): Promise<{
   }))
 
   return { rows: classified, otherSources, sourceId: hadithId, currentCompanionId, totalBooks, truncated, baseText }
+})
+
+// Counts shown in the التخريج section header, visible before the section is opened.
+export async function TakhrijBadges({ hadithId }: { hadithId: number }) {
+  const { rows } = await fetchTakhrij(hadithId)
+  if (rows.length === 0) return null
+  const books = new Set(rows.map(r => r.book_id)).size
+  const mutabaat = rows.filter(r => r.kind === 'mutabaa').length
+  const shawahid = rows.filter(r => r.kind === 'shahid').length
+  return (
+    <>
+      <span className="ui-chip">{rows.length} رواية في {books} كتاب</span>
+      {mutabaat > 0 && <span className="ui-chip-info">{mutabaat} متابعة</span>}
+      {shawahid > 0 && <span className="ui-chip-violet">{shawahid} شاهد</span>}
+    </>
+  )
 }
 
 export default async function TakhrijSection({

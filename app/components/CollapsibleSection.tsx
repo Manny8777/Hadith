@@ -6,11 +6,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 // what they want. The body is mounted on first open (so its data loads then, not on page load) and
 // kept mounted afterwards. A link to #id (the page's table of contents) opens it.
 export default function CollapsibleSection({
-  id, label, sub, children,
+  id, label, sub, badges, children,
 }: {
   id: string
   label: string
   sub?: string
+  // Summary chips shown beside the title, so the section's size is visible while it is closed.
+  badges?: ReactNode
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -36,7 +38,10 @@ export default function CollapsibleSection({
         className={`w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-right cursor-pointer transition-colors hover:bg-surface-sunken/50 ${open ? 'border-b border-border bg-surface-sunken/40' : ''}`}
       >
         <span className="flex-1 min-w-0">
-          <span className="block text-base sm:text-lg font-bold text-ink font-display leading-snug">{label}</span>
+          <span className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+            <span className="text-base sm:text-lg font-bold text-ink font-display leading-snug">{label}</span>
+            {badges}
+          </span>
           {sub && <span className="block text-xs text-gray-500 font-sans mt-0.5">{sub}</span>}
         </span>
         <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-sans font-medium transition-colors ${
