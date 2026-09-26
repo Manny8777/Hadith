@@ -26,12 +26,16 @@ export interface ServiceSectionConfig {
   commentaryType?: number
 }
 
+// commentaryType is the hadith_service_types id whose linked texts the section shows. A commentary
+// section is shown only when the hadith has texts of that type (see the hadith page), not on the
+// hadith_services flag alone: some flags (tafsser, rwah) are set although no texts exist for them.
 export const INLINE_SERVICE_CONFIGS: ServiceSectionConfig[] = [
   { key: 'shawahed', id: 'svc-shawahed', label: 'الشواهد والمتابعات', kind: 'witnesses' },
   { key: 'sharh', id: 'svc-sharh', label: 'شرح الحديث', kind: 'commentary', commentaryType: 6 },
+  { key: 'takhreg', id: 'svc-takhreg', label: 'تخريج كتب التخريج والعلل', kind: 'commentary', commentaryType: 8 },
   { key: 'feqh', id: 'svc-feqh', label: 'الفقه', kind: 'commentary', commentaryType: 1 },
-  { key: 'tafsser', id: 'svc-tafsser', label: 'التفسير', kind: 'commentary', commentaryType: 14 },
-  { key: 'biography', id: 'svc-biography', label: 'التراجم', kind: 'commentary', commentaryType: 15 },
+  { key: 'tafsser', id: 'svc-tafsser', label: 'التفسير', kind: 'commentary', commentaryType: 16 },
+  { key: 'biography', id: 'svc-biography', label: 'السيرة', kind: 'commentary', commentaryType: 17 },
   { key: 'medicine', id: 'svc-medicine', label: 'الطب النبوي', kind: 'commentary', commentaryType: 3 },
   { key: 'asbab', id: 'svc-asbab', label: 'أسباب الورود', kind: 'commentary', commentaryType: 7 },
   { key: 'mokhtalaf', id: 'svc-mokhtalaf', label: 'مختلف الحديث', kind: 'commentary', commentaryType: 12 },

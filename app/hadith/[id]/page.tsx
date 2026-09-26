@@ -7,7 +7,7 @@ import type { NarratorInChain, Chain, CriticismGroup } from '@/app/components/Ha
 import TakhrijSection, { TakhrijBadges } from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
 import { sectionBadgeSlots } from '@/app/components/SectionBadges'
-import { activeServiceSections } from '@/app/components/HadithServiceSection'
+import { activeServiceSections, INLINE_SERVICE_CONFIGS } from '@/app/components/HadithServiceSection'
 import UiIcon from '@/app/components/UiIcon'
 import DorarJudgment from '@/app/components/DorarJudgment'
 import type { DorarRuling } from '@/app/components/DorarJudgment'
@@ -308,6 +308,16 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   const hadithServices: Partial<Record<ServiceKey, boolean>> = {}
   for (const col of SERVICE_COLUMNS) {
     if (h[col] === true) hadithServices[col] = true
+  }
+  // A commentary section needs texts of its type linked to this hadith; the flag alone can be set
+  // with none (e.g. tafsser, rwah), which left the section showing only its empty state.
+  const linkedTypesRes = await pool.query<{ type_id: number }>(
+    `SELECT DISTINCT type_id FROM hadith_service_links WHERE hadith_id = $1`,
+    [mainId]
+  ).catch(() => ({ rows: [] as Array<{ type_id: number }> }))
+  const linkedTypes = new Set(linkedTypesRes.rows.map(r => Number(r.type_id)))
+  for (const cfg of INLINE_SERVICE_CONFIGS) {
+    if (cfg.kind === 'commentary' && !linkedTypes.has(cfg.commentaryType!)) delete hadithServices[cfg.key as ServiceKey]
   }
 
   const sanadSegments = parseSanadNarratorSegments(h.content as string)
