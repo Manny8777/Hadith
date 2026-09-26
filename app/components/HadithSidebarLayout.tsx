@@ -10,6 +10,7 @@ import ChainTimeline from './ChainTimeline'
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
 import HadithNumber from './HadithNumber'
+import UiIcon from './UiIcon'
 import MatnVariants from './MatnVariants'
 import { displayNarratorName } from '@/lib/narratorName'
 import MatnSimilaritySection from './MatnSimilaritySection'
@@ -255,17 +256,20 @@ export default function HadithSidebarLayout({
             <span aria-hidden="true">‹</span>
             <Link href={`/books/${h.book_id}`} aria-current="page">{h.book_title}</Link>
           </nav>
-          <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1>
-          {h.takhrij_author && <p className="hadith-source-author">المؤلف: {h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p>}
+          <div className="hadith-source-identity">
+          <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
+          <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1></div>
+          {h.takhrij_author && <div className="hadith-source-author"><p className="hadith-source-label"><UiIcon name="narrator" size={20} /> المؤلف</p><p>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p></div>}
+          </div>
           <dl className="hadith-source-hierarchy">
-            {h.section_text?.trim() && <div><dt>{h.section_text.trim().startsWith("باب") ? "الباب" : "الكتاب"}</dt><dd>{h.section_text.trim()}</dd></div>}
-            {h.chapter_text?.trim() && <div><dt>الباب</dt><dd>{h.chapter_text.trim()}</dd></div>}
-            {subjects.length > 0 && <div><dt>الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
+            {h.section_text?.trim() && <div><dt><UiIcon name="books" size={18} />{h.section_text.trim().startsWith("باب") ? "الباب" : "الكتاب"}</dt><dd>{h.section_text.trim()}</dd></div>}
+            {h.chapter_text?.trim() && <div><dt><UiIcon name="document" size={18} />الباب</dt><dd>{h.chapter_text.trim()}</dd></div>}
+            {subjects.length > 0 && <div><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
           <dl className="hadith-source-locators">
-            {h.part_num > 0 && <div><dt>الجزء</dt><dd>{h.part_num}</dd></div>}
-            {h.page_num > 0 && <div><dt>الصفحة</dt><dd>{h.page_num}</dd></div>}
-            {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div><dt>ترقيم الحديث</dt><dd><HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
+            {h.part_num > 0 && <div><dt><UiIcon name="layers" size={18} />الجزء</dt><dd>{h.part_num}</dd></div>}
+            {h.page_num > 0 && <div><dt><UiIcon name="document" size={18} />الصفحة</dt><dd>{h.page_num}</dd></div>}
+            {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div className="hadith-source-numbering"><dt>ترقيم الحديث</dt><dd><HadithNumber layout="source" harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
           </dl>
           {h.tarqeem_matboa1 && <p className="hadith-source-edition">{h.print1_edition && <span>{h.print1_edition}: </span>}<span>{h.tarqeem_matboa1}</span></p>}
         </header>

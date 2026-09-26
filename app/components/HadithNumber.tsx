@@ -5,10 +5,11 @@ interface Props {
   harf: string | null | undefined
   matboa: string | null | undefined
   matboa2?: number | null
+  layout?: 'source'
   className?: string
 }
 
-export default function HadithNumber({ harf, matboa, matboa2, className = '' }: Props) {
+export default function HadithNumber({ harf, matboa, matboa2, layout, className = '' }: Props) {
   const { pref, toggle } = useNumbering()
 
   const h = harf?.trim() || null
@@ -16,6 +17,20 @@ export default function HadithNumber({ harf, matboa, matboa2, className = '' }: 
   const m2 = matboa2 != null ? String(matboa2) : null
 
   if (!h && !m && !m2) return null
+
+  if (layout === 'source') {
+    return <span className="hadith-source-number-grid">
+      {[
+        { value: m, label: 'المطبوع', active: pref === 'matboa' },
+        { value: h, label: 'حرف', active: pref === 'harf' },
+        { value: m2, label: 'المطبوع ٢', active: pref === 'matboa' },
+      ].filter(item => item.value).map(item => (
+        <button key={item.label} type="button" onClick={toggle} aria-pressed={item.active} title={`ترقيم ${item.label}`}>
+          <span>{item.label}</span><strong>{item.value}</strong>
+        </button>
+      ))}
+    </span>
+  }
 
   return (
     <span className={`inline-flex items-center rounded-lg border border-gray-200 overflow-hidden text-[11px] font-mono bg-white ${className}`}>
