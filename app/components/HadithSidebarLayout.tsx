@@ -6,7 +6,6 @@ import ReportPrintButton from './ReportPrintButton'
 import SaveHadith from './SaveHadith'
 import HadithExport from './HadithExport'
 import ChainTimeline from './ChainTimeline'
-import HadithGradeBadge from './HadithGradeBadge'
 // import HadithNote from './HadithNote' // TODO: re-enable with per-user login
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
@@ -263,24 +262,16 @@ export default function HadithSidebarLayout({
           </p>
         )}
 
-        {/* Consensus grade badge + takhrij count */}
+        {/* Takhrij count. No overall verdict is shown for the hadith: scholars' statements are
+            presented one by one, each under its scholar, in «أقوال العلماء». */}
         {(() => {
-          const gradeCounts: Record<string, number> = {}
-          judgments.forEach(j => { if (j.grade_class) gradeCounts[j.grade_class] = (gradeCounts[j.grade_class] ?? 0) + 1 })
-          const consensusGrade = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
-          const gradeBadgeCls = consensusGrade === 'صحيح' ? 'bg-green-600 text-white border-green-700' :
-            consensusGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
-            consensusGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
-            'bg-gray-200 text-gray-500 border-gray-300'
           const takhrijCount = takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount
+          if (takhrijCount === 0) return null
           return (
             <div className="mb-3 flex items-center gap-3 flex-wrap">
-              <HadithGradeBadge judgments={judgments} consensusGrade={consensusGrade} chipCls={gradeBadgeCls} />
-              {takhrijCount > 0 && (
-                <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
-                  أُخرجه في {takhrijCount} مصدر
-                </a>
-              )}
+              <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
+                أُخرجه في {takhrijCount} مصدر
+              </a>
             </div>
           )
         })()}
@@ -556,48 +547,6 @@ export default function HadithSidebarLayout({
         {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
           <CollapsibleSection id="aqwal" label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`}>
-
-            {(() => {
-              const gradeCounts: Record<string, number> = {}
-              judgments.forEach(j => { if (j.grade_class) gradeCounts[j.grade_class] = (gradeCounts[j.grade_class] ?? 0) + 1 })
-              const dominant = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]
-              const domGrade = dominant?.[0] ?? null
-              const domCls = domGrade === 'صحيح' ? 'bg-green-600 text-white border-green-700' :
-                             domGrade === 'حسن'  ? 'bg-blue-500 text-white border-blue-600' :
-                             domGrade === 'ضعيف' ? 'bg-red-500 text-white border-red-600' :
-                             'bg-gray-200 text-gray-600 border-gray-300'
-              const otherCount = judgments.filter(j => !j.grade_class).length
-              if (!domGrade && otherCount === judgments.length) return null
-              return (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    {domGrade && (
-                      <span className={`text-sm font-bold px-4 py-1.5 rounded-full border ${domCls}`}>
-                        {domGrade}
-                      </span>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {Object.entries(gradeCounts).map(([g, n]) => {
-                        const cls = g === 'صحيح' ? 'bg-green-100 text-green-800 border-green-200' :
-                                    g === 'حسن'  ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                    'bg-red-100 text-red-700 border-red-200'
-                        return (
-                          <span key={g} className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${cls}`}>
-                            {g} ×{n}
-                          </span>
-                        )
-                      })}
-                      {otherCount > 0 && (
-                        <span className="text-xs px-2.5 py-0.5 rounded-full border bg-gray-100 text-gray-600 border-gray-200 font-medium">
-                          أخرى ×{otherCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-
             <div className="space-y-3">
               {judgmentGroups.map((group, gi) => {
                 const first = group[0]
