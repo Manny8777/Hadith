@@ -176,6 +176,7 @@ export default function HadithSidebarLayout({
 
   // Sections shown in main content and sidebar TOC — dynamic based on available data
   const SECTIONS = [
+    { id: 'matn', label: 'المتن' },
     { id: 'isnad',   label: 'الأسانيد والرواة' },
     ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
@@ -260,11 +261,11 @@ export default function HadithSidebarLayout({
             <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
             {h.section_text?.trim() && <>
               <span aria-hidden="true">‹</span>
-              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}><UiIcon name="books" size={18} /><span>{h.section_text.trim().startsWith('باب') ? 'الباب' : 'الكتاب'}: {h.section_text.trim()}</span></Link>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}><UiIcon name="books" size={18} /><span>{/^(كتاب|باب)/.test(h.section_text.trim()) ? h.section_text.trim() : `الكتاب: ${h.section_text.trim()}`}</span></Link>
             </>}
             {h.chapter_text?.trim() && <>
               <span aria-hidden="true">‹</span>
-              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>الباب: {h.chapter_text.trim()}</span></Link>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>{h.chapter_text.trim().startsWith('باب') ? h.chapter_text.trim() : `الباب: ${h.chapter_text.trim()}`}</span></Link>
             </>}
           </nav>
           {(h.part_num > 0 || h.page_num > 0) && (
@@ -274,6 +275,7 @@ export default function HadithSidebarLayout({
               {h.page_num > 0 && <span>الصفحة: {h.page_num}</span>}
             </div>
           )}
+          <a className="hadith-jump-link" href="#matn">انتقل إلى المتن ↓</a>
           <div className="hadith-source-identity">
           <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
           <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1></div>
@@ -307,7 +309,7 @@ export default function HadithSidebarLayout({
           const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
           if (!companion) return null
           return (
-            <div>
+            <div className="hadith-source-wide">
               <dt><UiIcon name="narrator" size={18} />الراوي</dt>
               <dd>
               <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
@@ -322,7 +324,7 @@ export default function HadithSidebarLayout({
           <dl className="hadith-source-locators">
             {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div className="hadith-source-numbering"><dt>ترقيم الحديث</dt><dd><HadithNumber layout="source" harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
           </dl>
-          {h.tarqeem_matboa1 && <p className="hadith-source-edition">{h.print1_edition && <span>{h.print1_edition}: </span>}<span>{h.tarqeem_matboa1}</span></p>}
+          {h.tarqeem_matboa1 && <p className="hadith-source-edition">{h.print1_edition && <span>الطبعة: {h.print1_edition} · </span>}<span>رقم المطبوع: {h.tarqeem_matboa1}</span></p>}
           {(h.tarf?.trim() || dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
             <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
               {h.tarf?.trim() && (
@@ -334,7 +336,7 @@ export default function HadithSidebarLayout({
               {dorarSlot && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                 {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
-                  <a href="#takhrij" className="text-green-700 hover:underline">أُخرجه في {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} مصدر</a>
+                  <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
                 )}
                 {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
               </div>
@@ -444,7 +446,9 @@ export default function HadithSidebarLayout({
                 </div>
               )}
               <div
-                className={sanad ? 'px-4 sm:px-6 py-6 sm:py-8' : 'px-4 sm:px-6 py-8 sm:py-10'}
+                id="matn"
+                tabIndex={-1}
+                className={sanad ? 'scroll-mt-header px-4 sm:px-6 py-6 sm:py-8' : 'scroll-mt-header px-4 sm:px-6 py-8 sm:py-10'}
                 style={{ ['--matn-size' as string]: MATN_SIZES[matnSize] }}
               >
                 {sanad && (

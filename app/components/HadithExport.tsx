@@ -272,7 +272,9 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
   }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <details className="hadith-export-disclosure">
+      <summary>نسخ / تصدير</summary>
+      <div className="hadith-export-options flex items-center gap-2 flex-wrap">
       <button
         onClick={handleCopyFootnote}
         className="text-xs text-blue-700 hover:text-blue-900 border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded-lg transition-colors bg-blue-50 hover:bg-blue-100"
@@ -300,6 +302,7 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
       >
         <UiIcon name="link" size={14} className="inline-block align-[-3px] ml-1" />{copiedLink ? 'تم نسخ الرابط' : 'نسخ رابط الحديث'}
       </button>
-    </div>
+      </div>
+    </details>
   )
 }

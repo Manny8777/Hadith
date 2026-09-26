@@ -23,12 +23,11 @@ export default function DorarJudgment({ rulings, searchUrl }: {
   searchUrl: string
 }) {
   // With several rulings (the book's own and later gradings) each is named by its muhaddith
-  const named = rulings.length > 1
   return (
     <>
       {rulings.map((r, i) => (
         <span key={i} className="inline-flex items-center gap-1.5 flex-wrap text-xs text-gray-600 font-sans">
-          <span className="text-gray-500">خلاصة حكم المحدث{named && r.muhaddith ? ` (${r.muhaddith})` : ''}:</span>
+          <span className="text-gray-500">خلاصة حكم المحدث{r.muhaddith ? ` (${r.muhaddith})` : ' (غير مذكور في البيانات)'}:</span>
           <span className={`font-bold px-2 py-0.5 rounded border ${gradeStyle(r.hukm ?? '')}`}>{r.hukm || '—'}</span>
           <a href={r.dorar_hash ? `https://dorar.net/h/${r.dorar_hash}` : searchUrl}
             target="_blank" rel="noopener noreferrer"
