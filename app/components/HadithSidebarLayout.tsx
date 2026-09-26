@@ -168,7 +168,7 @@ export default function HadithSidebarLayout({
     { id: 'takhrij', label: 'التخريج' },
     { id: 'matn-similarity', label: 'مطابقة المتون' },
     ...serviceSections.map(s => ({ id: s.id, label: s.label })),
-    { id: 'variants', label: 'المتن المُجمَّع والاختلافات' },
+    { id: 'variants', label: 'الروايات الموازية' },
     { id: 'adawat',  label: 'أدوات البحث' },
   ]
 
@@ -656,8 +656,8 @@ export default function HadithSidebarLayout({
           </CollapsibleSection>
         )}
 
-        {/* ── المتن المُجمَّع والاختلافات ── */}
-        <CollapsibleSection id="variants" label="المتن المُجمَّع والاختلافات" sub="مقارنة ألفاظ الروايات وتصنيف الاختلافات">
+        {/* ── الروايات الموازية (takhrij groups) ── */}
+        <CollapsibleSection id="variants" label="الروايات الموازية" sub="روايات موازية من كتب التخريج">
           <MatnVariants
             hadithId={hadithId}
             currentTarf={h.tarf}
@@ -674,7 +674,7 @@ export default function HadithSidebarLayout({
               { href: `/hadith/${hadithId}/chain-analysis`,       label: 'التحليل الزمني للإسناد', desc: 'رسم زمني لرواة السند مع الفجوات الزمنية' },
               { href: `/hadith/${hadithId}/all-narrators`,        label: 'رجال الحديث',            desc: 'قائمة كاملة بكل رواة هذا الحديث من مجموع الأسانيد' },
               { href: `/hadith/${hadithId}/witnesses`,            label: 'الشواهد والمتابعات',     desc: 'روايات موازية من صحابة آخرين — تُستخدم لتقوية الحديث' },
-              { href: `/hadith/${hadithId}/matn-variants`,        label: 'مقارنة المتون',           desc: 'مقارنة ألفاظ الروايات وتصنيف الاختلافات' },
+              { href: `/hadith/${hadithId}/matn-variants`,        label: 'مقارنة الألفاظ',          desc: 'الفروق المصنَّفة بين الروايات' },
               { href: `/hadith/${hadithId}/across-books`,         label: 'الحديث في كتب الحديث',   desc: 'مقارنة نص الحديث عبر جميع الكتب التي خرّجته' },
               { href: `/hadith/${hadithId}/pivot`,                label: 'مدار الحديث',            desc: 'الراوي الذي تجتمع عنده جميع أسانيد الحديث' },
               { href: `/hadith/${hadithId}/isnad-ranking`,        label: 'ترتيب الأسانيد قوةً',    desc: 'ترتيب جميع أسانيد الحديث من الأقوى إلى الأضعف' },

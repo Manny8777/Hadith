@@ -58,7 +58,10 @@ test.describe('Hadith core browser journeys', () => {
     await expect(page).toHaveURL(/\/hadith\/\d+/)
     await expect(page.getByRole('button', { name: 'نسخ رابط الحديث' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'طباعة الحديث' })).toBeVisible()
-    await expect(page.getByRole('link', { name: /مقارنة المتون.*تصنيف الاختلافات/ })).toBeVisible()
+    // The search-tools links live inside a section that starts closed and only mounts its
+    // children on first open, so the section has to be expanded before the link exists.
+    await page.getByRole('button', { name: /أدوات البحث/ }).click()
+    await expect(page.getByRole('link', { name: /مقارنة الألفاظ.*الفروق المصنَّفة/ })).toBeVisible()
     expect(errors).toEqual([])
   })
 
