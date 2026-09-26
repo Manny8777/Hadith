@@ -121,6 +121,8 @@ export interface HadithSidebarLayoutProps {
   takhrijSlot: ReactNode
   // Header chips for sections whose counts come from the server (SectionBadges), keyed by section id
   sectionBadges?: Record<string, ReactNode>
+  // Dorar's rulings (stored by scripts/dorar-crawl.mjs) — shown open, not in a collapsed section
+  dorarSlot?: ReactNode
 }
 
 const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string }> = {
@@ -139,6 +141,7 @@ export default function HadithSidebarLayout({
   matngroupSlot,
   takhrijSlot,
   sectionBadges = {},
+  dorarSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
@@ -167,6 +170,7 @@ export default function HadithSidebarLayout({
 
   // Sections shown in main content and sidebar TOC — dynamic based on available data
   const SECTIONS = [
+    ...(dorarSlot ? [{ id: 'dorar', label: 'حكم الدرر السنية' }] : []),
     { id: 'isnad',   label: 'الأسانيد والرواة' },
     ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
@@ -506,6 +510,8 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
+        {dorarSlot}
+
         <CollapsibleSection id="isnad" label="الأسانيد والرواة" badges={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)

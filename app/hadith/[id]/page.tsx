@@ -9,6 +9,9 @@ import MatnGroupSection from '@/app/components/MatnGroupSection'
 import { sectionBadgeSlots } from '@/app/components/SectionBadges'
 import { activeServiceSections } from '@/app/components/HadithServiceSection'
 import UiIcon from '@/app/components/UiIcon'
+import DorarJudgment from '@/app/components/DorarJudgment'
+import type { DorarRuling } from '@/app/components/DorarJudgment'
+import { DORAR_SOURCES, dorarKey, matnSearchWords, dorarSearchUrl } from '@/lib/dorar'
 import {
   parseSanadNarratorSegments,
   sanadSegmentsHaveNarrators,
@@ -339,6 +342,32 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   ).catch(() => ({ rows: [] as Array<{ node_id: number; text: string; is_leaf: boolean }> }))
   const musakaratNodes = musakaratRes.rows
 
+  // Dorar's rulings, fetched offline by scripts/dorar-crawl.mjs (tables absent until its first run)
+  const dorarSources = DORAR_SOURCES[Number(h.book_id)]
+  const dorarNumber = dorarSources ? dorarKey(h.content as string) : null
+  let dorar: { rulings: DorarRuling[]; crawled: boolean; searchUrl: string } | null = null
+  if (dorarSources && dorarNumber) {
+    const [rulingsRes, crawlRes] = await Promise.all([
+      pool.query<DorarRuling & { dorar_source_id: number | null }>(
+        `SELECT source, dorar_number, muhaddith, rawi, hukm, dorar_hash, dorar_source_id
+         FROM dorar_rulings WHERE book_id = $1 AND number = $2`,
+        [h.book_id, dorarNumber]
+      ).catch(() => ({ rows: [] as Array<DorarRuling & { dorar_source_id: number | null }> })),
+      pool.query(
+        `SELECT 1 FROM dorar_crawl WHERE book_id = $1 AND number = $2 AND status <> 'error'`,
+        [h.book_id, dorarNumber]
+      ).catch(() => ({ rows: [] })),
+    ])
+    // The book's own ruling first, then the later gradings, in DORAR_SOURCES order
+    const order = (id: number | null) => { const i = dorarSources.findIndex(s => s.id === id); return i === -1 ? 99 : i }
+    const rulings = [...rulingsRes.rows].sort((a, b) => order(a.dorar_source_id) - order(b.dorar_source_id))
+    dorar = {
+      rulings,
+      crawled: crawlRes.rows.length > 0,
+      searchUrl: dorarSearchUrl(matnSearchWords(h.content as string), dorarSources),
+    }
+  }
+
   return (
     <>
       {musakaratNodes.length > 0 && (
@@ -379,6 +408,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
           ...sectionBadgeSlots(mainId, ['matn-similarity', 'variants', ...activeServiceSections(hadithServices).map(c => c.id)]),
           takhrij: <TakhrijBadges hadithId={mainId} />,
         }}
+        dorarSlot={dorar ? <DorarJudgment {...dorar} /> : undefined}
       />
     </>
   )
