@@ -6,6 +6,8 @@ import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
 import type { NarratorInChain, Chain, CriticismGroup } from '@/app/components/HadithSidebarLayout'
 import TakhrijSection, { TakhrijBadges } from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
+import { sectionBadgeSlots } from '@/app/components/SectionBadges'
+import { activeServiceSections } from '@/app/components/HadithServiceSection'
 import UiIcon from '@/app/components/UiIcon'
 import {
   parseSanadNarratorSegments,
@@ -373,7 +375,10 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
         isnadType={dominantIsnadType}
         matngroupSlot={<MatnGroupSection hadithId={mainId} />}
         takhrijSlot={<TakhrijSection hadithId={mainId} />}
-        takhrijBadgesSlot={<TakhrijBadges hadithId={mainId} />}
+        sectionBadges={{
+          ...sectionBadgeSlots(mainId, ['matn-similarity', 'variants', ...activeServiceSections(hadithServices).map(c => c.id)]),
+          takhrij: <TakhrijBadges hadithId={mainId} />,
+        }}
       />
     </>
   )

@@ -17,6 +17,7 @@ import PrevNextNav from './PrevNextNav'
 import GhareebMatn from './GhareebMatn'
 import SanadNarrators from './SanadNarrators'
 import CollapsibleSection from './CollapsibleSection'
+import Chips from './Chips'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
 import { stripTashkeel } from '@/lib/ghareeb'
@@ -118,7 +119,8 @@ export interface HadithSidebarLayoutProps {
   sanadNarrators?: Record<number, SanadNarratorPreview>
   matngroupSlot?: ReactNode
   takhrijSlot: ReactNode
-  takhrijBadgesSlot?: ReactNode
+  // Header chips for sections whose counts come from the server (SectionBadges), keyed by section id
+  sectionBadges?: Record<string, ReactNode>
 }
 
 const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string }> = {
@@ -136,7 +138,7 @@ export default function HadithSidebarLayout({
   sanadNarrators = {},
   matngroupSlot,
   takhrijSlot,
-  takhrijBadgesSlot,
+  sectionBadges = {},
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
@@ -504,12 +506,17 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
-        <CollapsibleSection id="isnad" label="الأسانيد والرواة" sub={chains.length > 0 ? (() => {
+        <CollapsibleSection id="isnad" label="الأسانيد والرواة" badges={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)
             const mn = Math.min(...lens), mx = Math.max(...lens)
             const dl = mn === mx ? (dm[mn] || `${mn} رواة`) : `${dm[mn]||mn}–${dm[mx]||mx}`
-            return `${dl} · ${chains.length} ${chains.length === 1 ? 'سند' : 'أسانيد'} · ${chains[0].narrators.length} رواة`
+            const narrators = new Set(chains.flatMap(c => c.narrators.map(n => n.id))).size
+            return <Chips chips={[
+              { text: `${chains.length} ${chains.length === 1 ? 'سند' : 'أسانيد'}` },
+              { text: `${narrators} راوٍ`, tone: 'info' },
+              { text: dl, tone: 'violet' },
+            ]} />
           })() : undefined}>
           {chains.length === 0 ? (
             <p className="text-sm text-gray-400 py-4">لا يوجد إسناد مسجل لهذا الحديث</p>
@@ -548,7 +555,7 @@ export default function HadithSidebarLayout({
 
         {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
-          <CollapsibleSection id="aqwal" label="أقوال العلماء" sub={`${judgmentGroups.length} عالم · ${judgments.length} قول`}>
+          <CollapsibleSection id="aqwal" label="أقوال العلماء" badges={<Chips chips={[{ text: `${judgments.length} قول` }, { text: `${judgmentGroups.length} عالم`, tone: 'info' }]} />}>
             <div className="space-y-3">
               {judgmentGroups.map((group, gi) => {
                 const first = group[0]
@@ -614,18 +621,18 @@ export default function HadithSidebarLayout({
         )}
 
         {/* ── التخريج ── */}
-        <CollapsibleSection id="takhrij" label="التخريج" badges={takhrijBadgesSlot} sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
+        <CollapsibleSection id="takhrij" label="التخريج" badges={sectionBadges.takhrij} sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
           {takhrijSlot}
         </CollapsibleSection>
 
         {/* ── مطابقة المتون (حساب مباشر) ── */}
-        <CollapsibleSection id="matn-similarity" label="مطابقة المتون" sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
+        <CollapsibleSection id="matn-similarity" label="مطابقة المتون" badges={sectionBadges['matn-similarity']} sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
           <MatnSimilaritySection hadithId={hadithId} bare />
         </CollapsibleSection>
 
         {/* ── الخدمات العلمية (inline) ── */}
         {serviceSections.map(cfg => (
-          <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label}>
+          <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label} badges={sectionBadges[cfg.id]}>
             <HadithServiceSection hadithId={hadithId} config={cfg} />
           </CollapsibleSection>
         ))}
@@ -638,7 +645,7 @@ export default function HadithSidebarLayout({
         )}
 
         {relatedHadiths.length > 0 && (
-          <CollapsibleSection id="related" label="أحاديث ذات صلة" sub="روايات مرتبطة بنفس الموضوع أو الغرض">
+          <CollapsibleSection id="related" label="أحاديث ذات صلة" badges={<Chips chips={[{ text: `${relatedHadiths.length} حديث` }]} />} sub="روايات مرتبطة بنفس الموضوع أو الغرض">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {relatedHadiths.map((related) => (
                 <Link
@@ -659,7 +666,7 @@ export default function HadithSidebarLayout({
         )}
 
         {/* ── الروايات الموازية (takhrij groups) ── */}
-        <CollapsibleSection id="variants" label="الروايات الموازية" sub="روايات موازية من كتب التخريج">
+        <CollapsibleSection id="variants" label="الروايات الموازية" badges={sectionBadges.variants} sub="روايات موازية من كتب التخريج">
           <MatnVariants
             hadithId={hadithId}
             currentTarf={h.tarf}

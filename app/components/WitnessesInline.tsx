@@ -49,15 +49,7 @@ export default function WitnessesInline({ hadithId }: { hadithId: number }) {
 
   return (
     <div dir="rtl">
-      <div className="flex items-center gap-2 mb-4 text-xs flex-wrap">
-        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
-          {witnesses.length} طريق موازٍ
-        </span>
-        <span className="bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full font-medium">
-          {byCompanion.size} مجموعة
-        </span>
-      </div>
-
+      {/* Counts are in the section header (SectionBadges) */}
       <div className="space-y-4">
         {Array.from(byCompanion.entries()).map(([companionName, rows]) => (
           <div key={companionName}>

@@ -59,15 +59,7 @@ export default function NarratorsByRegionInline({ hadithId }: { hadithId: number
 
   return (
     <div dir="rtl">
-      <div className="flex items-center gap-2 mb-4 text-xs flex-wrap">
-        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
-          {narrators.length} راوٍ
-        </span>
-        <span className="bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-full font-medium">
-          {cities.length} بلد
-        </span>
-      </div>
-
+      {/* Counts are in the section header (SectionBadges) */}
       <div className="space-y-5">
         {cities.map(([city, narrs]) => (
           <div key={city}>
