@@ -254,7 +254,15 @@ export default function HadithSidebarLayout({
           <nav aria-label="مسار الكتاب" className="hadith-source-breadcrumb">
             <Link href="/books">الكتب</Link>
             <span aria-hidden="true">‹</span>
-            <Link href={`/books/${h.book_id}`} aria-current="page">{h.book_title}</Link>
+            <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
+            {h.section_text?.trim() && <>
+              <span aria-hidden="true">‹</span>
+              <span>{h.section_text.trim().startsWith('باب') ? 'الباب' : 'الكتاب'}: {h.section_text.trim()}</span>
+            </>}
+            {h.chapter_text?.trim() && <>
+              <span aria-hidden="true">‹</span>
+              <span>{'الباب: '}{h.chapter_text.trim()}</span>
+            </>}
           </nav>
           <div className="hadith-source-identity">
           <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
