@@ -121,7 +121,7 @@ export interface HadithSidebarLayoutProps {
   takhrijSlot: ReactNode
   // Header chips for sections whose counts come from the server (SectionBadges), keyed by section id
   sectionBadges?: Record<string, ReactNode>
-  // Dorar's rulings (stored by scripts/dorar-crawl.mjs) — shown open, not in a collapsed section
+  // Dorar's ruling (stored by scripts/dorar-crawl.mjs), shown in the line under the hadith title
   dorarSlot?: ReactNode
 }
 
@@ -170,7 +170,6 @@ export default function HadithSidebarLayout({
 
   // Sections shown in main content and sidebar TOC — dynamic based on available data
   const SECTIONS = [
-    ...(dorarSlot ? [{ id: 'dorar', label: 'حكم الدرر السنية' }] : []),
     { id: 'isnad',   label: 'الأسانيد والرواة' },
     ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
@@ -270,16 +269,20 @@ export default function HadithSidebarLayout({
           </p>
         )}
 
-        {/* Takhrij count. No overall verdict is shown for the hadith: scholars' statements are
-            presented one by one, each under its scholar, in «أقوال العلماء». */}
+        {/* Dorar's ruling (attributed to its muhaddith, linked to Dorar) + takhrij count. The site
+            computes no overall verdict of its own: scholars' statements stay one by one, each under
+            its scholar, in «أقوال العلماء». */}
         {(() => {
           const takhrijCount = takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount
-          if (takhrijCount === 0) return null
+          if (takhrijCount === 0 && !dorarSlot) return null
           return (
-            <div className="mb-3 flex items-center gap-3 flex-wrap">
-              <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
-                أُخرجه في {takhrijCount} مصدر
-              </a>
+            <div className="mb-3 flex items-center gap-x-4 gap-y-2 flex-wrap">
+              {dorarSlot}
+              {takhrijCount > 0 && (
+                <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
+                  أُخرجه في {takhrijCount} مصدر
+                </a>
+              )}
             </div>
           )
         })()}
@@ -510,8 +513,6 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
-        {dorarSlot}
-
         <CollapsibleSection id="isnad" label="الأسانيد والرواة" badges={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)
