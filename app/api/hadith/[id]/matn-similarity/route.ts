@@ -29,6 +29,7 @@ export async function GET(
   const parallelRes = await pool.query(
     `SELECT
        t.hadith_id,
+       h.book_id,
        h.content,
        b.title        AS book_title,
        b.takhrij_death,
@@ -71,6 +72,7 @@ export async function GET(
     const { matn: matnDisplay } = splitSanadMatn(content)
     return {
       hadith_id:      Number(row.hadith_id),
+      book_id:        Number(row.book_id),
       book_title:     (row.book_title as string | null) ?? null,
       book_death:     row.takhrij_death != null ? Number(row.takhrij_death) : null,
       num_harf:       (row.tarqeem_harf    as string | null) ?? null,

@@ -7,6 +7,7 @@ import { prepareForComparison, wordDice, queryRecall, splitIntoPhrases } from '@
 
 interface SimilarityRow {
   hadith_id:       number
+  book_id:         number
   book_title:      string | null
   book_death:      number | null
   num_harf:        string | null
@@ -262,7 +263,7 @@ export default function MatnSimilaritySection({ hadithId, bare = false }: { hadi
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-snug">
                       <Link
-                        href={`/books/${row.hadith_id}`}
+                        href={`/books/${row.book_id}`}
                         className="font-semibold text-green-800 hover:text-green-600 hover:underline"
                       >
                         {row.book_title ?? 'كتاب'}
