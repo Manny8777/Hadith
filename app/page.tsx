@@ -112,6 +112,7 @@ export default async function Home() {
         </div>
 
         {/* الكتب الستة quick links */}
+        <img src="/assets/theme-ornament.svg" alt="" aria-hidden="true" width="240" height="24" className="home-section-divider" />
         <div className="home-book-section ui-card rounded-2xl p-5 sm:p-6 mb-4">
           <h2 className="text-base font-bold text-green-900 mb-4 font-display">الكتب الستة والمسانيد الكبرى</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -165,6 +166,7 @@ export default async function Home() {
         </div>
 
         {/* Research Tools */}
+        <img src="/assets/theme-ornament.svg" alt="" aria-hidden="true" width="240" height="24" className="home-section-divider" />
         <div className="home-research-tools ui-card p-5 sm:p-6 mt-4">
           <h2 className="text-base font-bold text-green-900 mb-4">أدوات بحثية متخصصة</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

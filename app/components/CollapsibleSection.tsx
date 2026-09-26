@@ -35,7 +35,7 @@ export default function CollapsibleSection({
         aria-expanded={open}
         aria-controls={`${id}-body`}
         onClick={() => { setOpen(o => !o); setMounted(true) }}
-        className={`w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-right cursor-pointer transition-colors hover:bg-surface-sunken/50 ${open ? 'border-b border-border bg-surface-sunken/40' : ''}`}
+        className={`scholarly-section-heading w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-right cursor-pointer transition-colors hover:bg-surface-sunken/50 ${open ? 'border-b border-border bg-surface-sunken/40' : ''}`}
       >
         <span className="flex-1 min-w-0">
           <span className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">

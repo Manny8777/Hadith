@@ -240,7 +240,7 @@ body {
 
   .theme-texture {
     background-color: #0F3D2E;
-    background-image: linear-gradient(rgba(15, 61, 46, .8), rgba(15, 61, 46, .8)), url('/assets/hadith-pattern.svg');
+    background-image: linear-gradient(rgba(15, 61, 46, .55), rgba(15, 61, 46, .55)), url('/assets/hadith-pattern.svg');
     background-size: auto, 1440px 360px;
     background-position: center;
   }
@@ -575,10 +575,17 @@ html.dark {
   display: flex;
   justify-content: center;
   padding: 18px 0;
+  background-image: url('/assets/hadith-pattern.svg');
+  background-size: 960px 240px;
+  border-bottom: 1px solid var(--color-border-warm);
+  margin-bottom: 24px;
 }
 .home-ornament img {
   height: 24px;
-  opacity: .8;
+  width: 280px;
+  padding-inline: 20px;
+  box-sizing: content-box;
+  background: var(--color-paper);
 }
 .home-stats {
   max-width: 1152px;
@@ -612,6 +619,53 @@ html.dark {
 .home-sections h2 {
   font-family: var(--font-display);
   color: var(--color-ink);
+}
+
+/* Ornaments mark section boundaries; Arabic reading surfaces stay unpatterned. */
+.home-section-divider {
+  display: block;
+  width: min(320px, 100%);
+  height: 32px;
+  margin: 28px auto;
+}
+.home-book-section > h2,
+.home-research-tools > h2 {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border-warm);
+}
+.ui-card:has(.hadith-matn)::before {
+  content: '';
+  display: block;
+  height: 28px;
+  background-color: var(--color-paper);
+  background-image: url('/assets/hadith-pattern.svg');
+  background-size: 960px 240px;
+  background-position: center;
+  border-bottom: 1px solid var(--color-border-warm);
+}
+.hadith-matn::after {
+  content: '';
+  display: block;
+  width: min(280px, 100%);
+  height: 28px;
+  margin: 28px auto 0;
+  background: url('/assets/theme-ornament.svg') center / contain no-repeat;
+}
+.scholarly-section-heading::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-accent-gold-dark);
+  transform: rotate(45deg);
+}
+.scholarly-section-heading[aria-expanded="true"] {
+  border-inline-start: 3px solid var(--color-accent-gold);
+}
+@media print {
+  .ui-card:has(.hadith-matn)::before,
+  .hadith-matn::after,
+  .home-section-divider { display: none; }
 }
 /* Navigation tools share the paper palette; scholarly grade badges keep their meaning. */
 .home-research-tools a {
