@@ -341,92 +341,90 @@ export default function HadithSidebarLayout({
           )
         })()}
 
-        {/* Controls bar */}
-        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <a href={`/hadith/compare?a=${hadithId}`}
-              className="text-xs border border-indigo-200 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
-              قارن
-            </a>
-            <button
-              onClick={() => setShowTashkeel(v => !v)}
-              className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
-                showTashkeel
-                  ? 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                  : 'border-amber-300 bg-amber-50 text-amber-700 font-medium'
-              }`}
-            >
-              {showTashkeel ? 'بلا تشكيل' : 'مع التشكيل'}
-            </button>
-            {/* Matn font-size stepper */}
-            <div className="inline-flex items-center rounded-lg border border-gray-200 overflow-hidden" data-no-convert>
-              <button
-                onClick={() => setMatnSize(s => Math.max(0, s - 1))}
-                disabled={matnSize <= 0}
-                title="تصغير حجم المتن"
-                aria-label="تصغير حجم المتن"
-                className="px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-              >
-                أ−
-              </button>
-              <span className="px-1.5 text-[10px] text-gray-400 border-x border-gray-200 select-none" title="حجم المتن">حجم</span>
-              <button
-                onClick={() => setMatnSize(s => Math.min(MATN_SIZES.length - 1, s + 1))}
-                disabled={matnSize >= MATN_SIZES.length - 1}
-                title="تكبير حجم المتن"
-                aria-label="تكبير حجم المتن"
-                className="px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-              >
-                أ+
-              </button>
-            </div>
-            <ReportPrintButton
-              report={{
-                title: h.book_title,
-                subtitle: h.tarqeem_harf || h.tarqeem_matboa1 ? `رقم ${h.tarqeem_harf || h.tarqeem_matboa1}` : 'حديث نبوي',
-                text: [
-                  cleanHadithContent(h.content || h.tarf || ''),
-                  chains.length > 0 ? `\n\nالسند: ${chains[0].narrators.map((n) => n.name).join(' ← ')}` : '',
-                ].filter(Boolean).join('\n'),
-              }}
-              label="طباعة الحديث"
-            />
-            <SaveHadith hadithId={hadithId} />
-            <HadithExport
-              hadith={{
-                main_id: hadithId,
-                book_title: h.book_title,
-                takhrij_author: h.takhrij_author,
-                takhrij_death: h.takhrij_death,
-                section_text: h.section_text,
-                chapter_text: h.chapter_text,
-                part_num: h.part_num,
-                page_num: h.page_num,
-                tarqeem_harf: h.tarqeem_harf,
-                tarqeem_matboa1: h.tarqeem_matboa1,
-                tarf: h.tarf,
-              }}
-              chain={chains[0]?.narrators || []}
-              takhrijBooks={takhrijBooks}
-              takhrijSummary={takhrijSummary}
-              judgments={judgments.map(j => ({
-                say_text: j.say_text,
-                scientist_name: j.scientist_name,
-                grade_class: j.grade_class,
-              }))}
-            />
-            {/* TODO: re-enable when per-user login/notes are implemented
-            <HadithNote hadithId={hadithId} />
-            */}
-          </div>
-        </div>
-
         {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {
           const { sanad, matn, tail, footnotes } = splitSanadMatn(h.content)
           const matnText = matn || cleanHadithContent(h.content)
           return (
             <div className="ui-card mb-4 overflow-hidden">
+              <header aria-label="أدوات الحديث" className="hadith-reader-toolbar border-b border-border bg-surface px-4 sm:px-6 py-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <a href={`/hadith/compare?a=${hadithId}`}
+                    className="text-xs border border-indigo-200 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+                    قارن
+                  </a>
+                  <button
+                    onClick={() => setShowTashkeel(v => !v)}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+                      showTashkeel
+                        ? 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                        : 'border-amber-300 bg-amber-50 text-amber-700 font-medium'
+                    }`}
+                  >
+                    {showTashkeel ? 'بلا تشكيل' : 'مع التشكيل'}
+                  </button>
+                  {/* Matn font-size stepper */}
+                  <div className="inline-flex items-center rounded-lg border border-gray-200 overflow-hidden" data-no-convert>
+                    <button
+                      onClick={() => setMatnSize(s => Math.max(0, s - 1))}
+                      disabled={matnSize <= 0}
+                      title="تصغير حجم المتن"
+                      aria-label="تصغير حجم المتن"
+                      className="px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                    >
+                      أ−
+                    </button>
+                    <span className="px-1.5 text-[10px] text-gray-400 border-x border-gray-200 select-none" title="حجم المتن">حجم</span>
+                    <button
+                      onClick={() => setMatnSize(s => Math.min(MATN_SIZES.length - 1, s + 1))}
+                      disabled={matnSize >= MATN_SIZES.length - 1}
+                      title="تكبير حجم المتن"
+                      aria-label="تكبير حجم المتن"
+                      className="px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                    >
+                      أ+
+                    </button>
+                  </div>
+                  <ReportPrintButton
+                    report={{
+                      title: h.book_title,
+                      subtitle: h.tarqeem_harf || h.tarqeem_matboa1 ? `رقم ${h.tarqeem_harf || h.tarqeem_matboa1}` : 'حديث نبوي',
+                      text: [
+                        cleanHadithContent(h.content || h.tarf || ''),
+                        chains.length > 0 ? `\n\nالسند: ${chains[0].narrators.map((n) => n.name).join(' ← ')}` : '',
+                      ].filter(Boolean).join('\n'),
+                    }}
+                    label="طباعة الحديث"
+                  />
+                  <SaveHadith hadithId={hadithId} />
+                  <HadithExport
+                    hadith={{
+                      main_id: hadithId,
+                      book_title: h.book_title,
+                      takhrij_author: h.takhrij_author,
+                      takhrij_death: h.takhrij_death,
+                      section_text: h.section_text,
+                      chapter_text: h.chapter_text,
+                      part_num: h.part_num,
+                      page_num: h.page_num,
+                      tarqeem_harf: h.tarqeem_harf,
+                      tarqeem_matboa1: h.tarqeem_matboa1,
+                      tarf: h.tarf,
+                    }}
+                    chain={chains[0]?.narrators || []}
+                    takhrijBooks={takhrijBooks}
+                    takhrijSummary={takhrijSummary}
+                    judgments={judgments.map(j => ({
+                      say_text: j.say_text,
+                      scientist_name: j.scientist_name,
+                      grade_class: j.grade_class,
+                    }))}
+                  />
+                  {/* TODO: re-enable when per-user login/notes are implemented
+                  <HadithNote hadithId={hadithId} />
+                  */}
+                </div>
+              </header>
               {sanad && (
                 <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border bg-surface-sunken">
                   <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">السند</p>
