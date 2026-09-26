@@ -8,13 +8,18 @@ export const metadata = { title: 'تقاطع الكتب — جامع خادم ا
 interface Book { id: number; title: string; takhrij_author: string | null; hadith_count: number }
 
 export default async function IntersectionPage() {
+  // Only books that have takhrij links can share hadiths with another book, and the search below
+  // works on those links — so list exactly those books, counting the hadiths each has in takhrij.
   const { rows: books } = await pool.query<Book>(
-    `SELECT b.id, b.title, b.takhrij_author,
-            COUNT(h.main_id)::int AS hadith_count
-     FROM books b
-     LEFT JOIN hadith_toc h ON h.book_id = b.id AND h.is_leaf = true AND h.is_paragraph = true
-     GROUP BY b.id, b.title, b.takhrij_author
-     ORDER BY b.tarteeb, b.id`
+    `SELECT b.id, b.title, b.takhrij_author, t.hadith_count
+     FROM (
+       SELECT book_id, COUNT(DISTINCT hadith_id)::int AS hadith_count
+       FROM takhrij
+       WHERE book_id IS NOT NULL
+       GROUP BY book_id
+     ) t
+     JOIN books b ON b.id = t.book_id
+     ORDER BY b.strong ASC NULLS LAST, b.tarteeb, b.id`
   )
 
   return (

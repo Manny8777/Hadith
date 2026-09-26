@@ -40,11 +40,14 @@ export default function IntersectionClient({ books }: { books: Book[] }) {
     setResult(null)
     try {
       const res = await fetch(`/api/books/intersection?a=${idA}&b=${idB}&mode=${mode}`)
-      const data = await res.json()
-      if (data.error) { setError(data.error); return }
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data || data.error) {
+        setError(data?.error || `تعذّر إكمال البحث (خطأ ${res.status}) — حاول مرة أخرى`)
+        return
+      }
       setResult(data)
     } catch {
-      setError('حدث خطأ في البحث')
+      setError('تعذّر الاتصال بالخادم — تحقّق من الاتصال وحاول مرة أخرى')
     } finally {
       setLoading(false)
     }
@@ -67,7 +70,7 @@ export default function IntersectionClient({ books }: { books: Book[] }) {
             >
               <option value="">-- اختر --</option>
               {books.map(b => (
-                <option key={b.id} value={b.id}>{b.title} ({b.hadith_count.toLocaleString('ar-EG')} ح)</option>
+                <option key={b.id} value={b.id}>{b.title} ({b.hadith_count.toLocaleString('ar-EG')} حديث في التخريج)</option>
               ))}
             </select>
           </div>
@@ -81,7 +84,7 @@ export default function IntersectionClient({ books }: { books: Book[] }) {
             >
               <option value="">-- اختر --</option>
               {books.filter(b => b.id !== parseInt(bookA)).map(b => (
-                <option key={b.id} value={b.id}>{b.title} ({b.hadith_count.toLocaleString('ar-EG')} ح)</option>
+                <option key={b.id} value={b.id}>{b.title} ({b.hadith_count.toLocaleString('ar-EG')} حديث في التخريج)</option>
               ))}
             </select>
           </div>
