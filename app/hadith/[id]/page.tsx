@@ -8,7 +8,6 @@ import TakhrijSection, { TakhrijBadges } from '@/app/components/TakhrijSection'
 import MatnGroupSection from '@/app/components/MatnGroupSection'
 import { sectionBadgeSlots } from '@/app/components/SectionBadges'
 import { activeServiceSections, INLINE_SERVICE_CONFIGS } from '@/app/components/HadithServiceSection'
-import UiIcon from '@/app/components/UiIcon'
 import DorarJudgment from '@/app/components/DorarJudgment'
 import type { DorarRuling } from '@/app/components/DorarJudgment'
 import { DORAR_SOURCES, dorarKey, matnSearchWords, dorarSearchUrl } from '@/lib/dorar'
@@ -369,10 +368,11 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      {musakaratNodes.length > 0 && (
-        <div className="mb-4 flex items-center gap-2 flex-wrap bg-amber-50 border border-amber-200 rounded-xl p-3">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800">
-            <UiIcon name="link" size={15} /> يُسار إلى شجرة مختلف الحديث
+      <HadithSidebarLayout
+        relatedTopicsSlot={musakaratNodes.length > 0 && (
+        <div className="hadith-related-topics mb-5 flex items-center gap-2 flex-wrap border-t border-border pt-4">
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600">
+            يُسار إلى شجرة مختلف الحديث
           </span>
           {musakaratNodes.map(n => (
             <Link
@@ -380,12 +380,11 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
               href={`/topics/contradictions/node/${n.node_id}`}
               className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full border border-amber-200 hover:bg-amber-200"
             >
-              {n.text.slice(0, 40)}
+              {n.text}
             </Link>
           ))}
         </div>
       )}
-      <HadithSidebarLayout
         hadithId={mainId}
         hadith={h}
         chains={chains}

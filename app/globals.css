@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Quiet, fully labelled source index above the hadith reader. */
+.hadith-source-index { margin-block: .5rem 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border-warm); overflow-wrap: anywhere; }
+.hadith-source-breadcrumb { display: flex; flex-wrap: wrap; gap: .5rem; font-size: 13px; color: var(--color-primary); margin-bottom: .6rem; }
+.hadith-source-index a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hadith-source-title { font-family: 'ThmanyahSerifText', serif; font-size: clamp(24px, 3vw, 30px); font-weight: 700; line-height: 1.6; color: var(--color-primary); }
+.hadith-source-author, .hadith-source-edition { font-size: 13px; margin-top: .3rem; opacity: .8; }
+.hadith-source-hierarchy { display: grid; gap: .55rem; margin-top: .85rem; font-size: 15px; line-height: 1.9; }
+.hadith-source-hierarchy > div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: .5rem; }
+.hadith-source-hierarchy dt, .hadith-source-locators dt { font-size: 13px; opacity: .75; }
+.hadith-source-subjects { display: flex; flex-wrap: wrap; gap: .25rem .8rem; color: var(--color-primary); }
+.hadith-source-locators { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
+.hadith-source-locators dd { margin-top: .3rem; font-size: 16px; }
+.hadith-source-locators button { min-height: 32px; }
+.hadith-related-topics a { overflow-wrap: anywhere; }
+
 /* Use a .dark class (toggle-driven) for the dark variant instead of prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 

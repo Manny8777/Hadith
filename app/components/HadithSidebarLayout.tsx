@@ -122,6 +122,7 @@ export interface HadithSidebarLayoutProps {
   // Header chips for sections whose counts come from the server (SectionBadges), keyed by section id
   sectionBadges?: Record<string, ReactNode>
   // Dorar's ruling (stored by scripts/dorar-crawl.mjs), shown in the line under the hadith title
+  relatedTopicsSlot?: ReactNode
   dorarSlot?: ReactNode
 }
 
@@ -142,6 +143,7 @@ export default function HadithSidebarLayout({
   takhrijSlot,
   sectionBadges = {},
   dorarSlot,
+  relatedTopicsSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
@@ -247,20 +249,26 @@ export default function HadithSidebarLayout({
       <div className="flex-1 min-w-0 px-3 sm:px-4 pt-2 pb-8">
         <TrackHadithView hadithId={hadithId} hadithTitle={h.book_title + (h.tarqeem_harf ? ` رقم ${h.tarqeem_harf}` : '')} />
 
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-2 flex-wrap font-sans">
-          <Link href={`/books/${h.book_id}`} className="text-green-700 hover:underline font-medium">
-            {h.book_title}
-          </Link>
-          {h.section_text?.trim() && <><span className="text-gray-300">←</span><span>{h.section_text.trim()}</span></>}
-          {h.chapter_text?.trim() && <><span className="text-gray-300">←</span><span>{h.chapter_text.trim()}</span></>}
-          {(h.part_num > 0 || h.page_num > 0) && (
-            <span className="text-gray-300 mr-1">ج{h.part_num} ص{h.page_num}</span>
-          )}
-          {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && (
-            <HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} />
-          )}
-        </div>
+        <header className="hadith-source-index" dir="rtl">
+          <nav aria-label="مسار الكتاب" className="hadith-source-breadcrumb">
+            <Link href="/books">الكتب</Link>
+            <span aria-hidden="true">‹</span>
+            <Link href={`/books/${h.book_id}`} aria-current="page">{h.book_title}</Link>
+          </nav>
+          <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1>
+          {h.takhrij_author && <p className="hadith-source-author">المؤلف: {h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p>}
+          <dl className="hadith-source-hierarchy">
+            {h.section_text?.trim() && <div><dt>{h.section_text.trim().startsWith("باب") ? "الباب" : "الكتاب"}</dt><dd>{h.section_text.trim()}</dd></div>}
+            {h.chapter_text?.trim() && <div><dt>الباب</dt><dd>{h.chapter_text.trim()}</dd></div>}
+            {subjects.length > 0 && <div><dt>الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
+          </dl>
+          <dl className="hadith-source-locators">
+            {h.part_num > 0 && <div><dt>الجزء</dt><dd>{h.part_num}</dd></div>}
+            {h.page_num > 0 && <div><dt>الصفحة</dt><dd>{h.page_num}</dd></div>}
+            {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div><dt>ترقيم الحديث</dt><dd><HadithNumber harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
+          </dl>
+          {h.tarqeem_matboa1 && <p className="hadith-source-edition">{h.print1_edition && <span>{h.print1_edition}: </span>}<span>{h.tarqeem_matboa1}</span></p>}
+        </header>
 
         {/* Tarf */}
         {h.tarf?.trim() && (
@@ -332,14 +340,6 @@ export default function HadithSidebarLayout({
             </div>
           )
         })()}
-
-        {/* Print reference badge */}
-        {h.tarqeem_matboa1 && (
-          <div className="text-[11px] text-gray-400 mb-2 text-right" dir="rtl">
-            {h.print1_edition && <span className="font-medium text-gray-500">{h.print1_edition}: </span>}
-            <span>{h.tarqeem_matboa1}</span>
-          </div>
-        )}
 
         {/* Controls bar */}
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
@@ -482,23 +482,7 @@ export default function HadithSidebarLayout({
           )
         })()}
 
-        {/* Subject tags */}
-        {subjects.length > 0 && (
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">الموضوعات</span>
-              <div className="flex-1 h-px bg-gray-100" />
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {subjects.map(s => (
-                <Link key={s.id} href={`/topics/item/${s.id}`}
-                  className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full hover:bg-amber-100 hover:border-amber-300 transition-colors">
-                  {s.title}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {relatedTopicsSlot}
 
         {/* Mobile: horizontal TOC strip */}
         <div className="sm:hidden mb-5 -mx-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
