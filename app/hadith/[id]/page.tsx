@@ -78,7 +78,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       `SELECT DISTINCT b.title
        FROM takhrij t
        JOIN books b ON b.id = t.book_id
-       WHERE t.group_id = (SELECT group_id FROM takhrij WHERE hadith_id = $1 LIMIT 1)
+       WHERE t.group_id IN (SELECT group_id FROM takhrij WHERE hadith_id = $1)
          AND t.hadith_id != $1
        ORDER BY b.title
        LIMIT 20`,
@@ -114,7 +114,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
           LIMIT 1) as current_companion,
          COUNT(DISTINCT t.hadith_id)::int as total_takhrij
        FROM takhrij t
-       WHERE t.group_id = (SELECT group_id FROM takhrij WHERE hadith_id = $1 LIMIT 1)
+       WHERE t.group_id IN (SELECT group_id FROM takhrij WHERE hadith_id = $1)
          AND t.hadith_id != $1`,
       [mainId]
     ).then(async (r) => {
@@ -134,7 +134,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
            WHERE ih2.hadith_id = t.hadith_id AND ic.narrator_id_array[1] IS NOT NULL
            LIMIT 1
          ) comp ON true
-         WHERE t.group_id = (SELECT group_id FROM takhrij WHERE hadith_id = $1 LIMIT 1)
+         WHERE t.group_id IN (SELECT group_id FROM takhrij WHERE hadith_id = $1)
            AND t.hadith_id != $1`,
         [mainId, currentCompanion]
       )

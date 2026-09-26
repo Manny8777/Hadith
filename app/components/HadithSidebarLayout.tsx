@@ -10,6 +10,7 @@ import ChainTimeline from './ChainTimeline'
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
 import HadithNumber from './HadithNumber'
+import { useNumbering } from '@/lib/numberingContext'
 import UiIcon from './UiIcon'
 import MatnVariants from './MatnVariants'
 import { displayNarratorName } from '@/lib/narratorName'
@@ -172,6 +173,8 @@ export default function HadithSidebarLayout({
     localStorage.setItem('matnSize', String(matnSize))
   }, [matnSize])
 
+  const { pref: numberingPreference } = useNumbering()
+  const selectedNumber = numberingPreference === 'harf' ? h.tarqeem_harf : h.tarqeem_matboa1
   const serviceSections = activeServiceSections(hadithServices)
 
   // Sections shown in main content and sidebar TOC — dynamic based on available data
@@ -254,96 +257,10 @@ export default function HadithSidebarLayout({
       <div className="flex-1 min-w-0 px-3 sm:px-4 pt-2 pb-8">
         <TrackHadithView hadithId={hadithId} hadithTitle={h.book_title + (h.tarqeem_harf ? ` رقم ${h.tarqeem_harf}` : '')} />
 
-        <header className="hadith-source-index" dir="rtl">
-          <nav aria-label="مسار الكتاب" className="hadith-source-breadcrumb">
-            <Link href="/books">الكتب</Link>
-            <span aria-hidden="true">‹</span>
-            <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
-            {h.section_text?.trim() && <>
-              <span aria-hidden="true">‹</span>
-              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}><UiIcon name="books" size={18} /><span>{/^(كتاب|باب)/.test(h.section_text.trim()) ? h.section_text.trim() : `الكتاب: ${h.section_text.trim()}`}</span></Link>
-            </>}
-            {h.chapter_text?.trim() && <>
-              <span aria-hidden="true">‹</span>
-              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>{h.chapter_text.trim().startsWith('باب') ? h.chapter_text.trim() : `الباب: ${h.chapter_text.trim()}`}</span></Link>
-            </>}
-          </nav>
-          {(h.part_num > 0 || h.page_num > 0) && (
-            <div className="hadith-source-location">
-              {h.part_num > 0 && <span>الجزء: {h.part_num}</span>}
-              {h.part_num > 0 && h.page_num > 0 && <span aria-hidden="true">·</span>}
-              {h.page_num > 0 && <span>الصفحة: {h.page_num}</span>}
-            </div>
-          )}
+        <nav aria-label="التنقل داخل الحديث" className="flex flex-wrap gap-4 mb-3 text-sm">
           <a className="hadith-jump-link" href="#matn">انتقل إلى المتن ↓</a>
-          <div className="hadith-source-identity">
-          <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
-          <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1></div>
-          {h.takhrij_author && <div className="hadith-source-author"><p className="hadith-source-label"><UiIcon name="narrator" size={20} /> المؤلف</p><p>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p></div>}
-          </div>
-          <dl className="hadith-source-hierarchy">
-          {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
-            const t = ISNAD_TYPE_MAP[isnadType]
-            return (
-              <div>
-                <dt>نوع الحديث</dt>
-                <dd title={t.desc}>{t.label}</dd>
-              </div>
-            )
-          })()}
-          {(() => {
-            const terms = chains.map(c => c.tahdethTerm).filter(Boolean) as string[]
-            if (terms.length === 0) return null
-            const freq: Record<string, number> = {}
-            terms.forEach(t => { freq[t] = (freq[t] ?? 0) + 1 })
-            const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0]
-            return (
-              <div>
-                <dt>صيغة التحديث</dt>
-                <dd>{dominant}</dd>
-              </div>
-            )
-          })()}
-
-        {(() => {
-          const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
-          if (!companion) return null
-          return (
-            <div className="hadith-source-wide">
-              <dt><UiIcon name="narrator" size={18} />الراوي</dt>
-              <dd>
-              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
-                {displayNarratorName(companion.name, companion.abb_name)}
-              </Link>
-              </dd>
-            </div>
-          )
-        })()}
-            {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
-          </dl>
-          <dl className="hadith-source-locators">
-            {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div className="hadith-source-numbering"><dt>ترقيم الحديث</dt><dd><HadithNumber layout="source" harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
-          </dl>
-          {h.tarqeem_matboa1 && <p className="hadith-source-edition">{h.print1_edition && <span>الطبعة: {h.print1_edition} · </span>}<span>رقم المطبوع: {h.tarqeem_matboa1}</span></p>}
-          {(h.tarf?.trim() || dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
-            <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
-              {h.tarf?.trim() && (
-                <div>
-                  <p className="hadith-source-label">طرف الحديث</p>
-                  <p className="font-serif text-base leading-relaxed mt-1">{h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
-                </div>
-              )}
-              {dorarSlot && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
-                  <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
-                )}
-                {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
-              </div>
-            </section>
-          )}
-        </header>
-
+          <a className="hadith-jump-link" href="#source-details">بيانات المصدر والتوثيق ↓</a>
+        </nav>
         {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {
           const { sanad, matn, tail, footnotes } = splitSanadMatn(h.content)
@@ -484,6 +401,100 @@ export default function HadithSidebarLayout({
             </div>
           )
         })()}
+
+        <header id="source-details" className="hadith-source-index scroll-mt-header" dir="rtl">
+          <nav aria-label="مسار الكتاب" className="hadith-source-breadcrumb">
+            <Link href="/books">الكتب</Link>
+            <span aria-hidden="true">‹</span>
+            <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
+            {h.section_text?.trim() && <>
+              <span aria-hidden="true">‹</span>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}><UiIcon name="books" size={18} /><span>{/^(كتاب|باب)/.test(h.section_text.trim()) ? h.section_text.trim() : `الكتاب: ${h.section_text.trim()}`}</span></Link>
+            </>}
+            {h.chapter_text?.trim() && <>
+              <span aria-hidden="true">‹</span>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>{h.chapter_text.trim().startsWith('باب') ? h.chapter_text.trim() : `الباب: ${h.chapter_text.trim()}`}</span></Link>
+            </>}
+          </nav>
+          {(h.part_num > 0 || h.page_num > 0) && (
+            <div className="hadith-source-location">
+              {h.part_num > 0 && <span>الجزء: {h.part_num}</span>}
+              {h.part_num > 0 && h.page_num > 0 && <span aria-hidden="true">·</span>}
+              {h.page_num > 0 && <span>الصفحة: {h.page_num}</span>}
+            </div>
+          )}
+          <div className="hadith-source-identity">
+          <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
+          <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1></div>
+          {h.takhrij_author && <div className="hadith-source-author"><p className="hadith-source-label"><UiIcon name="narrator" size={20} /> المؤلف</p><p>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p></div>}
+          </div>
+          <dl className="hadith-source-hierarchy">
+          {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
+            const t = ISNAD_TYPE_MAP[isnadType]
+            return (
+              <div>
+                <dt>نوع الحديث</dt>
+                <dd title={t.desc}>{t.label}</dd>
+              </div>
+            )
+          })()}
+          {(() => {
+            const terms = chains.map(c => c.tahdethTerm).filter(Boolean) as string[]
+            if (terms.length === 0) return null
+            const freq: Record<string, number> = {}
+            terms.forEach(t => { freq[t] = (freq[t] ?? 0) + 1 })
+            const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0]
+            return (
+              <div>
+                <dt>صيغة التحديث</dt>
+                <dd>{dominant}</dd>
+              </div>
+            )
+          })()}
+
+        {(() => {
+          const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
+          if (!companion) return null
+          return (
+            <div className="hadith-source-wide">
+              <dt><UiIcon name="narrator" size={18} />الراوي</dt>
+              <dd>
+              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
+                {displayNarratorName(companion.name, companion.abb_name)}
+              </Link>
+              </dd>
+            </div>
+          )
+        })()}
+            {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
+          </dl>
+          <dl className="hadith-source-locators">
+            {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div className="hadith-source-numbering"><dt>ترقيم الحديث</dt><dd><HadithNumber layout="source" harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
+          </dl>
+          <p className="hadith-source-edition" aria-live="polite">
+            <strong>المرجع: </strong>{h.book_title} · {h.takhrij_author && `${h.takhrij_author} · `}
+            {h.print1_edition && `الطبعة: ${h.print1_edition} · `}
+            {h.part_num > 0 && `ج ${h.part_num} · `}{h.page_num > 0 && `ص ${h.page_num} · `}
+            {numberingPreference === 'harf' ? 'ترقيم حرف' : 'ترقيم المطبوع'}: {selectedNumber || 'غير متوفر'}
+          </p>
+          {(h.tarf?.trim() || dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
+            <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
+              {h.tarf?.trim() && (
+                <div>
+                  <p className="hadith-source-label">طرف الحديث</p>
+                  <p className="font-serif text-base leading-relaxed mt-1">{h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
+                </div>
+              )}
+              {dorarSlot && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
+                  <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
+                )}
+                {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
+              </div>
+            </section>
+          )}
+        </header>
 
         {relatedTopicsSlot}
 

@@ -973,3 +973,18 @@ html.dark {
     color: #000 !important;
   }
 }
+
+/* One semantic source table, presented as labelled cards on narrow screens. */
+.research-source-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: start; }
+.research-source-table th, .research-source-table td { padding: .75rem; border-bottom: 1px solid var(--color-border); vertical-align: top; text-align: start; }
+.research-source-table th { background: var(--color-surface-sunken); color: var(--color-primary); }
+.research-source-table td a { display: inline-block; padding-block: .25rem; }
+@media (max-width: 767px) {
+  .research-source-table, .research-source-table tbody { display: block; }
+  .research-source-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .research-source-table tr { display: block; border: 1px solid var(--color-border-warm); border-radius: 12px; margin-bottom: .75rem; padding: .5rem; }
+  .research-source-table td { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: .5rem; border: 0; padding: .35rem; overflow-wrap: anywhere; }
+  .research-source-table td::before { content: attr(data-label); color: var(--color-primary); }
+  .research-source-table td br { display: none; }
+  .research-source-table td span:last-child { grid-column: 2; }
+}

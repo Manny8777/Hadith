@@ -179,8 +179,8 @@ export async function TakhrijBadges({ hadithId }: { hadithId: number }) {
   const { rows } = await fetchTakhrij(hadithId)
   if (rows.length === 0) return null
   const books = new Set(rows.map(r => r.book_id)).size
-  const mutabaat = rows.filter(r => r.kind === 'mutabaa').length
-  const shawahid = rows.filter(r => r.kind === 'shahid').length
+  const mutabaat = rows.filter(r => r.main_id !== hadithId && r.kind === 'mutabaa').length
+  const shawahid = rows.filter(r => r.main_id !== hadithId && r.kind === 'shahid').length
   return (
     <>
       <span className="ui-chip">{rows.length} رواية في {books} كتاب</span>
@@ -202,8 +202,8 @@ export default async function TakhrijSection({
     <p className="text-sm text-gray-400 py-4">لا يوجد تخريج مسجل لهذا الحديث في قاعدة البيانات</p>
   )
 
-  const mutabaatCount = rows.filter(r => r.kind === 'mutabaa').length
-  const shawahidCount = rows.filter(r => r.kind === 'shahid').length
+  const mutabaatCount = rows.filter(r => r.main_id !== hadithId && r.kind === 'mutabaa').length
+  const shawahidCount = rows.filter(r => r.main_id !== hadithId && r.kind === 'shahid').length
 
   return (
     <TakhrijClient

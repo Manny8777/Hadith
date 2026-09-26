@@ -301,6 +301,24 @@ function ViewModeControls({
   )
 }
 
+function StructuredSources({ rows, sourceId }: { rows: TakhrijRow[]; sourceId: number }) {
+  const relationship = (row: TakhrijRow) => row.main_id === sourceId ? 'الرواية الحالية' : row.kind === 'mutabaa' ? 'متابعة' : row.kind === 'shahid' ? 'شاهد' : 'غير محدد'
+  return <div className="research-source-list">
+    <p className="text-sm mb-3 text-gray-600">النتائج المعروضة: {rows.length} رواية في {new Set(rows.map(r => r.book_id)).size} كتاب. يشمل العدد الرواية الحالية إن ظهرت؛ المتابعات والشواهد تصف الروايات الأخرى.</p>
+    {rows.length === 0 ? <p>لا توجد روايات مطابقة لهذه المرشحات</p> : <table className="research-source-table">
+      <caption className="sr-only">مصادر التخريج وأرقام الروايات</caption>
+      <thead><tr>{['الكتاب', 'رقم الحديث', 'الجزء / الصفحة', 'العلاقة', 'الرواية'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
+      <tbody>{rows.map(row => <tr key={row.main_id}>
+        <td data-label="الكتاب"><Link className="ui-link font-semibold" href={`/books/${row.book_id}`}>{row.book_title || `كتاب ${row.book_id}`}</Link></td>
+        <td data-label="رقم الحديث"><span>المطبوع: {row.tarqeem_matboa1 || '—'}</span><br /><span>حرف: {row.tarqeem_harf || '—'}</span></td>
+        <td data-label="الجزء / الصفحة">ج {row.part_num || '—'} · ص {row.page_num || '—'}</td>
+        <td data-label="العلاقة">{relationship(row)}</td>
+        <td data-label="الرواية"><Link className="ui-link" href={`/hadith/${row.main_id}`}>عرض الرواية</Link></td>
+      </tr>)}</tbody>
+    </table>}
+  </div>
+}
+
 // ── إجمالي view ──────────────────────────────────────────────────────────────
 
 function CitationTextView({
@@ -694,8 +712,8 @@ export default function TakhrijClient({
   )
 
   const visibleBooks = useMemo(() => new Set(filtered.map(r => r.book_id)).size, [filtered])
-  const visibleMutabaat = filtered.filter(r => r.kind === 'mutabaa').length
-  const visibleShawahid = filtered.filter(r => r.kind === 'shahid').length
+  const visibleMutabaat = filtered.filter(r => r.main_id !== sourceId && r.kind === 'mutabaa').length
+  const visibleShawahid = filtered.filter(r => r.main_id !== sourceId && r.kind === 'shahid').length
 
   return (
     <div dir="rtl">
@@ -886,7 +904,11 @@ export default function TakhrijClient({
       </div>
 
       {/* Content */}
-      <CitationTextView rows={filtered} sourceId={sourceId} viewMode={viewMode} />
+      <StructuredSources rows={filtered} sourceId={sourceId} />
+      <details className="research-citation-text mt-4">
+        <summary className="cursor-pointer text-sm text-green-700 py-3">النص المتصل للتخريج ونسخه</summary>
+        <CitationTextView rows={filtered} sourceId={sourceId} viewMode={viewMode} />
+      </details>
 
       {truncated && (
         <p className="text-xs text-gray-400 mt-2 text-center">
