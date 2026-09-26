@@ -644,12 +644,8 @@ export default function HadithSidebarLayout({
           </CollapsibleSection>
         ))}
 
-        {/* ── مقارنة المتون (group matn) ── */}
-        {matngroupSlot && (
-          <section id="matn-group" className="mb-6 scroll-mt-header">
-            {matngroupSlot}
-          </section>
-        )}
+        {/* ── روايات بنفس المتن (group matn) — renders its own collapsed section, or nothing ── */}
+        {matngroupSlot}
 
         {relatedHadiths.length > 0 && (
           <CollapsibleSection id="related" label="أحاديث ذات صلة" badges={<Chips chips={[{ text: `${relatedHadiths.length} حديث` }]} />} sub="روايات مرتبطة بنفس الموضوع أو الغرض">

@@ -1,5 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import CollapsibleSection from './CollapsibleSection'
+import Chips from './Chips'
 
 interface GroupMember {
   hadith_id: number
@@ -33,10 +35,12 @@ export default async function MatnGroupSection({ hadithId }: { hadithId: number 
   if (members.length === 0) return null
 
   return (
-    <div className="mt-3 mb-4">
-      <p className="text-xs text-gray-500 mb-2 font-medium">
-        روايات بنفس المتن في {members.length} مصدر آخر:
-      </p>
+    <CollapsibleSection
+      id="matn-group"
+      label="روايات بنفس المتن"
+      badges={<Chips chips={[{ text: `${members.length} مصدر` }]} />}
+      sub={`روايات بنفس المتن في ${members.length} مصدر آخر`}
+    >
       <div className="flex flex-wrap gap-2">
         {members.map(m => (
           <Link
@@ -59,6 +63,6 @@ export default async function MatnGroupSection({ hadithId }: { hadithId: number 
           </Link>
         ))}
       </div>
-    </div>
+    </CollapsibleSection>
   )
 }
