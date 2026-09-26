@@ -15,8 +15,8 @@ export default function MatnMatchLine({
   if (!parts || parts.length === 0) return null
   return (
     <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2">
-      <span className="block text-[10px] font-semibold text-amber-700 mb-1">{label}</span>
-      <p className="text-sm leading-relaxed text-gray-700">
+      <span className="matn-match-label block text-[10px] font-semibold text-amber-700 mb-1">{label}</span>
+      <p className="matn-match-text text-sm leading-relaxed text-gray-700">
         {parts.map((part, i) => (
           <span key={i}>
             {i > 0 ? ' ' : ''}

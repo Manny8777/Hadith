@@ -252,7 +252,7 @@ function SearchInner() {
             <div
               ref={highlightRef}
               aria-hidden
-              className="pointer-events-none absolute inset-0 select-none overflow-hidden whitespace-pre rounded-lg px-4 py-3 text-lg text-transparent"
+              className="search-query-type pointer-events-none absolute inset-0 select-none overflow-hidden whitespace-pre rounded-lg px-4 py-3 text-lg text-transparent"
               dir="rtl"
             >
               {highlightTokens(q).map((t, i) =>
@@ -280,7 +280,7 @@ function SearchInner() {
                 ? `بحث في أحاديث ${narratorNameParam || 'الراوي'}...`
                 : 'ابحث في الأحاديث النبوية...'
               }
-              className="relative w-full rounded-lg bg-transparent px-4 py-3 text-lg focus:outline-none"
+              className="search-query-type relative w-full rounded-lg bg-transparent px-4 py-3 text-lg focus:outline-none"
               dir="rtl"
             />
           </div>
@@ -648,7 +648,7 @@ function SearchInner() {
                 {r.section_text?.trim()} {r.chapter_text?.trim()}
               </div>
             )}
-            <p className="text-gray-800 text-sm leading-relaxed line-clamp-4">
+            <p className="search-result-preview text-gray-800 text-sm leading-relaxed line-clamp-4">
               {stripTags(r.tarf).slice(0, 300) || '...'}
             </p>
             <MatnMatchLine parts={r.snippet} />

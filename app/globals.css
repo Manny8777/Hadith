@@ -776,6 +776,58 @@ html.dark {
     height: 88px !important;
   }
 }
+/* Mobile type scale: preserve Thmanyah and desktop sizes, give Arabic text room. */
+@media (max-width: 639px) {
+  :root {
+    --text-xs: .8125rem;
+    --text-xs--line-height: 1.6;
+    --text-sm: .9375rem;
+    --text-sm--line-height: 1.7;
+  }
+
+  main h1.text-3xl {
+    font-size: 1.5rem;
+    line-height: 1.6;
+  }
+
+  input[type="search"], input[type="text"], input[type="number"],
+  input:not([type]), select, textarea, .search-query-type {
+    font-size: 1rem;
+  }
+
+  .search-result-preview {
+    font-size: 1.0625rem;
+    line-height: 1.95;
+  }
+
+  .matn-match-text {
+    font-size: 1rem;
+    line-height: 1.9;
+  }
+
+  .matn-match-label,
+  .ui-card:has(.hadith-matn) > div > p.font-sans {
+    font-size: .8125rem;
+    line-height: 1.6;
+  }
+
+  .hadith-sanad {
+    font-size: 1rem;
+    line-height: 2;
+  }
+
+  .hadith-matn {
+    /* Scale the reader's chosen size rather than overriding their controls. */
+    font-size: calc(var(--matn-size, 1.25rem) * 1.12);
+    line-height: 1.95;
+  }
+
+  .home-description {
+    font-size: .875rem;
+    line-height: 1.9;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ui-card, .home-nav-card, .home-book-chip {
     transition: none;
