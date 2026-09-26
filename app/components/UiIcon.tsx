@@ -62,8 +62,11 @@ function glyph(name: IconName): ReactNode {
     case 'share':
     case 'external': return <><circle cx="18" cy="5" r="2" {...common} /><circle cx="6" cy="12" r="2" {...common} /><circle cx="18" cy="19" r="2" {...common} /><path d="m7.8 11 8.4-5M7.8 13l8.4 5" {...common} /></>
     case 'bookmark': return <path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-3.5L6 21z" {...common} />
-    case 'sun': return <><circle cx="12" cy="12" r="3.5" {...common} /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" {...common} /></>
-    case 'moon': return <path d="M19.5 15.5A7.5 7.5 0 0 1 8.5 4.5 7.5 7.5 0 1 0 19.5 15.5z" {...common} />
+    case 'sun': return <>
+      <circle cx="12" cy="12" r="4" {...common} strokeWidth={2} />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M19.07 4.93l-1.42 1.42M6.35 17.65l-1.42 1.42" {...common} strokeWidth={2} />
+    </>
+    case 'moon': return <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" {...common} strokeWidth={2} />
     case 'landmark':
     case 'kaaba': return <><path d="M3 20h18M5 17h14M6 17V9l6-4 6 4v8M9 17v-4h6v4M8 10h8" {...common} /></>
     case 'scale': return <><path d="M12 4v16M7 20h10M5 7h14M8 7l-3 6a3 3 0 0 0 6 0L8 7M16 7l-3 6a3 3 0 0 0 6 0l-3-6" {...common} /></>

@@ -223,11 +223,13 @@ function ThemeToggle() {
     <button
       onClick={toggle}
       data-no-convert
+      type="button"
       title={dark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
       aria-label="تبديل المظهر"
+      aria-pressed={dark}
       className="flex items-center justify-center w-11 h-11 rounded-full text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] transition-colors shrink-0"
     >
-      <UiIcon name={dark ? 'sun' : 'moon'} size={16} />
+      <UiIcon name={dark ? 'sun' : 'moon'} size={22} className="text-[#C9A96B]" />
     </button>
   )
 }
