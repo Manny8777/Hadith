@@ -27,21 +27,31 @@ export default function CollapsibleSection({
   }, [id])
 
   return (
-    <section id={id} className="mb-4 scroll-mt-header">
+    <section id={id} className={`ui-card mb-3 scroll-mt-header overflow-hidden ${open ? 'ring-1 ring-accent-gold/40' : ''}`}>
       <button
         type="button"
         aria-expanded={open}
         aria-controls={`${id}-body`}
         onClick={() => { setOpen(o => !o); setMounted(true) }}
-        className="ui-section-head !mb-0 w-full text-right cursor-pointer rounded-lg py-2 hover:bg-surface-sunken/60 transition-colors"
+        className={`w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-right cursor-pointer transition-colors hover:bg-surface-sunken/50 ${open ? 'border-b border-border bg-surface-sunken/40' : ''}`}
       >
-        <h2 className="ui-section-head-title">{label}</h2>
-        {sub && <span className="ui-section-head-sub">{sub}</span>}
-        <span className="ui-section-head-rule" />
-        <span aria-hidden className={`text-gray-400 text-sm transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-base sm:text-lg font-bold text-ink font-display leading-snug">{label}</span>
+          {sub && <span className="block text-xs text-gray-500 font-sans mt-0.5">{sub}</span>}
+        </span>
+        <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-sans font-medium transition-colors ${
+          open
+            ? 'border-border bg-surface text-gray-600'
+            : 'border-green-700 bg-green-700 text-white'
+        }`}>
+          {open ? 'إخفاء' : 'عرض'}
+          <svg aria-hidden viewBox="0 0 20 20" className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 8l5 5 5-5" />
+          </svg>
+        </span>
       </button>
       {mounted && (
-        <div id={`${id}-body`} hidden={!open} className="pt-3 pb-4">
+        <div id={`${id}-body`} hidden={!open} className="px-3 sm:px-5 pt-4 pb-5">
           {children}
         </div>
       )}
