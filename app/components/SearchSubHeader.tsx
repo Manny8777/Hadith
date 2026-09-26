@@ -31,7 +31,7 @@ export default function SearchSubHeader() {
   }
 
   return (
-    <div className="relative z-10 bg-[#FFFDF7] border-b border-[#E4DFD2] font-sans" dir="rtl">
+    <div className="relative z-10 bg-surface border-b border-border font-sans" dir="rtl">
       <div className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
           <form onSubmit={handleSubmit} className="flex flex-1 min-w-0 gap-2" role="search">
@@ -42,7 +42,7 @@ export default function SearchSubHeader() {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="بحث نصي في المتون والأطراف..."
-              className="flex-1 min-w-0 min-h-10 rounded-full border border-[#D9C9A8] bg-[#FFFDF7] px-4 py-2 text-sm text-[#17201D] placeholder:text-[#747873] focus:border-[#C9A96B] focus:outline-none focus:ring-2 focus:ring-[#C9A96B]/20 transition-colors"
+              className="flex-1 min-w-0 min-h-11 rounded-full border border-border-warm bg-surface px-4 py-2 text-sm text-ink placeholder:text-muted focus:border-[#C9A96B] focus:outline-none focus:ring-2 focus:ring-[#C9A96B]/20 transition-colors"
               dir="rtl"
               enterKeyHint="search"
             />
@@ -58,13 +58,13 @@ export default function SearchSubHeader() {
           <div className="hidden sm:flex items-center gap-1 sm:gap-2 shrink-0 text-xs sm:text-sm">
             <Link
               href="/find-by-number"
-              className="rounded-full border border-[#D9C9A8] bg-[#FFFDF7] px-3 py-1.5 text-[#17201D] hover:border-[#C9A96B] hover:bg-[#F8F1E4] hover:text-[#0F3D2E] transition-colors whitespace-nowrap"
+              className="rounded-full border border-border-warm bg-surface px-3 py-1.5 text-ink hover:border-[#C9A96B] hover:bg-paper hover:text-primary transition-colors whitespace-nowrap"
             >
               رقم حديث
             </Link>
             <Link
               href="/hadiths/advanced-research"
-              className="rounded-full border border-[#D9C9A8] bg-[#FFFDF7] px-3 py-1.5 text-[#17201D] hover:border-[#C9A96B] hover:bg-[#F8F1E4] hover:text-[#0F3D2E] transition-colors whitespace-nowrap"
+              className="rounded-full border border-border-warm bg-surface px-3 py-1.5 text-ink hover:border-[#C9A96B] hover:bg-paper hover:text-primary transition-colors whitespace-nowrap"
             >
               بحث متعدد
             </Link>
@@ -83,9 +83,9 @@ export default function SearchSubHeader() {
 
 export function SearchSubHeaderFallback() {
   return (
-    <div className="relative z-10 bg-[#FFFDF7] border-b border-[#E4DFD2] font-sans" dir="rtl" aria-hidden>
+    <div className="relative z-10 bg-surface border-b border-border font-sans" dir="rtl" aria-hidden>
       <div className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5">
-        <div className="h-10 rounded-full bg-[#F0E8D8] animate-pulse" />
+        <div className="h-10 rounded-full bg-surface-sunken animate-pulse" />
       </div>
     </div>
   )

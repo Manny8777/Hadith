@@ -135,6 +135,9 @@
   --color-primary: #0F3D2E;        /* handoff deep emerald */
   --color-primary-soft: #E2EEE7;   /* quiet emerald tint */
   --color-accent-gold: #C9A96B;    /* handoff antique gold */
+  --color-accent-gold-dark: #A8894F;
+  --color-border-warm: #D9C9A8;
+  --color-on-dark: #F8F1E4;
   --color-white: #FFFDF7;          /* ivory, never harsh pure white */
 
   /* Emerald — narrator chains, active links, selected states, primary actions, صحيح/مرفوع */
@@ -146,17 +149,17 @@
   /* Gold — references, badges, hadith/volume/page numbers, scholarly highlights, موقوف */
   --color-amber-50:#FBF3DF; --color-amber-100:#F5E8C8; --color-amber-200:#EAD3A0; --color-amber-300:#DDC58F; --color-amber-400:#C9A96B; --color-amber-500:#B28F50; --color-amber-600:#A8894F; --color-amber-700:#8F703F; --color-amber-800:#72572F; --color-amber-900:#55411F; --color-amber-950:#342712;
 
-  /* Blue — citations, source links, clickable references, حسن/مرسل */
-  --color-blue-50:#DCEFFF; --color-blue-100:#BFE0FB; --color-blue-200:#93C9F4; --color-blue-300:#5FACEA; --color-blue-400:#2E8FD8; --color-blue-500:#1A82C8; --color-blue-600:#1378B8; --color-blue-700:#105F92; --color-blue-800:#0E4D75; --color-blue-900:#0B3A58; --color-blue-950:#082A41;
+  /* Sage — quiet citations and source links, حسن/مرسل */
+  --color-blue-50:#EDF2EF; --color-blue-100:#DEE8E1; --color-blue-200:#C6D7CC; --color-blue-300:#ADC4B5; --color-blue-400:#8DAA99; --color-blue-500:#6D927E; --color-blue-600:#527760; --color-blue-700:#41624F; --color-blue-800:#314D3D; --color-blue-900:#233D2F; --color-blue-950:#152A21;
 
   /* Red — danger / weak, ضعيف */
   --color-red-50:#F8E7E7; --color-red-100:#F0CECE; --color-red-200:#E3A9A9; --color-red-300:#D38282; --color-red-400:#C56565; --color-red-500:#BC5353; --color-red-600:#B44747; --color-red-700:#963A3A; --color-red-800:#762E2E; --color-red-900:#582424;
 
   /* Teal — transmission terms (عن/حدثنا), kept within the emerald family */
-  --color-teal-50:#DCF2EA; --color-teal-100:#C0E7D8; --color-teal-200:#97D6BF; --color-teal-300:#67C0A2; --color-teal-400:#3AA585; --color-teal-500:#1C9272; --color-teal-600:#118566; --color-teal-700:#0E6E54; --color-teal-800:#0B5743; --color-teal-900:#08412F;
+  --color-teal-50:#EAF1EB; --color-teal-100:#D6E6DC; --color-teal-200:#B9D4C5; --color-teal-300:#94BBA8; --color-teal-400:#73A28C; --color-teal-500:#55876F; --color-teal-600:#3E735C; --color-teal-700:#2D5E4A; --color-teal-800:#214A3A; --color-teal-900:#17382C;
 
-  /* Purple — secondary tools used sparingly (notes, compare, BibTeX) */
-  --color-purple-50:#EFE5FF; --color-purple-100:#E0CEFB; --color-purple-200:#CBB0F4; --color-purple-300:#B08CEA; --color-purple-400:#976BDD; --color-purple-500:#8757CB; --color-purple-600:#7C4DB8; --color-purple-700:#663E98; --color-purple-800:#503078; --color-purple-900:#3C2459; --color-purple-950:#271637;
+  /* Warm stone — secondary tools, notes, comparison, and citations */
+  --color-purple-50:#F5F1E8; --color-purple-100:#ECE5D6; --color-purple-200:#DED3BA; --color-purple-300:#CDBD9C; --color-purple-400:#B5A37D; --color-purple-500:#978563; --color-purple-600:#7B6C4F; --color-purple-700:#635640; --color-purple-800:#4E4434; --color-purple-900:#393226; --color-purple-950:#26221A;
 
   /* ── Aliases: map Tailwind's default palettes onto the scholarly set.
      Because they reference the core vars, they auto-adapt in dark mode too. ── */
@@ -186,6 +189,16 @@
   --radius-md: 14px;
   --radius-lg: 18px;
   --radius-pill: 999px;
+  --bg-page: var(--color-paper);
+  --bg-surface: var(--color-surface);
+  --bg-dark: #0F3D2E;
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-muted);
+  --text-on-dark: var(--color-on-dark);
+  --accent-primary: var(--color-primary);
+  --accent-gold: var(--color-accent-gold);
+  --border-soft: var(--color-border);
+  --border-warm: var(--color-border-warm);
 }
 
 body {
@@ -227,10 +240,9 @@ body {
 
   .theme-texture {
     background-color: #0F3D2E;
-    background-image: linear-gradient(rgba(15, 61, 46, .88), rgba(15, 61, 46, .88)), url('/assets/hadith-pattern.png');
+    background-image: linear-gradient(rgba(15, 61, 46, .8), rgba(15, 61, 46, .8)), url('/assets/hadith-pattern.svg');
     background-size: auto, 1440px 360px;
-    background-repeat: no-repeat, repeat-x;
-    background-position: center, center top;
+    background-position: center;
   }
 
   .ui-section-head {
@@ -269,7 +281,14 @@ body {
   }
 
   .ui-segmented-item-active {
-    @apply bg-white text-green-700 border-gray-200 shadow-sm font-semibold;
+    @apply font-semibold;
+    background: var(--bg-dark);
+    color: var(--color-on-dark);
+    border-color: var(--color-accent-gold);
+  }
+
+  .ui-segmented-item-active:hover {
+    color: var(--color-on-dark);
   }
 
   .ui-chip {
@@ -340,16 +359,18 @@ body {
    GhareebMatn hardcodes (text-lg / leading-loose / font-serif / text-gray-900).
    Aligned to the start (right, in RTL) to match the sanad block. */
 .hadith-matn {
-  font-family: var(--font-display);
-  font-size: var(--matn-size, clamp(1.5rem, 1rem + 2.3vw, 2.3rem));
+  font-family: var(--font-serif);
+  font-size: var(--matn-size, clamp(1.65rem, 2.2vw, 2.25rem));
   line-height: 1.95;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--color-ink);
   text-align: start;
+  max-width: 820px;
+  margin-inline: auto;
 }
 
 /* ───────────────────────── Dark mode ─────────────────────────
-   Cool charcoal surfaces + warm cream text (matches hdith.com's dark theme).
+   Scholarly green-charcoal surfaces and warm ivory text from the handoff.
    Every Tailwind utility resolves var(--color-*), so overriding the tokens here
    re-skins the entire site at runtime — no per-component changes needed.
    Ramps are tuned so: low steps = dark tints (chip/badge backgrounds),
@@ -367,13 +388,15 @@ html.dark {
      reference these vars, so they adapt to dark automatically. */
   --color-paper: #101513;          /* handoff scholarly dark page */
   --color-surface: #171D1A;        /* handoff dark ivory-equivalent surface */
-  --color-surface-sunken: #121815; /* nav / panels / sanad block */
+  --color-surface-sunken: #1C2420; /* elevated panels and sanad blocks */
   --color-border: #29332E;
   --color-ink: #F4F0E5;            /* primary text */
   --color-muted: #A6AAA5;
   --color-primary: #72A991;        /* handoff dark-mode emerald */
   --color-primary-soft: #1D3229;
   --color-accent-gold: #C7AA70;
+  --color-accent-gold-dark: #B99A61;
+  --color-border-warm: #4B4434;
   --color-white: #171D1A;          /* bg-white → elevated card */
 
   /* Warm gray — surfaces dark, text light (muted ≈ 500, ink ≈ 900) */
@@ -385,17 +408,334 @@ html.dark {
   /* Gold */
   --color-amber-50:#2A2418; --color-amber-100:#3A301D; --color-amber-200:#504326; --color-amber-300:#6B5830; --color-amber-400:#8D723E; --color-amber-500:#AA8950; --color-amber-600:#C7AA70; --color-amber-700:#D6BD8E; --color-amber-800:#E6D2AA; --color-amber-900:#F1E4C8; --color-amber-950:#FBF3DD;
 
-  /* Cyan / blue link */
-  --color-blue-50:#0C2436; --color-blue-100:#103450; --color-blue-200:#16486E; --color-blue-300:#1E6395; --color-blue-400:#2C84C4; --color-blue-500:#3BA0E6; --color-blue-600:#4DB9FF; --color-blue-700:#76CBFF; --color-blue-800:#A0DBFF; --color-blue-900:#C6EAFF; --color-blue-950:#E2F4FF;
+  /* Sage citations */
+  --color-blue-50:#16231C; --color-blue-100:#1D3026; --color-blue-200:#284235; --color-blue-300:#365948; --color-blue-400:#48715B; --color-blue-500:#648E75; --color-blue-600:#85AC95; --color-blue-700:#A1C1AD; --color-blue-800:#BAD3C3; --color-blue-900:#D3E3D8; --color-blue-950:#E7F0E9;
 
   /* Alert red */
   --color-red-50:#2C1414; --color-red-100:#3E1B1B; --color-red-200:#552525; --color-red-300:#743434; --color-red-400:#9C4848; --color-red-500:#BC5454; --color-red-600:#C85B5B; --color-red-700:#D97E7E; --color-red-800:#E6A3A3; --color-red-900:#F0C4C4;
 
   /* Teal — transmission terms (within emerald family) */
-  --color-teal-50:#0C2620; --color-teal-100:#11362C; --color-teal-200:#184B3D; --color-teal-300:#226555; --color-teal-400:#338C73; --color-teal-500:#45AD8D; --color-teal-600:#58C7A2; --color-teal-700:#2596BE; --color-teal-800:#4EBA65; --color-teal-900:#B0EDD6;
+  --color-teal-50:#14251D; --color-teal-100:#1A3327; --color-teal-200:#244736; --color-teal-300:#315F49; --color-teal-400:#427C61; --color-teal-500:#58997A; --color-teal-600:#76B294; --color-teal-700:#96C7AD; --color-teal-800:#B5DAC5; --color-teal-900:#D4EBDE;
 
-  /* Purple — secondary accent */
-  --color-purple-50:#1C1530; --color-purple-100:#281C46; --color-purple-200:#382663; --color-purple-300:#4D348C; --color-purple-400:#6A4AB8; --color-purple-500:#8C68DB; --color-purple-600:#B68CFF; --color-purple-700:#C7A6FF; --color-purple-800:#D6BCFF; --color-purple-900:#E5D3FF; --color-purple-950:#F2EAFF;
+  /* Warm stone secondary accent */
+  --color-purple-50:#252219; --color-purple-100:#302B20; --color-purple-200:#423B2B; --color-purple-300:#5A5039; --color-purple-400:#7B6D4D; --color-purple-500:#9C8A64; --color-purple-600:#BAA67C; --color-purple-700:#CDBB96; --color-purple-800:#DFD2B5; --color-purple-900:#EEE5D2; --color-purple-950:#F6EFE0;
+}
+
+/* Shared brand framing uses the original transparent handoff artwork. */
+.brand-mark {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.brand-mark .brand-mark-image {
+  position: absolute;
+  max-width: none;
+  height: auto;
+}
+.brand-mark-emblem .brand-mark-image {
+  width: 272%;
+  left: -86%;
+  top: -7%;
+}
+.brand-mark-full .brand-mark-image {
+  width: 233%;
+  left: -66.7%;
+  top: -4.3%;
+}
+.brand-tile {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 12px;
+  background: #F8F1E4;
+  border: 1px solid #C9A96B;
+}
+.site-nav {
+  box-shadow: 0 1px 0 rgb(201 169 107 / .16);
+}
+.site-nav .nav-dropdown {
+  max-height: min(70vh, 560px);
+}
+
+.home-page {
+
+  margin: -1.5rem -.75rem 0;
+
+  background: var(--color-paper);
+
+}
+.home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-bottom: 1px solid #A8894F;
+}
+.home-hero-atmosphere {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 46%;
+  z-index: -1;
+  opacity: .48;
+  mask-image: linear-gradient(to right, #000 25%, transparent 100%);
+}
+.home-hero-atmosphere img {
+  width: 200% !important;
+  max-width: none;
+  left: auto !important;
+  right: 0;
+  object-position: right center;
+}
+.home-hero-content {
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 44px 24px 48px;
+}
+.home-hero-heading {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  max-width: 830px;
+  margin-bottom: 28px;
+}
+.home-brand-plaque {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border: 1px solid #C9A96B;
+  border-radius: 70px 70px 16px 16px;
+  background: #F8F1E4;
+}
+.home-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #C9A96B;
+  margin-bottom: 12px;
+}
+.home-title {
+  font-size: clamp(1.85rem, 3.1vw, 2.9rem);
+  font-weight: 500;
+  line-height: 1.65;
+  color: #F8F1E4;
+}
+.home-description {
+  max-width: 540px;
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: #D9DED7;
+}
+.home-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 760px;
+  min-height: 60px;
+  padding: 5px;
+  border: 1px solid #C9A96B;
+  border-radius: 999px;
+  background: #FFFDF7;
+  box-shadow: 0 2px 12px rgb(0 0 0 / .06);
+}
+.home-search-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 48px 10px 8px;
+  border-radius: 999px;
+  background: transparent;
+  color: #17201D;
+  font-size: 15px;
+}
+.home-search-input::placeholder {
+  color: #747873;
+}
+.home-search-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px;
+  flex-shrink: 0;
+  padding-inline: 23px;
+  border-radius: 999px;
+  background: #C9A96B;
+  color: #17201D;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 160ms;
+}
+.home-search-button:hover {
+  background: #BFA063;
+}
+.home-search-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  max-width: 760px;
+  margin-top: 14px;
+  color: #D9DED7;
+  font-size: 12px;
+}
+.home-ornament {
+  display: flex;
+  justify-content: center;
+  padding: 18px 0;
+}
+.home-ornament img {
+  height: 24px;
+  opacity: .8;
+}
+.home-stats {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.home-stat {
+  padding: 22px 8px 18px;
+}
+.home-nav-card {
+  transition: border-color 160ms, transform 160ms;
+}
+.home-nav-card:hover {
+  transform: translateY(-2px);
+}
+.home-book-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border-warm);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  transition: border-color 160ms, background 160ms;
+}
+.home-book-chip:hover {
+  background: var(--color-paper);
+  border-color: var(--color-accent-gold);
+}
+.home-sections h2 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+}
+/* Navigation tools share the paper palette; scholarly grade badges keep their meaning. */
+.home-research-tools a {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+.home-research-tools a:hover {
+  background: var(--color-paper);
+  border-color: var(--color-accent-gold);
+}
+.home-research-tools a > div:first-child {
+  color: var(--color-primary);
+}
+.home-research-tools a > div:last-child {
+  color: var(--color-muted);
+}
+.site-footer {
+  margin-top: 48px;
+  padding: 30px 24px;
+  color: #F8F1E4;
+  border-top: 1px solid #A8894F;
+}
+.site-footer-inner {
+  max-width: 1152px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.site-footer-ornament {
+  margin-inline-start: auto;
+  width: 200px;
+  opacity: .75;
+}
+
+@media (min-width: 640px) {
+  .home-page {
+    margin: -2.5rem -1.5rem 0;
+  }
+}
+@media (min-width: 1024px) {
+  .home-page {
+    margin-inline: -2rem;
+  }
+}
+@media (max-width: 767px) {
+  .home-hero-content {
+    padding: 28px 20px 32px;
+  }
+  .home-hero-heading {
+    gap: 18px;
+  }
+  .home-brand-plaque {
+    padding: 8px 9px;
+  }
+  .home-brand-plaque .brand-mark {
+    width: 76px !important;
+    height: 108px !important;
+  }
+  .home-title {
+    font-size: 1.7rem;
+    line-height: 1.6;
+  }
+  .home-eyebrow {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+  .home-description {
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .home-hero-atmosphere {
+    width: 100%;
+    opacity: .15;
+  }
+  .home-stat {
+    padding: 16px 6px;
+  }
+  .home-search-button {
+    padding-inline: 16px;
+  }
+  .home-search-input {
+    font-size: 13px;
+  }
+  .hadith-matn {
+    font-size: var(--matn-size, 1.55rem);
+    line-height: 1.9;
+  }
+  .site-footer-ornament {
+    display: none;
+  }
+  .ui-segmented-item, .ui-filter-trigger {
+    min-height: 44px;
+  }
+}
+@media (max-width: 380px) {
+  .home-hero-content {
+    padding-inline: 16px;
+  }
+  .home-hero-heading {
+    gap: 12px;
+  }
+  .home-title {
+    font-size: 1.45rem;
+  }
+  .home-brand-plaque .brand-mark {
+    width: 62px !important;
+    height: 88px !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-card, .home-nav-card, .home-book-chip {
+    transition: none;
+  }
+  .home-nav-card:hover {
+    transform: none;
+  }
 }
 
 /* Generated reports are portaled here so print output can exclude the app shell. */

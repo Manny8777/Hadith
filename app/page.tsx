@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import pool from '@/lib/db'
 import HomeSearch from '@/app/components/HomeSearch'
 import BrandMark from '@/app/components/BrandMark'
@@ -30,47 +31,48 @@ export default async function Home() {
   } catch {}
 
   return (
-    <div dir="rtl" className="min-h-screen -mx-3 sm:-mx-4 -mt-8 bg-[#F8F1E4] dark:bg-[#101513]">
+    <div dir="rtl" className="home-page">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-[#0F3D2E] border-b border-[#C9A96B]/40 dark:bg-[#101513]">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.045] dark:opacity-[0.07]" style={{ backgroundImage: "url('/assets/hero-atmosphere.png')", backgroundSize: '1440px 420px', backgroundRepeat: 'no-repeat', backgroundPosition: 'center top' }} />
-        <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-14 text-center sm:pt-20 sm:pb-16">
-          <div className="flex justify-center mb-5">
-            <BrandMark size={64} className="drop-shadow-sm" />
+      <div className="home-hero theme-texture">
+        <div className="home-hero-atmosphere" aria-hidden="true">
+          <Image src="/assets/brand/library-atmosphere.png" alt="" fill sizes="(max-width: 767px) 100vw, 600px" className="object-cover" />
+        </div>
+        <div className="home-hero-content">
+          <div className="home-hero-heading">
+            <div className="home-brand-plaque"><BrandMark size={108} full /></div>
+            <div>
+              <p className="home-eyebrow">برنامج خادم الحرمين الشريفين</p>
+              <h1 className="home-title font-display">
+                موسوعة الحديث النبوي الشريف
+              </h1>
+              <p className="home-description font-sans">
+                قاعدة بيانات متكاملة لباحثي الحديث في مراحل الماجستير والدكتوراه
+              </p>
+            </div>
           </div>
-          <div className="inline-flex items-center gap-2 bg-[#0F3D2E] text-[#E6C77A] text-[11px] font-sans font-semibold px-3.5 py-1.5 rounded-sm tracking-wide border border-[#C9A96B]/50">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#d8b66a]" />
-            برنامج خادم الحرمين الشريفين
+
+          <HomeSearch />
+
+          {/* Quick examples */}
+          <div className="home-search-examples font-sans">
+            <span>جرب:</span>
+            {['إنما الأعمال بالنيات', 'من كذب علي', 'الطهور شطر الإيمان'].map(ex => (
+              <Link key={ex} href={`/search?q=${encodeURIComponent(ex)}`}
+                className="text-[#E6D2AA] hover:text-[#FFFDF7] hover:underline">
+                {ex}
+              </Link>
+            ))}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#F8F1E4] mb-4 leading-tight font-display">
-            موسوعة الحديث النبوي الشريف
-          </h1>
-          <p className="text-[#D7DDD2] text-lg mb-10 max-w-2xl mx-auto font-sans">
-          قاعدة بيانات متكاملة لباحثي الحديث في مراحل الماجستير والدكتوراه
-          </p>
-
-        <HomeSearch />
-
-        {/* Quick examples */}
-        <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-[#C4C8C0] font-sans">
-          <span>جرب:</span>
-          {['إنما الأعمال بالنيات', 'من كذب علي', 'الطهور شطر الإيمان'].map(ex => (
-            <Link key={ex} href={`/search?q=${encodeURIComponent(ex)}`}
-              className="text-[#E6C77A] hover:text-[#FFFDF7] hover:underline">
-              {ex}
-            </Link>
-          ))}
         </div>
       </div>
-      </div>
 
-      <div className="flex justify-center bg-[#F8F1E4] dark:bg-[#101513] py-2" aria-hidden="true">
-        <img src="/assets/theme-ornament.png" alt="" className="h-6 w-60 opacity-80 dark:opacity-60" />
+      <div className="home-ornament" aria-hidden="true">
+        <img src="/assets/theme-ornament.svg" alt="" width="240" height="24" />
       </div>
 
       {/* Stats banner */}
-      <div className="bg-[#FFFDF7] text-[#17201D] border-b border-[#E4DFD2] dark:bg-[#171D1A] dark:text-[#F4F0E5] dark:border-[#29332E] py-7">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
+      <div className="home-stats">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 text-center">
           {[
             { num: hadiths.toLocaleString('ar-EG'), label: 'حديث' },
             { num: narrators.toLocaleString('ar-EG'), label: 'راوٍ' },
@@ -79,16 +81,17 @@ export default async function Home() {
             { num: bio.toLocaleString('ar-EG'), label: 'راوٍ مترجَم' },
             { num: criticism.toLocaleString('ar-EG'), label: 'راوٍ مجروح/معدَّل' },
           ].map((s, i) => (
-            <div key={i}>
-              <div className="text-2xl font-bold text-[#0F3D2E] dark:text-[#C7AA70] font-display">{s.num}</div>
-              <div className="text-xs text-[#747873] dark:text-[#A6AAA5] mt-0.5 font-sans">{s.label}</div>
+            <div key={i} className="home-stat ui-card">
+              <UiIcon name={(['book-open', 'narrator', 'books', 'topics', 'bio', 'scale'] as IconName[])[i]} size={24} className="mx-auto mb-2 text-accent-gold" />
+              <div className="text-2xl font-bold text-ink font-display">{s.num}</div>
+              <div className="text-xs text-muted mt-0.5 font-sans">{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Main Nav Cards */}
-      <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="home-sections max-w-6xl mx-auto px-4 py-8 sm:py-10">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
           {[
             { href: '/books', icon: 'books' as IconName, title: 'تصفح الكتب', description: `${books} كتاباً من أمهات المصادر` },
@@ -98,32 +101,33 @@ export default async function Home() {
             { href: '/lexicon', icon: 'lexicon' as IconName, title: 'غريب الحديث', description: `${lexicon.toLocaleString('ar-EG')} لفظة معتمدة` },
             { href: '/narrators?sort=hadiths', icon: 'chart' as IconName, title: 'أكثر الرواة حديثاً', description: 'مرتب حسب عدد الأحاديث' },
           ].map((card) => (
-            <Link key={card.href} href={card.href} className="group relative overflow-hidden rounded-[16px] border border-[#E4DFD2] bg-[#FFFDF7] p-5 shadow-[0_1px_2px_rgba(23,32,29,.04),0_8px_24px_rgba(23,32,29,.04)] transition-all hover:-translate-y-0.5 hover:border-[#C9A96B] hover:shadow-[0_1px_2px_rgba(23,32,29,.05),0_12px_30px_rgba(23,32,29,.06)] dark:border-[#29332E] dark:bg-[#171D1A]">
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#C9A96B]/55 bg-[#F8F1E4] text-[#0F3D2E] transition-colors group-hover:bg-[#0F3D2E] group-hover:text-[#F8F1E4] dark:bg-[#1D3229] dark:text-[#C7AA70]">
+            <Link key={card.href} href={card.href} className="home-nav-card ui-card group p-5">
+              <div className="ui-icon-tile mb-4 h-11 w-11">
                 <UiIcon name={card.icon} size={24} />
               </div>
-              <div className="font-bold text-[#0F3D2E] group-hover:text-[#A8894F] font-display dark:text-[#F4F0E5] dark:group-hover:text-[#C7AA70]">{card.title}</div>
-              <div className="text-sm text-[#747873] mt-1 font-sans dark:text-[#A6AAA5]">{card.description}</div>
+              <div className="font-bold text-primary font-display">{card.title}</div>
+              <div className="text-sm text-muted mt-1 font-sans">{card.description}</div>
             </Link>
           ))}
         </div>
 
         {/* الكتب الستة quick links */}
-        <div className="ui-card rounded-2xl p-6 mb-4">
+        <div className="home-book-section ui-card rounded-2xl p-5 sm:p-6 mb-4">
           <h2 className="text-base font-bold text-green-900 mb-4 font-display">الكتب الستة والمسانيد الكبرى</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { id: 1, name: 'صحيح البخاري', count: '٧٤١٠', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 2, name: 'صحيح مسلم', count: '٧٦٦٦', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 5, name: 'سنن النسائي', count: '٥٧٨٠', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 3, name: 'سنن أبي داود', count: '٥٢٦٠', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 4, name: 'جامع الترمذي', count: '٤٤١٢', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 6, name: 'سنن ابن ماجه', count: '٤٤٦٧', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 7, name: 'موطأ مالك', count: '١٧٨١', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
-              { id: 8, name: 'مسند أحمد', count: '٢٨٢٤٥', color: 'border-[#D9C9A8] hover:border-[#C9A96B] text-[#0F3D2E]' },
+              { id: 1, name: 'صحيح البخاري', count: '٧٤١٠' },
+              { id: 2, name: 'صحيح مسلم', count: '٧٦٦٦' },
+              { id: 5, name: 'سنن النسائي', count: '٥٧٨٠' },
+              { id: 3, name: 'سنن أبي داود', count: '٥٢٦٠' },
+              { id: 4, name: 'جامع الترمذي', count: '٤٤١٢' },
+              { id: 6, name: 'سنن ابن ماجه', count: '٤٤٦٧' },
+              { id: 7, name: 'موطأ مالك', count: '١٧٨١' },
+              { id: 8, name: 'مسند أحمد', count: '٢٨٢٤٥' },
             ].map(book => (
               <Link key={book.id} href={`/books/${book.id}`}
-                className={`bg-[#FFFDF7] border rounded-full px-4 py-3 flex flex-col hover:bg-[#F8F1E4] hover:shadow-sm transition-all ${book.color}`}>
+                className="home-book-chip">
+                <UiIcon name="book-open" size={20} className="text-accent-gold mb-1" />
                 <span className="font-semibold text-sm leading-snug">{book.name}</span>
                 <span className="text-xs text-gray-400 mt-1">{book.count} حديث</span>
               </Link>
@@ -161,7 +165,7 @@ export default async function Home() {
         </div>
 
         {/* Research Tools */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 mt-4">
+        <div className="home-research-tools ui-card p-5 sm:p-6 mt-4">
           <h2 className="text-base font-bold text-green-900 mb-4">أدوات بحثية متخصصة</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <Link href="/chains" className="bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-3 hover:border-[#C9A96B] hover:shadow-sm transition-all group">

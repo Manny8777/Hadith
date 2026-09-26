@@ -207,7 +207,7 @@ function NumberingToggle() {
     <button
       onClick={toggle}
       title={pref === 'harf' ? 'التبديل الى ترقيم المطبوع' : 'التبديل الى ترقيم حرف'}
-      className="flex items-center gap-1 text-[11px] text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
+      className="flex items-center gap-1 text-[11px] text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] min-h-11 px-2.5 py-1 rounded-lg transition-colors shrink-0 whitespace-nowrap"
     >
       <span className={pref === 'harf' ? 'text-[#E6C77A] font-bold' : 'text-[#F8F1E4]/55'}>حرف</span>
       <UiIcon name="arrow" size={14} className="text-[#C9A96B]/70" />
@@ -225,7 +225,7 @@ function ThemeToggle() {
       data-no-convert
       title={dark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
       aria-label="تبديل المظهر"
-      className="flex items-center justify-center w-8 h-8 rounded-md text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] transition-colors shrink-0"
+      className="flex items-center justify-center w-11 h-11 rounded-full text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] transition-colors shrink-0"
     >
       <UiIcon name={dark ? 'sun' : 'moon'} size={16} />
     </button>
@@ -239,7 +239,7 @@ function NumeralToggle() {
       onClick={toggle}
       data-no-convert
       title="تبديل صيغة الأرقام بين الإنجليزية (123) والعربية (١٢٣) — يشمل الموقع كله"
-      className="flex items-center justify-center gap-1 text-[11px] text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] px-2 py-1 rounded transition-colors shrink-0 whitespace-nowrap"
+      className="flex items-center justify-center gap-1 text-[11px] text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] min-h-11 px-2.5 py-1 rounded-lg transition-colors shrink-0 whitespace-nowrap"
     >
       <span className={pref === 'western' ? 'text-[#E6C77A] font-bold' : 'text-[#F8F1E4]/55'}>123</span>
       <UiIcon name="arrow" size={14} className="text-[#C9A96B]/70" />
@@ -269,26 +269,27 @@ export default function NavHeader() {
   }
 
   return (
-    <nav ref={navRef} className="theme-texture relative z-30 bg-[#0F3D2E] text-[#F8F1E4] font-sans border-b border-[#C9A96B]/40" dir="rtl">
-      <div className="max-w-7xl mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
+    <nav ref={navRef} aria-label="التنقل الرئيسي" className="site-nav theme-texture relative z-30 bg-[#0F3D2E] text-[#F8F1E4] font-sans border-b border-[#C9A96B]/40" dir="rtl">
+      <div className="max-w-[1440px] mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
         <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-3 shrink-0 text-[#F8F1E4] transition-colors hover:text-[#E6C77A]">
-          <BrandMark size={36} className="shrink-0" />
+          <span className="brand-tile"><BrandMark size={42} /></span>
           <span className="flex flex-col leading-none font-display">
-            <span className="text-[10px] tracking-wide text-[#C9A96B]">موسوعة الحديث</span>
-            <span className="mt-0.5 whitespace-nowrap text-sm sm:text-base font-bold">جامع خادم الحرمين</span>
+            <span className="text-[10px] text-[#C9A96B]">موسوعة الحديث النبوي</span>
+            <span className="mt-0.5 whitespace-nowrap text-sm sm:text-base font-bold">الجامع</span>
           </span>
         </a>
 
-        <div className="hidden sm:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
+        <div className="hidden xl:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
 
         {/* Desktop: inline categories with dropdowns */}
-        <div className="hidden sm:flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
+        <div className="hidden xl:flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
           {CATEGORIES.map(cat => (
-            <div key={cat.id} className="relative shrink-0">
+            <div key={cat.id} className="shrink-0">
               <button
                 type="button"
                 onClick={() => toggle(cat.id)}
-                className={`flex items-center gap-1 text-sm font-sans px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+                aria-expanded={open === cat.id}
+                className={`flex items-center gap-1 text-sm font-sans px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
                     ? 'bg-[#C9A96B] text-[#0F3D2E]'
                     : 'text-[#F8F1E4]/80 hover:text-[#FFFDF7] hover:bg-white/10'
@@ -300,7 +301,7 @@ export default function NavHeader() {
 
               {open === cat.id && (
                 <div
-                  className="absolute top-full right-0 mt-1.5 bg-[#FFFDF7] text-[#17201D] rounded-xl shadow-[0_8px_30px_rgba(23,32,29,.12)] border border-[#C9A96B]/40 p-3 z-[100] overflow-y-auto font-sans w-[min(100vw-1.5rem,640px)] max-h-[80vh]"
+                  className="nav-dropdown absolute top-full right-3 left-3 mx-auto mt-1.5 bg-surface text-ink rounded-xl shadow-[0_8px_30px_rgba(23,32,29,.12)] border border-[#C9A96B]/40 p-3 z-[100] overflow-y-auto font-sans w-[min(100vw-1.5rem,640px)] max-h-[80vh]"
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-0.5">
                     {cat.links.map(link => (
@@ -308,7 +309,7 @@ export default function NavHeader() {
                         key={link.href}
                         href={link.href}
                         onClick={() => setOpen(null)}
-                        className="flex items-center justify-between gap-1 text-sm text-[#17201D] hover:text-[#0F3D2E] hover:bg-[#F0E8D8] px-2 py-1 rounded transition-colors"
+                        className="flex items-center justify-between gap-1 text-sm text-ink hover:text-primary hover:bg-paper px-3 py-2.5 rounded transition-colors"
                       >
                         <span className="truncate">{link.label}</span>
                         {link.isNew && (
@@ -326,11 +327,11 @@ export default function NavHeader() {
         </div>
 
         {/* Mobile: push toggles + menu button to the end */}
-        <div className="flex-1 sm:hidden" />
+        <div className="flex-1 xl:hidden" />
 
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
-          <div className="flex flex-col items-stretch gap-1">
+          <div className="hidden xl:flex items-center gap-2">
             <NumberingToggle />
             <NumeralToggle />
           </div>
@@ -342,7 +343,7 @@ export default function NavHeader() {
           onClick={() => { setMobileOpen(v => !v); setOpen(null) }}
           aria-label="القائمة"
           aria-expanded={mobileOpen}
-          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md text-[#F8F1E4] border border-[#C9A96B]/40 hover:border-[#C9A96B] hover:bg-white/10 transition-colors shrink-0"
+          className="xl:hidden flex items-center justify-center w-11 h-11 rounded-full text-[#F8F1E4] border border-[#C9A96B]/40 hover:border-[#C9A96B] hover:bg-white/10 transition-colors shrink-0"
         >
           <UiIcon name={mobileOpen ? 'close' : 'menu'} size={18} />
         </button>
@@ -350,14 +351,19 @@ export default function NavHeader() {
 
       {/* Mobile: collapsible category menu (accordion — avoids clipping dropdowns) */}
       {mobileOpen && (
-        <div className="sm:hidden border-t border-[#C9A96B]/30 bg-[#F8F1E4] text-[#17201D] max-h-[72vh] overflow-y-auto overscroll-contain">
+        <div className="xl:hidden border-t border-[#C9A96B]/30 bg-surface text-ink max-h-[72vh] overflow-y-auto overscroll-contain">
+          <div className="flex gap-3 p-3 bg-[#0F3D2E]">
+            <NumberingToggle />
+            <NumeralToggle />
+          </div>
           {CATEGORIES.map(cat => (
             <div key={cat.id} className="border-b border-border/60">
               <button
                 type="button"
                 onClick={() => toggle(cat.id)}
+                aria-expanded={open === cat.id}
                 className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
-                  open === cat.id ? 'text-[#0F3D2E] font-semibold bg-[#E2EEE7]' : 'text-[#17201D]/85'
+                  open === cat.id ? 'text-primary font-semibold bg-primary-soft' : 'text-ink'
                 }`}
               >
                 {cat.label}
@@ -370,7 +376,7 @@ export default function NavHeader() {
                       key={link.href}
                       href={link.href}
                       onClick={() => { setOpen(null); setMobileOpen(false) }}
-                      className="flex items-center justify-between gap-1 text-[13px] text-gray-700 hover:text-green-800 active:bg-green-50 px-2 py-1 rounded transition-colors"
+                      className="flex items-center justify-between gap-1 text-[13px] text-gray-700 hover:text-green-800 active:bg-green-50 px-2 py-2.5 min-h-11 rounded transition-colors"
                     >
                       <span className="truncate">{link.label}</span>
                       {link.isNew && (

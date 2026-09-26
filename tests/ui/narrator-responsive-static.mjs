@@ -16,6 +16,6 @@ assert.match(
   /className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 sm:w-auto sm:flex-none"/,
   'narrator subnavigation must scroll inside its own bounded container',
 )
-assert.match(source, /<h1 className="text-lg font-bold text-amber-100">/, 'narrator header title must remain present')
+assert.match(source, /<h1\b[^>]*>موسوعة الحديث الشريف<\/h1>/, 'narrator header title must remain present regardless of theme colours')
 
 console.log('Narrator responsive static checks passed.')

@@ -271,7 +271,7 @@ export default async function NarratorPage({
             <UiIcon name="arrow" size={15} /> قائمة الرواة
           </Link>
           <div className="flex items-center gap-2">
-            <BrandMark size={28} />
+            <span className="brand-tile"><BrandMark size={28} /></span>
             <h1 className="text-lg font-bold text-[#F8F1E4]">موسوعة الحديث الشريف</h1>
           </div>
           <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 sm:w-auto sm:flex-none">
