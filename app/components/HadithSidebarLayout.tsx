@@ -260,13 +260,20 @@ export default function HadithSidebarLayout({
             <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
             {h.section_text?.trim() && <>
               <span aria-hidden="true">‹</span>
-              <Link href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}>{h.section_text.trim().startsWith('باب') ? 'الباب' : 'الكتاب'}: {h.section_text.trim()}</Link>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}><UiIcon name="books" size={18} /><span>{h.section_text.trim().startsWith('باب') ? 'الباب' : 'الكتاب'}: {h.section_text.trim()}</span></Link>
             </>}
             {h.chapter_text?.trim() && <>
               <span aria-hidden="true">‹</span>
-              <Link href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}>{'الباب: '}{h.chapter_text.trim()}</Link>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>الباب: {h.chapter_text.trim()}</span></Link>
             </>}
           </nav>
+          {(h.part_num > 0 || h.page_num > 0) && (
+            <div className="hadith-source-location">
+              {h.part_num > 0 && <span>الجزء: {h.part_num}</span>}
+              {h.part_num > 0 && h.page_num > 0 && <span aria-hidden="true">·</span>}
+              {h.page_num > 0 && <span>الصفحة: {h.page_num}</span>}
+            </div>
+          )}
           <div className="hadith-source-identity">
           <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
           <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1></div>
@@ -310,51 +317,30 @@ export default function HadithSidebarLayout({
             </div>
           )
         })()}
-            {h.section_text?.trim() && <div><dt><UiIcon name="books" size={18} />{h.section_text.trim().startsWith("باب") ? "الباب" : "الكتاب"}</dt><dd>{h.section_text.trim()}</dd></div>}
-            {h.chapter_text?.trim() && <div><dt><UiIcon name="document" size={18} />الباب</dt><dd>{h.chapter_text.trim()}</dd></div>}
-            {subjects.length > 0 && <div><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
+            {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
           <dl className="hadith-source-locators">
-            {h.part_num > 0 && <div><dt><UiIcon name="layers" size={18} />الجزء</dt><dd>{h.part_num}</dd></div>}
-            {h.page_num > 0 && <div><dt><UiIcon name="document" size={18} />الصفحة</dt><dd>{h.page_num}</dd></div>}
             {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div className="hadith-source-numbering"><dt>ترقيم الحديث</dt><dd><HadithNumber layout="source" harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
           </dl>
           {h.tarqeem_matboa1 && <p className="hadith-source-edition">{h.print1_edition && <span>{h.print1_edition}: </span>}<span>{h.tarqeem_matboa1}</span></p>}
-        </header>
-
-        {/* Tarf */}
-        {h.tarf?.trim() && (
-          <p className="text-sm text-gray-500 italic mb-2 text-right font-serif leading-relaxed" dir="rtl">
-            {h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
-          </p>
-        )}
-
-        {/* Dorar's ruling (attributed to its muhaddith, linked to Dorar) + takhrij count. The site
-            computes no overall verdict of its own: scholars' statements stay one by one, each under
-            its scholar, in «أقوال العلماء». */}
-        {(() => {
-          const takhrijCount = takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount
-          if (takhrijCount === 0 && !dorarSlot) return null
-          return (
-            <div className="mb-3 flex items-center gap-x-4 gap-y-2 flex-wrap">
-              {dorarSlot}
-              {takhrijCount > 0 && (
-                <a href="#takhrij" className="text-xs text-gray-500 hover:text-green-700 hover:underline transition-colors">
-                  أُخرجه في {takhrijCount} مصدر
-                </a>
+          {(h.tarf?.trim() || dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
+            <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
+              {h.tarf?.trim() && (
+                <div>
+                  <p className="hadith-source-label">طرف الحديث</p>
+                  <p className="font-serif text-base leading-relaxed mt-1">{h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
+                </div>
               )}
-            </div>
-          )
-        })()}
-
-        {/* Additional hadith service indicator */}
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {hadithServices?.ghareeb && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border font-semibold text-xs bg-amber-100 text-amber-800 border-amber-300">
-              غريب الحديث
-            </span>
+              {dorarSlot && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
+                  <a href="#takhrij" className="text-green-700 hover:underline">أُخرجه في {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} مصدر</a>
+                )}
+                {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
+              </div>
+            </section>
           )}
-        </div>
+        </header>
 
         {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {

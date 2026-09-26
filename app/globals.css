@@ -3,6 +3,9 @@
 /* Source card: stacked reading order on phones, wider metadata grid on desktop. */
 .hadith-source-index { margin-block: .5rem 1.25rem; padding: 1rem; border: 1px solid var(--color-border-warm); border-top: 4px solid var(--color-primary); border-radius: 16px; background: var(--color-surface); box-shadow: 0 3px 12px #00000006; overflow-wrap: anywhere; }
 .hadith-source-breadcrumb { display: flex; flex-wrap: wrap; gap: .5rem; font-size: 13px; color: var(--color-primary); margin-bottom: 1rem; }
+.hadith-source-location { display: flex; flex-wrap: wrap; gap: .5rem; font-size: 14px; margin-block: -.4rem 1rem; }
+.hadith-breadcrumb-heading { display: inline-flex; align-items: baseline; gap: .4rem; min-width: 0; color: color-mix(in srgb, var(--color-accent-gold) 70%, var(--color-primary)); }
+.hadith-breadcrumb-heading svg { align-self: flex-start; margin-top: .1rem; }
 .hadith-source-index a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .hadith-source-identity { display: grid; gap: .9rem; padding-bottom: 1rem; }
 .hadith-source-title { font-family: 'ThmanyahSerifText', serif; font-size: clamp(25px, 3vw, 32px); font-weight: 700; line-height: 1.6; color: var(--color-primary); }
@@ -10,16 +13,17 @@
 .hadith-source-index svg { flex-shrink: 0; }
 .hadith-source-author > p:last-child { font-size: 16px; line-height: 1.8; margin-top: .25rem; }
 .hadith-source-edition { font-size: 13px; margin-top: .75rem; opacity: .8; }
-.hadith-source-hierarchy { display: grid; border-top: 1px solid var(--color-border-warm); }
+.hadith-source-hierarchy { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; border-top: 1px solid var(--color-border-warm); }
 .hadith-source-hierarchy > div { padding-block: .85rem; min-width: 0; }
-.hadith-source-hierarchy > div + div { border-top: 1px solid var(--color-border-warm); }
+.hadith-source-hierarchy > div:nth-child(n+3) { border-top: 1px solid var(--color-border-warm); }
+.hadith-source-hierarchy > .hadith-source-wide { grid-column: 1 / -1; }
 .hadith-source-hierarchy dd { margin-top: .25rem; font-size: 16px; line-height: 1.9; }
 .hadith-source-subjects { display: flex; flex-wrap: wrap; gap: .25rem .8rem; color: var(--color-primary); }
 .hadith-source-locators { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); border-top: 1px solid var(--color-border-warm); }
 .hadith-source-locators > div { padding: .8rem .6rem; min-width: 0; }
 .hadith-source-locators > div:nth-child(2) { border-inline-start: 1px solid var(--color-border-warm); }
 .hadith-source-locators dd { margin-top: .25rem; font-size: 21px; }
-.hadith-source-locators .hadith-source-numbering { grid-column: 1 / -1; border-top: 1px solid var(--color-border-warm); padding-inline: 0; }
+.hadith-source-locators .hadith-source-numbering { grid-column: 1 / -1; padding-inline: 0; }
 .hadith-source-numbering > dt { padding-inline: .6rem; font-size: 12px; }
 .hadith-source-number-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .35rem; }
 .hadith-source-number-grid button { display: flex; flex-direction: column; align-items: flex-start; padding: .35rem .6rem; border-radius: 6px; text-align: start; cursor: pointer; }
@@ -32,9 +36,9 @@
   .hadith-source-identity { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: center; gap: 2rem; }
   .hadith-source-author { border-inline-start: 1px solid var(--color-border-warm); padding-inline-start: 1.5rem; }
   .hadith-source-hierarchy { grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 2rem; }
-  .hadith-source-hierarchy > div + div { border-top: 0; }
-  .hadith-source-locators { grid-template-columns: repeat(4,minmax(0,1fr)); align-items: stretch; }
-  .hadith-source-locators .hadith-source-numbering { grid-column: span 2; border-top: 0; border-inline-start: 1px solid var(--color-border-warm); padding-inline-start: 1rem; }
+
+  .hadith-source-locators { grid-template-columns: 1fr; }
+  .hadith-source-locators .hadith-source-numbering { grid-column: 1 / -1; }
 }
 
 /* Use a .dark class (toggle-driven) for the dark variant instead of prefers-color-scheme */
