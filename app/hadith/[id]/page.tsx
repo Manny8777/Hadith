@@ -145,6 +145,21 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (!hadithRes.rows[0]) notFound()
   const h = hadithRes.rows[0]
 
+  // Resolve breadcrumb targets from this hadith's own book hierarchy, not title searches.
+  const ancestorsRes = await pool.query<{ main_id: number; content: string | null }>(
+    `SELECT main_id, content FROM hadith_toc
+     WHERE book_id = $1 AND is_leaf = false
+       AND left_value < $2 AND right_value > $3
+     ORDER BY left_value DESC`,
+    [h.book_id, h.left_value, h.right_value]
+  )
+  const normalizeHeading = (text: string | null) => (text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  const headingTarget = (text: string | null) => ancestorsRes.rows.find(
+    row => normalizeHeading(row.content) === normalizeHeading(text)
+  )?.main_id
+  const sectionTarget = headingTarget(h.section_text)
+  const chapterTarget = headingTarget(h.chapter_text)
+
   // Parse books_takhrij: space-separated book IDs on hadith_toc
   const booksTakhrijIds = (h.books_takhrij || '').trim().split(/\s+/).map(Number).filter((n: number) => n > 0)
   const booksTakhrijRes = booksTakhrijIds.length > 0
@@ -387,6 +402,8 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
       )}
         hadithId={mainId}
         hadith={h}
+        sectionTarget={sectionTarget}
+        chapterTarget={chapterTarget}
         chains={chains}
         narratorCriticism={narratorCriticism}
         commonNarrators={commonNarrators}

@@ -104,6 +104,8 @@ export type { HadithServiceKey }
 
 export interface HadithSidebarLayoutProps {
   hadithId: number
+  sectionTarget?: number
+  chapterTarget?: number
   hadith: HadithInfo
   chains: Chain[]
   narratorCriticism?: Record<number, CriticismGroup[]>
@@ -135,6 +137,7 @@ const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string 
 }
 
 export default function HadithSidebarLayout({
+  sectionTarget, chapterTarget,
   hadithId, hadith: h, chains, narratorCriticism = {}, commonNarrators,
   judgments, subjects, relatedHadiths, takhrijBooks, takhrijSummary,
   hadithServices, isnadType,
@@ -257,11 +260,11 @@ export default function HadithSidebarLayout({
             <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
             {h.section_text?.trim() && <>
               <span aria-hidden="true">‹</span>
-              <span>{h.section_text.trim().startsWith('باب') ? 'الباب' : 'الكتاب'}: {h.section_text.trim()}</span>
+              <Link href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}>{h.section_text.trim().startsWith('باب') ? 'الباب' : 'الكتاب'}: {h.section_text.trim()}</Link>
             </>}
             {h.chapter_text?.trim() && <>
               <span aria-hidden="true">‹</span>
-              <span>{'الباب: '}{h.chapter_text.trim()}</span>
+              <Link href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}>{'الباب: '}{h.chapter_text.trim()}</Link>
             </>}
           </nav>
           <div className="hadith-source-identity">
@@ -270,6 +273,43 @@ export default function HadithSidebarLayout({
           {h.takhrij_author && <div className="hadith-source-author"><p className="hadith-source-label"><UiIcon name="narrator" size={20} /> المؤلف</p><p>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p></div>}
           </div>
           <dl className="hadith-source-hierarchy">
+          {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
+            const t = ISNAD_TYPE_MAP[isnadType]
+            return (
+              <div>
+                <dt>نوع الحديث</dt>
+                <dd title={t.desc}>{t.label}</dd>
+              </div>
+            )
+          })()}
+          {(() => {
+            const terms = chains.map(c => c.tahdethTerm).filter(Boolean) as string[]
+            if (terms.length === 0) return null
+            const freq: Record<string, number> = {}
+            terms.forEach(t => { freq[t] = (freq[t] ?? 0) + 1 })
+            const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0]
+            return (
+              <div>
+                <dt>صيغة التحديث</dt>
+                <dd>{dominant}</dd>
+              </div>
+            )
+          })()}
+
+        {(() => {
+          const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
+          if (!companion) return null
+          return (
+            <div>
+              <dt><UiIcon name="narrator" size={18} />الراوي</dt>
+              <dd>
+              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
+                {displayNarratorName(companion.name, companion.abb_name)}
+              </Link>
+              </dd>
+            </div>
+          )
+        })()}
             {h.section_text?.trim() && <div><dt><UiIcon name="books" size={18} />{h.section_text.trim().startsWith("باب") ? "الباب" : "الكتاب"}</dt><dd>{h.section_text.trim()}</dd></div>}
             {h.chapter_text?.trim() && <div><dt><UiIcon name="document" size={18} />الباب</dt><dd>{h.chapter_text.trim()}</dd></div>}
             {subjects.length > 0 && <div><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
@@ -307,51 +347,14 @@ export default function HadithSidebarLayout({
           )
         })()}
 
-        {/* Isnad type badge + tahdeth term + غريب الحديث badge */}
+        {/* Additional hadith service indicator */}
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
-            const t = ISNAD_TYPE_MAP[isnadType]
-            return (
-              <span
-                title={t.desc}
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full border font-semibold text-xs ${t.cls}`}
-              >
-                {t.label}
-              </span>
-            )
-          })()}
-          {(() => {
-            const terms = chains.map(c => c.tahdethTerm).filter(Boolean) as string[]
-            if (terms.length === 0) return null
-            const freq: Record<string, number> = {}
-            terms.forEach(t => { freq[t] = (freq[t] ?? 0) + 1 })
-            const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0]
-            return (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border font-serif text-xs bg-teal-50 text-teal-700 border-teal-200">
-                {dominant}
-              </span>
-            )
-          })()}
           {hadithServices?.ghareeb && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border font-semibold text-xs bg-amber-100 text-amber-800 border-amber-300">
               غريب الحديث
             </span>
           )}
         </div>
-
-        {/* Companion narrator */}
-        {(() => {
-          const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
-          if (!companion) return null
-          return (
-            <div className="text-xs text-gray-500 mb-2 text-right" dir="rtl">
-              رواه{' '}
-              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
-                {displayNarratorName(companion.name, companion.abb_name)}
-              </Link>
-            </div>
-          )
-        })()}
 
         {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {
