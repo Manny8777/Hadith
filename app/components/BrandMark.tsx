@@ -1,15 +1,14 @@
 import Image from 'next/image'
 
-/** The supplied Al-Jami artwork, framed to its emblem or complete wordmark. */
+/** The complete supplied Al-Jami artwork, with only transparent canvas trimmed. */
 export default function BrandMark({
   size = 56,
   className = '',
-  full = false,
-}: { size?: number; className?: string; full?: boolean }) {
+}: { size?: number; className?: string }) {
   return (
     <span
-      className={['brand-mark', full ? 'brand-mark-full' : 'brand-mark-emblem', className].join(' ')}
-      style={{ width: size, height: full ? size * 1.42 : size }}
+      className={['brand-mark', 'brand-mark-full', className].join(' ')}
+      style={{ width: size, height: size * 1.42 }}
       aria-hidden="true"
     >
       <Image
@@ -17,7 +16,7 @@ export default function BrandMark({
         alt=""
         width={1536}
         height={1024}
-        sizes={Math.ceil(size * (full ? 2.33 : 2.72)) + 'px'}
+        sizes={Math.ceil(size * 2.33) + 'px'}
         className="brand-mark-image"
       />
     </span>

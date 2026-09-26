@@ -39,7 +39,7 @@ export default async function Home() {
         </div>
         <div className="home-hero-content">
           <div className="home-hero-heading">
-            <div className="home-brand-plaque"><BrandMark size={108} full /></div>
+            <div className="home-brand-plaque"><BrandMark size={108} /></div>
             <div>
               <p className="home-eyebrow">برنامج خادم الحرمين الشريفين</p>
               <h1 className="home-title font-display">

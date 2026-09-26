@@ -432,13 +432,6 @@ html.dark {
   position: absolute;
   max-width: none;
   height: auto;
-}
-.brand-mark-emblem .brand-mark-image {
-  width: 272%;
-  left: -86%;
-  top: -7%;
-}
-.brand-mark-full .brand-mark-image {
   width: 233%;
   left: -66.7%;
   top: -4.3%;
