@@ -257,10 +257,6 @@ export default function HadithSidebarLayout({
       <div className="flex-1 min-w-0 px-3 sm:px-4 pt-2 pb-8">
         <TrackHadithView hadithId={hadithId} hadithTitle={h.book_title + (h.tarqeem_harf ? ` رقم ${h.tarqeem_harf}` : '')} />
 
-        <nav aria-label="التنقل داخل الحديث" className="flex flex-wrap gap-4 mb-3 text-sm">
-          <a className="hadith-jump-link" href="#matn">انتقل إلى المتن ↓</a>
-          <a className="hadith-jump-link" href="#source-details">بيانات المصدر والتوثيق ↓</a>
-        </nav>
         {/* Hadith text — sanad then matn (matn is the hero) */}
         {(() => {
           const { sanad, matn, tail, footnotes } = splitSanadMatn(h.content)
