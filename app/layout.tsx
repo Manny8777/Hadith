@@ -46,6 +46,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div>
               <p className="font-display text-lg">برنامج خادم الحرمين الشريفين</p>
               <p className="font-sans text-xs opacity-75">موسوعة الحديث النبوي الشريف</p>
+              <p className="font-sans text-xs mt-1">
+                للتواصل عبر واتساب:{' '}
+                <a href="https://wa.me/61426047327" target="_blank" rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:opacity-80" dir="ltr">
+                  +61 426 047 327
+                </a>
+              </p>
             </div>
             <img src="/assets/theme-ornament.svg" alt="" width="240" height="24" className="site-footer-ornament" />
           </div>
