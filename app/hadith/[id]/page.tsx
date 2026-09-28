@@ -1,5 +1,8 @@
 export const dynamic = 'force-dynamic'
+import type { Metadata } from 'next'
 import pool from '@/lib/db'
+import { splitSanadMatn, stripXmlToVerbatim } from '@/lib/hadithText'
+import { openGraph, twitter } from '@/lib/siteMeta'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import HadithSidebarLayout from '@/app/components/HadithSidebarLayout'
@@ -16,6 +19,47 @@ import {
   sanadSegmentsHaveNarrators,
   type SanadNarratorPreview,
 } from '@/lib/sanadNarrators'
+
+// Link previews (WhatsApp, X, Telegram…) show the hadith itself: book and printed number in the
+// title, the matn as the description, and Dorar's ruling when one is stored.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const mainId = parseInt((await params).id)
+  if (Number.isNaN(mainId)) return {}
+  const res = await pool.query<{ book_id: number; book_title: string; tarf: string | null; content: string | null; tarqeem_matboa1: string | null; tarqeem_harf: string | null }>(
+    `SELECT h.book_id, b.title AS book_title, h.tarf, h.content, h.tarqeem_matboa1, h.tarqeem_harf
+     FROM hadith_toc h JOIN books b ON b.id = h.book_id WHERE h.main_id = $1`,
+    [mainId]
+  ).catch(() => ({ rows: [] as never[] }))
+  const h = res.rows[0]
+  if (!h) return {}
+
+  const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s)
+  const matn = (splitSanadMatn(h.content || '').matn || stripXmlToVerbatim(h.tarf || '')).replace(/\s+/g, ' ').trim()
+  const num = h.tarqeem_matboa1?.trim() || h.tarqeem_harf?.trim()
+  const source = num ? `${h.book_title} ${num}` : h.book_title
+  const title = matn ? `${source}: «${clip(matn, 60)}»` : source
+
+  let ruling = ''
+  const sources = DORAR_SOURCES[Number(h.book_id)]
+  const key = sources ? dorarKey(h.content) : null
+  if (sources && key) {
+    const r = await pool.query<{ hukm: string | null; muhaddith: string | null }>(
+      `SELECT hukm, muhaddith FROM dorar_rulings WHERE book_id = $1 AND number = $2 ORDER BY dorar_source_id NULLS LAST LIMIT 1`,
+      [h.book_id, key]
+    ).catch(() => ({ rows: [] as Array<{ hukm: string | null; muhaddith: string | null }> }))
+    const d = r.rows[0]
+    if (d?.hukm) ruling = ` — خلاصة حكم المحدث${d.muhaddith ? ` (${d.muhaddith})` : ''}: ${d.hukm}`
+  }
+  const description = clip(matn || source, 220) + ruling
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/hadith/${mainId}` },
+    openGraph: openGraph({ title, description, url: `/hadith/${mainId}`, type: 'article' }),
+    twitter: twitter({ title, description }),
+  }
+}
 
 export default async function HadithPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

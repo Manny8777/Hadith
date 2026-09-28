@@ -8,14 +8,19 @@ import NumeralConverter from './components/NumeralConverter'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
 import { ThemeProvider } from '@/lib/themeContext'
+import { SITE_NAME, SITE_DESCRIPTION, openGraph, twitter } from '@/lib/siteMeta'
 
 // Applied before paint to avoid a flash of the wrong theme.
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`
 
+// metadataBase makes link-preview URLs absolute; SITE_URL overrides it outside production.
 export const metadata: Metadata = {
-  title: 'جامع خادم الحرمين الشريفين',
-  description: 'موسوعة الحديث النبوي الشريف – بحث وتحقيق',
+  metadataBase: new URL(process.env.SITE_URL || 'https://hadith-web-production.up.railway.app'),
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
   icons: { icon: { url: '/assets/brand/al-jami-icon.svg', type: 'image/svg+xml' } },
+  openGraph: openGraph({ title: SITE_NAME, description: SITE_DESCRIPTION }),
+  twitter: twitter(),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
