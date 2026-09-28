@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cardInfoField, cardInfoLines } from '@/lib/bookReference'
 import ServiceContentRenderer from '@/app/components/ServiceContentRenderer'
+import { serviceContentMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +52,11 @@ interface BookMeta {
   author_name: string | null
   author_short: string | null
   author_death: number | null
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return serviceContentMeta(id, `/service-content/${id}`)
 }
 
 export default async function ServiceContentPage({

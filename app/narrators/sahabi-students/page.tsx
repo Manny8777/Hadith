@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ interface StudentDetail {
   hadith_count: number
   is_companion: boolean
 }
+
+export const metadata = pageMeta({
+  title: 'شبكة تلاميذ الصحابة',
+  description: 'أبرز الصحابة بعدد تلاميذهم المباشرين، وأوسعهم أثراً في نشر الحديث.',
+  path: '/narrators/sahabi-students',
+})
 
 export default async function SahabiStudentsPage({
   searchParams,

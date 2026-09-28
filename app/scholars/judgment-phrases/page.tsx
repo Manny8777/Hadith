@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,12 @@ interface PhraseEntry {
   judgment_text: string
   count: number
 }
+
+export const metadata = pageMeta({
+  title: 'معجم صيغ الحكم عند العلماء',
+  description: 'الصيغ التي استخدمها كل عالم في الحكم على الأحاديث تصحيحاً وتضعيفاً.',
+  path: '/scholars/judgment-phrases',
+})
 
 export default async function JudgmentPhrasesPage({
   searchParams,

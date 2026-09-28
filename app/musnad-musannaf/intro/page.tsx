@@ -3,8 +3,15 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface IntroSection { id: number; sort: number; title: string; content: string | null }
+
+export const metadata = pageMeta({
+  title: 'مقدمة الكتاب',
+  description: 'مقدمة المسند المصنف المعلل للدكتور بشار عواد معروف وآخرين — موارد الكتاب ومنهجه.',
+  path: '/musnad-musannaf/intro',
+})
 
 export default async function MusnadIntroPage() {
   const res = await pool.query<IntroSection>(`SELECT id, sort, title, content FROM ilal_intro ORDER BY sort`)

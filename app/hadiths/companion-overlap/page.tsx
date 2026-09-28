@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import NavigateSelect from '@/app/components/NavigateSelect'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,12 @@ interface TopCompanion {
   abb_name: string | null
   hadith_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'الأحاديث المشتركة بين الصحابة',
+  description: 'أحاديث رواها أكثر من صحابي — أساس بحث التواتر والتعدد الصحابي.',
+  path: '/hadiths/companion-overlap',
+})
 
 export default async function CompanionOverlapPage({
   searchParams,

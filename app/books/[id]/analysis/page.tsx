@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { bookMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,11 @@ function gradeColor(grade: string | null) {
 function chainDepthLabel(n: number): string {
   const map: Record<number, string> = { 3: 'ثلاثي', 4: 'رباعي', 5: 'خماسي', 6: 'سداسي', 7: 'سباعي', 8: 'ثماني', 9: 'تساعي' }
   return map[n] || `${n} رجال`
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return bookMeta(id, `/books/${id}/analysis`, 'تحليل')
 }
 
 export default async function BookAnalysisPage({ params }: { params: Promise<{ id: string }> }) {

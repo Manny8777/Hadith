@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,12 @@ interface BookAppearance {
   chain_count: number
   position_avg: number
 }
+
+export const metadata = pageMeta({
+  title: 'الرواة الأكثر انتشاراً عبر الكتب',
+  description: 'الرواة الأكثر انتشاراً في كتب الحديث المختلفة، مقياساً لمكانة الراوي في الرواية.',
+  path: '/narrators/most-cited',
+})
 
 export default async function MostCitedPage({
   searchParams,

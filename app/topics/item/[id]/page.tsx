@@ -9,6 +9,7 @@ import TopicExport from '@/app/components/TopicExport'
 import HadithNumber from '@/app/components/HadithNumber'
 import TopicSearchForm from '@/app/components/TopicSearchForm'
 import { buildTopicUrl, parseTopicUrl, type SearchGrade, type TopicUrlPatch, type TopicView } from '@/lib/urlState'
+import { topicItemMeta } from '@/lib/entityMeta'
 
 interface SubjectItem {
   id: number
@@ -54,6 +55,11 @@ interface TopCompanion {
 
 function stripTags(html: string): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return topicItemMeta(id, `/topics/item/${id}`)
 }
 
 export default async function TopicItemPage({

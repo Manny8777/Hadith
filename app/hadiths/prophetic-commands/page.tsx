@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,12 @@ const COMMAND_TYPES = [
   { key: 'wajib', label: 'الواجب والفريضة', pattern: 'فريضة|واجب|وجب|أُمرنا|افترض|افترضت|فُرض', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   { key: 'sunna', label: 'السنة والمستحب', pattern: 'سنة|يستحب|من السنة|فضل|يُستحب|مستحب', color: 'bg-teal-100 text-teal-800 border-teal-200' },
 ]
+
+export const metadata = pageMeta({
+  title: 'الأوامر والنواهي النبوية — دراسة أسلوبية',
+  description: 'أحاديث الأوامر والنواهي الصريحة وأحاديث الفعل النبوي، لدراسة أسلوب التشريع النبوي.',
+  path: '/hadiths/prophetic-commands',
+})
 
 export default async function PropheticCommandsPage({
   searchParams,

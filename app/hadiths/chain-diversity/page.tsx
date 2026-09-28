@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ interface SearchResult {
   book_name: string
   chain_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'تنوع الأسانيد في الحديث — كثرة الرواة بكل موضع',
+  description: 'كم راوياً مختلفاً نقل الحديث في كل موضع من مواضع السند، لقياس الشهرة والتواتر.',
+  path: '/hadiths/chain-diversity',
+})
 
 export default async function ChainDiversityPage({
   searchParams,

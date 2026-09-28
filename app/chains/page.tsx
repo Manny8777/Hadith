@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import pool from '@/lib/db'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface SearchParams {
   book?: string
@@ -24,6 +25,12 @@ const DEPTH_LABELS: Record<number, string> = {
 function stripTags(html: string): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
+
+export const metadata = pageMeta({
+  title: 'علو الإسناد',
+  description: 'كلما قلّ عدد الرواة بين الجامع والنبي ﷺ كان الإسناد «عالياً»، والثلاثيات أعلاها درجةً.',
+  path: '/chains',
+})
 
 export default async function ChainsPage({
   searchParams,

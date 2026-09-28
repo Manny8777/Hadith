@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,12 @@ interface BookList {
   book_name: string
   total_hadiths: number
 }
+
+export const metadata = pageMeta({
+  title: 'ملف الكتاب — تحليل إحصائي شامل',
+  description: 'بصمة كل كتاب من حيث عدد أحاديثه وتنوع صحابته ومتوسط طول أسانيده ونسب الأحكام فيه.',
+  path: '/books/author-profile',
+})
 
 export default async function AuthorProfilePage({
   searchParams,

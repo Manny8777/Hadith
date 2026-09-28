@@ -4,6 +4,7 @@ import pool from '@/lib/db'
 import Link from 'next/link'
 import TopicSearch from './TopicSearch'
 import UiIcon, { type IconName } from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Category {
   id: number
@@ -21,6 +22,12 @@ const ICONS: IconName[] = [
   'lexicon', 'landmark', 'moon', 'handshake', 'scroll', 'scale', 'herb', 'prayer',
   'spark', 'map', 'globe', 'diamond', 'science', 'kaaba',
 ]
+
+export const metadata = pageMeta({
+  title: 'الفهارس الموضوعية',
+  description: 'تصفح الأحاديث النبوية مرتبةً حسب الموضوع.',
+  path: '/topics',
+})
 
 export default async function TopicsPage() {
   const { rows: categories } = await pool.query<Category>(`

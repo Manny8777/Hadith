@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import HadithNumSearch from '@/app/components/HadithNumSearch'
 import HadithNumber from '@/app/components/HadithNumber'
 import { cardInfoField, cardInfoLines } from '@/lib/bookReference'
+import { bookMeta } from '@/lib/entityMeta'
 
 function stripTags(html: string): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -13,6 +14,11 @@ function stripTags(html: string): string {
 
 function chapterLabel(row: { content: string | null; chapter_text: string | null; section_text: string | null }): string {
   return stripTags(row.content || '') || row.chapter_text?.trim() || row.section_text?.trim() || '—'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return bookMeta(id, `/books/${id}`)
 }
 
 export default async function BookPage({

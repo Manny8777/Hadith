@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,12 @@ interface CenturyNarrator {
   hadith_count: number
   grade_category: string
 }
+
+export const metadata = pageMeta({
+  title: 'توزيع درجات الرواة عبر القرون',
+  description: 'نسب الثقات والصدوقين والضعفاء والمجاهيل في كل قرن هجري.',
+  path: '/narrators/grade-distribution',
+})
 
 export default async function GradeDistributionPage({
   searchParams,

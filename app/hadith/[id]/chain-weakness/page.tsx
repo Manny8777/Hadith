@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,11 @@ function gradeStrength(grade: string | null, isCompanion: boolean): {
   if (/ضعيف|متروك|منكر|كذاب|موضوع|واهٍ|مجهول|ليس بثقة/.test(grade)) return { level: 'weak', label: grade.slice(0, 20), color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', score: 1 }
 
   return { level: 'unknown', label: grade.slice(0, 20), color: 'text-gray-500', bgColor: 'bg-gray-100 border-gray-300', score: 2 }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/chain-weakness`, 'تحليل الحلقات الضعيفة في الأسانيد')
 }
 
 export default async function ChainWeaknessPage({

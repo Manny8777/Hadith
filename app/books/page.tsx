@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Book {
   id: number
@@ -29,6 +30,12 @@ function classifyBook(title: string): { label: string; color: string } {
     return { label: 'السنن', color: 'text-teal-700' }
   return { label: 'أخرى', color: 'text-gray-500' }
 }
+
+export const metadata = pageMeta({
+  title: 'كتب المتون الحديثية',
+  description: 'تصفح كتب المتون الحديثية في الموسوعة: أبوابها وأحاديثها ومؤلفيها وطبعاتها.',
+  path: '/books',
+})
 
 export default async function BooksPage() {
   const { rows: books } = await pool.query<Book>(

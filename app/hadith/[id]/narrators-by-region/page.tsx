@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 interface NarratorRow {
   id: number
@@ -17,6 +18,11 @@ function primaryCity(n: NarratorRow): string {
   const raw = (n.living_city || n.birth_city || '').trim()
   if (!raw) return ''
   return raw.split('،')[0].replace(/قال.*?:/g, '').trim()
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/narrators-by-region`, 'الرواية بالبلدان')
 }
 
 export default async function NarratorsByRegionPage({

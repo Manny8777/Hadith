@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +34,11 @@ interface ParallelRow {
 interface JudgmentRow {
   judgment_text: string
   scientist_name: string
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/research-report`, 'التقرير البحثي للحديث')
 }
 
 export default async function ResearchReportPage({

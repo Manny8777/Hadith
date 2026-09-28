@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import LexiconSearch from './LexiconSearch'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface LetterNode {
   id: number
@@ -56,6 +57,12 @@ async function getWordsUnderLetter(
   ])
   return { words: wordsRes.rows, total: countRes.rows[0]?.cnt || 0 }
 }
+
+export const metadata = pageMeta({
+  title: 'غريب الحديث',
+  description: 'معجم ألفاظ الحديث النبوي الشريف — شرح الكلمات الغريبة والنادرة الواردة في السنة.',
+  path: '/lexicon',
+})
 
 export default async function LexiconPage({
   searchParams,

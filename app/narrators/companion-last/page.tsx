@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,12 @@ interface CompanionHadith {
   judgment_text: string | null
   chain_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'آخر الصحابة وفاةً — الذين أدركهم التابعون المتأخرون',
+  description: 'الصحابة الذين طالت أعمارهم فتلقى عنهم التابعون المتأخرون في بلدان متفرقة.',
+  path: '/narrators/companion-last',
+})
 
 export default async function CompanionLastPage({
   searchParams,

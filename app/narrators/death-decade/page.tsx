@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,12 @@ interface NarratorInDecade {
   hadith_count: number
   death_year_num: number
 }
+
+export const metadata = pageMeta({
+  title: 'الرواة حسب عقد الوفاة',
+  description: 'توزيع المحدثين على عقود الهجرة، يكشف تركُّز النشاط الحديثي في كل فترة.',
+  path: '/narrators/death-decade',
+})
 
 export default async function DeathDecadePage({
   searchParams,

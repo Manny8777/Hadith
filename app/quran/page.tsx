@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Sura {
   id: number
@@ -22,6 +23,12 @@ async function getSuras(): Promise<Sura[]> {
   )
   return rows
 }
+
+export const metadata = pageMeta({
+  title: 'القرآن الكريم',
+  description: 'فهرس الآيات القرآنية المُستشهد بها في الأحاديث النبوية الشريفة.',
+  path: '/quran',
+})
 
 export default async function QuranPage() {
   const suras = await getSuras()

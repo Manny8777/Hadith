@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,12 @@ const ABROGATION_TYPES = [
   { key: 'mutaqaddam', label: 'متقدم ومتأخر', pattern: 'متأخر|متقدم|آخر الأمرين|الآخر من أمر', color: 'bg-amber-50 border-amber-200 text-amber-800' },
   { key: 'mansukh_bi', label: 'نسخ بالآية', pattern: 'نسخته.*آية|نسخت.*بقوله|جاءت.*آية', color: 'bg-purple-50 border-purple-200 text-purple-800' },
 ]
+
+export const metadata = pageMeta({
+  title: 'فهرس الناسخ والمنسوخ',
+  description: 'أحاديث ورد في أحكام العلماء عليها ذكر النسخ — ناسخ أو منسوخ أو متقدم ومتأخر.',
+  path: '/hadiths/abrogation',
+})
 
 export default async function AbrogationPage({
   searchParams,

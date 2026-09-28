@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ interface ShortChainHadith {
   companion_name: string | null
   judgment_text: string | null
 }
+
+export const metadata = pageMeta({
+  title: 'الأسانيد العالية — قِصار السند',
+  description: 'الأسانيد بأقل عدد من الرواة — الثلاثيات والرباعيات — أعلاها إسناداً.',
+  path: '/narrators/short-chains',
+})
 
 export default async function ShortChainsPage({
   searchParams,

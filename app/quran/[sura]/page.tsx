@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { suraMeta } from '@/lib/entityMeta'
 
 interface Aya {
   id: number
@@ -36,6 +37,11 @@ async function getData(suraId: number): Promise<{ sura: Sura; ayat: Aya[] } | nu
   ])
   if (suraRes.rows.length === 0) return null
   return { sura: suraRes.rows[0], ayat: ayatRes.rows }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ sura: string }> }) {
+  const { sura } = await params
+  return suraMeta(sura, `/quran/${sura}`)
 }
 
 export default async function SuraPage({ params }: { params: Promise<{ sura: string }> }) {

@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,12 @@ interface ChapterHadith {
   judgment_text: string | null
   chain_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'تحليل الأبواب في كل كتاب',
+  description: 'فهرس الأبواب لكل كتاب مع عدد أحاديث كل باب ونسب الصحيح والضعيف فيه.',
+  path: '/books/chapter-analysis',
+})
 
 export default async function ChapterAnalysisPage({
   searchParams,

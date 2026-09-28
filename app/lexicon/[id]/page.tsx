@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LexiconHadithList from '../LexiconHadithList'
 import { LEXICON_SCOPE_CTE } from '@/lib/ghareeb'
+import { lexiconMeta } from '@/lib/entityMeta'
 
 interface LexiconItem {
   id: number
@@ -45,6 +46,11 @@ function lexiconRootHref(lexiconId: number): string {
 function lexiconRootLabel(lexiconId: number): string {
   if (lexiconId === 3) return 'معجم الأماكن والبلدان'
   return 'معجم غريب الحديث'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return lexiconMeta(id, `/lexicon/${id}`)
 }
 
 export default async function LexiconItemPage({

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,12 @@ const FIQH_TOPICS = [
   { label: 'الحدود', pattern: 'حد|قصاص|دية|جلد|قطع|زنا|سرقة' },
   { label: 'الجهاد', pattern: 'جهاد|غزو|حرب|قتال|شهيد|فيء|غنيمة' },
 ]
+
+export const metadata = pageMeta({
+  title: 'أحاديث الآحاد الصحابي',
+  description: 'أحاديث لم يروها إلا صحابي واحد، مع تصنيف موضوعي فقهي.',
+  path: '/hadiths/single-companion',
+})
 
 export default async function SingleCompanionPage({
   searchParams,

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface BookStat {
   id: number
@@ -30,6 +31,12 @@ function gradeBar(count: number, total: number, color: string) {
     </div>
   )
 }
+
+export const metadata = pageMeta({
+  title: 'إحصاءات درجات الأحاديث',
+  description: 'توزيع درجات الأحاديث من صحيح وحسن وضعيف في كل كتاب وعبر جميع الكتب.',
+  path: '/books/stats',
+})
 
 export default async function BooksStatsPage() {
   // Per-book grade distribution from hadith_judgments

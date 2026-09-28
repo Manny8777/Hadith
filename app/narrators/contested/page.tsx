@@ -1,5 +1,6 @@
 ﻿import pool from "@/lib/db"
 import Link from "next/link"
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = "force-dynamic"
 
@@ -21,6 +22,12 @@ interface CriticismDetail {
   criticism_text: string
   is_praise: boolean
 }
+
+export const metadata = pageMeta({
+  title: 'المختلف فيهم — رواة مدحهم بعض العلماء وجرحهم آخرون',
+  description: 'رواة اختلفت فيهم كلمة العلماء بين التوثيق والتجريح.',
+  path: '/narrators/contested',
+})
 
 export default async function ContestedNarratorsPage({
   searchParams,

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,12 @@ interface ScholarCentury {
   sahih_pct: number
   daif_pct: number
 }
+
+export const metadata = pageMeta({
+  title: 'تطور أحكام علماء الحديث عبر القرون',
+  description: 'توزيع أحكام التصحيح والتضعيف حسب القرن الهجري للعالم، يكشف تطور منهج النقد الحديثي.',
+  path: '/hadiths/grade-evolution',
+})
 
 export default async function GradeEvolutionPage({
   searchParams,

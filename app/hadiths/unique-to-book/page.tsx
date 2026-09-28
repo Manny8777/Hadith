@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,12 @@ interface BookUnique {
   total_hadiths: number
   unique_pct: number
 }
+
+export const metadata = pageMeta({
+  title: 'الأحاديث التي انفرد بها كل كتاب',
+  description: 'أحاديث موجودة في كتاب واحد فقط، تكشف ما تميَّز كل مصنَّف بجمعه.',
+  path: '/hadiths/unique-to-book',
+})
 
 export default async function UniqueToBookPage({
   searchParams,

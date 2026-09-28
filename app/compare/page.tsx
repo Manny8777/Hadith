@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import pool from '@/lib/db'
 import CompareSearch from './CompareSearch'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +43,12 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
     </div>
   )
 }
+
+export const metadata = pageMeta({
+  title: 'مقارنة الرواة',
+  description: 'قارن بين راويين: الطبقة والدرجة والشيوخ والتلاميذ والأحاديث المشتركة.',
+  path: '/compare',
+})
 
 export default async function ComparePage({
   searchParams,

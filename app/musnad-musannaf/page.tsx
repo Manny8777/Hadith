@@ -3,6 +3,13 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import CompanionList, { type CompanionRow } from './CompanionList'
+import { pageMeta } from '@/lib/siteMeta'
+
+export const metadata = pageMeta({
+  title: 'المسند المصنف المعلل',
+  description: 'مسند منظَّم بالصحابة مع تخريج الأحاديث وعللها — للدكتور بشار عواد معروف وآخرين.',
+  path: '/musnad-musannaf',
+})
 
 export default async function MusnadIndexPage() {
   const [res, introRes] = await Promise.all([

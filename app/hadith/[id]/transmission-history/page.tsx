@@ -1,5 +1,6 @@
 ﻿import pool from '@/lib/db'
 import Link from 'next/link'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,11 @@ interface BookEra {
   book_death: number | null
   chain_count: number
   companion_names: string
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/transmission-history`, 'تاريخ انتقال الحديث عبر القرون')
 }
 
 export default async function TransmissionHistoryPage({

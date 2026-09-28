@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,12 @@ interface GradeDetail {
   judgment_text: string
   count: number
 }
+
+export const metadata = pageMeta({
+  title: 'درجات الأحاديث حسب الكتاب',
+  description: 'نسب الصحيح والحسن والضعيف في كل كتاب من كتب الحديث.',
+  path: '/hadiths/grade-by-book',
+})
 
 export default async function GradeByBookPage({
   searchParams,

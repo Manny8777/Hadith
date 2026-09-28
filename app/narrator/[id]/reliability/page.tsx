@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { narratorMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,11 @@ interface PositionRow {
   position: number
   chain_count: number
   sahih_in_position: number
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return narratorMeta(id, `/narrator/${id}/reliability`, 'التحليل الإحصائي للموثوقية')
 }
 
 export default async function NarratorReliabilityPage({

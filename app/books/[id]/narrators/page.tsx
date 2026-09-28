@@ -4,6 +4,7 @@ import pool from '@/lib/db'
 import Link from 'next/link'
 import NavCheckbox from '@/app/components/NavCheckbox'
 import { notFound } from 'next/navigation'
+import { bookMeta } from '@/lib/entityMeta'
 
 interface NarratorRow {
   id: number
@@ -22,6 +23,11 @@ function gradeColor(grade: string | null) {
   if (/صدوق|حسن|مقبول/.test(grade)) return 'bg-amber-100 text-amber-700'
   if (/ضعيف|منكر|متروك|كذاب/.test(grade)) return 'bg-red-100 text-red-600'
   return 'bg-gray-100 text-gray-500'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return bookMeta(id, `/books/${id}/narrators`, 'رواة كتاب')
 }
 
 export default async function BookNarratorsPage({

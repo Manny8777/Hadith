@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface SearchParams { city?: string; page?: string }
 
@@ -12,6 +13,12 @@ function gradeColor(grade: string | null) {
   if (/ضعيف|منكر|متروك|كذاب/.test(grade)) return 'bg-red-100 text-red-600'
   return 'bg-gray-100 text-gray-500'
 }
+
+export const metadata = pageMeta({
+  title: 'الرواة حسب البلد',
+  description: 'تصفح رواة الحديث حسب البلدان التي نزلوها.',
+  path: '/narrators/cities',
+})
 
 export default async function NarratorCitiesPage({
   searchParams,

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import pool from '@/lib/db'
 import NarratorNetworkGraph from '@/app/components/NarratorNetworkGraph'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ interface CentralNarrator {
   tabaqa: string | null
   chain_count: string
 }
+
+export const metadata = pageMeta({
+  title: 'محورية الرواة في الأسانيد',
+  description: 'أكثر الرواة ظهوراً في شبكة الأسانيد، وأهمية كل راوٍ في نقل الحديث النبوي.',
+  path: '/narrators/network',
+})
 
 export default async function NetworkPage({
   searchParams,

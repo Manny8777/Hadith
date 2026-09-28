@@ -2,8 +2,15 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import FindByNumberClient from './FindByNumberClient'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Book { id: number; title: string; takhrij_author: string | null; takhrij_death: number | null }
+
+export const metadata = pageMeta({
+  title: 'البحث برقم الحديث',
+  description: 'انتقل مباشرة إلى حديث محدد باختيار الكتاب وإدخال رقمه كما ورد في الطبعة المرجعية.',
+  path: '/find-by-number',
+})
 
 export default async function FindByNumberPage() {
   const { rows: books } = await pool.query<Book>(

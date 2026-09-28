@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import NavigateSelect from '@/app/components/NavigateSelect'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ interface ConflictDetail {
   judgment_text: string
   judgment_category: string
 }
+
+export const metadata = pageMeta({
+  title: 'اختلاف العلماء في الحكم على الأحاديث',
+  description: 'أحاديث صحَّحها بعض العلماء وضعَّفها آخرون، لدراسة الخلاف في نقد الحديث.',
+  path: '/hadiths/divergent-judgments',
+})
 
 export default async function DivergentJudgmentsPage({
   searchParams,

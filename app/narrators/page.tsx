@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import pool from '@/lib/db'
 import { displayNarratorName } from '@/lib/narratorName'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,12 @@ const QUICK_FILTERS = [
   { key: 'rawy', label: 'رواة فقط', color: 'teal' },
   { key: 'for_work', label: 'مُعتمد للعمل', color: 'emerald' },
 ] as const
+
+export const metadata = pageMeta({
+  title: 'رواة الحديث',
+  description: 'تراجم رواة الحديث النبوي: درجاتهم وطبقاتهم ووفياتهم وشيوخهم وتلاميذهم.',
+  path: '/narrators',
+})
 
 export default async function NarratorsPage({
   searchParams,

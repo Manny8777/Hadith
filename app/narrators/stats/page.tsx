@@ -1,7 +1,14 @@
 import Link from 'next/link'
 import pool from '@/lib/db'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata = pageMeta({
+  title: 'إحصاءات الرواة',
+  description: 'توزيع الرواة حسب الدرجة والقرن، وأكثر الرواة أحاديث في الكتب.',
+  path: '/narrators/stats',
+})
 
 export default async function NarratorStatsPage() {
   const [gradeRes, tabaqaRes, topRes, centuryRes, bioCntRes] = await Promise.all([

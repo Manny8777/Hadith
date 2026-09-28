@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,12 @@ const THEMATIC_KEYWORDS = [
   { label: 'الدعاء والذكر', pattern: 'اللهم|يدعو|الدعاء|ذكر الله|تسبيح|استغفر', color: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
   { label: 'الآخرة والجنة', pattern: 'جنة|جهنم|القيامة|يوم القيامة|الآخرة|حساب', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
 ]
+
+export const metadata = pageMeta({
+  title: 'تصفح الأحاديث بالموضوع الكلمي',
+  description: 'بحث في متون الأحاديث بحسب الكلمات المفتاحية والمواضيع الكبرى.',
+  path: '/hadiths/matn-keywords',
+})
 
 export default async function MatnKeywordsPage({
   searchParams,

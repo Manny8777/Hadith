@@ -7,6 +7,7 @@ import CompareNarratorPicker from '@/app/components/CompareNarratorPicker'
 import NarratorTopics from '@/app/components/NarratorTopics'
 import BrandMark from '@/app/components/BrandMark'
 import UiIcon from '@/app/components/UiIcon'
+import { narratorMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,11 @@ function gradingColor(grade: string | null) {
   if (/صدوق|حسن|مقبول/.test(grade)) return 'bg-amber-100 text-amber-800 border-amber-200'
   if (/ضعيف|منكر|متروك|كذاب/.test(grade)) return 'bg-red-100 text-red-700 border-red-200'
   return 'bg-gray-100 text-gray-600 border-gray-200'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return narratorMeta(id, `/narrator/${id}`)
 }
 
 export default async function NarratorPage({

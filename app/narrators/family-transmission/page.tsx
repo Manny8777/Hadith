@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,12 @@ interface FamilyChain {
   hadith_text: string
   book_name: string
 }
+
+export const metadata = pageMeta({
+  title: 'الرواية العائلية — رواة يجمعهم النسب',
+  description: 'رواة من أسرة واحدة يظهرون معاً في الأسانيد، يكشف انتقال العلم داخل الأسر الحديثية.',
+  path: '/narrators/family-transmission',
+})
 
 export default async function FamilyTransmissionPage({
   searchParams,

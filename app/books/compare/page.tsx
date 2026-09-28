@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,6 +92,12 @@ async function getBookStats(id: number): Promise<BookStat> {
     shared_hadiths: 0,
   }
 }
+
+export const metadata = pageMeta({
+  title: 'مقارنة الكتب',
+  description: 'مقارنة منهجية بين كتابَين حديثيَّين — درجات الأسانيد، أطوالها، مصادر الصحابة.',
+  path: '/books/compare',
+})
 
 export default async function BooksComparePage({
   searchParams,

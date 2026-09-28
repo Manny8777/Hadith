@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,12 @@ interface TakhrijBook {
   judgment_text: string | null
   chain_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'الأحاديث المنتشرة عبر الكتب — بالتخريج',
+  description: 'الأحاديث التي أُخرجت في أكثر من كتاب، تكشف درجة شهرتها وتيسّر المقارنة بين رواياتها.',
+  path: '/hadiths/takhrij-spread',
+})
 
 export default async function TakhrijSpreadPage({
   searchParams,

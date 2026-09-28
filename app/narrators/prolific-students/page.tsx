@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,12 @@ interface TeacherDetail {
   is_companion: boolean
   chain_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'أكثر الرواة شيوخاً — المكثرون من التحمل',
+  description: 'رواة تتلمذوا على أكبر عدد من الشيوخ، أوسعهم في طلب العلم وتحمُّل الرواية.',
+  path: '/narrators/prolific-students',
+})
 
 export default async function ProlificStudentsPage({
   searchParams,

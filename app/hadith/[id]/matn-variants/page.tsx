@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,11 @@ interface VersionRow {
   companion_name: string | null
   match_sort: number | null
   label: string | null
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/matn-variants`, 'تحليل الفروق النصية بين الروايات')
 }
 
 export default async function MatnVariantsPage({

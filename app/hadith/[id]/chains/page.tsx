@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import HadithNumber from '@/app/components/HadithNumber'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +72,11 @@ function chainTypeBadge(isnadType: number | null): { label: string; cls: string 
   if (isnadType === 3) return { label: 'مقطوع', cls: 'bg-orange-100 text-orange-700 border-orange-300' }
   if (isnadType === 4) return { label: 'مرسل', cls: 'bg-purple-100 text-purple-700 border-purple-300' }
   return null
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/chains`, 'مقارنة الأسانيد')
 }
 
 export default async function HadithChainsPage({

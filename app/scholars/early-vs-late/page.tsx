@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,12 @@ interface EraStats {
   avg_sahih_pct: number
   avg_daif_pct: number
 }
+
+export const metadata = pageMeta({
+  title: 'منهج العلماء في التصحيح والتضعيف عبر القرون',
+  description: 'مقارنة منهجية بين أجيال علماء الحديث في التصحيح والتضعيف.',
+  path: '/scholars/early-vs-late',
+})
 
 export default async function EarlyVsLatePage({
   searchParams,

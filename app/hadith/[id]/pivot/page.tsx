@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +40,11 @@ function barColor(pct: number) {
   if (pct >= 60) return 'bg-amber-500'
   if (pct >= 40) return 'bg-yellow-400'
   return 'bg-green-400'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/pivot`, 'مدار الحديث')
 }
 
 export default async function PivotPage({ params }: { params: Promise<{ id: string }> }) {

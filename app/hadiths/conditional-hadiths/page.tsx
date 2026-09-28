@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ const CONDITIONAL_TYPES = [
   { key: 'command', label: 'الأمر (افعل)', pattern: 'أمر.*بـ|ائتوا|افعلوا|أقيموا|آتوا|توضأوا|صوموا', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   { key: 'definition', label: 'التعريف (الـ هو)', pattern: 'المسلم من|المؤمن من|الإسلام أن|الإيمان أن|الصلاة من', color: 'bg-violet-100 text-violet-800 border-violet-200' },
 ]
+
+export const metadata = pageMeta({
+  title: 'أحاديث الأحكام — التصنيف الأسلوبي',
+  description: 'تصنيف الأحاديث بأسلوبها اللغوي: الثواب والتحذير والشرط والنهي والأمر والتعريف.',
+  path: '/hadiths/conditional-hadiths',
+})
 
 export default async function ConditionalHadithsPage({
   searchParams,

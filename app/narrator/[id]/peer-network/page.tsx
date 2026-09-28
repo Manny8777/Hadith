@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { narratorMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,11 @@ interface PeerRow {
   shared_chains: number
   shared_hadiths: number
   relation_type: string
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return narratorMeta(id, `/narrator/${id}/peer-network`, 'شبكة الأقران')
 }
 
 export default async function PeerNetworkPage({

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,12 @@ interface BottleneckHadith {
   bottleneck_position: number
   judgment_text: string | null
 }
+
+export const metadata = pageMeta({
+  title: 'الراوي الوحيد — أحاديث تجري في سند واحد',
+  description: 'أحاديث تتعدد أسانيدها لكنها كلها تمر براوٍ واحد في نقطة بعينها.',
+  path: '/hadiths/narrator-bottleneck',
+})
 
 export default async function NarratorBottleneckPage({
   searchParams,

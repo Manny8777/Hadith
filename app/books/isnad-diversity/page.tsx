@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,12 @@ interface CompanionShare {
   hadith_count: number
   pct_of_book: number
 }
+
+export const metadata = pageMeta({
+  title: 'تنوع المصادر الصحابية بالكتب',
+  description: 'عدد الصحابة الذين تدور عليهم أحاديث كل كتاب، مقياساً لشموله وتنوع مصادره.',
+  path: '/books/isnad-diversity',
+})
 
 export default async function IsnadDiversityPage({
   searchParams,

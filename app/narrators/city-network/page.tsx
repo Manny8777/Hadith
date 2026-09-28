@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,12 @@ interface CityNarrator {
   is_companion: boolean
   hadith_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'شبكة الرواية بين المدن',
+  description: 'مسارات انتقال الحديث بين المدن الإسلامية، من مكة والمدينة إلى الكوفة والبصرة وبغداد ونيسابور.',
+  path: '/narrators/city-network',
+})
 
 export default async function CityNetworkPage({
   searchParams,

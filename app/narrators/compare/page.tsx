@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Narrator {
   id: number
@@ -43,6 +44,12 @@ function gradeBadge(grade: string | null, isCompanion = false) {
   if (/ضعيف|منكر|متروك|كذاب/.test(grade)) return 'bg-red-100 text-red-600 border-red-200'
   return 'bg-gray-100 text-gray-500 border-gray-200'
 }
+
+export const metadata = pageMeta({
+  title: 'مقارنة الرواة',
+  description: 'قارن بين راويين: الدرجة والطبقة والشيوخ والتلاميذ المشتركين.',
+  path: '/narrators/compare',
+})
 
 export default async function NarratorComparePage({
   searchParams,

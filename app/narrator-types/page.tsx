@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface RelationType {
   id: number
@@ -28,6 +29,12 @@ function gradeColor(grade: string | null) {
   if (/ضعيف|منكر|متروك|كذاب/.test(grade)) return 'bg-red-100 text-red-600'
   return 'bg-gray-100 text-gray-500'
 }
+
+export const metadata = pageMeta({
+  title: 'أنواع علاقات الرواة',
+  description: 'تصنيفات العلاقات بين الرواة، مع الرواة المنتسبين إلى كل نوع.',
+  path: '/narrator-types',
+})
 
 export default async function NarratorTypesPage({
   searchParams,

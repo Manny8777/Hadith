@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { bookMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,11 @@ function gradeClass(g: string | null, isComp: boolean) {
   if (g.includes('ضعيف') || g.includes('متروك') || g.includes('منكر')) return 'bg-red-100 text-red-600'
   if (g.includes('مجهول')) return 'bg-gray-100 text-gray-500'
   return 'bg-blue-50 text-blue-700'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return bookMeta(id, `/books/${id}/isnad-profile`, 'رجال')
 }
 
 export default async function BookIsnadProfilePage({

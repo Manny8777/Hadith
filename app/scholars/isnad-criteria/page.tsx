@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,12 @@ interface GradeDistrib {
   judgment_text: string
   count: number
 }
+
+export const metadata = pageMeta({
+  title: 'معايير قبول الإسناد عند كل عالم',
+  description: 'تحليل أحكام كل محدث لاستنباط منهجه في قبول الأسانيد.',
+  path: '/scholars/isnad-criteria',
+})
 
 export default async function IsnadCriteriaPage({
   searchParams,

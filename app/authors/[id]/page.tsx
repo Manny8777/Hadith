@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { authorMeta } from '@/lib/entityMeta'
 
 type BioPart = { type: 'heading' | 'paragraph'; text: string }
 
@@ -30,6 +31,11 @@ function parseAuthorBio(xml: string | null): BioPart[] {
     if (text) parts.push({ type: 'paragraph', text })
   }
   return parts
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return authorMeta(id, `/authors/${id}`)
 }
 
 export default async function AuthorPage({ params }: { params: Promise<{ id: string }> }) {

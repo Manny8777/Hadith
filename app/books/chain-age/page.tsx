@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,12 @@ interface ChainDetail {
   chain_length: number
   hadith_text: string
 }
+
+export const metadata = pageMeta({
+  title: 'عمر الأسانيد — المدة بين الصحابي والمُصنِّف',
+  description: 'متوسط الفارق الزمني بين وفاة الصحابي الراوي ووفاة المصنِّف في كل كتاب.',
+  path: '/books/chain-age',
+})
 
 export default async function ChainAgePage({
   searchParams,

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,12 @@ interface MudallisHadith {
   chain_narrators: string[]
   judgment_text: string | null
 }
+
+export const metadata = pageMeta({
+  title: 'فهرس المدلِّسين من الرواة',
+  description: 'رواة وردت في تراجمهم أحكام بالتدليس، مع أحاديثهم التي هم في سندها.',
+  path: '/narrators/mudallis-catalog',
+})
 
 export default async function MudallisCatalogPage({
   searchParams,

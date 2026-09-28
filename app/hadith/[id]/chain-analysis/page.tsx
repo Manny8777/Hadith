@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,11 @@ function dotColor(g: string | null, isComp: boolean) {
   if (g.includes('صدوق') || g.includes('لا بأس') || g.includes('حسن')) return 'bg-amber-500'
   if (g.includes('ضعيف') || g.includes('متروك') || g.includes('منكر')) return 'bg-red-500'
   return 'bg-gray-400'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/chain-analysis`, 'تحليل زمني للإسناد')
 }
 
 export default async function ChainAnalysisPage({

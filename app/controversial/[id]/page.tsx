@@ -3,6 +3,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { controversialMeta } from '@/lib/entityMeta'
 
 interface TreeNode {
   id: number
@@ -20,6 +21,11 @@ interface ContentLink {
   part_text: string | null
   part_num: number | null
   page_num: number | null
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return controversialMeta(id, `/controversial/${id}`)
 }
 
 export default async function ControversialNodePage({

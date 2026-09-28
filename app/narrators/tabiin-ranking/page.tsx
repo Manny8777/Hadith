@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,12 @@ interface TabiiDetail {
   companion_name: string
   chain_count: number
 }
+
+export const metadata = pageMeta({
+  title: 'ترتيب التابعين — بالشيوخ والتلاميذ والأحاديث',
+  description: 'التابعون مرتَّبون بعدد الصحابة الذين سمعوا منهم وعدد تلاميذهم وأحاديثهم.',
+  path: '/narrators/tabiin-ranking',
+})
 
 export default async function TabiinRankingPage({
   searchParams,

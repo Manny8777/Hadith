@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import pool from '@/lib/db'
+import { narratorMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +44,11 @@ function centuryLabel(year: number | null) {
     6: 'ق٦', 7: 'ق٧', 8: 'ق٨', 9: 'ق٩', 10: 'ق١٠',
   }
   return labels[c] || `ق${c}`
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return narratorMeta(id, `/narrator/${id}/criticism-history`, 'تاريخ أقوال النقاد')
 }
 
 export default async function CriticismHistoryPage({

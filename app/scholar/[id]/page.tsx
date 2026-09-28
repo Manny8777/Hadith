@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { scholarMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,11 @@ function garhClass(g: string | null) {
   if (g.includes('ثق') || g.includes('صدوق') || g.includes('لا بأس')) return 'bg-green-100 text-green-700'
   if (g.includes('ضعيف') || g.includes('متروك') || g.includes('منكر')) return 'bg-red-100 text-red-600'
   return 'bg-gray-100 text-gray-600'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return scholarMeta(id, `/scholar/${id}`)
 }
 
 export default async function ScholarProfilePage({

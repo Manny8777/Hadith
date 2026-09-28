@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +32,12 @@ const POPULAR_OPENINGS = [
   { label: 'المسلم أخو', pattern: '^المسلم أخو' },
   { label: 'كل أمر ذي بال', pattern: '^كل أمر ذي بال|^كل أمر لا يُبدأ' },
 ]
+
+export const metadata = pageMeta({
+  title: 'الروايات المتشابهة في المتن — تحليل الفواتح',
+  description: 'يجمع الأحاديث التي تبدأ بالعبارة نفسها ليكشف اختلاف الألفاظ بين كتب الحديث.',
+  path: '/hadiths/opening-variants',
+})
 
 export default async function OpeningVariantsPage({
   searchParams,

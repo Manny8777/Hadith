@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { topicMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,6 +31,11 @@ function depthColor(d: number): string {
   if (d <= 5) return 'bg-amber-400'
   if (d <= 7) return 'bg-orange-400'
   return 'bg-red-400'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return topicMeta(id, `/topics/${id}/analysis`, 'تحليل إسناد موضوع')
 }
 
 export default async function TopicAnalysisPage({

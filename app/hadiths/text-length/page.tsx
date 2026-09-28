@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,12 @@ interface SampleHadith {
   book_name: string
   char_len: number
 }
+
+export const metadata = pageMeta({
+  title: 'توزيع أطوال نصوص الأحاديث',
+  description: 'كيف تتوزع الأحاديث حسب طول نصها، وأي الكتب تحوي المطوَّلات وأيها يقتصر على القصار.',
+  path: '/hadiths/text-length',
+})
 
 export default async function TextLengthPage({
   searchParams,

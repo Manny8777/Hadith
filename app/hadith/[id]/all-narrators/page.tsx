@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,11 @@ function gradeClass(g: string | null, isComp: boolean) {
   if (g.includes('ضعيف') || g.includes('متروك') || g.includes('منكر')) return 'bg-red-100 text-red-600 border-red-200'
   if (g.includes('مجهول')) return 'bg-gray-100 text-gray-600 border-gray-200'
   return 'bg-blue-50 text-blue-700 border-blue-200'
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/all-narrators`, 'رجال الحديث')
 }
 
 export default async function AllNarratorsPage({ params }: { params: Promise<{ id: string }> }) {

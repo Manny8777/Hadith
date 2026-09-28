@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,12 @@ interface BookSummary {
   top_companion: string | null
   top_companion_pct: number
 }
+
+export const metadata = pageMeta({
+  title: 'مصفوفة الكتب والصحابة',
+  description: 'أحاديث كل صحابي في كل كتاب، تكشف تخصص كل مصنَّف في الرواية عن صحابة بعينهم.',
+  path: '/hadiths/book-companion-matrix',
+})
 
 export default async function BookCompanionMatrixPage({
   searchParams,

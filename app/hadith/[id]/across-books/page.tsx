@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,11 @@ interface ParallelVersion {
 
 function stripTags(s: string | null) {
   return (s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/across-books`, 'الحديث في كتب الحديث')
 }
 
 export default async function AcrossBooksPage({ params }: { params: Promise<{ id: string }> }) {

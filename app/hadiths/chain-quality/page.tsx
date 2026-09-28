@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,12 @@ const QUALITY_PRESETS = [
     color: 'bg-teal-100 text-teal-800 border-teal-200',
   },
 ]
+
+export const metadata = pageMeta({
+  title: 'فلتر جودة الأسانيد',
+  description: 'ابحث عن الأحاديث بمعايير نوعية في أسانيدها: أعلاها إسناداً وأوثقها رواةً وأكثرها طرقاً.',
+  path: '/hadiths/chain-quality',
+})
 
 export default async function ChainQualityPage({
   searchParams,

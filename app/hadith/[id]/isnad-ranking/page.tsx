@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,6 +58,11 @@ function strengthLabel(score: number): { label: string; color: string } {
   if (score >= 30) return { label: 'مقبول', color: 'bg-amber-100 text-amber-800 border-amber-200' }
   if (score >= 0)  return { label: 'ضعيف', color: 'bg-orange-100 text-orange-800 border-orange-200' }
   return { label: 'شديد الضعف', color: 'bg-red-100 text-red-800 border-red-200' }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return hadithSectionMeta(id, `/hadith/${id}/isnad-ranking`, 'ترتيب الأسانيد')
 }
 
 export default async function IsnadRankingPage({ params }: { params: Promise<{ id: string }> }) {

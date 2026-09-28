@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { topicMeta } from '@/lib/entityMeta'
 
 interface SubjectItem {
   id: number
@@ -20,6 +21,11 @@ interface Category {
   is_leaf: boolean
   left_value: number
   right_value: number
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return topicMeta(id, `/topics/${id}`)
 }
 
 export default async function CategoryPage({

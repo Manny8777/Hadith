@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Companion {
   id: number
@@ -16,6 +17,12 @@ interface Companion {
 }
 
 interface GradeStat { grade_class: string; cnt: number }
+
+export const metadata = pageMeta({
+  title: 'الصحابة الكرام رضي الله عنهم',
+  description: 'صحابة النبي ﷺ في الموسوعة مرتبين حسب عدد الأحاديث المروية عنهم.',
+  path: '/companions',
+})
 
 export default async function CompanionsPage() {
   const [companionsRes, gradeStatsRes, totalRes] = await Promise.all([

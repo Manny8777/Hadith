@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import IsnadTree from '@/app/components/IsnadTree'
 import UiIcon from '@/app/components/UiIcon'
 import { getChainsForHadith } from '@/lib/isnadChains'
+import { musnadMusannafMeta } from '@/lib/entityMeta'
 
 interface Companion { id: number; seq: number; name: string; slug: string; tarjama: string | null; narrator_id: number | null }
 interface Entry {
@@ -61,6 +62,11 @@ function judgmentTone(j: string | null): string {
 }
 
 const PER_PAGE = 12
+export async function generateMetadata({ params }: { params: Promise<{ companion: string }> }) {
+  const { companion } = await params
+  return musnadMusannafMeta(decodeURIComponent(companion), `/musnad-musannaf/${companion}`)
+}
+
 export default async function MusnadCompanionPage({ params, searchParams }: { params: Promise<{ companion: string }>; searchParams: Promise<{ page?: string }> }) {
   const { companion: companionParam } = await params
   const slug = decodeURIComponent(companionParam)

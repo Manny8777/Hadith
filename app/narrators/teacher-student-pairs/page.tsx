@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,12 @@ interface PairHadith {
   book_name: string
   judgment_text: string | null
 }
+
+export const metadata = pageMeta({
+  title: 'أكثر أزواج الشيخ والراوي تواتراً',
+  description: 'الأزواج الأكثر تكراراً من شيخ وتلميذه المباشر في الأسانيد.',
+  path: '/narrators/teacher-student-pairs',
+})
 
 export default async function TeacherStudentPairsPage({
   searchParams,

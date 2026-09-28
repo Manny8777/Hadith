@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 interface Section {
   id: number
@@ -40,6 +41,12 @@ async function getData() {
 
   return { sections: sectionsRes.rows, booksBySection }
 }
+
+export const metadata = pageMeta({
+  title: 'تصنيف الكتب',
+  description: 'كتب الموسوعة مرتبة حسب الموضوع.',
+  path: '/sections',
+})
 
 export default async function SectionsPage() {
   const { sections, booksBySection } = await getData()

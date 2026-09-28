@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,12 @@ interface BridgeDetail {
   student_death: number | null
   book_name: string
 }
+
+export const metadata = pageMeta({
+  title: 'رواة الجسور — حاملو الرواية بين الجيلين',
+  description: 'تابعون سمعوا من كبار الصحابة ونقلوا إلى الجيل التالي، حلقة الوصل بين عصر النبوة وعصر التدوين.',
+  path: '/narrators/generation-bridge',
+})
 
 export default async function GenerationBridgePage({
   searchParams,
