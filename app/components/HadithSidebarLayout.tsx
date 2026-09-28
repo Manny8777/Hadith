@@ -278,11 +278,8 @@ export default function HadithSidebarLayout({
               {h.page_num > 0 && <span>الصفحة: {h.page_num}</span>}
             </div>
           )}
-          <div className="hadith-source-identity">
-          <div><p className="hadith-source-label"><UiIcon name="book-open" size={20} /> المصدر / الكتاب</p>
-          <h1 className="hadith-source-title"><Link href={`/books/${h.book_id}`}>{h.book_title}</Link></h1></div>
-          {h.takhrij_author && <div className="hadith-source-author"><p className="hadith-source-label"><UiIcon name="narrator" size={20} /> المؤلف</p><p>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</p></div>}
-          </div>
+          {/* The book is named in the breadcrumb above; the page heading stays for screen readers and search */}
+          <h1 className="sr-only">{h.book_title}</h1>
           <dl className="hadith-source-hierarchy">
           {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
             const t = ISNAD_TYPE_MAP[isnadType]
@@ -321,6 +318,12 @@ export default function HadithSidebarLayout({
             </div>
           )
         })()}
+            {h.takhrij_author && (
+              <div className="hadith-source-wide">
+                <dt><UiIcon name="narrator" size={18} />المؤلف</dt>
+                <dd>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</dd>
+              </div>
+            )}
             {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
           <dl className="hadith-source-locators">

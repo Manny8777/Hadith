@@ -51,10 +51,11 @@
 .hadith-export-options { padding-top: .65rem; }
 .hadith-reader-toolbar button, .hadith-reader-toolbar summary { min-height: 36px; }
 @media (min-width: 900px) {
-  .hadith-source-hierarchy { grid-template-columns: 1fr 1fr 2fr; }
+  /* one row: نوع الحديث · صيغة التحديث · الراوي · المؤلف; the topics take a full row below */
+  .hadith-source-hierarchy { grid-template-columns: 1fr 1fr 2fr 2fr; }
   .hadith-source-hierarchy > .hadith-source-wide { grid-column: auto; }
   .hadith-source-hierarchy > .hadith-source-wide:has(.hadith-source-subjects) { grid-column: 1 / -1; }
-  .hadith-source-hierarchy > div:nth-child(3) { border-top: 0; }
+  .hadith-source-hierarchy > div:nth-child(-n+4):not(:has(.hadith-source-subjects)) { border-top: 0; }
   .hadith-source-locators { max-width: 32rem; }
   .hadith-source-index { padding-block: 1rem; }
 }
