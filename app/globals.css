@@ -193,11 +193,11 @@
   --font-display: 'ThmanyahSerifDisplay', 'Traditional Arabic', serif;
 
   /* ─────────── Light palette — warm paper / scholarly book page ─────────── */
-  --color-paper: #F8F1E4;          /* handoff parchment page background */
+  --color-paper: #FAF8F4;          /* light paper page background */
   --color-surface: #FFFDF7;        /* handoff ivory card surface */
   --color-surface-sunken: #F0E8D8; /* warm elevated panels, sanad blocks, nav */
   --color-border: #E4DFD2;         /* handoff soft border */
-  --color-ink: #17201D;            /* handoff deep ink */
+  --color-ink: #14151A;            /* near-black ink */
   --color-muted: #747873;          /* handoff muted text */
   --color-primary: #0F3D2E;        /* handoff deep emerald */
   --color-primary-soft: #E2EEE7;   /* quiet emerald tint */
@@ -251,7 +251,7 @@
   --background: var(--color-paper);
   --foreground: var(--color-ink);
   --text-prose: 0.9375rem;
-  --leading-prose: 2.2;
+  --leading-prose: 1.6;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 18px;
@@ -410,9 +410,10 @@ body {
     @apply text-xs text-gray-600 shrink-0 font-sans font-medium;
   }
 
+  /* The sanad: muted transmission words at 17px; narrator names stand out (SanadNarrators) */
   .hadith-sanad {
-    @apply text-[15px] sm:text-base text-gray-700 font-serif;
-    line-height: 2.1;
+    @apply text-[17px] text-gray-600 font-serif;
+    line-height: 1.95;
   }
 
   /* Anchor offset that tracks the sticky header height (set on <html> by the layout) */
@@ -427,8 +428,8 @@ body {
    Aligned to the start (right, in RTL) to match the sanad block. */
 .hadith-matn {
   font-family: var(--font-serif);
-  font-size: var(--matn-size, clamp(1.65rem, 2.2vw, 2.25rem));
-  line-height: 1.95;
+  font-size: var(--matn-size, 24px);
+  line-height: 1.85;
   font-weight: 400;
   color: var(--color-ink);
   text-align: start;

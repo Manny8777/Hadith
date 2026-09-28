@@ -33,15 +33,11 @@ function cleanHadithContent(xml: string): string {
 }
 
 // Reader-adjustable matn sizes (responsive clamps so every level scales on mobile).
-// Level 0 matches the sanad text size; the default sits one level above it.
-const MATN_SIZES = [
-  'clamp(0.9375rem, 0.9rem + 0.2vw, 1.05rem)', // 0 — same as السند (~15–16px)
-  'clamp(1.1rem, 0.95rem + 0.7vw, 1.35rem)',   // 1 — default (~18–22px)
-  'clamp(1.3rem, 1rem + 1.3vw, 1.7rem)',       // 2
-  'clamp(1.55rem, 1.05rem + 2vw, 2.05rem)',    // 3
-  'clamp(1.8rem, 1.1rem + 2.8vw, 2.4rem)',     // 4
-]
-const MATN_SIZE_DEFAULT = 1
+// The matn opens at 24px; the reader can step it down or up with أ−/أ+ (the choice is remembered
+// under MATN_SIZE_KEY — renamed whenever the default changes, so stored old defaults don't stick).
+const MATN_SIZES = ['16px', '18px', '21px', '24px', '28px']
+const MATN_SIZE_DEFAULT = 3
+const MATN_SIZE_KEY = 'matnSize.v2'
 
 export interface NarratorInChain {
   id: number
@@ -167,11 +163,11 @@ export default function HadithSidebarLayout({
 
   // Persist the reader's matn-size preference across hadiths/sessions
   useEffect(() => {
-    const saved = parseInt(localStorage.getItem('matnSize') ?? '', 10)
+    const saved = parseInt(localStorage.getItem(MATN_SIZE_KEY) ?? '', 10)
     if (!Number.isNaN(saved) && saved >= 0 && saved < MATN_SIZES.length) setMatnSize(saved)
   }, [])
   useEffect(() => {
-    localStorage.setItem('matnSize', String(matnSize))
+    localStorage.setItem(MATN_SIZE_KEY, String(matnSize))
   }, [matnSize])
 
   const { pref: numberingPreference } = useNumbering()

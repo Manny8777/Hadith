@@ -173,7 +173,7 @@ export default function SanadNarrators({
         nodes.push(
           <span
             key={`nar-${id}-${i}`}
-            className="font-bold text-ink cursor-pointer rounded-sm px-0.5 underline decoration-green-300 decoration-1 underline-offset-[5px] transition-colors hover:decoration-green-600 hover:text-green-800"
+            className="text-[19px] font-medium text-teal-700 cursor-pointer rounded-sm px-0.5 underline decoration-teal-300 decoration-1 underline-offset-[5px] transition-colors hover:decoration-teal-600 hover:text-teal-800"
             onClick={e => {
               e.stopPropagation()
               if (activeId === id) closePopover()
