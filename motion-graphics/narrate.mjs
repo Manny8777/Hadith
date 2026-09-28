@@ -41,7 +41,21 @@ const { sceneBounds: SCENE_BOUNDS, lines: LINES } = JSON.parse(readFileSync(path
 const TAIL = 0.9      // after a line ends, before the scene's exit finishes
 const LAST_TAIL = 2   // the closing frame holds a little longer
 
-async function tts(text, out) {
+// The API allows a few requests a minute on lower tiers: on 429, wait as long as it says and retry
+async function tts(text, out, attempt = 1) {
+  try {
+    return await ttsOnce(text, out)
+  } catch (e) {
+    const wait = String(e.message).match(/TTS 429.*?retry in (\d+)s/)
+    if (!wait || attempt > 6) throw e
+    const s = Number(wait[1]) + 2
+    process.stdout.write(`rate-limited, waiting ${s}s… `)
+    await new Promise(r => setTimeout(r, s * 1000))
+    return tts(text, out, attempt + 1)
+  }
+}
+
+async function ttsOnce(text, out) {
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     method: 'POST',
     headers: { 'x-goog-api-key': apiKey(), 'Content-Type': 'application/json' },

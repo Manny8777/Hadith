@@ -2,3 +2,4 @@
 *.mp4
 !*-narrated.mp4
 stills/
+.log-*.txt
