@@ -273,25 +273,26 @@ export default function NavHeader() {
   return (
     <nav ref={navRef} aria-label="التنقل الرئيسي" className="site-nav theme-texture relative z-30 bg-[#0F3D2E] text-[#F8F1E4] font-sans border-b border-[#C9A96B]/40" dir="rtl">
       <div className="max-w-[1440px] mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
-        <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-3 shrink-0 text-[#F8F1E4] transition-colors hover:text-[#E6C77A]">
+        <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-2 xl:ml-3 shrink-0 text-[#F8F1E4] transition-colors hover:text-[#E6C77A]">
           <span className="brand-tile"><BrandMark size={42} /></span>
-          <span className="flex flex-col leading-none font-display">
+          {/* Between 960px and 1150px the full menu needs the room; the logo tile already reads «الجامع» */}
+          <span className="flex flex-col leading-none font-display min-[960px]:max-[1150px]:hidden">
             <span className="text-[10px] text-[#C9A96B]">موسوعة الحديث النبوي</span>
             <span className="mt-0.5 whitespace-nowrap text-sm sm:text-base font-bold">الجامع</span>
           </span>
         </a>
 
-        <div className="hidden xl:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
+        <div className="hidden min-[960px]:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
 
         {/* Desktop: inline categories with dropdowns */}
-        <div className="hidden xl:flex items-center gap-0.5 flex-1 min-w-0 flex-wrap">
+        <div className="hidden min-[960px]:flex items-center gap-0 xl:gap-0.5 flex-1 min-w-0">
           {CATEGORIES.map(cat => (
             <div key={cat.id} className="shrink-0">
               <button
                 type="button"
                 onClick={() => toggle(cat.id)}
                 aria-expanded={open === cat.id}
-                className={`flex items-center gap-1 text-sm font-sans px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-0.5 xl:gap-1 text-[13px] xl:text-[13.5px] font-sans px-1.5 xl:px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
                     ? 'bg-[#C9A96B] text-[#0F3D2E]'
                     : 'text-[#F8F1E4]/80 hover:text-[#FFFDF7] hover:bg-white/10'
@@ -329,11 +330,11 @@ export default function NavHeader() {
         </div>
 
         {/* Mobile: push toggles + menu button to the end */}
-        <div className="flex-1 xl:hidden" />
+        <div className="flex-1 min-[960px]:hidden" />
 
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
-          <div className="hidden xl:flex items-center gap-2">
+          <div className="hidden min-[960px]:flex items-center gap-1 xl:gap-2">
             <NumberingToggle />
             <NumeralToggle />
           </div>
@@ -345,7 +346,7 @@ export default function NavHeader() {
           onClick={() => { setMobileOpen(v => !v); setOpen(null) }}
           aria-label="القائمة"
           aria-expanded={mobileOpen}
-          className="xl:hidden flex items-center justify-center w-11 h-11 rounded-full text-[#F8F1E4] border border-[#C9A96B]/40 hover:border-[#C9A96B] hover:bg-white/10 transition-colors shrink-0"
+          className="min-[960px]:hidden flex items-center justify-center w-11 h-11 rounded-full text-[#F8F1E4] border border-[#C9A96B]/40 hover:border-[#C9A96B] hover:bg-white/10 transition-colors shrink-0"
         >
           <UiIcon name={mobileOpen ? 'close' : 'menu'} size={18} />
         </button>
@@ -353,7 +354,7 @@ export default function NavHeader() {
 
       {/* Mobile: collapsible category menu (accordion — avoids clipping dropdowns) */}
       {mobileOpen && (
-        <div className="xl:hidden border-t border-[#C9A96B]/30 bg-surface text-ink max-h-[72vh] overflow-y-auto overscroll-contain">
+        <div className="min-[960px]:hidden border-t border-[#C9A96B]/30 bg-surface text-ink max-h-[72vh] overflow-y-auto overscroll-contain">
           <div className="flex gap-3 p-3 bg-[#0F3D2E]">
             <NumberingToggle />
             <NumeralToggle />
