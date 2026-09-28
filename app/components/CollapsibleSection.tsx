@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import SectionIcon, { hasSectionIcon } from './SectionIcon'
 
 // A hadith-page section that starts closed: the reader sees its title and summary, and opens only
 // what they want. The body is mounted on first open (so its data loads then, not on page load) and
@@ -37,6 +38,9 @@ export default function CollapsibleSection({
         onClick={() => { setOpen(o => !o); setMounted(true) }}
         className={`scholarly-section-heading w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-right cursor-pointer transition-colors hover:bg-surface-sunken/50 ${open ? 'border-b border-border bg-surface-sunken/40' : ''}`}
       >
+        {hasSectionIcon(id) && (
+          <span className="ui-icon-tile w-10 h-10 shrink-0"><SectionIcon id={id} size={22} /></span>
+        )}
         <span className="flex-1 min-w-0">
           <span className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
             <span className="text-base sm:text-lg font-bold text-ink font-display leading-snug">{label}</span>
