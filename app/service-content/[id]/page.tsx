@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cardInfoField, cardInfoLines } from '@/lib/bookReference'
 import ServiceContentRenderer from '@/app/components/ServiceContentRenderer'
 
 export const dynamic = 'force-dynamic'
@@ -37,6 +38,21 @@ interface ChildNode {
   page_num: number | null
 }
 
+// The catalogue row for the book this passage belongs to, joined to its author so the page can cite
+// the source the reader is looking at.
+interface BookMeta {
+  id: number
+  title: string | null
+  card_info: string | null
+  print1_edition: string | null
+  takhrij_author: string | null
+  takhrij_death: number | null
+  author_id: number | null
+  author_name: string | null
+  author_short: string | null
+  author_death: number | null
+}
+
 export default async function ServiceContentPage({
   params,
 }: {
@@ -46,7 +62,7 @@ export default async function ServiceContentPage({
   const nodeId = parseInt(id)
   if (isNaN(nodeId)) notFound()
 
-  const [nodeRes, quranRes, suraRes, childrenRes, parentRes] = await Promise.all([
+  const [nodeRes, quranRes, suraRes, childrenRes, parentRes, bookRes] = await Promise.all([
     pool.query<ServiceNode>(
       `SELECT id, book_id, book_name, parent_id, section_text, part_text,
               is_leaf, is_paragraph, part_num, page_num, content, tarf
@@ -75,6 +91,16 @@ export default async function ServiceContentPage({
        )`,
       [nodeId]
     ),
+    pool.query<BookMeta>(
+      `SELECT b.id, b.title, b.card_info, b.print1_edition, b.takhrij_author, b.takhrij_death,
+              a.id AS author_id, a.name AS author_name, a.short_name AS author_short,
+              a.death_date AS author_death
+       FROM hadith_service_content s
+       JOIN books b ON b.id = s.book_id
+       LEFT JOIN authors a ON a.id = b.author_id
+       WHERE s.id = $1`,
+      [nodeId]
+    ).catch(() => ({ rows: [] as BookMeta[] })),
   ])
 
   if (!nodeRes.rows.length) notFound()
@@ -82,6 +108,14 @@ export default async function ServiceContentPage({
   const quranRef = quranRes.rows[0] ?? null
   const children = childrenRes.rows
   const parent = parentRes.rows[0] ?? null
+
+  const book = bookRes.rows[0] ?? null
+  const cardLines = cardInfoLines(book?.card_info)
+  const publisher = cardInfoField(cardLines, ['الناشر'])
+  const edition = cardInfoField(cardLines, ['الطبعة'])
+  const volumeCount = cardInfoField(cardLines, ['عدد الأجزاء'])
+  const authorName = book?.author_name || book?.author_short || book?.takhrij_author || null
+  const authorDeath = book?.author_death ?? book?.takhrij_death ?? null
 
   const suraByName = Object.fromEntries(suraRes.rows.map(s => [s.name, Number(s.id)]))
 
@@ -100,7 +134,13 @@ export default async function ServiceContentPage({
             <span>/</span>
           </>
         )}
-        <span className="text-gray-700 font-medium">{node.book_name}</span>
+        {book ? (
+          <Link href={`/books/${book.id}`} className="text-gray-700 font-medium hover:text-amber-700">
+            {book.title || node.book_name}
+          </Link>
+        ) : (
+          <span className="text-gray-700 font-medium">{node.book_name}</span>
+        )}
       </nav>
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
@@ -147,6 +187,68 @@ export default async function ServiceContentPage({
           </div>
         )}
       </div>
+
+      {(book || node.book_name) && (
+        <section className="bg-white border border-gray-200 rounded-xl p-5 mb-6" aria-label="مرجع النص">
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
+            <div className="w-1 h-6 bg-amber-400 rounded" />
+            <h3 className="text-sm font-semibold text-gray-600">{'المرجع'}</h3>
+          </div>
+          <dl className="space-y-1.5 text-sm leading-relaxed font-arabic">
+            <div className="flex gap-2 items-baseline">
+              <dt className="w-24 shrink-0 text-gray-500">{'الكتاب'}</dt>
+              <dd className="text-gray-900">
+                {book ? (
+                  <Link href={`/books/${book.id}`} className="text-emerald-800 hover:underline">
+                    {book.title || node.book_name}
+                  </Link>
+                ) : node.book_name}
+              </dd>
+            </div>
+            {authorName && (
+              <div className="flex gap-2 items-baseline">
+                <dt className="w-24 shrink-0 text-gray-500">{'المؤلف'}</dt>
+                <dd className="text-gray-900">
+                  {book?.author_id ? (
+                    <Link href={`/authors/${book.author_id}`} className="text-emerald-800 hover:underline">
+                      {authorName}
+                    </Link>
+                  ) : authorName}
+                  {authorDeath ? ` (ت ${authorDeath} هـ)` : ''}
+                </dd>
+              </div>
+            )}
+            {publisher && (
+              <div className="flex gap-2 items-baseline">
+                <dt className="w-24 shrink-0 text-gray-500">{'الناشر'}</dt>
+                <dd className="text-gray-900">{publisher}</dd>
+              </div>
+            )}
+            {edition && (
+              <div className="flex gap-2 items-baseline">
+                <dt className="w-24 shrink-0 text-gray-500">{'الطبعة'}</dt>
+                <dd className="text-gray-900">{edition}</dd>
+              </div>
+            )}
+            {volumeCount && volumeCount !== '1' && (
+              <div className="flex gap-2 items-baseline">
+                <dt className="w-24 shrink-0 text-gray-500">{'عدد الأجزاء'}</dt>
+                <dd className="text-gray-900">{volumeCount}</dd>
+              </div>
+            )}
+            {(node.part_num != null || node.page_num != null) && (
+              <div className="flex gap-2 items-baseline">
+                <dt className="w-24 shrink-0 text-gray-500">{'موضع الطبعة'}</dt>
+                <dd className="text-gray-900">
+                  {node.part_num != null ? `ج ${node.part_num}` : ''}
+                  {node.part_num != null && node.page_num != null ? ' · ' : ''}
+                  {node.page_num != null ? `ص ${node.page_num}` : ''}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
 
       {parent && parent.id !== 0 && (
         <div className="mb-4">

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import HadithNumSearch from '@/app/components/HadithNumSearch'
 import HadithNumber from '@/app/components/HadithNumber'
+import { cardInfoField, cardInfoLines } from '@/lib/bookReference'
 
 function stripTags(html: string): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -29,17 +30,32 @@ export default async function BookPage({
   const LIMIT = 50
   const offset = (page - 1) * LIMIT
 
-  const [bookRes, rootRes] = await Promise.all([
+  const [bookRes, rootRes, authorRes] = await Promise.all([
     pool.query('SELECT * FROM books WHERE id = $1', [bookId]),
     pool.query(
       `SELECT main_id FROM hadith_toc WHERE book_id = $1 AND (parent_id = 0 OR parent_id IS NULL) LIMIT 1`,
       [bookId]
     ),
+    pool.query<{ id: number; name: string | null; short_name: string | null; death_date: number | null }>(
+      `SELECT a.id, a.name, a.short_name, a.death_date
+       FROM authors a JOIN books b ON b.author_id = a.id
+       WHERE b.id = $1`,
+      [bookId]
+    ).catch(() => ({ rows: [] as Array<{ id: number; name: string | null; short_name: string | null; death_date: number | null }> })),
   ])
 
   if (!bookRes.rows[0]) notFound()
   const book = bookRes.rows[0]
   const rootId: number | null = rootRes.rows[0]?.main_id ?? null
+
+  // Service books (شروح، تراجم، جرح وتعديل) carry no `takhrij_author`, so the header reads the
+  // author and the citation card straight from `authors` / `books.card_info`.
+  const author = authorRes.rows[0] ?? null
+  const authorName = book.takhrij_author || author?.name || author?.short_name || null
+  const authorDeath = book.takhrij_death || author?.death_date || null
+  const cardLines = cardInfoLines(book.card_info)
+  const publisher = cardInfoField(cardLines, ['الناشر'])
+  const edition = cardInfoField(cardLines, ['الطبعة'])
 
   // Helper to build hrefs
   const buildHref = (overrides: Record<string, string | number | undefined>) => {
@@ -368,14 +384,19 @@ export default async function BookPage({
             <Link href="/books" className="text-amber-300 hover:text-amber-100">← الكتب</Link>
           </div>
           <h1 className="text-xl font-bold text-amber-100 leading-snug">{book.title}</h1>
-          {book.takhrij_author && (
+          {authorName && (
             <p className="text-amber-200/70 text-sm mt-1">
               {book.author_id ? (
                 <Link href={`/authors/${book.author_id}`} className="hover:text-amber-100 transition-colors">
-                  {book.takhrij_author}
+                  {authorName}
                 </Link>
-              ) : book.takhrij_author}
-              {book.takhrij_death ? ` (ت ${book.takhrij_death} هـ)` : ''}
+              ) : authorName}
+              {authorDeath ? ` (ت ${authorDeath} هـ)` : ''}
+            </p>
+          )}
+          {(publisher || edition) && (
+            <p className="text-amber-200/60 text-xs mt-1">
+              {[publisher, edition].filter(Boolean).join(' · ')}
             </p>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-amber-200/60">
