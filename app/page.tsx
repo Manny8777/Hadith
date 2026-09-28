@@ -15,6 +15,13 @@ const GRADE_SHORTCUTS = [
   { label: 'الصحابة', href: '/narrators?companion=1', color: 'bg-amber-500 text-white border-amber-500' },
 ]
 
+// Films in public/media/<src>.mp4, with <src>-poster.jpg and <src>.ar.vtt captions
+// (made in motion-graphics/; see narrate.mjs)
+const TOUR_FILMS = [
+  { src: 'migration-film', title: 'من سطح المكتب إلى الويب', note: 'كيف انتقل البرنامج إلى موقعٍ يُفتح من أي متصفح — دقيقة وعشر ثوانٍ' },
+  { src: 'numbering-film', title: 'ترقيم حرف والترقيم المطبوع', note: 'لماذا يختلف رقم الحديث من طبعةٍ لأخرى، وكيف تعزو بدقة — دقيقة ونصف تقريبًا' },
+]
+
 // Hadith pages that each show off a different part of the hadith page
 const HADITH_EXAMPLES = [
   { id: 5, title: 'إنما الأعمال بالنيات', source: 'صحيح البخاري ١', shows: 'الإسناد والتخريج وحكم الدرر' },
@@ -100,40 +107,41 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Tour: how the desktop program became this site, and hadith pages to try */}
+      {/* Tour: short films about the site, and hadith pages to try */}
       <div className="max-w-6xl mx-auto px-4 pt-8 sm:pt-10">
         <div className="ui-card rounded-2xl p-5 sm:p-6">
           <h2 className="text-base font-bold text-green-900 mb-1 font-display">جولة في الموسوعة</h2>
-          <p className="text-sm text-muted mb-4 font-sans">كيف انتقل البرنامج من سطح المكتب إلى الويب، وأحاديث تكشف ما تتيحه صفحة الحديث</p>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-            <div className="lg:col-span-3">
-              <video
-                controls
-                preload="none"
-                playsInline
-                poster="/media/migration-film-poster.jpg"
-                className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#faf6ec]"
-              >
-                <source src="/media/migration-film.mp4" type="video/mp4" />
-                <track kind="captions" src="/media/migration-film.ar.vtt" srcLang="ar" label="العربية" default />
-              </video>
-              <p className="text-xs text-muted mt-2 font-sans">من برنامجٍ على سطح المكتب إلى موسوعةٍ على الويب — دقيقة وعشر ثوانٍ</p>
-            </div>
-            <div className="lg:col-span-2">
-              <p className="text-xs font-bold text-gray-500 mb-2 font-sans">جرّب هذه الأحاديث:</p>
-              <div className="flex flex-col gap-2">
-                {HADITH_EXAMPLES.map(ex => (
-                  <Link key={ex.id} href={`/hadith/${ex.id}`}
-                    className="block bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-2.5 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
-                    <span className="block text-sm font-semibold text-green-900 group-hover:text-green-700 font-display leading-relaxed">{ex.title}</span>
-                    <span className="flex items-center justify-between gap-2 mt-0.5 text-xs font-sans">
-                      <span className="text-gray-500">{ex.source}</span>
-                      <span className="text-amber-800">{ex.shows}</span>
-                    </span>
-                  </Link>
-                ))}
+          <p className="text-sm text-muted mb-4 font-sans">أفلامٌ قصيرة عن الموسوعة، وأحاديث تكشف ما تتيحه صفحة الحديث</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {TOUR_FILMS.map(film => (
+              <div key={film.src}>
+                <video
+                  controls
+                  preload="none"
+                  playsInline
+                  poster={`/media/${film.src}-poster.jpg`}
+                  className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#faf6ec]"
+                >
+                  <source src={`/media/${film.src}.mp4`} type="video/mp4" />
+                  <track kind="captions" src={`/media/${film.src}.ar.vtt`} srcLang="ar" label="العربية" default />
+                </video>
+                <p className="text-sm font-semibold text-green-900 mt-2 font-display">{film.title}</p>
+                <p className="text-xs text-muted font-sans">{film.note}</p>
               </div>
-            </div>
+            ))}
+          </div>
+          <p className="text-xs font-bold text-gray-500 mt-6 mb-2 font-sans">جرّب هذه الأحاديث:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {HADITH_EXAMPLES.map(ex => (
+              <Link key={ex.id} href={`/hadith/${ex.id}`}
+                className="block bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-2.5 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
+                <span className="block text-sm font-semibold text-green-900 group-hover:text-green-700 font-display leading-relaxed">{ex.title}</span>
+                <span className="flex items-center justify-between gap-2 mt-0.5 text-xs font-sans">
+                  <span className="text-gray-500">{ex.source}</span>
+                  <span className="text-amber-800">{ex.shows}</span>
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
