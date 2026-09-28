@@ -56,6 +56,7 @@ export default function SearchHistoryPanel({
   const [saved, setSaved] = useState<SearchEntry[]>([])
   const [recent, setRecent] = useState<SearchEntry[]>([])
   const [status, setStatus] = useState('')
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     setSaved(readEntries(SAVED_KEY))
@@ -130,10 +131,22 @@ export default function SearchHistoryPanel({
     </li>
   )
 
+  // Collapsed by default: a one-line bar with the counts and the save button; opening it shows the
+  // saved and recent searches side by side.
   return (
-    <section aria-label="سجل البحث" className="rounded-xl border border-gray-200 bg-white/70 p-3 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-gray-700">سجل البحث</h2>
+    <section aria-label="سجل البحث" className="rounded-xl border border-gray-200 bg-white/70">
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="search-history-body"
+          className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-green-800"
+        >
+          <svg aria-hidden viewBox="0 0 20 20" className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 8l5 5 5-5" /></svg>
+          سجل البحث
+          <span className="text-xs font-normal text-gray-400">({saved.length} محفوظ · {recent.length} أخير)</span>
+        </button>
         <button
           type="button"
           onClick={saveCurrent}
@@ -144,27 +157,31 @@ export default function SearchHistoryPanel({
         </button>
       </div>
       <p role="status" aria-live="polite" className="sr-only">{status}</p>
-      <details open={saved.length > 0}>
-        <summary className="cursor-pointer text-xs font-medium text-gray-500">المحفوظات ({saved.length})</summary>
-        {saved.length > 0 ? (
-          <ul className="mt-2 space-y-1">{saved.map((entry) => renderEntry(entry, true))}</ul>
-        ) : (
-          <p className="mt-2 text-xs text-gray-400">لم تحفظ أي بحث بعد.</p>
-        )}
-      </details>
-      <details open={recent.length > 0}>
-        <summary className="cursor-pointer text-xs font-medium text-gray-500">الأخيرة ({recent.length})</summary>
-        {recent.length > 0 ? (
-          <>
-            <ul className="mt-2 space-y-1">{recent.map((entry) => renderEntry(entry))}</ul>
-            <button type="button" onClick={clearRecent} className="mt-2 text-xs text-gray-400 hover:text-red-600">
-              مسح البحث الأخير
-            </button>
-          </>
-        ) : (
-          <p className="mt-2 text-xs text-gray-400">ستظهر عمليات البحث التي تجريها هنا.</p>
-        )}
-      </details>
+      {open && (
+        <div id="search-history-body" className="grid sm:grid-cols-2 gap-4 border-t border-gray-100 px-3 py-3">
+          <div>
+            <h3 className="text-xs font-medium text-gray-500">المحفوظات ({saved.length})</h3>
+            {saved.length > 0 ? (
+              <ul className="mt-2 space-y-1">{saved.map((entry) => renderEntry(entry, true))}</ul>
+            ) : (
+              <p className="mt-2 text-xs text-gray-400">لم تحفظ أي بحث بعد.</p>
+            )}
+          </div>
+          <div>
+            <h3 className="text-xs font-medium text-gray-500">الأخيرة ({recent.length})</h3>
+            {recent.length > 0 ? (
+              <>
+                <ul className="mt-2 space-y-1">{recent.map((entry) => renderEntry(entry))}</ul>
+                <button type="button" onClick={clearRecent} className="mt-2 text-xs text-gray-400 hover:text-red-600">
+                  مسح البحث الأخير
+                </button>
+              </>
+            ) : (
+              <p className="mt-2 text-xs text-gray-400">ستظهر عمليات البحث التي تجريها هنا.</p>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

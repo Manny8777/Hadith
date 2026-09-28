@@ -223,7 +223,7 @@ function SearchInner() {
 
   return (
     <div dir="rtl">
-      <h1 className="text-3xl font-bold text-green-900 mb-6 font-display">البحث في الأحاديث</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-4 font-display">البحث في الأحاديث</h1>
 
       {/* Narrator mode banner */}
       {isNarratorMode && narratorNameParam && (
@@ -244,15 +244,16 @@ function SearchInner() {
       )}
 
       {/* Search form — always visible */}
-      <form onSubmit={handleSubmit} className="mb-8" role="search" aria-label="البحث في الأحاديث والكتاب الخدمي">
+      <form onSubmit={handleSubmit} className="ui-card rounded-2xl p-4 sm:p-5 mb-4" role="search" aria-label="البحث في الأحاديث والكتاب الخدمي">
         <div className="flex gap-3 mb-3">
-          <div className="relative flex-1 rounded-lg border border-gray-300 bg-white shadow-sm focus-within:ring-2 focus-within:ring-green-700">
+          <div className="relative flex-1 rounded-xl border-2 border-gray-200 bg-white shadow-sm transition-colors focus-within:border-green-700">
+            <svg aria-hidden viewBox="0 0 24 24" className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             {/* Highlight layer, behind the text. Invisible except for the connector tokens, and
                 mirroring the input's font/padding exactly so the blocks land under the words. */}
             <div
               ref={highlightRef}
               aria-hidden
-              className="search-query-type pointer-events-none absolute inset-0 select-none overflow-hidden whitespace-pre rounded-lg px-4 py-3 text-lg text-transparent"
+              className="search-query-type pointer-events-none absolute inset-0 select-none overflow-hidden whitespace-pre rounded-xl pr-12 pl-4 py-3 text-lg text-transparent"
               dir="rtl"
             >
               {highlightTokens(q).map((t, i) =>
@@ -280,13 +281,13 @@ function SearchInner() {
                 ? `بحث في أحاديث ${narratorNameParam || 'الراوي'}...`
                 : 'ابحث في الأحاديث النبوية...'
               }
-              className="search-query-type relative w-full rounded-lg bg-transparent px-4 py-3 text-lg focus:outline-none"
+              className="search-query-type relative w-full rounded-xl bg-transparent pr-12 pl-4 py-3 text-lg focus:outline-none"
               dir="rtl"
             />
           </div>
           <button
             type="submit"
-            className="bg-green-900 text-white px-6 py-3 rounded-lg hover:bg-green-800 transition-colors font-semibold"
+            className="bg-green-900 text-white px-7 py-3 rounded-xl hover:bg-green-800 transition-colors font-semibold shadow-sm"
           >
             بحث
           </button>
@@ -333,84 +334,97 @@ function SearchInner() {
           )}
         </div>
 
+        {/* Advanced options, collapsed unless one is in use: match mode, connectors, wildcards */}
+        <details className="group mb-3 rounded-xl border border-gray-200 bg-surface-sunken/40" open={matchMode !== 'phrase' || undefined}>
+          <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 marker:content-none [&::-webkit-details-marker]:hidden">
+            <svg aria-hidden viewBox="0 0 20 20" className="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 8l5 5 5-5" /></svg>
+            خيارات متقدمة
+            <span className="text-xs font-normal text-gray-400">
+              طريقة المطابقة: {matchMode === 'all' ? 'كل الكلمات' : matchMode === 'any' ? 'أي من الكلمات' : 'متتالية'} · و / أو / ليس · حروف ناقصة
+            </span>
+          </summary>
+          <div className="px-3 pb-3">
         {/* Match mode + operator keys — the original's متتالية / كل الكلمات / أي من الكلمات, and the
-            operators its dialog composes the WHERE clause from, offered in Arabic words (و / أو / ليس)
-            that the API accepts as connectives. */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span id="search-match-label" className="text-xs text-gray-500 shrink-0">طريقة المطابقة:</span>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-labelledby="search-match-label">
-            {([['phrase', 'متتالية'], ['all', 'كل الكلمات'], ['any', 'أي من الكلمات']] as [MatchMode, string][]).map(
-              ([value, label], i) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => handleMatchChange(value)}
-                  aria-pressed={matchMode === value}
-                  className={`px-3 py-1.5 transition-colors ${i > 0 ? 'border-r border-gray-200 ' : ''}${
-                    matchMode === value
-                      ? 'bg-green-800 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {label}
-                </button>
-              )
-            )}
-          </div>
+                operators its dialog composes the WHERE clause from, offered in Arabic words (و / أو / ليس)
+                that the API accepts as connectives. */}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span id="search-match-label" className="text-xs text-gray-500 shrink-0">طريقة المطابقة:</span>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-labelledby="search-match-label">
+                {([['phrase', 'متتالية'], ['all', 'كل الكلمات'], ['any', 'أي من الكلمات']] as [MatchMode, string][]).map(
+                  ([value, label], i) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleMatchChange(value)}
+                      aria-pressed={matchMode === value}
+                      className={`px-3 py-1.5 transition-colors ${i > 0 ? 'border-r border-gray-200 ' : ''}${
+                        matchMode === value
+                          ? 'bg-green-800 text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                )}
+              </div>
 
-            <span id="query-operators-label" className="text-xs text-gray-500 shrink-0 mr-1">ربط الشروط:</span>
-          <div className="flex gap-1" role="group" aria-labelledby="query-operators-label">
-            {([
-              ['AND', 'و', 'وأيضاً: لا بدّ أن توجد الكلمة الأخرى أيضاً'],
-              ['OR', 'أو', 'إحدى الكلمتين: أيّهما وُجد في الحديث'],
-              ['NOT', 'ليس', 'بدون هذه الكلمة: توجد الأولى ولا توجد هذه'],
-            ] as [string, string, string][]).map(([op, label, hint]) => (
-              <button
-                key={op}
-                type="button"
-                onClick={() => insertOp(op as 'AND' | 'OR' | 'NOT')}
-                title={hint}
-                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+                <span id="query-operators-label" className="text-xs text-gray-500 shrink-0 mr-1">ربط الشروط:</span>
+              <div className="flex gap-1" role="group" aria-labelledby="query-operators-label">
+                {([
+                  ['AND', 'و', 'وأيضاً: لا بدّ أن توجد الكلمة الأخرى أيضاً'],
+                  ['OR', 'أو', 'إحدى الكلمتين: أيّهما وُجد في الحديث'],
+                  ['NOT', 'ليس', 'بدون هذه الكلمة: توجد الأولى ولا توجد هذه'],
+                ] as [string, string, string][]).map(([op, label, hint]) => (
+                  <button
+                    key={op}
+                    type="button"
+                    onClick={() => insertOp(op as 'AND' | 'OR' | 'NOT')}
+                    title={hint}
+                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-          <span id="query-wildcards-label" className="text-xs text-gray-500 shrink-0 mr-1">حروف ناقصة:</span>
-          <div className="flex gap-1" role="group" aria-labelledby="query-wildcards-label">
-            {([
-              ['*', 'أيّ عدد من الحروف *', 'مثال: صلا* تجد كل كلمة تبدأ بـ صلا'],
-              ['?', 'حرف واحد ناقص ?', 'مثال: الصل? تجد الصلاة — حرف واحد لا تعرفه'],
-            ] as [string, string, string][]).map(([op, label, hint]) => (
-              <button
-                key={op}
-                type="button"
-                onClick={() => insertOp(op as '*' | '?')}
-                title={hint}
-                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+              <span id="query-wildcards-label" className="text-xs text-gray-500 shrink-0 mr-1">حروف ناقصة:</span>
+              <div className="flex gap-1" role="group" aria-labelledby="query-wildcards-label">
+                {([
+                  ['*', 'أيّ عدد من الحروف *', 'مثال: صلا* تجد كل كلمة تبدأ بـ صلا'],
+                  ['?', 'حرف واحد ناقص ?', 'مثال: الصل? تجد الصلاة — حرف واحد لا تعرفه'],
+                ] as [string, string, string][]).map(([op, label, hint]) => (
+                  <button
+                    key={op}
+                    type="button"
+                    onClick={() => insertOp(op as '*' | '?')}
+                    title={hint}
+                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="text-xs text-gray-400 mb-3 leading-relaxed">
-          أمثلة:
-          <span className="mx-1 text-gray-500 font-semibold">«الصلاة و الزكاة»</span>
-          حديث فيه الكلمتان —
-          <span className="mx-1 text-gray-500 font-semibold">«الصلاة و ليس الزكاة»</span>
-          حديث فيه الأولى وليست فيه الثانية —
-          <span className="mx-1 text-gray-500 font-semibold">«صلا*»</span>
-          أيّ كلمة تبدأ بـ«صلا» —
-          <span className="mx-1 text-gray-500 font-semibold">«الصل?»</span>
-          كلمة مثل «الصلاة» ينقصها حرف واحد. (وتُقبل المعاملات الإنجليزية AND / OR / NOT كذلك.)
-        </div>
+            <div className="text-xs text-gray-400 mb-3 leading-relaxed">
+              أمثلة:
+              <span className="mx-1 text-gray-500 font-semibold">«الصلاة و الزكاة»</span>
+              حديث فيه الكلمتان —
+              <span className="mx-1 text-gray-500 font-semibold">«الصلاة و ليس الزكاة»</span>
+              حديث فيه الأولى وليست فيه الثانية —
+              <span className="mx-1 text-gray-500 font-semibold">«صلا*»</span>
+              أيّ كلمة تبدأ بـ«صلا» —
+              <span className="mx-1 text-gray-500 font-semibold">«الصل?»</span>
+              كلمة مثل «الصلاة» ينقصها حرف واحد. (وتُقبل المعاملات الإنجليزية AND / OR / NOT كذلك.)
+            </div>
+
+          </div>
+        </details>
 
         {/* Book + Grade filters */}
         {!isNarratorMode && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex gap-3 items-center flex-wrap">
               <label id="search-source-label" className="text-sm text-gray-600 shrink-0 min-w-24">نطاق الكتب:</label>
               <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs" role="group" aria-labelledby="search-source-label">
@@ -441,13 +455,14 @@ function SearchInner() {
                 </span>
               )}
             </div>
-            <div className="flex gap-3 items-center">
-              <label htmlFor="search-book" className="text-sm text-gray-600 shrink-0 min-w-24">حسب الكتاب:</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor="search-book" className="text-xs font-medium text-gray-500">حسب الكتاب</label>
               <select
                 id="search-book"
                 value={bookId}
                 onChange={e => navigate({ bookId: e.target.value })}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-50"
                 dir="rtl"
               >
                 <option value="">جميع الكتب</option>
@@ -456,14 +471,14 @@ function SearchInner() {
                 ))}
               </select>
             </div>
-            <div className="flex gap-3 items-center">
-              <label htmlFor="search-grade" className="text-sm text-gray-600 shrink-0 min-w-24">درجة الحديث:</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor="search-grade" className="text-xs font-medium text-gray-500">درجة الحديث</label>
               <select
                 id="search-grade"
                 value={gradeFilter}
                 disabled={bookSource === 'service'}
                 onChange={e => navigate({ grade: e.target.value as typeof gradeFilter })}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-50"
                 dir="rtl"
               >
                 <option value="">جميع الدرجات</option>
@@ -471,30 +486,16 @@ function SearchInner() {
                 <option value="hasan">حسن</option>
                 <option value="daif">ضعيف / منكر</option>
               </select>
-              {(bookId || gradeFilter || subjectCatId || maxDepth) && (
-                <button
-                  type="button"
-                  onClick={() => navigate({
-                    bookId: '',
-                    grade: '',
-                    subjectCatId: '',
-                    maxDepth: '',
-                  })}
-                  className="text-sm text-gray-500 hover:text-red-600 transition-colors shrink-0"
-                >
-                  مسح الفلاتر
-                </button>
-              )}
             </div>
             {subjectCats.length > 0 && (
-              <div className="flex gap-3 items-center">
-                <label htmlFor="search-subject" className="text-sm text-gray-600 shrink-0 min-w-24">حسب الموضوع:</label>
+              <div className="flex flex-col gap-1 min-w-0">
+                <label htmlFor="search-subject" className="text-xs font-medium text-gray-500">حسب الموضوع</label>
                 <select
                   id="search-subject"
                   value={subjectCatId}
                   disabled={bookSource === 'service'}
                   onChange={e => navigate({ subjectCatId: e.target.value })}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-50"
                   dir="rtl"
                 >
                   <option value="">جميع الموضوعات</option>
@@ -504,14 +505,14 @@ function SearchInner() {
                 </select>
               </div>
             )}
-            <div className="flex gap-3 items-center">
-              <label htmlFor="search-depth" className="text-sm text-gray-600 shrink-0 min-w-24">علو الإسناد:</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor="search-depth" className="text-xs font-medium text-gray-500">علو الإسناد</label>
               <select
                 id="search-depth"
                 value={maxDepth}
                 disabled={bookSource === 'service'}
                 onChange={e => navigate({ maxDepth: e.target.value })}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-50"
                 dir="rtl"
               >
                 <option value="">أي طول</option>
@@ -521,6 +522,21 @@ function SearchInner() {
                 <option value="6">سداسي — ≤ 6 رواة</option>
               </select>
             </div>
+            </div>
+              {(bookId || gradeFilter || subjectCatId || maxDepth) && (
+                <button
+                  type="button"
+                  onClick={() => navigate({
+                    bookId: '',
+                    grade: '',
+                    subjectCatId: '',
+                    maxDepth: '',
+                  })}
+                  className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+                >
+                  مسح الفلاتر
+                </button>
+              )}
           </div>
         )}
 
