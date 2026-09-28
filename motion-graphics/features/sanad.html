@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>السند والمتن</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Feature film: the sanad and matn of Sahih al-Bukhari 1 (hadith 5), each narrator a link. */
+  .box { left: 60px; right: 60px; padding: 26px 34px; }
+  .lbl { font-size: 22px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+  .sanad { font-family: 'Amiri', serif; font-size: 33px; line-height: 1.95; color: #333; }
+  .nar { color: var(--green); font-weight: 700; border-bottom: 3px solid transparent; padding-bottom: 1px; }
+  .nar.on { border-bottom-color: var(--gold); }
+  .nar.hit { background: var(--gold-soft); border-radius: 8px; }
+  .pop { left: 150px; right: 150px; top: 500px; padding: 26px 32px; border-color: #e2c48f; }
+  .pop .tag { font-size: 18px; font-weight: 700; color: #fff; background: var(--green); border-radius: 999px; padding: 3px 14px; display: inline-block; }
+  .pop .nm { font-family: 'Amiri', serif; font-size: 34px; font-weight: 700; color: var(--green); margin-top: 10px; }
+  .pop .ku { font-size: 21px; color: var(--muted); }
+  .pop .row { display: flex; gap: 10px; font-size: 24px; margin-top: 10px; }
+  .pop .row b { color: var(--muted); font-weight: 500; min-width: 110px; }
+  .pop .more { margin-top: 14px; font-size: 21px; color: var(--green-2); font-weight: 600; }
+  .ctrl { display: flex; gap: 12px; justify-content: center; }
+  .ctrl span { font-size: 22px; font-weight: 600; padding: 8px 20px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); color: var(--muted); }
+  .ctrl span.on { background: var(--green); border-color: var(--green); color: #fff; }
+  .cursor { width: 40px; height: 40px; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+  <div class="brand"><i></i>جامع خادم الحرمين الشريفين</div>
+  <div class="brand-tag">موسوعة الحديث النبوي</div>
+
+  <!-- 0 · title -->
+  <div class="el center-x kicker" id="a-k" style="top:330px">ميزة من الموسوعة</div>
+  <div class="el center-x h1" id="a-h" style="top:370px">السند والمتن</div>
+  <div class="el center-x lead" id="a-l" style="top:500px;padding:0 120px">كل حديثٍ مقسومٌ إلى سنده ومتنه،<br>وكل راوٍ في السند يعرّف بنفسه</div>
+
+  <!-- 1 · the split -->
+  <div class="el center-x kicker" id="b-k" style="top:110px">صحيح البخاري · الحديث الأول</div>
+  <div class="el card box" id="b-s" style="top:160px"><div class="lbl">السند</div>
+    <div class="sanad">حَدَّثَنَا <span class="nar" id="n1">الْحُمَيْدِيُّ</span>، حَدَّثَنَا <span class="nar" id="n2">سُفْيَانُ</span>، حَدَّثَنَا <span class="nar" id="n3">يَحْيَى بْنُ سَعِيدٍ الْأَنْصَارِيُّ</span>، أَخْبَرَنِي <span class="nar" id="n4">مُحَمَّدُ بْنُ إِبْرَاهِيمَ التَّيْمِيُّ</span>: أَنَّهُ سَمِعَ <span class="nar" id="n5">عَلْقَمَةَ بْنَ وَقَّاصٍ اللَّيْثِيَّ</span>، يَقُولُ: سَمِعْتُ <span class="nar" id="n6">عُمَرَ بْنَ الْخَطَّابِ</span> رَضِيَ اللهُ عَنْهُ…</div></div>
+  <div class="el card box" id="b-m" style="top:470px"><div class="lbl">المتن</div>
+    <div class="matn" id="matn" style="font-size:36px">إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى…</div></div>
+
+  <!-- 2 · tap a narrator -->
+  <div class="el card pop" id="c-p">
+    <span class="tag">راوٍ</span>
+    <div class="nm">يحيى بن سعيد بن قيس بن عمرو…</div>
+    <div class="ku">أبو سعيد</div>
+    <div class="row"><b>الطبقة:</b>الخامسة</div>
+    <div class="row"><b>الوفاة:</b>143 هـ أو 144 هـ</div>
+    <div class="row"><b>ابن حجر:</b><span class="chip g">ثقة ثبت</span></div>
+    <div class="row"><b>الذهبي:</b><span class="chip g">حافظ فقيه حجة</span></div>
+    <div class="more">الترجمة الكاملة ←</div>
+  </div>
+  <svg class="el cursor" id="cur" viewBox="0 0 24 24"><path d="M4 2 L4 20 L9 15 L12 22 L15 21 L12 14 L19 14 Z" fill="#13261b" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+
+  <!-- 3 · read the matn your way -->
+  <div class="el center-x" id="d-c" style="top:475px"><div class="ctrl"><span id="t-on" class="on">مع التشكيل</span><span id="t-off">بلا تشكيل</span><span id="t-sz">حجم ＋</span></div></div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 13, 21, 29, 34],
+  lengths: [9.52,8.82,9.3,8,5.32], // @narration-timing
+  captions: [[0.5,8.62,"في موسوعة الحديث النبوي، يُعرض كل حديثٍ مقسومًا إلى سنده ومتنه."],[9.92,17.44,"فالسند سلسلة الرواة الذين نقلوا الحديث، وكل اسمٍ فيه رابطٌ إلى صاحبه."],[18.74,26.74,"اضغط على أي راوٍ لترى طبقته ووفاته، وحكم ابن حجر والذهبي عليه."],[28.04,33.88,"واقرأ المتن بالتشكيل أو بدونه، وبالحجم الذي يريحك."],[36.04,38.96,"جرّبها بنفسك على الموقع."]], // @narration-captions
+}
+</script>
+<script src="engine.js"></script>
+<script>
+/* 0 · title (0–5) */
+show('a-k', .2, 4.4); show('a-h', .5, 4.4, { y: 50 }); show('a-l', 1.1, 4.5, { y: 20 })
+
+/* 1 · the split (5–13); the sanad box stays through scene 3 */
+show('b-k', 5.2, null)
+tw('b-s', 5.4, .8, { o: 0, y: 40 }, { o: 1, y: 0 }, 'back')
+tw('b-m', 6.2, .8, { o: 0, y: 40 }, { o: 1, y: 0 }, 'back')
+{ // narrator names underline one by one
+  const ns = ['n1', 'n2', 'n3', 'n4', 'n5', 'n6'].map($)
+  hooks.push(t => ns.forEach((n, i) => n.classList.toggle('on', t >= 7.4 + i * .45)))
+}
+
+/* 2 · tap a narrator (13–21): cursor to يحيى بن سعيد, preview opens over the matn */
+tw('cur', 13.2, .4, { o: 0, x: 700, y: 900 }, { o: 1, x: 700, y: 900 })
+tw('cur', 13.5, 1.1, { x: 700, y: 900 }, { x: 540, y: 262 }, 'inOut')
+tw('cur', 20.4, .4, { o: 1 }, { o: 0 })
+hooks.push(t => $('n3').classList.toggle('hit', t >= 14.6 && t < 21))
+tw('b-m', 14.6, .4, { o: 1 }, { o: 0 }); tw('b-m', 21.1, .6, { o: 0 }, { o: 1 })
+tw('c-p', 14.7, .7, { o: 0, y: 30, s: .95 }, { o: 1, y: 0, s: 1 }, 'back'); tw('c-p', 20.6, .5, { o: 1 }, { o: 0 })
+
+/* 3 · tashkeel / size (21–29) */
+tw('d-c', 21.3, .6, { o: 0, y: 20 }, { o: 1, y: 0 })
+{
+  const withT = 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى…'
+  const without = withT.replace(/[ً-ْٰ]/g, '')
+  hooks.push(t => {
+    const bare = t >= 23.2 && t < 26.4
+    $('matn').textContent = bare ? without : withT
+    $('matn').style.fontSize = t >= 26.4 ? '44px' : '36px'
+    $('t-on').className = bare ? '' : 'on'; $('t-off').className = bare ? 'on' : ''
+    $('t-sz').className = t >= 26.4 && t < 28 ? 'on' : ''
+  })
+}
+tw('b-m', 21.1, 0, { y: 0 }, { y: 0 }); tw('b-m', 21.3, .6, { y: 0 }, { y: 80 }, 'inOut')
+// everything from scenes 1–3 leaves together
+;['b-k', 'b-s', 'd-c'].forEach(id => tw(id, 28.3, .5, { o: 1 }, { o: 0 }, 'inOut'))
+tw('b-m', 28.3, .5, { o: 1 }, { o: 0 }, 'inOut')
+
+/* 4 · outro (29–34) */
+outro(29, '/hadith/5')
+startFilm()
+</script>
+</body>
+</html>

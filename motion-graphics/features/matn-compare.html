@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مطابقة المتون</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Feature film: matn comparison for Sahih al-Bukhari 1 (hadith 5) — the word-overlap scores the
+     page computes, a word-level look at Ahmad's wording, and the parallel narrations. */
+  .row { left: 90px; right: 90px; padding: 20px 28px; display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 18px; }
+  .row .bk { font-size: 28px; font-weight: 700; color: var(--green); }
+  .row .num { font-size: 22px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .row .pc { font-family: 'JetBrains Mono', monospace; font-size: 46px; font-weight: 600; color: var(--green-2); direction: ltr; text-align: left; }
+  .row .track { grid-column: 1 / -1; height: 14px; border-radius: 7px; background: #ece5d2; overflow: hidden; }
+  .row .track i { display: block; height: 100%; width: 0; background: linear-gradient(270deg, var(--green-2), var(--gold)); }
+  .cmp { left: 70px; right: 70px; padding: 24px 30px; }
+  .cmp .src { font-size: 22px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+  .words { display: flex; gap: 14px; flex-wrap: wrap; font-family: 'Amiri', serif; font-size: 50px; }
+  .w { padding: 2px 14px; border-radius: 12px; transition: none; }
+  .w.same { background: var(--green-soft); color: var(--green); }
+  .w.diff { background: var(--amber-soft); color: var(--amber); }
+  .legend { display: flex; gap: 16px; justify-content: center; }
+  .par { left: 70px; right: 70px; padding: 20px 28px; }
+  .par .bk { font-size: 24px; font-weight: 700; color: var(--green); } .par .sec { font-size: 20px; color: var(--muted); }
+  .par .t { font-family: 'Amiri', serif; font-size: 38px; color: #222; margin-top: 4px; }
+  .grp { left: 70px; right: 70px; top: 190px; display: flex; justify-content: space-between; align-items: center; }
+  .grp span.g { font-size: 26px; font-weight: 700; color: var(--amber); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+  <div class="brand"><i></i>جامع خادم الحرمين الشريفين</div>
+  <div class="brand-tag">موسوعة الحديث النبوي</div>
+
+  <!-- 0 · title -->
+  <div class="el center-x kicker" id="a-k" style="top:330px">ميزة من الموسوعة</div>
+  <div class="el center-x h1" id="a-h" style="top:370px">مطابقة المتون</div>
+  <div class="el center-x lead" id="a-l" style="top:500px">كيف اختلفت ألفاظ الحديث بين رواياته؟</div>
+
+  <!-- 1 · scores -->
+  <div class="el center-x kicker" id="b-k" style="top:110px">صحيح البخاري 1 · «إنما الأعمال بالنيات»</div>
+  <div class="el center-x" id="b-c" style="top:150px"><span class="chip g" style="font-size:21px">53 رواية للمقارنة</span></div>
+  <div class="el card row" id="r1" style="top:230px"><div><div class="bk">مسند الحميدي</div><div class="num">28</div></div><div class="pc" id="p1">0٪</div><div class="track"><i id="i1"></i></div></div>
+  <div class="el card row" id="r2" style="top:410px"><div><div class="bk">شرح معاني الآثار</div><div class="num">4650</div></div><div class="pc" id="p2">0٪</div><div class="track"><i id="i2"></i></div></div>
+  <div class="el card row" id="r3" style="top:590px"><div><div class="bk">صحيح مسلم</div><div class="num">1907</div></div><div class="pc" id="p3">0٪</div><div class="track"><i id="i3"></i></div></div>
+  <div class="el center-x lead" id="b-s" style="top:780px;font-size:23px">حساب مباشر — نسبة تطابق الألفاظ بين المتون</div>
+
+  <!-- 2 · word by word -->
+  <div class="el center-x h2" id="c-h" style="top:140px">لفظًا بلفظ</div>
+  <div class="el card cmp" id="c-a" style="top:260px"><div class="src">صحيح البخاري 1</div>
+    <div class="words"><span class="w same">إِنَّمَا</span><span class="w" id="wa2">الْأَعْمَالُ</span><span class="w" id="wa3">بِالنِّيَّاتِ</span></div></div>
+  <div class="el card cmp" id="c-b" style="top:460px"><div class="src">مسند أحمد 306</div>
+    <div class="words"><span class="w same">إِنَّمَا</span><span class="w" id="wb2">الْعَمَلُ</span><span class="w" id="wb3">بِالنِّيَّةِ</span></div></div>
+  <div class="el center-x" id="c-l" style="top:680px"><div class="legend"><span class="chip g">لفظٌ مطابق</span><span class="chip a">لفظٌ مختلف</span></div></div>
+
+  <!-- 3 · parallel narrations -->
+  <div class="el center-x h2" id="d-h" style="top:100px;font-size:48px">الروايات الموازية</div>
+  <div class="el grp" id="d-g"><span class="g">من حديث: عمر بن الخطاب</span><span class="chip b" style="font-size:21px">54 رواية</span></div>
+  <div class="el card par" id="d-1" style="top:270px"><div class="bk">سنن ابن ماجه 4227 <span class="sec">· أبواب الزهد · باب النية</span></div><div class="t">«إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ»</div></div>
+  <div class="el card par" id="d-2" style="top:440px"><div class="bk">مسند أحمد 306</div><div class="t">«إِنَّمَا الْعَمَلُ بِالنِّيَّةِ»</div></div>
+  <div class="el card par" id="d-3" style="top:610px"><div class="bk">صحيح مسلم 1907</div><div class="t">«إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ»</div></div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 13, 21, 28, 33],
+  lengths: [8.16,9.3,12.06,7,5.16], // @narration-timing
+  captions: [[0.5,7.26,"مطابقة المتون: كيف اختلفت ألفاظ الحديث بين رواياته؟"],[8.56,16.56,"تحسب الموسوعة نسبة تطابق الألفاظ بين متن الحديث ومتون رواياته الأخرى، حسابًا مباشرًا."],[17.86,28.62,"فترى الفرق لفظًا بلفظ: «إنما الأعمال بالنيات» في البخاري، و«إنما العمل بالنية» في مسند أحمد."],[29.92,35.16,"وتُجمع الروايات الموازية بحسب الصحابي الذي رواها."],[36.92,39.68,"جرّبها بنفسك على الموقع."]], // @narration-captions
+}
+</script>
+<script src="engine.js"></script>
+<script>
+show('a-k', .2, 4.4); show('a-h', .5, 4.4, { y: 50 }); show('a-l', 1.1, 4.5, { y: 20 })
+
+/* 1 · scores (5–13) */
+show('b-k', 5.2, 12.4); show('b-c', 5.4, 12.4, { y: 10 })
+;[['r1', 'p1', 'i1', 82], ['r2', 'p2', 'i2', 79], ['r3', 'p3', 'i3', 64]].forEach(([r, p, i, v], k) => {
+  const t0 = 6.0 + k * .7
+  tw(r, t0, .7, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw(r, 12.4, .5, { o: 1 }, { o: 0 })
+  hooks.push(t => { const q = ease.out(Math.max(0, Math.min(1, (t - t0 - .3) / 1.4))); $(p).textContent = `${Math.round(v * q)}٪`; $(i).style.width = `${v * q}%` })
+})
+show('b-s', 8.6, 12.5, { y: 12 })
+
+/* 2 · word by word (13–21) */
+show('c-h', 13.2, 20.4)
+tw('c-a', 13.6, .7, { o: 0, y: 30 }, { o: 1, y: 0 }, 'back'); tw('c-a', 20.4, .5, { o: 1 }, { o: 0 })
+tw('c-b', 14.3, .7, { o: 0, y: 30 }, { o: 1, y: 0 }, 'back'); tw('c-b', 20.4, .5, { o: 1 }, { o: 0 })
+hooks.push(t => ['wa2', 'wa3', 'wb2', 'wb3'].forEach(id => $(id).className = t >= 16.0 ? 'w diff' : 'w'))
+show('c-l', 16.4, 20.4, { y: 12 })
+
+/* 3 · parallel narrations (21–28) */
+show('d-h', 21.2, 27.4); show('d-g', 21.6, 27.4, { y: 12 })
+;['d-1', 'd-2', 'd-3'].forEach((id, i) => { tw(id, 22.3 + i * .7, .7, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw(id, 27.4, .5, { o: 1 }, { o: 0 }) })
+
+outro(28, '/hadith/5')
+startFilm()
+</script>
+</body>
+</html>

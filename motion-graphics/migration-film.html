@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>من سطح المكتب إلى الويب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* A 50-second motion graphic on a fixed 1920×1080 stage. Every element's look is a pure function
+     of the time t (see render()), so the film plays live and can also be rendered frame by frame
+     (?capture=1 exposes window.__render(t)). */
+  :root {
+    --ink: #13261b;
+    --green: #1f4a33;
+    --green-2: #2d6a4a;
+    --green-soft: #e3efe6;
+    --gold: #c9a45c;
+    --gold-soft: #f3e7cc;
+    --cream: #faf6ec;
+    --paper: #fffdf7;
+    --muted: #6b7a70;
+    --line: #d9d2bf;
+    --win-grey: #d4d0c8;
+    --win-dark: #808080;
+    --win-blue: #0a246a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0d1a12; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Sans Arabic', sans-serif; }
+
+  #stage {
+    position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(ellipse 80% 70% at 50% 40%, #fffdf6 0%, var(--cream) 55%, #efe7d3 100%);
+    color: var(--ink); transform-origin: center center; flex-shrink: 0;
+  }
+  .pattern { position: absolute; inset: 0; opacity: .06; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%231f4a33' stroke-width='1.2'%3E%3Cpath d='M60 10 L74 46 L110 60 L74 74 L60 110 L46 74 L10 60 L46 46 Z'/%3E%3Crect x='32' y='32' width='56' height='56' transform='rotate(45 60 60)'/%3E%3Crect x='32' y='32' width='56' height='56'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 120px; }
+
+  .el { position: absolute; will-change: transform, opacity; }
+  .center-x { left: 0; right: 0; text-align: center; }
+
+  /* scene chrome */
+  .kicker { font-size: 26px; font-weight: 600; color: var(--gold); letter-spacing: 1px; }
+  .kicker .num { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px;
+    border-radius: 50%; background: var(--green); color: var(--gold-soft); font-size: 24px; margin-left: 14px; vertical-align: middle; }
+  .h1 { font-family: 'Amiri', serif; font-weight: 700; font-size: 104px; line-height: 1.25; color: var(--green); }
+  .h2 { font-family: 'Amiri', serif; font-weight: 700; font-size: 66px; line-height: 1.3; color: var(--green); }
+  .lead { font-size: 32px; color: var(--muted); font-weight: 400; line-height: 1.6; }
+  .gold { color: var(--gold); }
+  .mono { font-family: 'JetBrains Mono', monospace; direction: ltr; unicode-bidi: isolate; }
+
+  /* ── scene 1 ── */
+  .star { width: 520px; height: 520px; left: 700px; top: 150px; opacity: .12; }
+
+  /* ── scene 2: the Windows program ── */
+  .win { width: 980px; height: 600px; left: 470px; top: 250px; background: var(--win-grey);
+    border: 2px solid; border-color: #fff var(--win-dark) var(--win-dark) #fff; box-shadow: 0 30px 80px rgba(0,0,0,.25); direction: ltr; }
+  .win-title { height: 40px; background: linear-gradient(90deg, var(--win-blue), #3a6ea5); color: #fff; display: flex;
+    align-items: center; justify-content: space-between; padding: 0 8px 0 14px; font-size: 20px; font-weight: 600; }
+  .win-title .t { direction: rtl; font-family: 'IBM Plex Sans Arabic'; }
+  .win-btns { display: flex; gap: 4px; }
+  .win-btns span { width: 30px; height: 26px; background: var(--win-grey); border: 2px solid; border-color: #fff var(--win-dark) var(--win-dark) #fff;
+    color: #000; font: 700 14px/22px Tahoma, sans-serif; text-align: center; }
+  .win-menu { height: 34px; display: flex; gap: 26px; padding: 0 16px; align-items: center; font: 17px Tahoma, sans-serif; color: #000; direction: rtl; border-bottom: 1px solid var(--win-dark); }
+  .win-body { display: flex; direction: rtl; height: calc(100% - 74px - 30px); padding: 8px; gap: 8px; }
+  .win-tree { width: 300px; background: #fff; border: 2px solid; border-color: var(--win-dark) #fff #fff var(--win-dark); padding: 12px; font-size: 19px; line-height: 1.9; color: #000; }
+  .win-tree div::before { content: '⊞ '; color: #555; font-size: 15px; }
+  .win-text { flex: 1; background: #fff; border: 2px solid; border-color: var(--win-dark) #fff #fff var(--win-dark); padding: 18px 22px;
+    font-family: 'Amiri', serif; font-size: 27px; line-height: 1.9; color: #111; }
+  .win-status { height: 30px; border-top: 1px solid var(--win-dark); font: 15px Tahoma, sans-serif; color: #222; display: flex; align-items: center; padding: 0 12px; }
+
+  .lockbox { left: 140px; top: 330px; width: 330px; text-align: center; }
+  .cyl { width: 190px; height: 220px; margin: 0 auto; position: relative; }
+  .cyl svg { width: 100%; height: 100%; }
+  .tag { display: inline-block; padding: 10px 22px; border-radius: 999px; background: var(--paper); border: 2px solid var(--line); font-size: 24px; font-weight: 600; color: var(--green); }
+  .caption { font-size: 34px; color: var(--ink); font-weight: 500; }
+  .caption small { display: block; font-size: 26px; color: var(--muted); font-weight: 400; margin-top: 6px; }
+
+  /* ── scene 3: extraction ── */
+  .chip { padding: 20px 30px; border-radius: 22px; background: var(--paper); border: 2px solid var(--line); box-shadow: 0 10px 30px rgba(31,74,51,.08); text-align: center; }
+  .chip .big { font-size: 34px; font-weight: 700; color: var(--green); }
+  .chip .sm { font-size: 22px; color: var(--muted); margin-top: 4px; }
+  .arrow { height: 6px; background: linear-gradient(270deg, var(--gold), var(--green-2)); border-radius: 3px; transform-origin: right center; }
+  .arrow::after { content: ''; position: absolute; left: -14px; top: -9px; border: 12px solid transparent; border-right: 18px solid var(--green-2); border-left: 0; }
+  .files { left: 150px; top: 520px; width: 1620px; display: grid; grid-template-columns: repeat(11, 1fr); gap: 14px; direction: ltr; }
+  .file { height: 86px; border-radius: 12px; background: var(--paper); border: 2px solid var(--line); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--green); }
+  .file b { font-size: 12px; color: var(--gold); letter-spacing: 1px; }
+  .rename { top: 820px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 30px; }
+  .field { font-family: 'JetBrains Mono', monospace; font-size: 30px; padding: 12px 22px; border-radius: 12px; background: #efe9da; color: var(--muted); direction: ltr; }
+  .field.named { background: var(--green-soft); color: var(--green); font-weight: 600; }
+
+  /* ── scene 4: loading ── */
+  .bigfile { left: 1180px; top: 330px; width: 520px; }
+  .bar { height: 22px; border-radius: 11px; background: #ebe3cf; overflow: hidden; margin-top: 18px; direction: ltr; }
+  .bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--green-2), var(--gold)); transform-origin: left center; }
+  .pg { left: 240px; top: 300px; width: 380px; text-align: center; }
+  .maps { left: 640px; top: 690px; width: 640px; }
+  .map-row { display: flex; align-items: center; justify-content: space-between; direction: ltr; font-family: 'JetBrains Mono', monospace;
+    font-size: 28px; padding: 14px 26px; border-radius: 14px; background: var(--paper); border: 2px solid var(--line); margin-bottom: 14px; }
+  .map-row .from { color: var(--muted); }
+  .map-row .to { color: var(--green); font-weight: 600; }
+  .map-row .ar { color: var(--gold); font-size: 30px; }
+
+  /* ── scene 5: scale ── */
+  .stats { left: 160px; right: 160px; top: 420px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  .stat { position: relative; background: var(--paper); border: 2px solid var(--line); border-radius: 28px; padding: 34px 30px 30px; text-align: center; box-shadow: 0 16px 40px rgba(31,74,51,.07); }
+  .stat .n { font-size: 84px; font-weight: 700; color: var(--green); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 30px; color: var(--muted); margin-top: 6px; }
+  .stat.wide { grid-column: span 3; display: flex; align-items: center; justify-content: center; gap: 30px; padding: 26px; }
+  .stat.wide .n { font-size: 64px; }
+
+  /* ── scene 6: the web ── */
+  .browser { left: 720px; top: 290px; width: 1060px; height: 700px; border-radius: 20px; background: #fff; box-shadow: 0 40px 90px rgba(19,38,27,.25); overflow: hidden; border: 1px solid #d8d2c2; }
+  .b-top { height: 58px; background: #efeae0; display: flex; align-items: center; gap: 14px; padding: 0 18px; direction: ltr; }
+  .dots { display: flex; gap: 9px; } .dots i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+  .url { flex: 1; height: 36px; border-radius: 18px; background: #fff; display: flex; align-items: center; padding: 0 18px; font-family: 'JetBrains Mono', monospace; font-size: 17px; color: #444; }
+  .url .lock { color: var(--green-2); margin-right: 8px; }
+  .b-head { height: 70px; background: var(--green); display: flex; align-items: center; padding: 0 30px; color: #fff; font-family: 'Amiri', serif; font-size: 32px; font-weight: 700; }
+  .b-body { padding: 26px 34px; }
+  .crumb { font-size: 20px; color: var(--muted); }
+  .crumb b { color: var(--green-2); }
+  .numpill { display: inline-block; margin-right: 12px; padding: 3px 14px; border-radius: 999px; background: #6b5a2e; color: #fff; font-size: 17px; }
+  .hadith { font-family: 'Amiri', serif; font-size: 34px; line-height: 1.9; margin-top: 16px; color: #1c1c1c; }
+  .ruling { margin-top: 16px; font-size: 21px; color: #555; display: flex; gap: 12px; align-items: center; }
+  .ruling .g { padding: 3px 12px; border-radius: 8px; background: #dff0e3; color: #1b6b3a; border: 1px solid #bfe0c8; font-weight: 700; }
+  .ruling a { color: var(--green-2); }
+  .secs { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .sec { border: 1px solid #e3ddcc; border-radius: 14px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 600; color: var(--ink); }
+  .sec span { font-size: 16px; font-weight: 500; color: #fff; background: var(--green-2); padding: 4px 14px; border-radius: 999px; }
+  .stack { left: 150px; top: 250px; width: 480px; display: flex; flex-direction: column; gap: 16px; }
+  .stack .chip { text-align: right; padding: 16px 26px; }
+  .stack .chip .big { font-size: 30px; }
+
+  /* ── scene 7: timeline + outro ── */
+  .tline { left: 200px; right: 200px; top: 560px; height: 6px; background: #e3dccb; border-radius: 3px; }
+  .tline i { position: absolute; inset: 0; background: linear-gradient(270deg, var(--gold), var(--green-2)); border-radius: 3px; transform-origin: right center; }
+  .mile { top: 520px; width: 320px; margin-right: -160px; text-align: center; }
+  .mile .dot { width: 86px; height: 86px; margin: 0 auto; border-radius: 50%; background: var(--green); border: 6px solid var(--cream); box-shadow: 0 0 0 3px var(--gold);
+    display: flex; align-items: center; justify-content: center; color: var(--gold-soft); font-size: 22px; font-weight: 700; line-height: 1.05; }
+  .mile .d { font-size: 26px; font-weight: 700; color: var(--gold); margin-top: 18px; }
+  .mile .w { font-size: 28px; color: var(--ink); margin-top: 6px; font-weight: 500; }
+  .outro-url { font-family: 'JetBrains Mono', monospace; font-size: 34px; color: var(--green-2); direction: ltr; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 14px 36px; display: inline-block; }
+
+  /* live-playback controls (hidden while capturing) */
+  #ctl { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; z-index: 10;
+    background: rgba(13,26,18,.75); padding: 8px 14px; border-radius: 999px; color: #eee; font: 14px 'IBM Plex Sans Arabic'; }
+  #ctl button { background: var(--gold); color: #13261b; border: 0; border-radius: 999px; padding: 6px 16px; font: 600 14px 'IBM Plex Sans Arabic'; cursor: pointer; }
+  #ctl input { width: 280px; accent-color: var(--gold); direction: ltr; }
+  .capture #ctl { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- ═══ 1 · title ═══ -->
+  <svg class="el star" id="s1-star" viewBox="0 0 200 200"><g fill="none" stroke="#1f4a33" stroke-width="1.5">
+    <path d="M100 8 L124 76 L192 100 L124 124 L100 192 L76 124 L8 100 L76 76 Z"/>
+    <rect x="45" y="45" width="110" height="110"/><rect x="45" y="45" width="110" height="110" transform="rotate(45 100 100)"/>
+    <circle cx="100" cy="100" r="30"/><circle cx="100" cy="100" r="88"/></g></svg>
+  <div class="el center-x kicker" id="s1-k" style="top:300px">قصة التحويل</div>
+  <div class="el center-x h1" id="s1-a" style="top:360px">من برنامج على سطح المكتب</div>
+  <div class="el center-x h1" id="s1-b" style="top:490px">إلى <span class="gold">موسوعة حديثية على الويب</span></div>
+  <div class="el center-x lead" id="s1-c" style="top:680px">برنامج خادم الحرمين الشريفين الجامع للحديث النبوي</div>
+
+  <!-- ═══ 2 · the Windows program ═══ -->
+  <div class="el center-x kicker" id="s2-k" style="top:110px">البداية</div>
+  <div class="el center-x h2" id="s2-h" style="top:150px">برنامج ويندوز… وبيانات مغلقة</div>
+  <div class="el win" id="s2-win">
+    <div class="win-title"><div class="win-btns"><span>✕</span><span>□</span><span>_</span></div><span class="t">الجامع للحديث النبوي</span></div>
+    <div class="win-menu"><span>ملف</span><span>بحث</span><span>الكتب</span><span>الرواة</span><span>أدوات</span><span>مساعدة</span></div>
+    <div class="win-body">
+      <div class="win-tree"><div>صحيح البخاري</div><div>صحيح مسلم</div><div>سنن أبي داود</div><div>جامع الترمذي</div><div>سنن النسائي</div><div>سنن ابن ماجه</div><div>مسند أحمد</div></div>
+      <div class="win-text">حَدَّثَنَا أَبُو نُعَيْمٍ، حَدَّثَنَا زُهَيْرٌ، عَنْ أَبِي إِسْحَاقَ… قَالَ: سَمِعْتُ النَّبِيَّ ﷺ يَقْرَؤُهَا: ﴿فَهَلْ مِنْ مُدَّكِرٍ﴾</div>
+    </div>
+    <div class="win-status">C:\HadithProg</div>
+  </div>
+  <div class="el lockbox" id="s2-lock">
+    <div class="cyl"><svg viewBox="0 0 190 220">
+      <ellipse cx="95" cy="36" rx="80" ry="26" fill="#f3e7cc" stroke="#c9a45c" stroke-width="3"/>
+      <path d="M15 36 V178 A80 26 0 0 0 175 178 V36" fill="#f3e7cc" stroke="#c9a45c" stroke-width="3"/>
+      <path d="M15 84 A80 26 0 0 0 175 84 M15 132 A80 26 0 0 0 175 132" fill="none" stroke="#c9a45c" stroke-width="2"/>
+      <g transform="translate(95 118)"><rect x="-30" y="-6" width="60" height="46" rx="8" fill="#1f4a33"/>
+      <path d="M-18 -6 V-20 A18 18 0 0 1 18 -20 V-6" fill="none" stroke="#1f4a33" stroke-width="8"/><circle cx="0" cy="16" r="6" fill="#f3e7cc"/></g></svg></div>
+    <div class="tag mono" style="margin-top:18px">Engine0200.dll</div>
+    <div class="lead" style="font-size:24px;margin-top:10px">صيغة ثنائية خاصة لا تُقرأ إلا عبر محرّك البرنامج</div>
+  </div>
+  <div class="el center-x caption" id="s2-cap" style="top:910px">برنامج يحتاج إلى تثبيت على ويندوز<small>وكثير من المستخدمين واجهوا صعوبة في تشغيله</small></div>
+
+  <!-- ═══ 3 · extraction ═══ -->
+  <div class="el center-x kicker" id="s3-k" style="top:110px"><span class="num">١</span>الاستخراج</div>
+  <div class="el center-x h2" id="s3-h" style="top:160px">قراءة البيانات عبر محرّك البرنامج نفسه</div>
+  <div class="el chip" id="s3-dll" style="left:1290px;top:320px;width:420px"><div class="big mono">Engine0200.dll</div><div class="sm">CIRServer · CIRRecordset</div></div>
+  <div class="el arrow" id="s3-arr" style="left:870px;top:380px;width:380px"></div>
+  <div class="el chip" id="s3-ex" style="left:420px;top:320px;width:420px"><div class="big mono">extractor.cpp</div><div class="sm">برنامج ٣٢‑بت · LLVM‑MinGW</div></div>
+  <div class="el files" id="s3-files"></div>
+  <div class="el rename" id="s3-ren">
+    <span class="field" id="s3-f">f0 · f1 · f2 …</span>
+    <span class="tag mono" id="s3-cat">Catalog.xml</span>
+    <span class="field named" id="s3-n">BookTOC_Hadith · TarqeemHarf …</span>
+  </div>
+  <div class="el center-x lead" id="s3-cap" style="top:940px"><b class="gold">٣١ جدولًا</b> صُدّرت إلى ملفات JSON، واستُعيدت أسماء الحقول من فهرس البرنامج</div>
+
+  <!-- ═══ 4 · loading ═══ -->
+  <div class="el center-x kicker" id="s4-k" style="top:110px"><span class="num">٢</span>التحميل</div>
+  <div class="el center-x h2" id="s4-h" style="top:160px">بثّ البيانات إلى قاعدة PostgreSQL</div>
+  <div class="el chip bigfile" id="s4-file"><div class="big mono">BookTOC_Hadith.json</div><div class="sm"><span class="mono">989 MB</span> · أكبر ملف في البرنامج</div><div class="bar"><i id="s4-bar"></i></div></div>
+  <div class="el arrow" id="s4-arr" style="left:660px;top:420px;width:480px"></div>
+  <div class="el pg" id="s4-pg">
+    <svg viewBox="0 0 190 220" style="width:200px;height:230px"><ellipse cx="95" cy="36" rx="80" ry="26" fill="#e3efe6" stroke="#1f4a33" stroke-width="3"/>
+      <path d="M15 36 V178 A80 26 0 0 0 175 178 V36" fill="#e3efe6" stroke="#1f4a33" stroke-width="3"/>
+      <path d="M15 84 A80 26 0 0 0 175 84 M15 132 A80 26 0 0 0 175 132" fill="none" stroke="#1f4a33" stroke-width="2"/></svg>
+    <div class="tag mono" style="margin-top:10px">PostgreSQL</div>
+  </div>
+  <div class="el maps" id="s4-maps">
+    <div class="map-row" id="s4-m1"><span class="from">Book</span><span class="ar">→</span><span class="to">books</span></div>
+    <div class="map-row" id="s4-m2"><span class="from">BookTOC_Hadith</span><span class="ar">→</span><span class="to">hadith_toc</span></div>
+    <div class="map-row" id="s4-m3"><span class="from">TarqeemHarf</span><span class="ar">→</span><span class="to">tarqeem_harf</span></div>
+  </div>
+  <div class="el center-x lead" id="s4-cap" style="top:960px"><span class="mono">seed.py</span> يقرأ الملفات قراءة متدفّقة عبر <span class="mono">ijson</span> ويكتبها في الجداول الجديدة</div>
+
+  <!-- ═══ 5 · scale ═══ -->
+  <div class="el center-x kicker" id="s5-k" style="top:170px"><span class="num">٣</span>الحجم</div>
+  <div class="el center-x h2" id="s5-h" style="top:220px">كل البيانات… في قاعدة واحدة</div>
+  <div class="el stats" id="s5-stats">
+    <div class="stat" id="s5-a"><div class="n" data-to="339607">0</div><div class="l">مدخل حديث</div></div>
+    <div class="stat" id="s5-b"><div class="n" data-to="250279">0</div><div class="l">سلسلة إسناد</div></div>
+    <div class="stat" id="s5-c"><div class="n" data-to="30087">0</div><div class="l">راوٍ وعالم</div></div>
+    <div class="stat wide" id="s5-d"><div class="n" data-to="281541">0</div><div class="l">صلة تخريج</div><div class="n" data-to="245" style="margin-right:60px">0</div><div class="l">كتابًا</div></div>
+  </div>
+
+  <!-- ═══ 6 · the web ═══ -->
+  <div class="el kicker" id="s6-k" style="top:100px;right:150px"><span class="num">٤</span>على الويب</div>
+  <div class="el h2" id="s6-h" style="top:150px;right:150px;font-size:58px;white-space:nowrap">موقع يُفتح من أي متصفح</div>
+  <div class="el stack" id="s6-stack" style="top:360px">
+    <div class="chip" id="s6-c1"><div class="big">Next.js 16 · React 19</div><div class="sm">واجهة عربية من اليمين إلى اليسار</div></div>
+    <div class="chip" id="s6-c2"><div class="big">PostgreSQL</div><div class="sm">استعلامات SQL مباشرة</div></div>
+    <div class="chip" id="s6-c3"><div class="big">Docker · Railway</div><div class="sm">نشر على السحابة</div></div>
+    <div class="chip" id="s6-c4"><div class="big"><span class="gold">١٨٩</span> صفحة · <span class="gold">٥٥</span> واجهة برمجية</div></div>
+  </div>
+  <div class="el browser" id="s6-br">
+    <div class="b-top"><div class="dots"><i style="background:#ec6a5e"></i><i style="background:#f4bf4f"></i><i style="background:#61c554"></i></div>
+      <div class="url"><span class="lock">🔒</span>hadith.dev/hadith/7430</div></div>
+    <div class="b-head">جامع خادم الحرمين الشريفين</div>
+    <div class="b-body">
+      <div class="crumb"><b>صحيح البخاري</b> ← كتاب تفسير القرآن <span class="numpill">٤٨٧١</span></div>
+      <div class="hadith">سَمِعْتُ النَّبِيَّ ﷺ يَقْرَؤُهَا: ﴿فَهَلْ مِنْ مُدَّكِرٍ﴾</div>
+      <div class="ruling" id="s6-rul">خلاصة حكم المحدث: <span class="g">[صحيح]</span><a>عرض في الدرر السنية</a> · <span>أُخرجه في ٢٥ مصدرًا</span></div>
+      <div class="secs">
+        <div class="sec" id="s6-x1">الأسانيد والرواة <span>شجرة الإسناد</span></div>
+        <div class="sec" id="s6-x2">التخريج <span>٢٥ مصدرًا</span></div>
+        <div class="sec" id="s6-x3">شرح الحديث <span>فتح الباري</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 7 · timeline + outro ═══ -->
+  <div class="el center-x kicker" id="s7-k" style="top:220px">الرحلة</div>
+  <div class="el center-x h2" id="s7-h" style="top:270px">من أول سطر إلى الإتاحة للجميع</div>
+  <div class="el tline" id="s7-line"><i id="s7-fill"></i></div>
+  <div class="el mile" id="s7-m1" style="right:200px"><div class="dot">يونيو</div><div class="d">١٢ يونيو ٢٠٢٦</div><div class="w">أول نسخة ويب</div></div>
+  <div class="el mile" id="s7-m2" style="right:707px"><div class="dot">يونيو</div><div class="d">١٥ يونيو ٢٠٢٦</div><div class="w">أول نشر على الإنترنت</div></div>
+  <div class="el mile" id="s7-m3" style="right:1213px"><div class="dot">سبتمبر</div><div class="d">٢٤ سبتمبر ٢٠٢٦</div><div class="w">اكتمال مزايا البرنامج</div></div>
+  <div class="el mile" id="s7-m4" style="right:1720px"><div class="dot">سبتمبر</div><div class="d">٢٥ سبتمبر ٢٠٢٦</div><div class="w">إتاحته للجميع</div></div>
+
+  <div class="el center-x h1" id="s8-a" style="top:340px;font-size:88px;font-family:'IBM Plex Sans Arabic',sans-serif">بلا تثبيت… من أي متصفح</div>
+  <div class="el center-x lead" id="s8-b" style="top:490px;font-size:36px">الموسوعة الحديثية كاملة، مفتوحة المصدر، على الويب</div>
+  <div class="el center-x" id="s8-c" style="top:600px"><span class="outro-url">hadith.dev</span></div>
+</div>
+
+<div id="ctl"><button id="play">إيقاف</button><button id="replay">إعادة</button><input id="seek" type="range" min="0" max="50" step="0.01" value="0"><span id="clock">0.0</span></div>
+
+<script>
+/* ── tiny deterministic timeline ── */
+// Scenes as authored (seconds). SCENE_LENGTHS, when set, stretches each scene to fit its narration:
+// the scene plays at normal speed, holds on its last frame, then runs its exit transition.
+// narrate.mjs writes the line below; null plays the film at its authored 50 s.
+const SCENE_BOUNDS = [0, 6, 13, 21, 28, 35, 42, 46.5, 50]
+const EXIT = 0.9 // length of a scene's exit transition
+const SCENE_LENGTHS = [8.06,11.4,9.9,9.3,11.46,7.38,8.06,5.92] // @narration-timing
+const LENGTHS = SCENE_LENGTHS ?? SCENE_BOUNDS.slice(1).map((b, i) => b - SCENE_BOUNDS[i])
+const DURATION = LENGTHS.reduce((a, b) => a + b, 0)
+// film time → authored time
+function warp(t) {
+  let start = 0
+  for (let i = 0; i < LENGTHS.length; i++) {
+    const a = SCENE_BOUNDS[i], span = SCENE_BOUNDS[i + 1] - a, len = LENGTHS[i]
+    const last = i === LENGTHS.length - 1
+    if (t < start + len || last) {
+      const u = t - start
+      if (last) return a + Math.min(u, span)                  // final scene: play, then hold
+      const play = span - EXIT                                // authored time before the exit
+      if (u < play) return a + u
+      if (u < len - EXIT) return a + play                     // hold
+      return a + play + (u - (len - EXIT))                    // exit transition
+    }
+    start += len
+  }
+  return SCENE_BOUNDS[SCENE_BOUNDS.length - 1]
+}
+const $ = id => document.getElementById(id)
+const ease = {
+  out: t => 1 - Math.pow(1 - t, 3),
+  inOut: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  back: t => { const c = 1.5; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2) },
+  lin: t => t,
+}
+const tracks = new Map() // element → [{start, dur, from, to, ease}]
+function tw(target, start, dur, from, to, e = 'out') {
+  const el = typeof target === 'string' ? $(target) : target
+  if (!tracks.has(el)) tracks.set(el, [])
+  tracks.get(el).push({ start, dur, from, to, ease: ease[e] })
+}
+// in at `a`, out at `b` (fade + drift)
+function show(id, a, b, { y = 40, x = 0, s = 1, d = .8, outD = .6 } = {}) {
+  tw(id, a, d, { o: 0, y, x, s }, { o: 1, y: 0, x: 0, s: 1 })
+  if (b != null) tw(id, b, outD, { o: 1, y: 0, x: 0, s: 1 }, { o: 0, y: -30, x: 0, s: 1 }, 'inOut')
+}
+const DEF = { o: 1, x: 0, y: 0, s: 1, r: 0, sx: 1, blur: 0 }
+function valueAt(list, t) {
+  const v = { ...DEF, ...list[0].from }
+  for (const k of list) {
+    if (t < k.start) break
+    const p = k.dur <= 0 ? 1 : Math.min(1, (t - k.start) / k.dur)
+    const q = k.ease(p)
+    for (const key of Object.keys(k.to)) {
+      const a = k.from[key] ?? v[key], b = k.to[key]
+      v[key] = a + (b - a) * q
+    }
+  }
+  return v
+}
+const hooks = [] // (t) => void, for counters etc.
+
+/* ── scene 1 (0–6) ── */
+tw('s1-star', 0, 1.5, { o: 0 }, { o: .12 })
+tw('s1-star', 0, 50, { r: 0, s: .8 }, { r: 60, s: 1 }, 'lin')
+tw('s1-star', 5.4, .6, { o: .12 }, { o: 0 })
+show('s1-k', .3, 5.4)
+show('s1-a', .7, 5.4, { y: 60 })
+show('s1-b', 1.4, 5.5, { y: 60 })
+show('s1-c', 2.4, 5.5, { y: 20 })
+
+/* ── scene 2 (6–13) ── */
+show('s2-k', 6.2, 12.4)
+show('s2-h', 6.4, 12.4)
+tw('s2-win', 6.6, 1, { o: 0, y: 80, s: .92 }, { o: 1, y: 0, s: 1 }, 'back')
+tw('s2-win', 9.2, 1, { x: 0 }, { x: 170 }, 'inOut')
+tw('s2-win', 12.3, .6, { o: 1 }, { o: 0 }, 'inOut')
+show('s2-lock', 9.6, 12.4, { x: -60, y: 0 })
+show('s2-cap', 10.4, 12.5, { y: 20 })
+
+/* ── scene 3 (13–21) ── */
+show('s3-k', 13.1, 20.4)
+show('s3-h', 13.3, 20.4)
+show('s3-dll', 13.8, 20.4, { x: 60, y: 0 })
+tw('s3-arr', 14.5, .8, { o: 1, sx: 0 }, { sx: 1 }, 'inOut'); tw('s3-arr', 20.4, .6, { o: 1 }, { o: 0 })
+show('s3-ex', 15.0, 20.4, { x: -60, y: 0 })
+{
+  const names = ['Book', 'BookTOC_Hadith', 'Authors', 'Nouns', 'Asaned', 'AsanedHadiths', 'HadithJudgmentSays', 'HadithGhareeb', 'Lexicon', 'QuranAyat', 'Sections']
+  const box = $('s3-files')
+  for (let i = 0; i < 31; i++) {
+    const f = document.createElement('div')
+    f.className = 'file'
+    f.innerHTML = names[i] ? `<span>${names[i].length > 11 ? names[i].slice(0, 10) + '…' : names[i]}</span><b>.JSON</b>` : `<b>.JSON</b>`
+    box.appendChild(f)
+    tw(f, 15.6 + i * .07, .45, { o: 0, y: 30, s: .7 }, { o: 1, y: 0, s: 1 }, 'back')
+  }
+  box.style.opacity = 1
+  tw(box, 20.4, .6, { o: 1 }, { o: 0 })
+}
+show('s3-ren', 17.8, 20.4, { y: 20 })
+tw('s3-n', 18.4, .6, { o: 0, x: 40 }, { o: 1, x: 0 })
+tw('s3-f', 18.6, .6, { o: 1 }, { o: .45 })
+show('s3-cap', 18.8, 20.5, { y: 20 })
+
+/* ── scene 4 (21–28) ── */
+show('s4-k', 21.1, 27.4)
+show('s4-h', 21.3, 27.4)
+show('s4-file', 21.7, 27.4, { x: 60, y: 0 })
+tw('s4-bar', 21.7, 0, { sx: 0 }, { sx: 0 }); tw('s4-bar', 22.4, 3.2, { sx: 0 }, { sx: 1 }, 'inOut')
+tw('s4-arr', 22.3, .8, { o: 1, sx: 0 }, { sx: 1 }, 'inOut'); tw('s4-arr', 27.4, .6, { o: 1 }, { o: 0 })
+show('s4-pg', 22.6, 27.4, { x: -60, y: 0 })
+tw('s4-pg', 25.6, .5, { s: 1 }, { s: 1.06 }, 'inOut'); tw('s4-pg', 26.1, .5, { s: 1.06 }, { s: 1 }, 'inOut')
+show('s4-maps', 23.4, 27.4, { y: 0 })
+show('s4-m1', 23.6, null, { y: 20 }); show('s4-m2', 24.2, null, { y: 20 }); show('s4-m3', 24.8, null, { y: 20 })
+show('s4-cap', 25.4, 27.5, { y: 20 })
+
+/* ── scene 5 (28–35) ── */
+show('s5-k', 28.1, 34.4)
+show('s5-h', 28.3, 34.4)
+tw('s5-stats', 28, 0, { o: 1 }, { o: 1 }); tw('s5-stats', 34.4, .6, { o: 1 }, { o: 0 })
+show('s5-a', 28.7, null, { y: 50 }); show('s5-b', 29.0, null, { y: 50 }); show('s5-c', 29.3, null, { y: 50 }); show('s5-d', 29.8, null, { y: 50 })
+{
+  const ar = n => Math.round(n).toLocaleString('ar-EG')
+  const nums = [...document.querySelectorAll('#s5-stats .n')]
+  const starts = [28.9, 29.2, 29.5, 30.0, 30.2]
+  hooks.push(t => nums.forEach((el, i) => {
+    const p = ease.out(Math.max(0, Math.min(1, (t - starts[i]) / 2.6)))
+    el.textContent = ar(+el.dataset.to * p)
+  }))
+}
+
+/* ── scene 6 (35–42) ── */
+show('s6-k', 35.1, 41.4, { x: -40, y: 0 })
+show('s6-h', 35.3, 41.4, { x: -40, y: 0 })
+tw('s6-br', 35.5, 1.1, { o: 0, y: 90, s: .94 }, { o: 1, y: 0, s: 1 }, 'back'); tw('s6-br', 41.4, .6, { o: 1 }, { o: 0 })
+tw('s6-stack', 35, 0, { o: 1 }, { o: 1 }); tw('s6-stack', 41.4, .6, { o: 1 }, { o: 0 })
+show('s6-c1', 36.3, null, { x: -40, y: 0 }); show('s6-c2', 36.7, null, { x: -40, y: 0 }); show('s6-c3', 37.1, null, { x: -40, y: 0 }); show('s6-c4', 37.7, null, { x: -40, y: 0, s: .9 })
+show('s6-rul', 37.2, null, { y: 12 })
+show('s6-x1', 37.8, null, { y: 16 }); show('s6-x2', 38.1, null, { y: 16 }); show('s6-x3', 38.4, null, { y: 16 })
+
+/* ── scene 7 (42–46.5) timeline ── */
+show('s7-k', 42.1, 46.3)
+show('s7-h', 42.3, 46.3)
+tw('s7-line', 42.4, .4, { o: 0 }, { o: 1 }); tw('s7-line', 46.3, .5, { o: 1 }, { o: 0 })
+tw('s7-fill', 42.4, 0, { sx: 0 }, { sx: 0 }); tw('s7-fill', 42.6, 2.6, { sx: 0 }, { sx: 1 }, 'inOut')
+;['s7-m1', 's7-m2', 's7-m3', 's7-m4'].forEach((id, i) => {
+  tw(id, 42.7 + i * .8, .6, { o: 0, y: 30, s: .6 }, { o: 1, y: 0, s: 1 }, 'back')
+  tw(id, 46.3, .5, { o: 1 }, { o: 0 }, 'inOut')
+})
+
+/* ── outro (46.5–50) ── */
+show('s8-a', 46.6, null, { y: 50 })
+show('s8-b', 47.2, null, { y: 20 })
+show('s8-c', 47.8, null, { y: 20, s: .9 })
+tw('s1-star', 46.5, 1.2, { o: 0 }, { o: .1 })
+
+/* ── render ── */
+function render(filmT) {
+  const t = warp(filmT)
+  for (const [el, list] of tracks) {
+    list.sort((a, b) => a.start - b.start)
+    const v = valueAt(list, t)
+    el.style.opacity = v.o
+    el.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s}) rotate(${v.r}deg) scaleX(${v.sx})`
+    el.style.visibility = v.o < .005 ? 'hidden' : 'visible'
+  }
+  hooks.forEach(h => h(t))
+}
+
+/* ── fit stage to window ── */
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080)
+  $('stage').style.transform = `scale(${s})`
+}
+addEventListener('resize', fit); fit()
+
+const capture = new URLSearchParams(location.search).has('capture')
+window.__duration = DURATION
+window.__render = render
+if (capture) {
+  document.body.classList.add('capture')
+  $('stage').style.transform = 'none'
+  removeEventListener('resize', fit)
+  render(0)
+} else {
+  let t0 = null, playing = true, now = 0
+  const seek = $('seek'), clock = $('clock'), btn = $('play')
+  seek.max = DURATION
+  function frame(ts) {
+    if (playing) {
+      if (t0 == null) t0 = ts - now * 1000
+      now = (ts - t0) / 1000
+      if (now >= DURATION) { now = DURATION; playing = false; btn.textContent = 'تشغيل' }
+    }
+    render(now); seek.value = now; clock.textContent = now.toFixed(1)
+    requestAnimationFrame(frame)
+  }
+  btn.onclick = () => { if (now >= DURATION) now = 0; playing = !playing; t0 = null; btn.textContent = playing ? 'إيقاف' : 'تشغيل' }
+  $('replay').onclick = () => { now = 0; t0 = null; playing = true; btn.textContent = 'إيقاف' }
+  seek.oninput = () => { now = +seek.value; t0 = null }
+  document.fonts.ready.then(() => requestAnimationFrame(frame))
+}
+</script>
+</body>
+</html>

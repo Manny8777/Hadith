@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>شجرة الإسناد</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Feature film: the isnad tree of Sahih Muslim 1907 (hadith 17444) — 3 of its 8 chains, the madar
+     (Yahya ibn Sa'id al-Ansari) where they meet, and the pivot page's coverage. */
+  .node { position: absolute; width: 250px; margin-right: -125px; padding: 9px 10px; text-align: center; border-radius: 14px;
+    background: var(--paper); border: 2px solid var(--line); font-size: 21px; font-weight: 600; color: var(--ink); box-shadow: 0 6px 18px rgba(31,74,51,.07); }
+  .node.sahabi { border-color: #e2c48f; background: #fffaf0; }
+  .node.madar { border-color: var(--gold); box-shadow: 0 0 0 6px rgba(201,164,92,.25), 0 8px 24px rgba(31,74,51,.12); }
+  .node.muslim { background: var(--green); border-color: var(--green); color: #fff; }
+  svg.edges { position: absolute; left: 0; top: 0; width: 1080px; height: 1080px; overflow: visible; }
+  .banner { left: 70px; right: 70px; top: 176px; padding: 14px 20px; text-align: center; font-size: 24px; font-weight: 700; color: var(--amber);
+    background: var(--amber-soft); border: 2px solid #e2c48f; border-radius: 16px; }
+  .panel { left: 70px; right: 70px; top: 170px; padding: 26px 30px; }
+  .panel h3 { font-family: 'Amiri', serif; font-size: 38px; color: var(--green); }
+  .stats { display: flex; gap: 12px; margin: 12px 0 18px; flex-wrap: wrap; }
+  .bar-row { display: grid; grid-template-columns: 330px 1fr 150px; gap: 14px; align-items: center; font-size: 21px; margin-top: 12px; }
+  .bar-row .nm { font-weight: 600; } .bar-row .pc { font-family: 'JetBrains Mono', monospace; direction: ltr; text-align: left; color: var(--muted); font-size: 19px; }
+  .track { height: 16px; border-radius: 8px; background: #ece5d2; overflow: hidden; direction: rtl; }
+  .track i { display: block; height: 100%; background: linear-gradient(270deg, var(--green-2), var(--gold)); width: 0; }
+  .sub { font-size: 19px; color: var(--muted); margin-top: 18px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+  <div class="brand"><i></i>جامع خادم الحرمين الشريفين</div>
+  <div class="brand-tag">موسوعة الحديث النبوي</div>
+
+  <!-- 0 · title -->
+  <div class="el center-x kicker" id="a-k" style="top:330px">ميزة من الموسوعة</div>
+  <div class="el center-x h1" id="a-h" style="top:370px">شجرة الإسناد</div>
+  <div class="el center-x lead" id="a-l" style="top:500px">كل طرق الحديث في شجرةٍ واحدة… ومداره</div>
+
+  <!-- 1–2 · the tree -->
+  <div class="el center-x kicker" id="b-k" style="top:110px">صحيح مسلم 1907 · «إنما الأعمال بالنيات»</div>
+  <div class="el center-x" id="b-c" style="top:180px"><span class="chip g" style="font-size:21px">8 أسانيد</span> <span class="chip b" style="font-size:21px">20 راوٍ</span> <span class="chip a" style="font-size:21px">سباعي</span> <span class="chip" style="font-size:19px;color:var(--muted)">يُعرض 3 من 8</span></div>
+  <div class="el banner" id="c-b">★ مدار الحديث: يحيى بن سعيد الأنصاري — تجتمع عنده جميع الطرق</div>
+  <div class="el" id="tree" style="left:0;top:0;width:1080px;height:1080px">
+    <svg class="edges" viewBox="0 0 1080 1080" id="edges"></svg>
+  </div>
+
+  <!-- 3 · the pivot page -->
+  <div class="el card panel" id="d-p">
+    <h3>مدار الحديث — نقطة الاجتماع</h3>
+    <div class="stats"><span class="chip g" style="font-size:20px">٨ إسناد</span><span class="chip a" style="font-size:20px">5 مدار مطلق</span><span class="chip b" style="font-size:20px">20 إجمالي الرواة</span></div>
+    <div id="rows"></div>
+    <div class="sub">رواة بتغطية أقل</div>
+    <div id="rows2"></div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 14, 22, 30, 35],
+  lengths: [7.12,10.46,8.06,8,5], // @narration-timing
+  captions: [[0.5,6.22,"شجرة الإسناد: كل طرق الحديث في شجرةٍ واحدة."],[7.52,16.68,"هذا حديث «إنما الأعمال بالنيات» في صحيح مسلم، بثمانية أسانيد يرويها عشرون راويًا."],[17.98,24.74,"وتلتقي الطرق كلها عند يحيى بن سعيد الأنصاري؛ فهو مدار الحديث."],[26.04,31.92,"وفي صفحة مدار الحديث ترى نصيب كل راوٍ من الأسانيد."],[34.04,36.64,"جرّبها بنفسك على الموقع."]], // @narration-captions
+}
+</script>
+<script src="engine.js"></script>
+<script>
+/* 0 · title (0–5) */
+show('a-k', .2, 4.4); show('a-h', .5, 4.4, { y: 50 }); show('a-l', 1.1, 4.5, { y: 20 })
+
+/* 1 · build the tree (5–14) */
+show('b-k', 5.2, 21.3); show('b-c', 5.5, 13.4)
+const X = { r: 830, m: 540, l: 250 }
+const N = [ // [id, name, x, y, class]
+  ['t1', 'عمر بن الخطاب', X.m, 250, 'sahabi'],
+  ['t2', 'علقمة بن وقاص العتواري', X.m, 325, ''],
+  ['t3', 'محمد بن إبراهيم التيمي', X.m, 400, ''],
+  ['t4', 'يحيى بن سعيد الأنصاري', X.m, 475, 'madar'],
+  ['r1', 'الليث بن سعد', X.r, 575, ''], ['r2', 'محمد بن رمح', X.r, 650, ''],
+  ['m1', 'سفيان بن عيينة', X.m, 575, ''], ['m2', 'ابن أبي عمر العدني', X.m, 650, ''],
+  ['l1', 'عبد الله بن المبارك', X.l, 575, ''], ['l2', 'أبو كريب محمد بن العلاء', X.l, 650, ''],
+  ['t5', 'مسلم', X.m, 755, 'muslim'],
+]
+const E = [['t1', 't2'], ['t2', 't3'], ['t3', 't4'], ['t4', 'r1'], ['t4', 'm1'], ['t4', 'l1'], ['r1', 'r2'], ['m1', 'm2'], ['l1', 'l2'], ['r2', 't5'], ['m2', 't5'], ['l2', 't5']]
+const tree = $('tree'), svg = $('edges'), pos = {}
+N.forEach(([id, name, x, y, cls], i) => {
+  const d = document.createElement('div'); d.id = id; d.className = `node el ${cls}`; d.textContent = name
+  d.style.right = `${1080 - x}px`; d.style.top = `${y}px`; tree.appendChild(d); pos[id] = [x, y]
+})
+const appear = { t1: 6.0, t2: 6.5, t3: 7.0, t4: 7.5, r1: 8.3, m1: 8.5, l1: 8.7, r2: 9.2, m2: 9.4, l2: 9.6, t5: 10.4 }
+Object.entries(appear).forEach(([id, t]) => tw(id, t, .5, { o: 0, s: .8, y: 10 }, { o: 1, s: 1, y: 0 }, 'back'))
+E.forEach(([a, b]) => {
+  const [x1, y1] = pos[a], [x2, y2] = pos[b]
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  p.setAttribute('d', `M${x1} ${y1 + 44} C ${x1} ${(y1 + y2) / 2 + 30}, ${x2} ${(y1 + y2) / 2 + 10}, ${x2} ${y2}`)
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', '#c9b88f'); p.setAttribute('stroke-width', '3')
+  p.setAttribute('pathLength', '1'); p.setAttribute('stroke-dasharray', '1'); p.id = `e-${a}-${b}`
+  svg.appendChild(p)
+  tw(p, appear[b] - .45, 0, { dash: 1 }, { dash: 1 }); tw(p, appear[b] - .45, .5, { dash: 1 }, { dash: 0 }, 'inOut')
+})
+tw('tree', 21.3, .5, { o: 1 }, { o: 0 }, 'inOut')
+
+/* 2 · the madar (14–22): Yahya glows, the chains above him light up */
+tw('c-b', 14.4, .7, { o: 0, y: -16 }, { o: 1, y: 0 }, 'back'); tw('c-b', 21.3, .5, { o: 1 }, { o: 0 })
+tw('t4', 14.2, .35, { s: 1 }, { s: 1.14 }, 'out'); tw('t4', 14.55, .5, { s: 1.14 }, { s: 1.06 }, 'inOut')
+hooks.push(t => {
+  const on = t >= 14.2 && t < 22
+  ;['e-t1-t2', 'e-t2-t3', 'e-t3-t4'].forEach(id => { const e = $(id); e.setAttribute('stroke', on ? '#c9a45c' : '#c9b88f'); e.setAttribute('stroke-width', on ? '6' : '3') })
+})
+
+/* 3 · the pivot page (22–30) */
+{
+  const rows = [['عمر بن الخطاب', 8], ['علقمة بن وقاص العتواري', 8], ['محمد بن إبراهيم التيمي', 8], ['يحيى بن سعيد الأنصاري', 8], ['مسلم', 8]]
+  const add = (box, [nm, n], i, t0) => {
+    const r = document.createElement('div'); r.className = 'bar-row'
+    r.innerHTML = `<span class="nm">${nm}</span><span class="track"><i></i></span><span class="pc">${n}/8 (${Math.round(n / 8 * 100)}%)</span>`
+    $(box).appendChild(r)
+    const bar = r.querySelector('i')
+    hooks.push(t => { const k = Math.max(0, Math.min(1, (t - (t0 + i * .25)) / .8)); bar.style.width = `${ease.out(k) * n / 8 * 100}%` })
+  }
+  rows.forEach((row, i) => add('rows', row, i, 23.2))
+  add('rows2', ['محمد بن عبد الله بن نمير', 2], 0, 25.2)
+}
+tw('d-p', 22.3, .8, { o: 0, y: 40 }, { o: 1, y: 0 }, 'back'); tw('d-p', 29.3, .5, { o: 1 }, { o: 0 })
+
+/* 4 · outro (30–35) */
+outro(30, '/hadith/17444')
+startFilm()
+</script>
+</body>
+</html>

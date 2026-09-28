@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ترقيم حرف والترقيم المطبوع</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Motion graphic on hadith numbering (Harf vs the printed editions), on a fixed 1920×1080 stage.
+     Same engine as migration-film.html: every element's look is a pure function of time t, so it
+     plays live and renders frame by frame (?capture=1 exposes window.__render(t)). */
+  :root {
+    --ink: #13261b; --green: #1f4a33; --green-2: #2d6a4a; --green-soft: #e3efe6;
+    --gold: #c9a45c; --gold-soft: #f3e7cc; --amber: #8a5a14; --amber-soft: #f7ead2;
+    --cream: #faf6ec; --paper: #fffdf7; --muted: #6b7a70; --line: #d9d2bf; --red: #a3342a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0d1a12; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Sans Arabic', sans-serif; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(ellipse 80% 70% at 50% 40%, #fffdf6 0%, var(--cream) 55%, #efe7d3 100%);
+    color: var(--ink); transform-origin: center center; flex-shrink: 0; }
+  .pattern { position: absolute; inset: 0; opacity: .06; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%231f4a33' stroke-width='1.2'%3E%3Cpath d='M60 10 L74 46 L110 60 L74 74 L60 110 L46 74 L10 60 L46 46 Z'/%3E%3Crect x='32' y='32' width='56' height='56' transform='rotate(45 60 60)'/%3E%3Crect x='32' y='32' width='56' height='56'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 120px; }
+  .el { position: absolute; will-change: transform, opacity; }
+  .center-x { left: 0; right: 0; text-align: center; }
+  .kicker { font-size: 26px; font-weight: 600; color: var(--gold); letter-spacing: 1px; }
+  .kicker .num { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px;
+    border-radius: 50%; background: var(--green); color: var(--gold-soft); font-size: 24px; margin-left: 14px; vertical-align: middle; }
+  .h1 { font-family: 'Amiri', serif; font-weight: 700; font-size: 100px; line-height: 1.3; color: var(--green); }
+  .h2 { font-family: 'Amiri', serif; font-weight: 700; font-size: 64px; line-height: 1.3; color: var(--green); }
+  .lead { font-size: 32px; color: var(--muted); line-height: 1.6; }
+  .gold { color: var(--gold); }
+  .mono { font-family: 'JetBrains Mono', monospace; direction: ltr; unicode-bidi: isolate; }
+  .card { background: var(--paper); border: 2px solid var(--line); border-radius: 26px; box-shadow: 0 16px 44px rgba(31,74,51,.08); }
+
+  /* number tiles */
+  .tile { width: 520px; padding: 30px 34px; text-align: center; }
+  .tile .lbl { font-size: 28px; font-weight: 600; }
+  .tile .ed { font-size: 22px; color: var(--muted); margin-top: 4px; }
+  .tile .big { font-family: 'JetBrains Mono', monospace; font-size: 110px; font-weight: 600; line-height: 1.15; margin-top: 8px; direction: ltr; }
+  .tile.matboa { border-color: #e2c48f; background: linear-gradient(180deg, #fffaf0, var(--paper)); }
+  .tile.matboa .lbl, .tile.matboa .big { color: var(--amber); }
+  .tile.harf { border-color: #b9d6c2; background: linear-gradient(180deg, #f3faf5, var(--paper)); }
+  .tile.harf .lbl, .tile.harf .big { color: var(--green); }
+  .hadith-line { font-family: 'Amiri', serif; font-size: 46px; color: #1c1c1c; }
+  .pill { display: inline-block; padding: 10px 24px; border-radius: 999px; background: var(--paper); border: 2px solid var(--line); font-size: 26px; font-weight: 600; color: var(--green); }
+
+  /* scene 0 */
+  .floatnum { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 64px; padding: 10px 26px; border-radius: 20px; direction: ltr; }
+  .fn-a { background: var(--amber-soft); color: var(--amber); } .fn-b { background: var(--green-soft); color: var(--green); }
+
+  /* scene 2 — Harf */
+  .harf-badge { width: 240px; height: 240px; border-radius: 48px; background: var(--green); color: var(--gold-soft); display: flex; align-items: center; justify-content: center;
+    font-family: 'Amiri', serif; font-size: 118px; font-weight: 700; box-shadow: 0 20px 50px rgba(31,74,51,.25); }
+  .yr { text-align: center; } .yr b { display: block; font-family: 'JetBrains Mono', monospace; font-size: 50px; color: var(--gold); direction: ltr; }
+  .yr span { font-size: 26px; color: var(--ink); font-weight: 500; }
+  .books9 { display: grid; grid-template-columns: repeat(9, auto); gap: 14px; justify-content: center; }
+  .b9 { padding: 14px 18px; border-radius: 16px; background: var(--paper); border: 2px solid var(--line); font-size: 24px; font-weight: 600; color: var(--green); }
+
+  /* scene 3 — Muslim */
+  .node { text-align: center; padding: 24px 30px; }
+  .node .l { font-size: 24px; font-weight: 600; } .node .n { font-family: 'JetBrains Mono', monospace; font-size: 78px; font-weight: 600; direction: ltr; line-height: 1.15; }
+  .node.m { border-color: #e2c48f; } .node.m .l, .node.m .n { color: var(--amber); }
+  .node.h { border-color: #b9d6c2; } .node.h .l, .node.h .n { color: var(--green); }
+  .node small { display: block; font-size: 20px; color: var(--muted); margin-top: 4px; }
+  svg.links { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+
+  /* scene 5 — citation */
+  .cite { left: 260px; right: 260px; top: 360px; padding: 50px 60px; text-align: center; }
+  .cite .t { font-family: 'Amiri', serif; font-size: 56px; color: #1c1c1c; line-height: 1.7; }
+  .hl { padding: 0 10px; border-radius: 10px; }
+  .hl1 { background: #f7ead2; } .hl2 { background: #e3efe6; } .hl3 { background: #e8e1f5; } .hl4 { background: #fbe3dd; }
+  .legend { top: 640px; left: 0; right: 0; display: flex; justify-content: center; gap: 22px; }
+  .legend span { font-size: 26px; font-weight: 600; padding: 10px 24px; border-radius: 999px; }
+  .warn { font-size: 34px; font-weight: 600; color: var(--red); }
+
+  /* scene 6 — the site */
+  .browser { left: 260px; top: 260px; width: 1400px; height: 520px; border-radius: 22px; background: #fff; box-shadow: 0 40px 90px rgba(19,38,27,.22); overflow: hidden; border: 1px solid #d8d2c2; }
+  .b-top { height: 58px; background: #efeae0; display: flex; align-items: center; gap: 14px; padding: 0 18px; direction: ltr; }
+  .dots { display: flex; gap: 9px; } .dots i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+  .url { flex: 1; height: 36px; border-radius: 18px; background: #fff; display: flex; align-items: center; padding: 0 18px; font-family: 'JetBrains Mono', monospace; font-size: 17px; color: #444; }
+  .b-head { height: 70px; background: var(--green); display: flex; align-items: center; padding: 0 34px; color: #fff; font-family: 'Amiri', serif; font-size: 32px; font-weight: 700; }
+  .b-body { padding: 34px 44px; }
+  .crumb { display: flex; align-items: center; gap: 16px; font-size: 26px; color: var(--muted); flex-wrap: wrap; }
+  .crumb b { color: var(--green-2); }
+  .toggle { display: inline-flex; border-radius: 14px; border: 2px solid #ddd; overflow: hidden; font-family: 'JetBrains Mono', monospace; font-size: 28px; direction: rtl; }
+  .toggle span { padding: 8px 20px; display: inline-flex; gap: 10px; align-items: center; color: #9a9a9a; background: #fff; transition: none; }
+  .toggle span i { font-style: normal; font-family: 'IBM Plex Sans Arabic'; font-weight: 700; font-size: 20px; }
+  .toggle .on-m { background: #a46a1a; color: #fff; } .toggle .on-h { background: #1f4a33; color: #fff; }
+  .hadith { font-family: 'Amiri', serif; font-size: 44px; line-height: 1.9; margin-top: 26px; color: #1c1c1c; }
+  .edition { margin-top: 18px; font-size: 26px; color: var(--muted); }
+  .edition b { color: var(--ink); font-family: 'JetBrains Mono', monospace; }
+  .cursor { width: 44px; height: 44px; left: 0; top: 0; }
+  .ring { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--gold); left: 0; top: 0; }
+
+  .outro-url { font-family: 'JetBrains Mono', monospace; font-size: 34px; color: var(--green-2); direction: ltr; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 14px 36px; display: inline-block; }
+
+  #ctl { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; z-index: 10;
+    background: rgba(13,26,18,.75); padding: 8px 14px; border-radius: 999px; color: #eee; font: 14px 'IBM Plex Sans Arabic'; }
+  #ctl button { background: var(--gold); color: #13261b; border: 0; border-radius: 999px; padding: 6px 16px; font: 600 14px 'IBM Plex Sans Arabic'; cursor: pointer; }
+  #ctl input { width: 280px; accent-color: var(--gold); direction: ltr; }
+  .capture #ctl { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- ═══ 0 · hook (0–6) ═══ -->
+  <div class="el center-x kicker" id="a-k" style="top:280px">للباحثين وطلبة الدراسات العليا</div>
+  <div class="el center-x h1" id="a-h" style="top:340px">هل تعرف أن ترقيم الأحاديث</div>
+  <div class="el center-x h1" id="a-h2" style="top:470px"><span class="gold">يختلف</span> من طبعةٍ لأخرى؟</div>
+  <div class="el floatnum fn-a" id="a-n1" style="left:250px;top:220px">4871</div>
+  <div class="el floatnum fn-b" id="a-n2" style="left:1480px;top:260px">4673</div>
+  <div class="el floatnum fn-a" id="a-n3" style="left:330px;top:720px">823</div>
+  <div class="el floatnum fn-b" id="a-n4" style="left:1420px;top:700px">1897</div>
+  <div class="el floatnum fn-a" id="a-n5" style="left:880px;top:780px">1668</div>
+
+  <!-- ═══ 1 · one hadith, two numbers (6–14) ═══ -->
+  <div class="el center-x kicker" id="b-k" style="top:110px">مثال</div>
+  <div class="el center-x h2" id="b-h" style="top:150px">حديثٌ واحد… ورقمان</div>
+  <div class="el center-x" id="b-card" style="top:290px"><span class="pill" style="font-size:24px">صحيح البخاري · كتاب تفسير القرآن</span>
+    <div class="hadith-line" style="margin-top:22px">سَمِعْتُ النَّبِيَّ ﷺ يَقْرَؤُهَا: ﴿فَهَلْ مِنْ مُدَّكِرٍ﴾</div></div>
+  <div class="el card tile matboa" id="b-m" style="right:380px;top:500px"><div class="lbl">الترقيم المطبوع</div><div class="ed">طبعة دار طوق النجاة</div><div class="big">4871</div></div>
+  <div class="el card tile harf" id="b-h2" style="left:380px;top:500px"><div class="lbl">ترقيم حرف</div><div class="ed">موسوعة الحديث الشريف</div><div class="big">4673</div></div>
+  <div class="el center-x" id="b-pp" style="top:900px"><span class="pill">الجزء ٦ · الصفحة ١٤٣</span></div>
+
+  <!-- ═══ 2 · what is Harf (14–22) ═══ -->
+  <div class="el center-x kicker" id="c-k" style="top:110px"><span class="num">١</span>ترقيم حرف</div>
+  <div class="el center-x h2" id="c-h" style="top:150px">ترقيم موسوعة الحديث الشريف من شركة «حرف»</div>
+  <div class="el harf-badge" id="c-badge" style="left:840px;top:300px">حرف</div>
+  <div class="el yr" id="c-y1" style="right:360px;top:360px;width:300px"><b>1985</b><span>الإصدار الأول مع شركة صخر</span></div>
+  <div class="el yr" id="c-y2" style="left:360px;top:360px;width:300px"><b>1988</b><span>الإصدار الثاني باسم «حرف»</span></div>
+  <div class="el books9" id="c-books" style="left:0;right:0;top:640px"></div>
+  <div class="el center-x lead" id="c-cap" style="top:780px">رقّمت الموسوعةُ كتبَ الحديث التسعة وأبوابها وأحاديثها ترقيمًا خاصًّا بها</div>
+
+  <!-- ═══ 3 · the printed numbering: Muslim (22–30) ═══ -->
+  <div class="el center-x kicker" id="d-k" style="top:110px"><span class="num">٢</span>الترقيم المطبوع</div>
+  <div class="el center-x h2" id="d-h" style="top:150px">ترقيم طبعةٍ ورقيةٍ بعينها</div>
+  <div class="el center-x" id="d-bk" style="top:270px"><span class="pill">صحيح مسلم · ترقيم محمد فؤاد عبد الباقي · دار إحياء الكتب العربية</span></div>
+  <svg class="el links" id="d-links" viewBox="0 0 1920 1080">
+    <path id="d-l1" d="M960 560 C 960 640, 1260 620, 1260 700" fill="none" stroke="#c9a45c" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+    <path id="d-l2" d="M960 560 C 960 640, 660 620, 660 700" fill="none" stroke="#c9a45c" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+  </svg>
+  <div class="el card node m" id="d-m" style="left:810px;top:360px;width:300px"><div class="l">المطبوع</div><div class="n">823</div></div>
+  <div class="el card node h" id="d-h1" style="left:1110px;top:700px;width:300px"><div class="l">حرف</div><div class="n">1896</div><small>الرواية الأولى · ٢/٢٠٥</small></div>
+  <div class="el card node h" id="d-h2" style="left:510px;top:700px;width:300px"><div class="l">حرف</div><div class="n">1897</div><small>الرواية الثانية · ٢/٢٠٦</small></div>
+  <div class="el center-x lead" id="d-cap" style="top:960px">رقمٌ مطبوعٌ واحد يجمع روايتين… ويفرّقهما ترقيم حرف</div>
+
+  <!-- ═══ 4 · Musnad Ahmad (30–37) ═══ -->
+  <div class="el center-x kicker" id="e-k" style="top:110px">مسند الإمام أحمد</div>
+  <div class="el center-x h2" id="e-h" style="top:150px">حديثٌ واحد… وثلاثة أرقام</div>
+  <div class="el center-x hadith-line" id="e-t" style="top:280px;font-size:42px">«قَدْ لَبِسْتُهُمَا مَعَ مَنْ هُوَ خَيْرٌ مِنْكَ»</div>
+  <div class="el card tile matboa" id="e-1" style="right:150px;top:420px;width:500px"><div class="lbl">المطبوع</div><div class="ed">طبعة جمعية المكنز الإسلامي</div><div class="big">1690</div></div>
+  <div class="el card tile matboa" id="e-2" style="right:710px;top:420px;width:500px"><div class="lbl">المطبوع ٢</div><div class="ed">طبعة الرسالة · تحقيق شعيب الأرناؤوط</div><div class="big">1668</div></div>
+  <div class="el card tile harf" id="e-3" style="right:1270px;top:420px;width:500px"><div class="lbl">ترقيم حرف</div><div class="ed">موسوعة الحديث الشريف</div><div class="big">1674</div></div>
+  <div class="el center-x" id="e-pp" style="top:820px"><span class="pill">الجزء ١ · الصفحة ٤١٥</span></div>
+
+  <!-- ═══ 5 · cite it fully (37–44) ═══ -->
+  <div class="el center-x kicker" id="f-k" style="top:130px">في العزو</div>
+  <div class="el center-x h2" id="f-h" style="top:170px">الرقم وحده لا يكفي</div>
+  <div class="el card cite" id="f-c"><div class="t">أخرجه البخاري <span class="hl hl2" id="f-1">(٤٨٧١)</span>، <span class="hl hl1" id="f-2">ط. دار طوق النجاة</span>، <span class="hl hl3" id="f-3">ج٦</span> <span class="hl hl4" id="f-4">ص١٤٣</span></div></div>
+  <div class="el legend" id="f-leg"><span class="hl2" id="f-l1">رقم الحديث</span><span class="hl1" id="f-l2">الطبعة</span><span class="hl3" id="f-l3">الجزء</span><span class="hl4" id="f-l4">الصفحة</span></div>
+  <div class="el center-x warn" id="f-w" style="top:800px">خطأٌ واحد في العزو يلاحظه المناقش مباشرة</div>
+
+  <!-- ═══ 6 · on the site (44–52) ═══ -->
+  <div class="el center-x kicker" id="g-k" style="top:110px">في الموسوعة</div>
+  <div class="el center-x h2" id="g-h" style="top:150px;font-size:56px">بين الترقيمين… بضغطة زر</div>
+  <div class="el browser" id="g-br">
+    <div class="b-top"><div class="dots"><i style="background:#ec6a5e"></i><i style="background:#f4bf4f"></i><i style="background:#61c554"></i></div>
+      <div class="url">hadith.dev/hadith/7430</div></div>
+    <div class="b-head">جامع خادم الحرمين الشريفين</div>
+    <div class="b-body">
+      <div class="crumb"><b>صحيح البخاري</b> ← كتاب تفسير القرآن ← باب ﴿أعجاز نخل منقعر﴾
+        <span class="toggle" id="g-tog"><span id="g-tm"><i>ط</i>4871</span><span id="g-th"><i>ح</i>4673</span></span></div>
+      <div class="hadith">سَمِعْتُ النَّبِيَّ ﷺ يَقْرَؤُهَا: ﴿فَهَلْ مِنْ مُدَّكِرٍ﴾</div>
+      <div class="edition" id="g-ed">الطبعة: دار طوق النجاة · <b>ج6 ص143</b></div>
+    </div>
+  </div>
+  <div class="el ring" id="g-ring"></div>
+  <svg class="el cursor" id="g-cur" viewBox="0 0 24 24"><path d="M4 2 L4 20 L9 15 L12 22 L15 21 L12 14 L19 14 Z" fill="#13261b" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+  <div class="el center-x lead" id="g-cap" style="top:840px">يُحفظ اختيارك، ويظهر اسم الطبعة والجزء والصفحة لكل حديث</div>
+
+  <!-- ═══ 7 · outro (52–56) ═══ -->
+  <div class="el center-x h1" id="h-a" style="top:320px;font-size:84px;font-family:'IBM Plex Sans Arabic',sans-serif">عزوٌ دقيق… من مصدرٍ واحد</div>
+  <div class="el center-x lead" id="h-b" style="top:470px;font-size:36px">موسوعة الحديث النبوي الشريف على الويب</div>
+  <div class="el center-x" id="h-c" style="top:570px"><span class="outro-url">hadith.dev</span></div>
+  <div class="el center-x lead" id="h-d" style="top:690px;font-size:30px">للتواصل عبر واتساب: <span class="mono" style="color:var(--green-2)">+61 426 047 327</span></div>
+</div>
+
+<div id="ctl"><button id="play">إيقاف</button><button id="replay">إعادة</button><input id="seek" type="range" min="0" max="56" step="0.01" value="0"><span id="clock">0.0</span></div>
+
+<script>
+/* ── deterministic timeline (same engine as migration-film.html) ── */
+// Scenes as authored (seconds). SCENE_LENGTHS, when set by narrate.mjs, stretches each scene to its
+// narration: the scene plays, holds on its last frame, then runs its exit transition.
+const SCENE_BOUNDS = [0, 6, 14, 22, 30, 37, 44, 52, 56]
+const EXIT = 0.9
+const SCENE_LENGTHS = [6.58,10,12.18,17.02,8.66,14.42,9.7,6.68] // @narration-timing
+const LENGTHS = SCENE_LENGTHS ?? SCENE_BOUNDS.slice(1).map((b, i) => b - SCENE_BOUNDS[i])
+const DURATION = LENGTHS.reduce((a, b) => a + b, 0)
+function warp(t) {
+  let start = 0
+  for (let i = 0; i < LENGTHS.length; i++) {
+    const a = SCENE_BOUNDS[i], span = SCENE_BOUNDS[i + 1] - a, len = LENGTHS[i]
+    const last = i === LENGTHS.length - 1
+    if (t < start + len || last) {
+      const u = t - start
+      if (last) return a + Math.min(u, span)
+      const play = span - EXIT
+      if (u < play) return a + u
+      if (u < len - EXIT) return a + play
+      return a + play + (u - (len - EXIT))
+    }
+    start += len
+  }
+  return SCENE_BOUNDS[SCENE_BOUNDS.length - 1]
+}
+const $ = id => document.getElementById(id)
+const ease = {
+  out: t => 1 - Math.pow(1 - t, 3),
+  inOut: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  back: t => { const c = 1.5; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2) },
+  lin: t => t,
+}
+const tracks = new Map()
+function tw(target, start, dur, from, to, e = 'out') {
+  const el = typeof target === 'string' ? $(target) : target
+  if (!tracks.has(el)) tracks.set(el, [])
+  tracks.get(el).push({ start, dur, from, to, ease: ease[e] })
+}
+function show(id, a, b, { y = 40, x = 0, s = 1, d = .8, outD = .6 } = {}) {
+  tw(id, a, d, { o: 0, y, x, s }, { o: 1, y: 0, x: 0, s: 1 })
+  if (b != null) tw(id, b, outD, { o: 1, y: 0, x: 0, s: 1 }, { o: 0, y: -30, x: 0, s: 1 }, 'inOut')
+}
+const DEF = { o: 1, x: 0, y: 0, s: 1, r: 0, sx: 1, dash: 0 }
+function valueAt(list, t) {
+  const v = { ...DEF, ...list[0].from }
+  for (const k of list) {
+    if (t < k.start) break
+    const q = k.ease(k.dur <= 0 ? 1 : Math.min(1, (t - k.start) / k.dur))
+    for (const key of Object.keys(k.to)) { const a = k.from[key] ?? v[key]; v[key] = a + (k.to[key] - a) * q }
+  }
+  return v
+}
+const hooks = []
+
+/* ── 0 · hook (0–6) ── */
+show('a-k', .3, 5.4)
+show('a-h', .7, 5.4, { y: 60 })
+show('a-h2', 1.3, 5.5, { y: 60 })
+;['a-n1', 'a-n2', 'a-n3', 'a-n4', 'a-n5'].forEach((id, i) => {
+  tw(id, 1.8 + i * .25, .7, { o: 0, s: .5, y: 20 }, { o: .9, s: 1, y: 0 }, 'back')
+  tw(id, 2.5 + i * .25, 3, { y: 0, r: 0 }, { y: i % 2 ? -18 : 18, r: i % 2 ? 4 : -4 }, 'inOut')
+  tw(id, 5.3, .6, { o: .9 }, { o: 0 }, 'inOut')
+})
+
+/* ── 1 · one hadith, two numbers (6–14) ── */
+show('b-k', 6.2, 13.4); show('b-h', 6.4, 13.4)
+show('b-card', 6.9, 13.4, { y: 30 })
+tw('b-m', 8.0, .9, { o: 0, y: 60, s: .9 }, { o: 1, y: 0, s: 1 }, 'back'); tw('b-m', 13.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+tw('b-h2', 8.6, .9, { o: 0, y: 60, s: .9 }, { o: 1, y: 0, s: 1 }, 'back'); tw('b-h2', 13.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+show('b-pp', 10.0, 13.4, { y: 20 })
+
+/* ── 2 · Harf (14–22) ── */
+show('c-k', 14.2, 21.4); show('c-h', 14.4, 21.4)
+tw('c-badge', 14.9, .9, { o: 0, s: .6, r: -8 }, { o: 1, s: 1, r: 0 }, 'back'); tw('c-badge', 21.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+show('c-y1', 15.8, 21.4, { x: -40, y: 0 }); show('c-y2', 16.4, 21.4, { x: 40, y: 0 })
+{
+  const books = ['البخاري', 'مسلم', 'أبو داود', 'الترمذي', 'النسائي', 'ابن ماجه', 'الدارمي', 'مالك', 'أحمد']
+  const box = $('c-books')
+  books.forEach((b, i) => {
+    const d = document.createElement('div'); d.className = 'b9'; d.textContent = b; box.appendChild(d)
+    tw(d, 17.2 + i * .12, .5, { o: 0, y: 26, s: .8 }, { o: 1, y: 0, s: 1 }, 'back')
+  })
+  tw(box, 21.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+}
+show('c-cap', 18.6, 21.5, { y: 20 })
+
+/* ── 3 · Muslim (22–30) ── */
+show('d-k', 22.2, 29.4); show('d-h', 22.4, 29.4)
+show('d-bk', 22.9, 29.4, { y: 20 })
+tw('d-m', 23.6, .8, { o: 0, s: .7 }, { o: 1, s: 1 }, 'back'); tw('d-m', 29.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+tw('d-links', 22, 0, { o: 1 }, { o: 1 }); tw('d-links', 29.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+tw('d-l1', 24.4, 0, { dash: 1 }, { dash: 1 }); tw('d-l1', 24.4, .9, { dash: 1 }, { dash: 0 }, 'inOut')
+tw('d-l2', 24.4, 0, { dash: 1 }, { dash: 1 }); tw('d-l2', 24.6, .9, { dash: 1 }, { dash: 0 }, 'inOut')
+tw('d-h1', 25.1, .8, { o: 0, y: 40, s: .85 }, { o: 1, y: 0, s: 1 }, 'back'); tw('d-h1', 29.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+tw('d-h2', 25.4, .8, { o: 0, y: 40, s: .85 }, { o: 1, y: 0, s: 1 }, 'back'); tw('d-h2', 29.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+show('d-cap', 26.4, 29.5, { y: 20 })
+
+/* ── 4 · Ahmad (30–37) ── */
+show('e-k', 30.2, 36.4); show('e-h', 30.4, 36.4)
+show('e-t', 30.9, 36.4, { y: 20 })
+;['e-1', 'e-2', 'e-3'].forEach((id, i) => {
+  tw(id, 31.6 + i * .5, .9, { o: 0, y: 60, s: .9 }, { o: 1, y: 0, s: 1 }, 'back')
+  tw(id, 36.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+})
+show('e-pp', 33.6, 36.4, { y: 20 })
+
+/* ── 5 · cite fully (37–44) ── */
+show('f-k', 37.2, 43.4); show('f-h', 37.4, 43.4)
+tw('f-c', 37.9, .9, { o: 0, y: 40, s: .96 }, { o: 1, y: 0, s: 1 }, 'back'); tw('f-c', 43.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+tw('f-leg', 37, 0, { o: 1 }, { o: 1 }); tw('f-leg', 43.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+;[1, 2, 3, 4].forEach(i => {
+  tw(`f-l${i}`, 38.9 + i * .45, .5, { o: 0, y: 20, s: .8 }, { o: 1, y: 0, s: 1 }, 'back')
+  tw(`f-${i}`, 38.9 + i * .45, .25, { s: 1 }, { s: 1.12 }, 'out'); tw(`f-${i}`, 39.15 + i * .45, .35, { s: 1.12 }, { s: 1 }, 'inOut')
+})
+show('f-w', 41.4, 43.5, { y: 20 })
+
+/* ── 6 · on the site (44–52) ── */
+show('g-k', 44.2, 51.4); show('g-h', 44.4, 51.4)
+tw('g-br', 44.8, 1, { o: 0, y: 80, s: .95 }, { o: 1, y: 0, s: 1 }, 'back'); tw('g-br', 51.4, .6, { o: 1 }, { o: 0 }, 'inOut')
+// the cursor glides to the toggle and clicks it twice: ط → ح → ط
+tw('g-cur', 46.0, .5, { o: 0, x: 1300, y: 700 }, { o: 1, x: 1300, y: 700 })
+tw('g-cur', 46.4, 1.1, { x: 1300, y: 700 }, { x: 773, y: 448 }, 'inOut')
+tw('g-cur', 49.8, .8, { x: 773, y: 448 }, { x: 903, y: 448 }, 'inOut')
+tw('g-cur', 51.4, .5, { o: 1 }, { o: 0 })
+{
+  const clicks = [47.6, 50.7]
+  const ring = $('g-ring'), tm = $('g-tm'), th = $('g-th'), ed = $('g-ed')
+  hooks.push(t => {
+    // which number is active: printed until the first click, Harf until the second, printed after
+    const n = clicks.filter(c => t >= c).length
+    const harf = n % 2 === 1
+    tm.className = harf ? '' : 'on-m'
+    th.className = harf ? 'on-h' : ''
+    ed.innerHTML = harf
+      ? 'ترقيم حرف: <b>4673</b> · موسوعة الحديث الشريف'
+      : 'الطبعة: دار طوق النجاة · <b>ج6 ص143</b>'
+    // a ring pulses at each click
+    const last = clicks.filter(c => t >= c).pop()
+    const k = last == null ? 1 : Math.min(1, (t - last) / .6)
+    const x = last === 50.7 ? 910 : 780
+    ring.style.left = `${x - 45}px`; ring.style.top = `${452 - 45}px`
+    ring.style.opacity = last == null || t > 51.4 ? 0 : 1 - k
+    ring.style.transform = `scale(${.4 + k * .9})`
+    ring.style.visibility = ring.style.opacity > 0 ? 'visible' : 'hidden'
+  })
+}
+show('g-cap', 48.4, 51.5, { y: 20 })
+
+/* ── 7 · outro (52–56) ── */
+show('h-a', 52.2, null, { y: 50 })
+show('h-b', 52.8, null, { y: 20 })
+show('h-c', 53.3, null, { y: 20, s: .9 })
+show('h-d', 53.8, null, { y: 20 })
+
+/* ── render ── */
+function render(filmT) {
+  const t = warp(filmT)
+  for (const [el, list] of tracks) {
+    list.sort((a, b) => a.start - b.start)
+    const v = valueAt(list, t)
+    el.style.opacity = v.o
+    if (el.tagName === 'path') { el.style.strokeDashoffset = v.dash; continue }
+    el.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s}) rotate(${v.r}deg) scaleX(${v.sx})`
+    el.style.visibility = v.o < .005 ? 'hidden' : 'visible'
+  }
+  hooks.forEach(h => h(t))
+}
+function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); $('stage').style.transform = `scale(${s})` }
+addEventListener('resize', fit); fit()
+window.__duration = DURATION
+window.__render = render
+if (new URLSearchParams(location.search).has('capture')) {
+  document.body.classList.add('capture'); $('stage').style.transform = 'none'; removeEventListener('resize', fit); render(0)
+} else {
+  let t0 = null, playing = true, now = 0
+  const seek = $('seek'), clock = $('clock'), btn = $('play')
+  seek.max = DURATION
+  function frame(ts) {
+    if (playing) { if (t0 == null) t0 = ts - now * 1000; now = (ts - t0) / 1000; if (now >= DURATION) { now = DURATION; playing = false; btn.textContent = 'تشغيل' } }
+    render(now); seek.value = now; clock.textContent = now.toFixed(1); requestAnimationFrame(frame)
+  }
+  btn.onclick = () => { if (now >= DURATION) now = 0; playing = !playing; t0 = null; btn.textContent = playing ? 'إيقاف' : 'تشغيل' }
+  $('replay').onclick = () => { now = 0; t0 = null; playing = true; btn.textContent = 'إيقاف' }
+  seek.oninput = () => { now = +seek.value; t0 = null }
+  document.fonts.ready.then(() => requestAnimationFrame(frame))
+}
+</script>
+</body>
+</html>

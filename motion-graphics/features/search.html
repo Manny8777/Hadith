@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>البحث</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Feature film: search — text search that ignores tashkeel and hamza forms (22 results for «الأعمال
+     بالنيات» however it is written), and «البحث بواسطة السند» (/asaneed/builder): pick narrators in
+     order and get the hadiths whose chains run through them (Ibn Umar → Nafi' → Malik). */
+  .box { left: 90px; right: 90px; top: 190px; height: 92px; border-radius: 46px; background: #fff; border: 3px solid var(--gold);
+    display: flex; align-items: center; padding: 0 34px; font-size: 38px; font-family: 'Amiri', serif; box-shadow: 0 14px 34px rgba(31,74,51,.1); }
+  .box .caret { display: inline-block; width: 3px; height: 44px; background: var(--green); margin-right: 4px; vertical-align: middle; }
+  .box .btn { margin-right: auto; font-family: 'IBM Plex Sans Arabic'; font-size: 24px; font-weight: 700; color: var(--ink); background: var(--gold); border-radius: 999px; padding: 10px 26px; }
+  .done { font-size: 26px; font-weight: 700; color: var(--green-2); }
+  .res { left: 90px; right: 90px; padding: 16px 26px; }
+  .res .bk { font-size: 22px; font-weight: 700; color: var(--green); }
+  .res .t { font-family: 'Amiri', serif; font-size: 32px; color: #222; } .res mark { background: var(--gold-soft); color: var(--amber); border-radius: 6px; padding: 0 4px; }
+  .spell { left: 90px; right: 90px; padding: 18px 28px; display: flex; justify-content: space-between; align-items: center; }
+  .spell .q { font-family: 'Amiri', serif; font-size: 40px; } .spell .n { font-size: 30px; font-weight: 700; color: var(--green-2); }
+  .chain { left: 60px; right: 60px; top: 300px; display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .nar { padding: 16px 22px; border-radius: 18px; background: var(--paper); border: 2px solid var(--line); font-size: 25px; font-weight: 700; color: var(--green); text-align: center; }
+  .nar.first { border-color: #e2c48f; background: #fffaf0; }
+  .arr { font-size: 34px; color: var(--gold); font-weight: 700; }
+  .count { left: 0; right: 0; top: 480px; text-align: center; }
+  .count .n { font-size: 110px; font-weight: 700; color: var(--green); line-height: 1; font-family: 'IBM Plex Sans Arabic'; }
+  .count .l { font-size: 28px; color: var(--muted); font-weight: 600; }
+  .filters { display: flex; gap: 12px; justify-content: center; }
+  .filters span { font-size: 22px; font-weight: 600; padding: 8px 22px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); color: var(--muted); }
+  .filters span.on { background: var(--green); border-color: var(--green); color: #fff; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+  <div class="brand"><i></i>جامع خادم الحرمين الشريفين</div>
+  <div class="brand-tag">موسوعة الحديث النبوي</div>
+
+  <!-- 0 · title -->
+  <div class="el center-x kicker" id="a-k" style="top:330px">ميزة من الموسوعة</div>
+  <div class="el center-x h1" id="a-h" style="top:370px">البحث</div>
+  <div class="el center-x lead" id="a-l" style="top:500px">في المتون… أو بالسند نفسه</div>
+
+  <!-- 1 · type without tashkeel, get voweled results -->
+  <div class="el center-x kicker" id="b-k" style="top:120px">بحثٌ نصي في المتون</div>
+  <div class="el box" id="b-box"><span id="typed"></span><span class="caret" id="caret"></span><span class="btn">بحث</span></div>
+  <div class="el center-x done" id="b-d" style="top:320px">اكتمل البحث: ٢٢ حديث</div>
+  <div class="el card res" id="r1" style="top:385px"><div class="bk">صحيح البخاري 1</div><div class="t">إِنَّمَا <mark>الْأَعْمَالُ بِالنِّيَّاتِ</mark>، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى…</div></div>
+  <div class="el card res" id="r2" style="top:540px"><div class="bk">صحيح ابن حبان 388</div></div>
+  <div class="el card res" id="r3" style="top:640px"><div class="bk">صحيح ابن حبان 4868</div></div>
+
+  <!-- 2 · however you write it -->
+  <div class="el center-x h2" id="c-h" style="top:140px">كيفما كتبتَها</div>
+  <div class="el card spell" id="s1" style="top:280px"><span class="q">الْأَعْمَالُ بِالنِّيَّاتِ</span><span class="n">٢٢</span></div>
+  <div class="el card spell" id="s2" style="top:420px"><span class="q">الأعمال بالنيات</span><span class="n">٢٢</span></div>
+  <div class="el card spell" id="s3" style="top:560px"><span class="q">الاعمال بالنيات</span><span class="n">٢٢</span></div>
+  <div class="el center-x lead" id="c-n" style="top:720px;font-size:25px">التشكيل وصور الهمزة لا تغيّر النتائج</div>
+
+  <!-- 3 · search by sanad -->
+  <div class="el center-x kicker" id="d-k" style="top:120px">البحث بواسطة السند</div>
+  <div class="el center-x h2" id="d-h" style="top:160px;font-size:46px">اختر الرواة… تظهر الأحاديث</div>
+  <div class="el chain" id="d-c">
+    <span class="nar first" id="c1">عبد الله بن عمر</span><span class="arr" id="a1">←</span>
+    <span class="nar" id="c2">نافع مولى ابن عمر</span><span class="arr" id="a2">←</span>
+    <span class="nar" id="c3">مالك بن أنس</span>
+  </div>
+  <div class="el count" id="d-n"><div class="n" id="cnt">0</div><div class="l">حديثًا بهذه السلسلة</div></div>
+  <div class="el center-x" id="d-f" style="top:720px"><div class="filters"><span class="on">الكل</span><span>صحيح</span><span>حسن</span><span>ضعيف</span></div></div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 13, 21, 30, 35],
+  lengths: [6.04,11.34,9.22,13.18,5.36], // @narration-timing
+  captions: [[0.5,5.14,"البحث في الموسوعة: في المتون، أو بالسند نفسه."],[6.44,16.48,"اكتب كلمات الحديث كما تعرفها، ولو بلا تشكيل، فتظهر لك الأحاديث مشكولةً ومصادرها."],[17.78,25.7,"كيفما كتبتَها، بالتشكيل أو بدونه، بالهمزة أو بغيرها، النتائج نفسها."],[27,38.88,"وفي البحث بواسطة السند، اختر الرواة بالترتيب: ابن عمر، فنافع، فمالك… فتظهر الأحاديث المروية بهذه السلسلة."],[40.18,43.14,"جرّبها بنفسك على الموقع."]], // @narration-captions
+}
+</script>
+<script src="engine.js"></script>
+<script>
+show('a-k', .2, 4.4); show('a-h', .5, 4.4, { y: 50 }); show('a-l', 1.1, 4.5, { y: 20 })
+
+/* 1 · typing (5–13) */
+show('b-k', 5.2, 12.4); tw('b-box', 5.4, .7, { o: 0, y: 20 }, { o: 1, y: 0 }, 'back'); tw('b-box', 12.4, .5, { o: 1 }, { o: 0 })
+{
+  const q = 'الاعمال بالنيات'
+  hooks.push(t => {
+    const n = Math.max(0, Math.min(q.length, Math.floor((t - 6.1) / .09)))
+    $('typed').textContent = q.slice(0, n)
+    $('caret').style.opacity = t < 8 && Math.floor(t * 2) % 2 === 0 ? 1 : (t < 8 ? 0 : 0)
+  })
+}
+show('b-d', 8.2, 12.4, { y: 12 })
+;['r1', 'r2', 'r3'].forEach((id, i) => { tw(id, 8.6 + i * .45, .6, { o: 0, y: 26 }, { o: 1, y: 0 }, 'back'); tw(id, 12.4, .5, { o: 1 }, { o: 0 }) })
+
+/* 2 · spellings (13–21) */
+show('c-h', 13.2, 20.4)
+;['s1', 's2', 's3'].forEach((id, i) => { tw(id, 13.8 + i * .8, .7, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw(id, 20.4, .5, { o: 1 }, { o: 0 }) })
+show('c-n', 16.6, 20.5, { y: 12 })
+
+/* 3 · chain builder (21–30) */
+show('d-k', 21.2, 29.4); show('d-h', 21.4, 29.4, { y: 20 })
+scene('d-c', 21.8, 29.4)
+const steps = [['c1', 21.9], ['a1', 22.7], ['c2', 22.9], ['a2', 25.4], ['c3', 25.6]]
+steps.forEach(([id, t]) => tw(id, t, .6, { o: 0, s: .7 }, { o: 1, s: 1 }, 'back'))
+scene('d-n', 23.3, 29.4)
+hooks.push(t => { // 9,085 with two narrators, then 1,194 once مالك is added
+  let v = 0
+  if (t >= 23.3 && t < 25.8) v = 9085 * ease.out(Math.min(1, (t - 23.3) / 1.2))
+  else if (t >= 25.8) v = 9085 - (9085 - 1194) * ease.out(Math.min(1, (t - 25.8) / 1.2))
+  $('cnt').textContent = Math.round(v).toLocaleString('ar-EG')
+})
+show('d-f', 27.0, 29.4, { y: 12 })
+
+outro(30, '/asaneed/builder')
+startFilm()
+</script>
+</body>
+</html>

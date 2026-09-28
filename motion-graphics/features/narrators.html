@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>الجرح والتعديل</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Feature film: narrator criticism — the grades and critics' statements on two narrators of the
+     chain of «إنما الأعمال بالنيات»: Yahya ibn Sa'id al-Ansari and Muhammad ibn Ibrahim al-Taymi. */
+  .head { left: 60px; right: 60px; top: 150px; padding: 22px 30px; }
+  .head .nm { font-family: 'Amiri', serif; font-size: 44px; font-weight: 700; color: var(--green); }
+  .head .grades { display: flex; gap: 22px; margin-top: 8px; flex-wrap: wrap; font-size: 22px; align-items: center; }
+  .head .grades b { color: var(--muted); font-weight: 500; }
+  .head .count { position: absolute; left: 28px; top: 26px; }
+  .q { left: 60px; right: 60px; padding: 18px 26px; border-right: 6px solid var(--green-2); }
+  .q.neg { border-right-color: var(--red); }
+  .q .who { font-size: 21px; font-weight: 700; color: var(--green-2); }
+  .q.neg .who { color: var(--red); }
+  .q .say { font-family: 'Amiri', serif; font-size: 30px; line-height: 1.7; color: #222; margin-top: 2px; }
+  .link { font-size: 26px; font-weight: 700; color: #fff; background: var(--green); border-radius: 999px; padding: 14px 34px; display: inline-block; }
+  .sum { left: 110px; right: 110px; top: 330px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .sum .card { padding: 26px; text-align: center; }
+  .sum .n { font-size: 72px; font-weight: 700; color: var(--green); line-height: 1.1; }
+  .sum .l { font-size: 22px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+  <div class="brand"><i></i>جامع خادم الحرمين الشريفين</div>
+  <div class="brand-tag">موسوعة الحديث النبوي</div>
+
+  <!-- 0 · title -->
+  <div class="el center-x kicker" id="a-k" style="top:330px">ميزة من الموسوعة</div>
+  <div class="el center-x h1" id="a-h" style="top:370px">الجرح والتعديل</div>
+  <div class="el center-x lead" id="a-l" style="top:500px">أقوال النقاد في كل راوٍ… بجوار السند</div>
+
+  <!-- 1 · Yahya ibn Sa'id -->
+  <div class="el center-x kicker" id="k1" style="top:100px">أقوال النقاد في راوٍ من السند</div>
+  <div class="el card head" id="h1"><div class="nm">يحيى بن سعيد الأنصاري</div>
+    <div class="grades"><span><b>ابن حجر:</b> <span class="chip g">ثقة ثبت</span></span><span><b>الذهبي:</b> <span class="chip g">حافظ فقيه حجة</span></span></div>
+    <span class="chip b count" style="font-size:20px">35 قولًا</span></div>
+  <div class="el card q" id="q1" style="top:360px"><div class="who">النسائي</div><div class="say">«ثقة مأمون . وفي موضع آخر : ثقة ثبت .»</div></div>
+  <div class="el card q" id="q2" style="top:505px"><div class="who">أحمد بن حنبل</div><div class="say">«يحيى بن سعيد أثبت الناس .»</div></div>
+  <div class="el card q" id="q3" style="top:650px"><div class="who">محمد بن سعد</div><div class="say">«كان ثقة كثير الحديث حجة ثبتا .»</div></div>
+
+  <!-- 2 · al-Taymi: the critics differ -->
+  <div class="el card head" id="h2"><div class="nm">محمد بن إبراهيم التيمي</div>
+    <div class="grades"><span><b>ابن حجر:</b> <span class="chip g">ثقة له أفراد</span></span><span><b>الذهبي:</b> <span class="chip a">وثقوه . وقال أحمد : روى مناكير</span></span></div>
+    <span class="chip b count" style="font-size:20px">19 قولًا</span></div>
+  <div class="el card q" id="q4" style="top:360px"><div class="who">أبو حاتم الرازي</div><div class="say">«ثقة»</div></div>
+  <div class="el card q" id="q5" style="top:490px"><div class="who">يحيى بن معين</div><div class="say">«ثقة»</div></div>
+  <div class="el card q neg" id="q6" style="top:620px"><div class="who">أحمد بن حنبل</div><div class="say">«في حديثه شيء ، يروي أحاديث مناكير أو منكرة»</div></div>
+
+  <!-- 3 · every statement attributed -->
+  <div class="el center-x h2" id="c-h" style="top:160px">كل قولٍ منسوبٌ إلى قائله</div>
+  <div class="el sum" id="c-s">
+    <div class="card"><div class="n">35</div><div class="l">قولًا في يحيى بن سعيد</div></div>
+    <div class="card"><div class="n">19</div><div class="l">قولًا في محمد التيمي</div></div>
+  </div>
+  <div class="el center-x" id="c-l" style="top:620px"><span class="link">الترجمة الكاملة وجميع أقوال النقاد ←</span></div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 13, 21, 28, 33],
+  lengths: [8,12.54,12.3,8.1,5.44], // @narration-timing
+  captions: [[0.5,7.1,"الجرح والتعديل: أقوال النقاد في كل راوٍ، بجوار السند."],[8.4,19.64,"يحيى بن سعيد الأنصاري ثقةٌ ثبت عند ابن حجر، وله في الموسوعة خمسةٌ وثلاثون قولًا من أقوال النقاد."],[20.94,31.94,"وقد تختلف أقوالهم؛ فمحمد بن إبراهيم التيمي وثّقه أبو حاتم وابن معين، وقال أحمد: في حديثه شيء."],[33.24,40.04,"وكل قولٍ منسوبٌ إلى قائله، مع الترجمة الكاملة للراوي."],[41.34,44.38,"جرّبها بنفسك على الموقع."]], // @narration-captions
+}
+</script>
+<script src="engine.js"></script>
+<script>
+show('a-k', .2, 4.4); show('a-h', .5, 4.4, { y: 50 }); show('a-l', 1.1, 4.5, { y: 20 })
+
+/* 1 · Yahya (5–13) */
+show('k1', 5.2, 20.4)
+tw('h1', 5.4, .8, { o: 0, y: 30 }, { o: 1, y: 0 }, 'back'); tw('h1', 12.4, .5, { o: 1 }, { o: 0 })
+;['q1', 'q2', 'q3'].forEach((id, i) => { tw(id, 6.8 + i * .9, .7, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw(id, 12.4, .5, { o: 1 }, { o: 0 }) })
+
+/* 2 · al-Taymi (13–21) */
+tw('h2', 13.2, .8, { o: 0, y: 30 }, { o: 1, y: 0 }, 'back'); tw('h2', 20.4, .5, { o: 1 }, { o: 0 })
+;['q4', 'q5', 'q6'].forEach((id, i) => { tw(id, 14.6 + i * 1.1, .7, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw(id, 20.4, .5, { o: 1 }, { o: 0 }) })
+tw('q6', 17.6, .3, { s: 1 }, { s: 1.04 }); tw('q6', 17.9, .4, { s: 1.04 }, { s: 1 }, 'inOut')
+
+/* 3 · attributed (21–28) */
+show('c-h', 21.2, 27.4, { y: 30 })
+tw('c-s', 21.8, .8, { o: 0, y: 40 }, { o: 1, y: 0 }, 'back'); tw('c-s', 27.4, .5, { o: 1 }, { o: 0 })
+tw('c-l', 23.2, .7, { o: 0, s: .8 }, { o: 1, s: 1 }, 'back'); tw('c-l', 27.4, .5, { o: 1 }, { o: 0 })
+
+outro(28, '/narrator/6932')
+startFilm()
+</script>
+</body>
+</html>

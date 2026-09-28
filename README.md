@@ -14,7 +14,19 @@
 - الموضوعات، والتخريج، والأحكام على الأحاديث، والعلل، ومقارنة المتون، والمعجم (غريب الحديث)، والآيات القرآنية المرتبطة
 - بحث في النصوص لا يتأثر بالتشكيل
 
-**الموقع المباشر:** https://hadith-web-production.up.railway.app
+**الموقع المباشر:** https://hadith.dev
+
+**أفلام تعريفية:** [السند والمتن](motion-graphics/features/sanad-narrated.mp4) ·
+[شجرة الإسناد](motion-graphics/features/isnad-tree-narrated.mp4) ·
+[الجرح والتعديل](motion-graphics/features/narrators-narrated.mp4) ·
+[التخريج](motion-graphics/features/takhrij-narrated.mp4) ·
+[مطابقة المتون](motion-graphics/features/matn-compare-narrated.mp4) ·
+[الشروح وغريب الحديث](motion-graphics/features/sharh-gharib-narrated.mp4) ·
+[البحث](motion-graphics/features/search-narrated.mp4) ·
+[أقوال العلماء](motion-graphics/features/rulings-narrated.mp4) ·
+[من سطح المكتب إلى الويب](motion-graphics/migration-film-narrated.mp4) ·
+[ترقيم حرف والترقيم المطبوع](motion-graphics/numbering-film-narrated.mp4)
+— والتفاصيل في [motion-graphics](motion-graphics/README.md).
 
 ## دعوة للمشاركة
 
@@ -80,7 +92,11 @@ running the Windows program. The encyclopedia includes:
   words (gharib al-hadith), and related Quranic verses
 - Full-text search that ignores diacritics (tashkeel)
 
-**Live site:** https://hadith-web-production.up.railway.app
+**Live site:** https://hadith.dev
+
+**Short films** (Arabic, narrated, with captions): one per feature — sanad &amp; matn, isnad tree,
+narrator criticism, takhrij, matn comparison, commentary &amp; rare words, search, scholars' rulings —
+plus the desktop-to-web story and hadith numbering. See [motion-graphics/](motion-graphics/README.md).
 
 ## Call for contributors
 

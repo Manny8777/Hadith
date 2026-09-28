@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>التخريج</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Feature film: takhrij — where a hadith appears across the books (Sahih al-Bukhari 1, hadith 5:
+     54 narrations in 19 books) and how they split into mutaba'at and shawahid (Bukhari 2, hadith 6). */
+  .big { font-size: 110px; font-weight: 700; color: var(--green); line-height: 1; font-family: 'IBM Plex Sans Arabic'; }
+  .bigl { font-size: 26px; color: var(--muted); font-weight: 600; }
+  .books { left: 70px; right: 70px; top: 470px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .bk { padding: 10px 18px; border-radius: 14px; background: var(--paper); border: 2px solid var(--line); font-size: 22px; font-weight: 600; color: var(--green); }
+  .def { left: 70px; right: 70px; padding: 24px 30px; }
+  .def h4 { font-size: 30px; font-weight: 700; } .def p { font-size: 25px; color: #333; margin-top: 6px; line-height: 1.6; }
+  .def.m { border-right: 8px solid var(--green-2); } .def.m h4 { color: var(--green-2); }
+  .def.s { border-right: 8px solid var(--amber); } .def.s h4 { color: var(--amber); }
+  .def .n { position: absolute; left: 26px; top: 20px; font-size: 54px; font-weight: 700; }
+  .bars { left: 110px; right: 110px; top: 380px; }
+  .bar { display: grid; grid-template-columns: 150px 1fr 70px; gap: 16px; align-items: center; margin-top: 22px; font-size: 26px; font-weight: 600; }
+  .track { height: 34px; border-radius: 10px; background: #ece5d2; overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; border-radius: 10px; }
+  .bar .v { font-family: 'JetBrains Mono', monospace; font-size: 30px; direction: ltr; text-align: left; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+  <div class="brand"><i></i>جامع خادم الحرمين الشريفين</div>
+  <div class="brand-tag">موسوعة الحديث النبوي</div>
+
+  <!-- 0 · title -->
+  <div class="el center-x kicker" id="a-k" style="top:330px">ميزة من الموسوعة</div>
+  <div class="el center-x h1" id="a-h" style="top:370px">التخريج</div>
+  <div class="el center-x lead" id="a-l" style="top:500px">أين روى الأئمة هذا الحديث؟</div>
+
+  <!-- 1 · 54 narrations in 19 books -->
+  <div class="el center-x kicker" id="b-k" style="top:110px">صحيح البخاري 1 · «إنما الأعمال بالنيات»</div>
+  <div class="el center-x" id="b-n" style="top:175px"><span class="big" id="n54">0</span> <span class="bigl">روايةً في</span> <span class="big" id="n19" style="color:var(--gold)">0</span> <span class="bigl">كتابًا</span></div>
+  <div class="el center-x lead" id="b-s" style="top:330px">التخريج · مصادر الحديث في كتب السنة</div>
+  <div class="el books" id="b-b"></div>
+
+  <!-- 2 · mutaba'a vs shahid -->
+  <div class="el center-x h2" id="c-h" style="top:140px">متابعةٌ أم شاهد؟</div>
+  <div class="el card def m" id="c-m" style="top:280px"><h4>المتابعة</h4><p>الحديث نفسه عن الصحابي نفسه،<br>من طريقٍ آخر</p><span class="n" style="color:var(--green-2)">53</span></div>
+  <div class="el card def s" id="c-s" style="top:520px"><h4>الشاهد</h4><p>الحديث عن صحابيٍّ آخر</p><span class="n" style="color:var(--amber)">0</span></div>
+  <div class="el center-x lead" id="c-n" style="top:720px;font-size:24px">«إنما الأعمال بالنيات» كله من حديث عمر بن الخطاب</div>
+
+  <!-- 3 · a hadith with both -->
+  <div class="el center-x kicker" id="d-k" style="top:150px">صحيح البخاري 2 · «مثل صلصلة الجرس»</div>
+  <div class="el center-x h2" id="d-h" style="top:200px">25 روايةً في 13 كتابًا</div>
+  <div class="el bars" id="d-b">
+    <div class="bar"><span style="color:var(--green-2)">متابعة</span><span class="track"><i id="bm" style="background:var(--green-2)"></i></span><span class="v" style="color:var(--green-2)">19</span></div>
+    <div class="bar"><span style="color:var(--amber)">شاهد</span><span class="track"><i id="bs" style="background:var(--gold)"></i></span><span class="v" style="color:var(--amber)">5</span></div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 13, 21, 28, 33],
+  lengths: [5.64,12.18,10.74,9.66,5.16], // @narration-timing
+  captions: [[0.5,4.74,"التخريج: أين روى الأئمة هذا الحديث؟"],[6.04,16.92,"حديث «إنما الأعمال بالنيات» له في الموسوعة أربعٌ وخمسون روايةً، في تسعة عشر كتابًا من كتب السنة."],[18.22,27.66,"وتُصنَّف رواياته: فالمتابعة ما رُوي عن الصحابي نفسه، والشاهد ما رُوي عن صحابيٍّ آخر."],[28.96,37.32,"فحديث «مثل صلصلة الجرس» مثلًا، له تسع عشرة متابعةً وخمسة شواهد."],[38.62,41.38,"جرّبها بنفسك على الموقع."]], // @narration-captions
+}
+</script>
+<script src="engine.js"></script>
+<script>
+show('a-k', .2, 4.4); show('a-h', .5, 4.4, { y: 50 }); show('a-l', 1.1, 4.5, { y: 20 })
+
+/* 1 · counts and books (5–13) */
+show('b-k', 5.2, 12.4); show('b-n', 5.4, 12.4); show('b-s', 6.0, 12.4, { y: 16 })
+hooks.push(t => {
+  const k = ease.out(Math.max(0, Math.min(1, (t - 5.5) / 1.8)))
+  $('n54').textContent = Math.round(54 * k); $('n19').textContent = Math.round(19 * k)
+})
+{
+  const books = ['صحيح البخاري', 'صحيح مسلم', 'المنتقى', 'صحيح ابن خزيمة', 'صحيح ابن حبان', 'سنن النسائي', 'السنن الكبرى', 'سنن أبي داود', 'جامع الترمذي', 'سنن ابن ماجه', 'سنن البيهقي الكبرى', 'مسند أحمد', '…']
+  books.forEach((b, i) => {
+    const d = document.createElement('span'); d.className = 'bk'; d.textContent = b; $('b-b').appendChild(d)
+    tw(d, 7.2 + i * .22, .5, { o: 0, y: 20, s: .8 }, { o: 1, y: 0, s: 1 }, 'back')
+  })
+  scene('b-b', 7.1, 12.4)
+}
+
+/* 2 · definitions (13–21) */
+show('c-h', 13.2, 20.4)
+tw('c-m', 13.8, .8, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw('c-m', 20.4, .5, { o: 1 }, { o: 0 })
+tw('c-s', 15.4, .8, { o: 0, x: 60 }, { o: 1, x: 0 }, 'back'); tw('c-s', 20.4, .5, { o: 1 }, { o: 0 })
+show('c-n', 17.4, 20.5, { y: 16 })
+
+/* 3 · Bukhari 2 (21–28) */
+show('d-k', 21.2, 27.4); show('d-h', 21.4, 27.4, { y: 30 })
+scene('d-b', 21.8, 27.4)
+hooks.push(t => {
+  const k = ease.out(Math.max(0, Math.min(1, (t - 22.4) / 1.4)))
+  $('bm').style.width = `${k * 19 / 25 * 100}%`; $('bs').style.width = `${k * 5 / 25 * 100}%`
+})
+
+outro(28, '/hadith/5')
+startFilm()
+</script>
+</body>
+</html>
