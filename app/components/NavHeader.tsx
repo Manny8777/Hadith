@@ -4,7 +4,6 @@ import { useNumbering } from '@/lib/numberingContext'
 import { useNumeral } from '@/lib/numeralContext'
 import { useTheme } from '@/lib/themeContext'
 import UiIcon from './UiIcon'
-import BrandMark from './BrandMark'
 
 type NavLink = { href: string; label: string; isNew?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
@@ -272,17 +271,13 @@ export default function NavHeader() {
 
   return (
     <nav ref={navRef} aria-label="التنقل الرئيسي" className="site-nav theme-texture relative z-30 bg-[#0F3D2E] text-[#F8F1E4] font-sans border-b border-[#C9A96B]/40" dir="rtl">
-      <div className="max-w-[1440px] mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 sm:py-2 min-w-0">
-        <a href="/" className="group flex items-center gap-2.5 px-1 py-1 ml-1 sm:ml-2 xl:ml-3 shrink-0 text-[#F8F1E4] transition-colors hover:text-[#E6C77A]">
-          <span className="brand-tile"><BrandMark size={42} /></span>
-          {/* Between 960px and 1150px the full menu needs the room; the logo tile already reads «الجامع» */}
-          <span className="flex flex-col leading-none font-display min-[960px]:max-[1150px]:hidden">
-            <span className="text-[10px] text-[#C9A96B]">موسوعة الحديث النبوي</span>
-            <span className="mt-0.5 whitespace-nowrap text-sm sm:text-base font-bold">الجامع</span>
-          </span>
+      <div className="max-w-[1440px] mx-auto flex items-center gap-1.5 px-3 sm:px-6 lg:px-7 py-1.5 min-w-0">
+        {/* The landscape logo on a cream plate: its green text needs a light ground on the green bar */}
+        <a href="/" aria-label="الجامع — موسوعة الحديث النبوي" className="shrink-0 ml-1 sm:ml-2 min-[960px]:max-[1150px]:ml-0.5 xl:ml-3 rounded-lg bg-[#FFFDF7] px-2.5 min-[960px]:max-[1150px]:px-2 py-1 ring-1 ring-[#C9A96B]/50 transition-shadow hover:ring-[#C9A96B]">
+          <img src="/assets/brand/al-jami-horizontal.png" alt="الجامع — موسوعة الحديث النبوي" width={104} height={40} className="block h-9 sm:h-10 min-[960px]:max-[1150px]:h-8 w-auto" />
         </a>
 
-        <div className="hidden min-[960px]:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
+        <div className="hidden min-[1150px]:block w-px h-5 bg-[#C9A96B]/35 mx-1 shrink-0" />
 
         {/* Desktop: inline categories with dropdowns */}
         <div className="hidden min-[960px]:flex items-center gap-0 xl:gap-0.5 flex-1 min-w-0">
@@ -292,7 +287,7 @@ export default function NavHeader() {
                 type="button"
                 onClick={() => toggle(cat.id)}
                 aria-expanded={open === cat.id}
-                className={`flex items-center gap-0.5 xl:gap-1 text-[13px] xl:text-[13.5px] font-sans px-1.5 xl:px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-0.5 xl:gap-1 text-[13px] min-[960px]:max-[1050px]:text-[12.5px] xl:text-[13.5px] font-sans px-1 min-[1150px]:px-1.5 xl:px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
                     ? 'bg-[#C9A96B] text-[#0F3D2E]'
                     : 'text-[#F8F1E4]/80 hover:text-[#FFFDF7] hover:bg-white/10'
