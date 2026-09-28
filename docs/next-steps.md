@@ -2,7 +2,7 @@
 
 **Project:** Hadith Encyclopedia web application
 **Status:** Backups/monitoring completed (step 1)
-**Starting point:** the application is deployed at [the live site](https://hadith-web-production.up.railway.app).
+**Starting point:** the application is deployed at [the live site](https://hadith.dev).
 
 This document covers the remaining work:
 

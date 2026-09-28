@@ -5,7 +5,7 @@ A dedicated section of the railway hadith encyclopedia that presents the book
 د. بشار عواد معروف وآخرون) **inside** the app, reusing railway's existing isnad,
 narrator, and criticism data and components.
 
-- **Live:** https://hadith-web-production.up.railway.app/musnad-musannaf
+- **Live:** https://hadith.dev/musnad-musannaf
 - **Routes:**
   - `/musnad-musannaf` — index of companions (مسند الصحابة), searchable, grouped by first letter.
   - `/musnad-musannaf/[companion]` — one companion's hadiths (paginated 12/page).

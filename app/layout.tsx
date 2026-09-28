@@ -15,7 +15,7 @@ const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t==='
 
 // metadataBase makes link-preview URLs absolute; SITE_URL overrides it outside production.
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.SITE_URL || 'https://hadith-web-production.up.railway.app'),
+  metadataBase: new URL(process.env.SITE_URL || 'https://hadith.dev'),
   title: SITE_NAME,
   description: SITE_DESCRIPTION,
   icons: { icon: { url: '/assets/brand/al-jami-icon.svg', type: 'image/svg+xml' } },
