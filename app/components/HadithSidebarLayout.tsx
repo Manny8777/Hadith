@@ -183,9 +183,9 @@ export default function HadithSidebarLayout({
     { id: 'isnad',   label: 'الأسانيد والرواة' },
     ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
+    { id: 'variants', label: 'الروايات الموازية' },
     { id: 'matn-similarity', label: 'مطابقة المتون' },
     ...serviceSections.map(s => ({ id: s.id, label: s.label })),
-    { id: 'variants', label: 'الروايات الموازية' },
     { id: 'adawat',  label: 'أدوات البحث' },
   ]
 
@@ -626,6 +626,16 @@ export default function HadithSidebarLayout({
           {takhrijSlot}
         </CollapsibleSection>
 
+        {/* ── الروايات الموازية (takhrij groups) ── */}
+        <CollapsibleSection id="variants" label="الروايات الموازية" badges={sectionBadges.variants} sub="روايات موازية من كتب التخريج">
+          <MatnVariants
+            hadithId={hadithId}
+            currentTarf={h.tarf}
+            currentBookTitle={h.book_title}
+            currentDeath={h.takhrij_death}
+          />
+        </CollapsibleSection>
+
         {/* ── مطابقة المتون (حساب مباشر) ── */}
         <CollapsibleSection id="matn-similarity" label="مطابقة المتون" badges={sectionBadges['matn-similarity']} sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
           <MatnSimilaritySection hadithId={hadithId} bare />
@@ -661,16 +671,6 @@ export default function HadithSidebarLayout({
             </div>
           </CollapsibleSection>
         )}
-
-        {/* ── الروايات الموازية (takhrij groups) ── */}
-        <CollapsibleSection id="variants" label="الروايات الموازية" badges={sectionBadges.variants} sub="روايات موازية من كتب التخريج">
-          <MatnVariants
-            hadithId={hadithId}
-            currentTarf={h.tarf}
-            currentBookTitle={h.book_title}
-            currentDeath={h.takhrij_death}
-          />
-        </CollapsibleSection>
 
         {/* ── أدوات البحث ── */}
         <CollapsibleSection id="adawat" label="أدوات البحث">
