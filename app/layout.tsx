@@ -10,8 +10,9 @@ import { NumeralProvider } from '@/lib/numeralContext'
 import { ThemeProvider } from '@/lib/themeContext'
 import { SITE_NAME, SITE_DESCRIPTION, openGraph, twitter } from '@/lib/siteMeta'
 
-// Applied before paint to avoid a flash of the wrong theme.
-const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`
+// Applied before paint to avoid a flash of the wrong theme. The site opens in the light theme;
+// dark only when the reader has chosen it (the system's dark preference is not followed).
+const THEME_INIT = `(function(){try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})()`
 
 // metadataBase makes link-preview URLs absolute; SITE_URL overrides it outside production.
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export const metadata: Metadata = {
   title: SITE_NAME,
   description: SITE_DESCRIPTION,
   icons: { icon: { url: '/assets/brand/al-jami-icon.svg', type: 'image/svg+xml' } },
-  openGraph: openGraph({ title: SITE_NAME, description: SITE_DESCRIPTION }),
+  // No preview title/description here: pages inherit the image and site name, while previews of a
+  // page that only sets its own <title>/description fall back to those rather than the site's.
+  openGraph: openGraph(),
   twitter: twitter(),
 }
 

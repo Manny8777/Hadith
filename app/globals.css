@@ -437,55 +437,172 @@ body {
 }
 
 /* ───────────────────────── Dark mode ─────────────────────────
-   Scholarly green-charcoal surfaces and warm ivory text from the handoff.
-   Every Tailwind utility resolves var(--color-*), so overriding the tokens here
-   re-skins the entire site at runtime — no per-component changes needed.
-   Ramps are tuned so: low steps = dark tints (chip/badge backgrounds),
-   mid steps = readable accents, high steps = light text. --color-white maps to a
-   dark surface so bg-white cards flip; text-white then reads as dark ink, which
-   stays legible because its backgrounds (greens, mid badges, inverted grays) are light. */
+   The colours of Claude Code's default dark terminal theme: a neutral charcoal page with its
+   orange (the gold accent), green (primary), blue and lavender (citations), violet, teal, pink-red
+   and amber. Every Tailwind utility resolves var(--color-*), so overriding the tokens here re-skins
+   the whole site. Each ramp runs from dark tints of the colour (50–500: chip and badge
+   backgrounds) through the colour itself (600) to lighter shades (700–950: readable text).
+   --color-white maps to a dark surface so bg-white cards flip. */
 html.dark {
   color-scheme: dark;
 
-  --background: #101513;
-  --foreground: #F4F0E5;
+  --background: #1A1A1A;
+  --foreground: #F2F2F2;
 
-  /* Dark palette — near-black premium surfaces, warm off-white text.
-     Only the core scales are overridden; the @theme aliases (emerald/sky/violet/…)
-     reference these vars, so they adapt to dark automatically. */
-  --color-paper: #101513;          /* handoff scholarly dark page */
-  --color-surface: #171D1A;        /* handoff dark ivory-equivalent surface */
-  --color-surface-sunken: #1C2420; /* elevated panels and sanad blocks */
-  --color-border: #29332E;
-  --color-ink: #F4F0E5;            /* primary text */
-  --color-muted: #A6AAA5;
-  --color-primary: #72A991;        /* handoff dark-mode emerald */
-  --color-primary-soft: #1D3229;
-  --color-accent-gold: #C7AA70;
-  --color-accent-gold-dark: #B99A61;
-  --color-border-warm: #4B4434;
-  --color-white: #171D1A;          /* bg-white → elevated card */
+  --color-paper: #1A1A1A;
+  --color-surface: #232323;
+  --color-surface-sunken: #2A2A2A;
+  --color-border: #3A3A3A;
+  --color-ink: #F2F2F2;
+  --color-muted: #999999;
+  --color-primary: #4EBA65;
+  --color-primary-soft: color-mix(in srgb, #4EBA65 18%, #1A1A1A);
+  --color-accent-gold: #D77757;
+  --color-accent-gold-dark: #C4674A;
+  --color-border-warm: color-mix(in srgb, #D77757 40%, #1A1A1A);
+  --color-white: #232323;
+  --color-on-dark: #F2F2F2;
+  --bg-dark: #2E2E2E;
 
-  /* Warm gray — surfaces dark, text light (muted ≈ 500, ink ≈ 900) */
-  --color-gray-50:#121815; --color-gray-100:#171D1A; --color-gray-200:#29332E; --color-gray-300:#3A463F; --color-gray-400:#707A72; --color-gray-500:#A6AAA5; --color-gray-600:#C4C8C0; --color-gray-700:#DDE0D8; --color-gray-800:#ECEEE7; --color-gray-900:#F4F0E5; --color-gray-950:#FFFDF7;
+  /* Neutral gray — surfaces dark, text light */
+  --color-gray-50:#1F1F1F; --color-gray-100:#262626; --color-gray-200:#3A3A3A; --color-gray-300:#505050; --color-gray-400:#707070; --color-gray-500:#999999; --color-gray-600:#B5B5B5; --color-gray-700:#CCCCCC; --color-gray-800:#E0E0E0; --color-gray-900:#F2F2F2; --color-gray-950:#FFFFFF;
 
-  /* Emerald */
-  --color-green-50:#15221D; --color-green-100:#1A3027; --color-green-200:#214336; --color-green-300:#2D5B49; --color-green-400:#3D7B62; --color-green-500:#4E9B78; --color-green-600:#62B18A; --color-green-700:#72A991; --color-green-800:#9BC6B0; --color-green-900:#C2DCCC; --color-green-950:#E5F0E9;
+  /* green: Claude Code "success" */
+  --color-green-50: color-mix(in srgb, #4EBA65 12%, #1A1A1A);
+  --color-green-100: color-mix(in srgb, #4EBA65 18%, #1A1A1A);
+  --color-green-200: color-mix(in srgb, #4EBA65 28%, #1A1A1A);
+  --color-green-300: color-mix(in srgb, #4EBA65 42%, #1A1A1A);
+  --color-green-400: color-mix(in srgb, #4EBA65 62%, #1A1A1A);
+  --color-green-500: color-mix(in srgb, #4EBA65 82%, #1A1A1A);
+  --color-green-600: #4EBA65;
+  --color-green-700: color-mix(in srgb, #4EBA65 80%, #FFFFFF);
+  --color-green-800: color-mix(in srgb, #4EBA65 62%, #FFFFFF);
+  --color-green-900: color-mix(in srgb, #4EBA65 44%, #FFFFFF);
+  --color-green-950: color-mix(in srgb, #4EBA65 26%, #FFFFFF);
+  /* amber: Claude Code orange */
+  --color-amber-50: color-mix(in srgb, #D77757 12%, #1A1A1A);
+  --color-amber-100: color-mix(in srgb, #D77757 18%, #1A1A1A);
+  --color-amber-200: color-mix(in srgb, #D77757 28%, #1A1A1A);
+  --color-amber-300: color-mix(in srgb, #D77757 42%, #1A1A1A);
+  --color-amber-400: color-mix(in srgb, #D77757 62%, #1A1A1A);
+  --color-amber-500: color-mix(in srgb, #D77757 82%, #1A1A1A);
+  --color-amber-600: #D77757;
+  --color-amber-700: color-mix(in srgb, #D77757 80%, #FFFFFF);
+  --color-amber-800: color-mix(in srgb, #D77757 62%, #FFFFFF);
+  --color-amber-900: color-mix(in srgb, #D77757 44%, #FFFFFF);
+  --color-amber-950: color-mix(in srgb, #D77757 26%, #FFFFFF);
+  /* blue: Claude Code "ide" blue */
+  --color-blue-50: color-mix(in srgb, #4782C8 12%, #1A1A1A);
+  --color-blue-100: color-mix(in srgb, #4782C8 18%, #1A1A1A);
+  --color-blue-200: color-mix(in srgb, #4782C8 28%, #1A1A1A);
+  --color-blue-300: color-mix(in srgb, #4782C8 42%, #1A1A1A);
+  --color-blue-400: color-mix(in srgb, #4782C8 62%, #1A1A1A);
+  --color-blue-500: color-mix(in srgb, #4782C8 82%, #1A1A1A);
+  --color-blue-600: #4782C8;
+  --color-blue-700: color-mix(in srgb, #4782C8 80%, #FFFFFF);
+  --color-blue-800: color-mix(in srgb, #4782C8 62%, #FFFFFF);
+  --color-blue-900: color-mix(in srgb, #4782C8 44%, #FFFFFF);
+  --color-blue-950: color-mix(in srgb, #4782C8 26%, #FFFFFF);
+  /* red: Claude Code "error" */
+  --color-red-50: color-mix(in srgb, #FF6B80 12%, #1A1A1A);
+  --color-red-100: color-mix(in srgb, #FF6B80 18%, #1A1A1A);
+  --color-red-200: color-mix(in srgb, #FF6B80 28%, #1A1A1A);
+  --color-red-300: color-mix(in srgb, #FF6B80 42%, #1A1A1A);
+  --color-red-400: color-mix(in srgb, #FF6B80 62%, #1A1A1A);
+  --color-red-500: color-mix(in srgb, #FF6B80 82%, #1A1A1A);
+  --color-red-600: #FF6B80;
+  --color-red-700: color-mix(in srgb, #FF6B80 80%, #FFFFFF);
+  --color-red-800: color-mix(in srgb, #FF6B80 62%, #FFFFFF);
+  --color-red-900: color-mix(in srgb, #FF6B80 44%, #FFFFFF);
+  --color-red-950: color-mix(in srgb, #FF6B80 26%, #FFFFFF);
+  /* teal: Claude Code "plan mode" */
+  --color-teal-50: color-mix(in srgb, #48968C 12%, #1A1A1A);
+  --color-teal-100: color-mix(in srgb, #48968C 18%, #1A1A1A);
+  --color-teal-200: color-mix(in srgb, #48968C 28%, #1A1A1A);
+  --color-teal-300: color-mix(in srgb, #48968C 42%, #1A1A1A);
+  --color-teal-400: color-mix(in srgb, #48968C 62%, #1A1A1A);
+  --color-teal-500: color-mix(in srgb, #48968C 82%, #1A1A1A);
+  --color-teal-600: #48968C;
+  --color-teal-700: color-mix(in srgb, #48968C 80%, #FFFFFF);
+  --color-teal-800: color-mix(in srgb, #48968C 62%, #FFFFFF);
+  --color-teal-900: color-mix(in srgb, #48968C 44%, #FFFFFF);
+  --color-teal-950: color-mix(in srgb, #48968C 26%, #FFFFFF);
+  /* purple / violet: Claude Code "auto-accept" violet */
+  --color-purple-50: color-mix(in srgb, #AF87FF 12%, #1A1A1A);
+  --color-purple-100: color-mix(in srgb, #AF87FF 18%, #1A1A1A);
+  --color-purple-200: color-mix(in srgb, #AF87FF 28%, #1A1A1A);
+  --color-purple-300: color-mix(in srgb, #AF87FF 42%, #1A1A1A);
+  --color-purple-400: color-mix(in srgb, #AF87FF 62%, #1A1A1A);
+  --color-purple-500: color-mix(in srgb, #AF87FF 82%, #1A1A1A);
+  --color-purple-600: #AF87FF;
+  --color-purple-700: color-mix(in srgb, #AF87FF 80%, #FFFFFF);
+  --color-purple-800: color-mix(in srgb, #AF87FF 62%, #FFFFFF);
+  --color-purple-900: color-mix(in srgb, #AF87FF 44%, #FFFFFF);
+  --color-purple-950: color-mix(in srgb, #AF87FF 26%, #FFFFFF);
+  --color-violet-50: color-mix(in srgb, #AF87FF 12%, #1A1A1A);
+  --color-violet-100: color-mix(in srgb, #AF87FF 18%, #1A1A1A);
+  --color-violet-200: color-mix(in srgb, #AF87FF 28%, #1A1A1A);
+  --color-violet-300: color-mix(in srgb, #AF87FF 42%, #1A1A1A);
+  --color-violet-400: color-mix(in srgb, #AF87FF 62%, #1A1A1A);
+  --color-violet-500: color-mix(in srgb, #AF87FF 82%, #1A1A1A);
+  --color-violet-600: #AF87FF;
+  --color-violet-700: color-mix(in srgb, #AF87FF 80%, #FFFFFF);
+  --color-violet-800: color-mix(in srgb, #AF87FF 62%, #FFFFFF);
+  --color-violet-900: color-mix(in srgb, #AF87FF 44%, #FFFFFF);
+  --color-violet-950: color-mix(in srgb, #AF87FF 26%, #FFFFFF);
+  /* yellow: Claude Code "warning" */
+  --color-yellow-50: color-mix(in srgb, #FFC107 12%, #1A1A1A);
+  --color-yellow-100: color-mix(in srgb, #FFC107 18%, #1A1A1A);
+  --color-yellow-200: color-mix(in srgb, #FFC107 28%, #1A1A1A);
+  --color-yellow-300: color-mix(in srgb, #FFC107 42%, #1A1A1A);
+  --color-yellow-400: color-mix(in srgb, #FFC107 62%, #1A1A1A);
+  --color-yellow-500: color-mix(in srgb, #FFC107 82%, #1A1A1A);
+  --color-yellow-600: #FFC107;
+  --color-yellow-700: color-mix(in srgb, #FFC107 80%, #FFFFFF);
+  --color-yellow-800: color-mix(in srgb, #FFC107 62%, #FFFFFF);
+  --color-yellow-900: color-mix(in srgb, #FFC107 44%, #FFFFFF);
+  --color-yellow-950: color-mix(in srgb, #FFC107 26%, #FFFFFF);
+  /* indigo/sky: Claude Code "permission" lavender */
+  --color-indigo-50: color-mix(in srgb, #B1B9F9 12%, #1A1A1A);
+  --color-indigo-100: color-mix(in srgb, #B1B9F9 18%, #1A1A1A);
+  --color-indigo-200: color-mix(in srgb, #B1B9F9 28%, #1A1A1A);
+  --color-indigo-300: color-mix(in srgb, #B1B9F9 42%, #1A1A1A);
+  --color-indigo-400: color-mix(in srgb, #B1B9F9 62%, #1A1A1A);
+  --color-indigo-500: color-mix(in srgb, #B1B9F9 82%, #1A1A1A);
+  --color-indigo-600: #B1B9F9;
+  --color-indigo-700: color-mix(in srgb, #B1B9F9 80%, #FFFFFF);
+  --color-indigo-800: color-mix(in srgb, #B1B9F9 62%, #FFFFFF);
+  --color-indigo-900: color-mix(in srgb, #B1B9F9 44%, #FFFFFF);
+  --color-indigo-950: color-mix(in srgb, #B1B9F9 26%, #FFFFFF);
+  --color-sky-50: color-mix(in srgb, #B1B9F9 12%, #1A1A1A);
+  --color-sky-100: color-mix(in srgb, #B1B9F9 18%, #1A1A1A);
+  --color-sky-200: color-mix(in srgb, #B1B9F9 28%, #1A1A1A);
+  --color-sky-300: color-mix(in srgb, #B1B9F9 42%, #1A1A1A);
+  --color-sky-400: color-mix(in srgb, #B1B9F9 62%, #1A1A1A);
+  --color-sky-500: color-mix(in srgb, #B1B9F9 82%, #1A1A1A);
+  --color-sky-600: #B1B9F9;
+  --color-sky-700: color-mix(in srgb, #B1B9F9 80%, #FFFFFF);
+  --color-sky-800: color-mix(in srgb, #B1B9F9 62%, #FFFFFF);
+  --color-sky-900: color-mix(in srgb, #B1B9F9 44%, #FFFFFF);
+  --color-sky-950: color-mix(in srgb, #B1B9F9 26%, #FFFFFF);
+  /* pink / rose: Claude Code "bash" pink */
+  --color-pink-50: color-mix(in srgb, #FD5DB1 12%, #1A1A1A);
+  --color-pink-100: color-mix(in srgb, #FD5DB1 18%, #1A1A1A);
+  --color-pink-200: color-mix(in srgb, #FD5DB1 28%, #1A1A1A);
+  --color-pink-300: color-mix(in srgb, #FD5DB1 42%, #1A1A1A);
+  --color-pink-400: color-mix(in srgb, #FD5DB1 62%, #1A1A1A);
+  --color-pink-500: color-mix(in srgb, #FD5DB1 82%, #1A1A1A);
+  --color-pink-600: #FD5DB1;
+  --color-pink-700: color-mix(in srgb, #FD5DB1 80%, #FFFFFF);
+  --color-pink-800: color-mix(in srgb, #FD5DB1 62%, #FFFFFF);
+  --color-pink-900: color-mix(in srgb, #FD5DB1 44%, #FFFFFF);
+  --color-pink-950: color-mix(in srgb, #FD5DB1 26%, #FFFFFF);
+}
 
-  /* Gold */
-  --color-amber-50:#2A2418; --color-amber-100:#3A301D; --color-amber-200:#504326; --color-amber-300:#6B5830; --color-amber-400:#8D723E; --color-amber-500:#AA8950; --color-amber-600:#C7AA70; --color-amber-700:#D6BD8E; --color-amber-800:#E6D2AA; --color-amber-900:#F1E4C8; --color-amber-950:#FBF3DD;
-
-  /* Sage citations */
-  --color-blue-50:#16231C; --color-blue-100:#1D3026; --color-blue-200:#284235; --color-blue-300:#365948; --color-blue-400:#48715B; --color-blue-500:#648E75; --color-blue-600:#85AC95; --color-blue-700:#A1C1AD; --color-blue-800:#BAD3C3; --color-blue-900:#D3E3D8; --color-blue-950:#E7F0E9;
-
-  /* Alert red */
-  --color-red-50:#2C1414; --color-red-100:#3E1B1B; --color-red-200:#552525; --color-red-300:#743434; --color-red-400:#9C4848; --color-red-500:#BC5454; --color-red-600:#C85B5B; --color-red-700:#D97E7E; --color-red-800:#E6A3A3; --color-red-900:#F0C4C4;
-
-  /* Teal — transmission terms (within emerald family) */
-  --color-teal-50:#14251D; --color-teal-100:#1A3327; --color-teal-200:#244736; --color-teal-300:#315F49; --color-teal-400:#427C61; --color-teal-500:#58997A; --color-teal-600:#76B294; --color-teal-700:#96C7AD; --color-teal-800:#B5DAC5; --color-teal-900:#D4EBDE;
-
-  /* Warm stone secondary accent */
-  --color-purple-50:#252219; --color-purple-100:#302B20; --color-purple-200:#423B2B; --color-purple-300:#5A5039; --color-purple-400:#7B6D4D; --color-purple-500:#9C8A64; --color-purple-600:#BAA67C; --color-purple-700:#CDBB96; --color-purple-800:#DFD2B5; --color-purple-900:#EEE5D2; --color-purple-950:#F6EFE0;
+/* The textured header and hero are deep green in the light theme; charcoal in dark. */
+html.dark .theme-texture {
+  background-color: #202020;
+  background-image: linear-gradient(rgba(32, 32, 32, .82), rgba(32, 32, 32, .82)), url('/assets/hadith-pattern.svg');
 }
 
 /* Shared brand framing uses the original transparent handoff artwork. */
