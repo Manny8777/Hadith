@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import pool from '@/lib/db'
 import HomeSearch from '@/app/components/HomeSearch'
 import BrandMark from '@/app/components/BrandMark'
@@ -15,11 +14,19 @@ const GRADE_SHORTCUTS = [
   { label: 'الصحابة', href: '/narrators?companion=1', color: 'bg-amber-500 text-white border-amber-500' },
 ]
 
-// Films in public/media/<src>.mp4, with <src>-poster.jpg and <src>.ar.vtt captions
-// (made in motion-graphics/; see narrate.mjs)
-const TOUR_FILMS = [
-  { src: 'migration-film', title: 'من سطح المكتب إلى الويب', note: 'كيف انتقل البرنامج إلى موقعٍ يُفتح من أي متصفح — دقيقة وعشر ثوانٍ' },
-  { src: 'numbering-film', title: 'ترقيم حرف والترقيم المطبوع', note: 'لماذا يختلف رقم الحديث من طبعةٍ لأخرى، وكيف تعزو بدقة — دقيقة ونصف تقريبًا' },
+// Films in public/media/ (made in motion-graphics/; see its README). The main film is the hero; the
+// wide ones carry an .ar.vtt caption track, the square feature films have their captions drawn in.
+const MAIN_FILM = { src: 'migration-film', title: 'من سطح المكتب إلى الويب' }
+const NUMBERING_FILM = { src: 'numbering-film', title: 'ترقيم حرف والترقيم المطبوع', note: 'لماذا يختلف رقم الحديث من طبعةٍ لأخرى، وكيف تعزو بدقة' }
+const FEATURE_FILMS = [
+  { src: 'feature-sanad', title: 'السند والمتن' },
+  { src: 'feature-isnad-tree', title: 'شجرة الإسناد' },
+  { src: 'feature-narrators', title: 'الجرح والتعديل' },
+  { src: 'feature-takhrij', title: 'التخريج' },
+  { src: 'feature-matn-compare', title: 'مطابقة المتون' },
+  { src: 'feature-sharh-gharib', title: 'الشروح وغريب الحديث' },
+  { src: 'feature-search', title: 'البحث' },
+  { src: 'feature-rulings', title: 'أقوال العلماء' },
 ]
 
 // Hadith pages that each show off a different part of the hadith page
@@ -49,39 +56,39 @@ export default async function Home() {
 
   return (
     <div dir="rtl" className="home-page">
-      {/* Hero */}
-      <div className="home-hero theme-texture">
-        <div className="home-hero-atmosphere" aria-hidden="true">
-          <Image src="/assets/brand/library-atmosphere.png" alt="" fill sizes="(max-width: 767px) 100vw, 600px" className="object-cover" />
-        </div>
-        <div className="home-hero-content">
-          <div className="home-hero-heading">
-            <div className="home-brand-plaque"><BrandMark size={108} /></div>
-            <div>
-              <p className="home-eyebrow">برنامج خادم الحرمين الشريفين</p>
-              <h1 className="home-title font-display">
-                موسوعة الحديث النبوي الشريف
-              </h1>
-              <p className="home-description font-sans">
-                قاعدة بيانات متكاملة لباحثي الحديث في مراحل الماجستير والدكتوراه
-              </p>
-            </div>
+      {/* Hero: the main film, then search */}
+      <section className="max-w-6xl mx-auto px-4 pt-2 sm:pt-4">
+        <div className="flex items-end justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <p className="text-xs font-semibold text-accent-gold font-sans">برنامج خادم الحرمين الشريفين</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-ink font-display leading-tight">موسوعة الحديث النبوي الشريف</h1>
           </div>
+          <p className="text-sm text-muted font-sans">قاعدة بيانات متكاملة لباحثي الحديث</p>
+        </div>
+        <video
+          controls
+          preload="metadata"
+          playsInline
+          poster={`/media/${MAIN_FILM.src}-poster.jpg`}
+          aria-label={MAIN_FILM.title}
+          className="w-full aspect-video rounded-2xl border border-[#D9C9A8] bg-[#faf6ec] shadow-[0_18px_50px_rgba(15,61,46,.14)]"
+        >
+          <source src={`/media/${MAIN_FILM.src}.mp4`} type="video/mp4" />
+          <track kind="captions" src={`/media/${MAIN_FILM.src}.ar.vtt`} srcLang="ar" label="العربية" default />
+        </video>
 
+        <div className="mt-5">
           <HomeSearch />
-
-          {/* Quick examples */}
-          <div className="home-search-examples font-sans">
-            <span>جرب:</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm font-sans text-muted">
+            <span>جرّب:</span>
             {['إنما الأعمال بالنيات', 'من كذب علي', 'الطهور شطر الإيمان'].map(ex => (
-              <Link key={ex} href={`/search?q=${encodeURIComponent(ex)}`}
-                className="text-[#E6D2AA] hover:text-[#FFFDF7] hover:underline">
+              <Link key={ex} href={`/search?q=${encodeURIComponent(ex)}`} className="text-green-700 hover:text-green-900 hover:underline">
                 {ex}
               </Link>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="home-ornament" aria-hidden="true">
         <img src="/assets/theme-ornament.svg" alt="" width="240" height="24" />
@@ -107,44 +114,55 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Tour: short films about the site, and hadith pages to try */}
-      <div className="max-w-6xl mx-auto px-4 pt-8 sm:pt-10">
+      {/* The other films, and hadith pages to try */}
+      <section className="max-w-6xl mx-auto px-4 pt-8 sm:pt-10">
         <div className="ui-card rounded-2xl p-5 sm:p-6">
-          <h2 className="text-base font-bold text-green-900 mb-1 font-display">جولة في الموسوعة</h2>
-          <p className="text-sm text-muted mb-4 font-sans">أفلامٌ قصيرة عن الموسوعة، وأحاديث تكشف ما تتيحه صفحة الحديث</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {TOUR_FILMS.map(film => (
+          <h2 className="text-base font-bold text-green-900 mb-1 font-display">أفلام الموسوعة</h2>
+          <p className="text-sm text-muted mb-4 font-sans">جولةٌ في ميزات الموسوعة، وأحاديث تكشف ما تتيحه صفحة الحديث</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+            <div className="lg:col-span-3">
+              <video controls preload="none" playsInline poster={`/media/${NUMBERING_FILM.src}-poster.jpg`}
+                aria-label={NUMBERING_FILM.title}
+                className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#faf6ec]">
+                <source src={`/media/${NUMBERING_FILM.src}.mp4`} type="video/mp4" />
+                <track kind="captions" src={`/media/${NUMBERING_FILM.src}.ar.vtt`} srcLang="ar" label="العربية" default />
+              </video>
+              <p className="text-sm font-semibold text-green-900 mt-2 font-display">{NUMBERING_FILM.title}</p>
+              <p className="text-xs text-muted font-sans">{NUMBERING_FILM.note}</p>
+            </div>
+            <div className="lg:col-span-2">
+              <p className="text-xs font-bold text-gray-500 mb-2 font-sans">جرّب هذه الأحاديث:</p>
+              <div className="flex flex-col gap-2">
+                {HADITH_EXAMPLES.map(ex => (
+                  <Link key={ex.id} href={`/hadith/${ex.id}`}
+                    className="block bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-2 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
+                    <span className="block text-sm font-semibold text-green-900 group-hover:text-green-700 font-display leading-relaxed">{ex.title}</span>
+                    <span className="flex items-center justify-between gap-2 text-xs font-sans">
+                      <span className="text-gray-500">{ex.source}</span>
+                      <span className="text-amber-800">{ex.shows}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <h3 className="text-sm font-bold text-gray-600 mt-7 mb-3 font-sans">ميزات صفحة الحديث</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {FEATURE_FILMS.map(film => (
               <div key={film.src}>
-                <video
-                  controls
-                  preload="none"
-                  playsInline
-                  poster={`/media/${film.src}-poster.jpg`}
-                  className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#faf6ec]"
-                >
+                <video controls preload="none" playsInline poster={`/media/${film.src}-poster.jpg`}
+                  aria-label={film.title}
+                  className="w-full aspect-square rounded-xl border border-[#D9C9A8] bg-[#faf6ec]">
                   <source src={`/media/${film.src}.mp4`} type="video/mp4" />
-                  <track kind="captions" src={`/media/${film.src}.ar.vtt`} srcLang="ar" label="العربية" default />
                 </video>
-                <p className="text-sm font-semibold text-green-900 mt-2 font-display">{film.title}</p>
-                <p className="text-xs text-muted font-sans">{film.note}</p>
+                <p className="text-sm font-semibold text-green-900 mt-1.5 font-display text-center">{film.title}</p>
               </div>
             ))}
           </div>
-          <p className="text-xs font-bold text-gray-500 mt-6 mb-2 font-sans">جرّب هذه الأحاديث:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {HADITH_EXAMPLES.map(ex => (
-              <Link key={ex.id} href={`/hadith/${ex.id}`}
-                className="block bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-2.5 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
-                <span className="block text-sm font-semibold text-green-900 group-hover:text-green-700 font-display leading-relaxed">{ex.title}</span>
-                <span className="flex items-center justify-between gap-2 mt-0.5 text-xs font-sans">
-                  <span className="text-gray-500">{ex.source}</span>
-                  <span className="text-amber-800">{ex.shows}</span>
-                </span>
-              </Link>
-            ))}
-          </div>
         </div>
-      </div>
+      </section>
 
       {/* Main Nav Cards */}
       <div className="home-sections max-w-6xl mx-auto px-4 py-8 sm:py-10">
