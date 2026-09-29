@@ -330,15 +330,9 @@ export default function HadithSidebarLayout({
             )}
             {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
-          {(dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
-            <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
-              {dorarSlot && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
-                  <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
-                )}
-                {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
-              </div>
+          {dorarSlot && (
+            <section aria-label="حكم الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>
             </section>
           )}
         </header>
@@ -474,6 +468,14 @@ export default function HadithSidebarLayout({
                   <div className="mt-4 pt-4 border-t border-border text-sm text-gray-700 leading-loose whitespace-pre-wrap" dir="rtl">
                     {applyTashkeel(tail)}
                   </div>
+                )}
+                {(takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
+                  <p className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-sans" dir="rtl">
+                    {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
+                      <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
+                    )}
+                    {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
+                  </p>
                 )}
                 {footnotes.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1" dir="rtl">
