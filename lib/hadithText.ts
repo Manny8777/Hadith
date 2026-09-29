@@ -159,3 +159,10 @@ export function extractMatnForComparison(xml: string): string {
     .replace(/\s+/g, ' ')
     .trim()
 }
+
+/** The hadith's tarf (its opening, marked <طرف> in the text) as display text, or '' when unmarked. */
+export function extractTarf(xml: string): string {
+  // (not \b: JavaScript's word boundary only knows ASCII letters)
+  const m = (xml || '').match(/<طرف(?:\s[^>]*)?>([\s\S]*?)<\/طرف>/)
+  return m ? renderHadithInlineText(m[1]) : ''
+}

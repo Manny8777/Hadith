@@ -22,7 +22,8 @@ import Chips from './Chips'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
 import { stripTashkeel } from '@/lib/ghareeb'
-import { splitSanadMatn, stripXmlToVerbatim } from '@/lib/hadithText'
+import { splitSanadMatn, stripXmlToVerbatim, extractTarf } from '@/lib/hadithText'
+import { findTarfRange, withTarf } from '@/lib/tarf'
 import type { SanadNarratorPreview, SanadSegment } from '@/lib/sanadNarrators'
 import type { ReactNode } from 'react'
 
@@ -283,13 +284,6 @@ export default function HadithSidebarLayout({
           </p>
           {/* The book is named in the breadcrumb above; the page heading stays for screen readers and search */}
           <h1 className="sr-only">{h.book_title}</h1>
-          {/* The hadith's opening (tarf), right after the reference and before the facts row */}
-          {h.tarf?.trim() && (
-            <div className="hadith-source-tarf">
-              <p className="hadith-source-label">طرف الحديث</p>
-              <p className="font-serif text-base leading-relaxed mt-1">{h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
-            </div>
-          )}
           <dl className="hadith-source-hierarchy">
           {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
             const t = ISNAD_TYPE_MAP[isnadType]
@@ -353,6 +347,10 @@ export default function HadithSidebarLayout({
         {(() => {
           const { sanad, matn, tail, footnotes } = splitSanadMatn(h.content)
           const matnText = matn || cleanHadithContent(h.content)
+          // The tarf is shown where it sits in the matn (a faint highlight), not repeated beside it
+          const tarf = extractTarf(h.content)
+          const plainMatn = applyTashkeel(matnText)
+          const tarfRange = findTarfRange(plainMatn, tarf, showTashkeel)
           return (
             <div className="ui-card mb-4 overflow-hidden">
               <header aria-label="أدوات الحديث" className="hadith-reader-toolbar border-b border-border bg-surface px-4 sm:px-6 py-3">
@@ -463,12 +461,13 @@ export default function HadithSidebarLayout({
                   <GhareebMatn
                     hadithId={hadithId}
                     matn={matnText}
+                    tarf={tarf}
                     showTashkeel={showTashkeel}
                     className="hadith-matn"
                   />
                 ) : (
                   <p className="hadith-matn whitespace-pre-wrap" dir="rtl">
-                    {applyTashkeel(matnText)}
+                    {withTarf(plainMatn, 0, tarfRange, tarf, 'matn')}
                   </p>
                 )}
                 {tail && (

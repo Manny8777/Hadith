@@ -1,12 +1,15 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { findTarfRange, withTarf } from '@/lib/tarf'
 import Link from 'next/link'
 import { findGhareebMatches, stripTashkeel, type GhareebWord } from '@/lib/ghareeb'
 
 interface GhareebMatnProps {
   hadithId: number
   matn: string
+  // The tarf (display text), highlighted where it sits in the matn
+  tarf?: string
   showTashkeel: boolean
   className?: string
 }
@@ -126,6 +129,7 @@ function GhareebPopover({
 export default function GhareebMatn({
   hadithId,
   matn,
+  tarf = '',
   showTashkeel,
   className = '',
 }: GhareebMatnProps) {
@@ -163,6 +167,8 @@ export default function GhareebMatn({
     return stripTashkeel(matn)
   }, [matn, showTashkeel])
 
+  const tarfRange = useMemo(() => findTarfRange(displayMatn, tarf, showTashkeel), [displayMatn, tarf, showTashkeel])
+
   const matches = useMemo(
     () => findGhareebMatches(displayMatn, words),
     [displayMatn, words]
@@ -187,7 +193,7 @@ export default function GhareebMatn({
   if (loading) {
     return (
       <p className={className || 'text-lg leading-loose text-gray-900 font-serif'} dir="rtl">
-        {displayMatn}
+        {withTarf(displayMatn, 0, tarfRange, tarf, 'all')}
       </p>
     )
   }
@@ -195,7 +201,7 @@ export default function GhareebMatn({
   if (matches.length === 0) {
     return (
       <p className={className || 'text-lg leading-loose text-gray-900 font-serif'} dir="rtl">
-        {displayMatn}
+        {withTarf(displayMatn, 0, tarfRange, tarf, 'all')}
       </p>
     )
   }
@@ -205,7 +211,7 @@ export default function GhareebMatn({
 
   for (const m of matches) {
     if (m.start > cursor) {
-      segments.push(displayMatn.slice(cursor, m.start))
+      segments.push(...withTarf(displayMatn.slice(cursor, m.start), cursor, tarfRange, tarf, `t${cursor}`))
     }
     const word = wordByFormId.get(m.formId)
     if (word) {
@@ -234,7 +240,7 @@ export default function GhareebMatn({
   }
 
   if (cursor < displayMatn.length) {
-    segments.push(displayMatn.slice(cursor))
+    segments.push(...withTarf(displayMatn.slice(cursor), cursor, tarfRange, tarf, `t${cursor}`))
   }
 
   return (
