@@ -281,7 +281,7 @@ export default function HadithSidebarLayout({
               h.tarqeem_matboa1?.trim() && `المطبوع: ${h.tarqeem_matboa1.trim()}`,
               h.tarqeem_matboa2 != null && (SECOND_EDITION[h.book_id]
                 ? `المطبوع ٢ (${SECOND_EDITION[h.book_id]}): ${h.tarqeem_matboa2}`
-                : `المطبوع ٢: ${h.tarqeem_matboa2}`),
+                : `المطبوع ٢ (طبعة أخرى): ${h.tarqeem_matboa2}`),
               h.tarqeem_harf?.trim() && `حرف: ${h.tarqeem_harf.trim()}`,
             ].filter(Boolean).join(' · ')}
           </p>
