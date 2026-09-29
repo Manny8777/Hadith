@@ -200,7 +200,7 @@
 // narration: the scene plays, holds on its last frame, then runs its exit transition.
 const SCENE_BOUNDS = [0, 6, 14, 22, 30, 37, 44, 52, 56]
 const EXIT = 0.9
-const SCENE_LENGTHS = [6.58,10,12.18,17.02,8.66,14.42,9.7,6.68] // @narration-timing
+const SCENE_LENGTHS = [7.42,11.24,12.3,18.5,9.38,14.9,10.94,6.76] // @narration-timing
 const LENGTHS = SCENE_LENGTHS ?? SCENE_BOUNDS.slice(1).map((b, i) => b - SCENE_BOUNDS[i])
 const DURATION = LENGTHS.reduce((a, b) => a + b, 0)
 function warp(t) {

@@ -281,7 +281,7 @@
 // narrate.mjs writes the line below; null plays the film at its authored 50 s.
 const SCENE_BOUNDS = [0, 6, 13, 21, 28, 35, 42, 46.5, 50]
 const EXIT = 0.9 // length of a scene's exit transition
-const SCENE_LENGTHS = [8.06,11.4,9.9,9.3,11.46,7.38,8.06,5.92] // @narration-timing
+const SCENE_LENGTHS = [9.18,12.72,10.74,9.9,13.02,9.3,8.5,6.36] // @narration-timing
 const LENGTHS = SCENE_LENGTHS ?? SCENE_BOUNDS.slice(1).map((b, i) => b - SCENE_BOUNDS[i])
 const DURATION = LENGTHS.reduce((a, b) => a + b, 0)
 // film time → authored time
