@@ -283,6 +283,13 @@ export default function HadithSidebarLayout({
           </p>
           {/* The book is named in the breadcrumb above; the page heading stays for screen readers and search */}
           <h1 className="sr-only">{h.book_title}</h1>
+          {/* The hadith's opening (tarf), right after the reference and before the facts row */}
+          {h.tarf?.trim() && (
+            <div className="hadith-source-tarf">
+              <p className="hadith-source-label">طرف الحديث</p>
+              <p className="font-serif text-base leading-relaxed mt-1">{h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
+            </div>
+          )}
           <dl className="hadith-source-hierarchy">
           {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
             const t = ISNAD_TYPE_MAP[isnadType]
@@ -329,14 +336,8 @@ export default function HadithSidebarLayout({
             )}
             {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
-          {(h.tarf?.trim() || dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
+          {(dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
             <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
-              {h.tarf?.trim() && (
-                <div>
-                  <p className="hadith-source-label">طرف الحديث</p>
-                  <p className="font-serif text-base leading-relaxed mt-1">{h.tarf.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</p>
-                </div>
-              )}
               {dorarSlot && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                 {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
