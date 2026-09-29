@@ -150,6 +150,12 @@ export default function HadithSidebarLayout({
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
 
+  // The first printed number and the edition it belongs to. Books with no named edition
+  // (البيهقي، المستدرك) have no printed numbering at all — their «المطبوع» is Harf's
+  // number repeated — so it is dropped rather than credited to an edition.
+  const edition1 = h.print1_edition?.trim() && h.print1_edition.trim() !== '0' ? h.print1_edition.trim() : null
+  const matboa1 = edition1 ? h.tarqeem_matboa1?.trim() || null : null
+
   // Track the sticky header height so the TOC sidebar + section anchors sit flush under it
   useEffect(() => {
     const header = document.querySelector('header')
@@ -269,20 +275,20 @@ export default function HadithSidebarLayout({
               <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>{h.chapter_text.trim().startsWith('باب') ? h.chapter_text.trim() : `الباب: ${h.chapter_text.trim()}`}</span></Link>
             </>}
           </nav>
-          {/* One line for the full reference: book, author, edition, part, page, and every numbering —
-              so nothing below repeats it */}
+          {/* One line for the full reference: book, author, part, page, and every numbering —
+              so nothing below repeats it. Each number names its own edition, so no number
+              reads as belonging to another's. */}
           <p className="hadith-source-edition">
             <strong>المرجع: </strong>{[
               h.book_title,
               h.takhrij_author,
-              h.print1_edition && `الطبعة: ${h.print1_edition}`,
+              // With no first number to carry it, the edition still names the part and page
+              !matboa1 && edition1 && `الطبعة: ${edition1}`,
               h.part_num > 0 && `ج ${h.part_num}`,
               h.page_num > 0 && `ص ${h.page_num}`,
-              h.tarqeem_matboa1?.trim() && `المطبوع: ${h.tarqeem_matboa1.trim()}`,
-              h.tarqeem_matboa2 != null && (SECOND_EDITION[h.book_id]
-                ? `المطبوع ٢ (${SECOND_EDITION[h.book_id]}): ${h.tarqeem_matboa2}`
-                : `المطبوع ٢ (طبعة أخرى): ${h.tarqeem_matboa2}`),
-              h.tarqeem_harf?.trim() && `حرف: ${h.tarqeem_harf.trim()}`,
+              matboa1 && `المطبوع (${edition1}): ${matboa1}`,
+              h.tarqeem_matboa2 != null && `المطبوع ٢ (${SECOND_EDITION[h.book_id] ?? 'طبعة أخرى'}): ${h.tarqeem_matboa2}`,
+              h.tarqeem_harf?.trim() && `حرف (موسوعة الحديث الشريف): ${h.tarqeem_harf.trim()}`,
             ].filter(Boolean).join(' · ')}
           </p>
           {/* The book is named in the breadcrumb above; the page heading stays for screen readers and search */}
