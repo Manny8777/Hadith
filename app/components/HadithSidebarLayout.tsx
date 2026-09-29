@@ -12,6 +12,7 @@ import IsnadTree from './IsnadTree'
 import UiIcon from './UiIcon'
 import MatnVariants from './MatnVariants'
 import { displayNarratorName } from '@/lib/narratorName'
+import { SECOND_EDITION } from '@/lib/printEditions'
 import MatnSimilaritySection from './MatnSimilaritySection'
 import PrevNextNav from './PrevNextNav'
 import GhareebMatn from './GhareebMatn'
@@ -278,7 +279,9 @@ export default function HadithSidebarLayout({
               h.part_num > 0 && `ج ${h.part_num}`,
               h.page_num > 0 && `ص ${h.page_num}`,
               h.tarqeem_matboa1?.trim() && `المطبوع: ${h.tarqeem_matboa1.trim()}`,
-              h.tarqeem_matboa2 != null && `المطبوع ٢: ${h.tarqeem_matboa2}`,
+              h.tarqeem_matboa2 != null && (SECOND_EDITION[h.book_id]
+                ? `المطبوع ٢ (${SECOND_EDITION[h.book_id]}): ${h.tarqeem_matboa2}`
+                : `المطبوع ٢: ${h.tarqeem_matboa2}`),
               h.tarqeem_harf?.trim() && `حرف: ${h.tarqeem_harf.trim()}`,
             ].filter(Boolean).join(' · ')}
           </p>
