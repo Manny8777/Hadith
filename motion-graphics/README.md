@@ -24,6 +24,7 @@
 
 | الفيلم | ما يعرضه |
 |---|---|
+| [الفيلم الترويجي](promo/promo-narrated.mp4) ([الترجمة](promo/promo.srt)) | لمحاتٌ سريعة من ميزات الموسوعة، بلقطاتٍ حقيقية من الموقع |
 | [من سطح المكتب إلى الويب](migration-film-narrated.mp4) ([الترجمة](migration-film.srt)) | كيف نُقل البرنامج من تطبيق ويندوز إلى موقعٍ على الويب |
 | [ترقيم حرف والترقيم المطبوع](numbering-film-narrated.mp4) ([الترجمة](numbering-film.srt)) | لماذا يختلف رقم الحديث من طبعةٍ لأخرى، وكيف تعزو بدقة |
 
@@ -39,6 +40,8 @@ Studio); each scene is stretched to fit its line rather than the voice being spe
   `migration-film.html` and `numbering-film.html` carry their own copy of the engine.
 - `<film>.html` — the film; `<film>.lines.json` — its narration, one line per scene.
 - `audio*/` — the generated voice clips, kept so a film can be re-rendered without calling the API.
+- `promo/` — the promo film: `capture.mjs` screenshots the running site into `promo/shots/`, which
+  `promo.html` pans and zooms inside a browser window (`node motion-graphics/narrate.mjs --film promo/promo`).
 - `render-film.mjs` — renders `<film>.html` to `<film>.mp4` (or stills with `--stills`).
 - `narrate.mjs` — generates missing voice clips, fits the scenes to them, writes the captions
   (`<film>.srt`, and in the picture for the feature films), re-renders and mixes

@@ -5,7 +5,7 @@
 // re-rendered, and the lines are mixed in at their scenes' starts → migration-film-narrated.mp4.
 // The key is read from GEMINI_API_KEY or .env.local (gitignored).
 //
-//   node motion-graphics/narrate.mjs [--film migration-film] [--voice Charon] [--model gemini-3.8-flash-tts] [--only 3] [--captions-only]
+//   node motion-graphics/narrate.mjs [--film migration-film] [--voice Charon] [--model gemini-3.8-flash-tts] [--style '…'] [--only 3] [--captions-only]
 //
 // Also writes migration-film.srt (captions timed to the narration); --captions-only writes just
 // that, without re-rendering or mixing.
@@ -23,7 +23,7 @@ const VOICE = opt('voice', 'Charon')
 const ONLY = opt('only', null)
 const CAPTIONS_ONLY = args.includes('--captions-only')
 const MODEL = opt('model', 'gemini-3.8-flash-tts')
-const STYLE = 'calm, measured documentary narration in Modern Standard Arabic'
+const STYLE = opt('style', 'calm, measured documentary narration in Modern Standard Arabic')
 
 function apiKey() {
   if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY

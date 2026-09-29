@@ -16,7 +16,8 @@ const GRADE_SHORTCUTS = [
 
 // Films in public/media/ (made in motion-graphics/; see its README). The main film is the hero; the
 // wide ones carry an .ar.vtt caption track, the square feature films have their captions drawn in.
-const MAIN_FILM = { src: 'migration-film', title: 'من سطح المكتب إلى الويب' }
+const MAIN_FILM = { src: 'promo', title: 'الجامع — موسوعة الحديث النبوي الشريف' }
+const MIGRATION_FILM = { src: 'migration-film', title: 'من سطح المكتب إلى الويب', note: 'كيف نُقل البرنامج من تطبيق ويندوز إلى موقعٍ على الويب' }
 const NUMBERING_FILM = { src: 'numbering-film', title: 'ترقيم حرف والترقيم المطبوع', note: 'لماذا يختلف رقم الحديث من طبعةٍ لأخرى، وكيف تعزو بدقة' }
 const FEATURE_FILMS = [
   { src: 'feature-sanad', title: 'السند والمتن' },
@@ -120,32 +121,33 @@ export default async function Home() {
           <h2 className="text-base font-bold text-green-900 mb-1 font-display">أفلام الموسوعة</h2>
           <p className="text-sm text-muted mb-4 font-sans">جولةٌ في ميزات الموسوعة، وأحاديث تكشف ما تتيحه صفحة الحديث</p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-            <div className="lg:col-span-3">
-              <video controls preload="none" playsInline poster={`/media/${NUMBERING_FILM.src}-poster.jpg`}
-                aria-label={NUMBERING_FILM.title}
-                className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#faf6ec]">
-                <source src={`/media/${NUMBERING_FILM.src}.mp4`} type="video/mp4" />
-                <track kind="captions" src={`/media/${NUMBERING_FILM.src}.ar.vtt`} srcLang="ar" label="العربية" default />
-              </video>
-              <p className="text-sm font-semibold text-green-900 mt-2 font-display">{NUMBERING_FILM.title}</p>
-              <p className="text-xs text-muted font-sans">{NUMBERING_FILM.note}</p>
-            </div>
-            <div className="lg:col-span-2">
-              <p className="text-xs font-bold text-gray-500 mb-2 font-sans">جرّب هذه الأحاديث:</p>
-              <div className="flex flex-col gap-2">
-                {HADITH_EXAMPLES.map(ex => (
-                  <Link key={ex.id} href={`/hadith/${ex.id}`}
-                    className="block bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-2 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
-                    <span className="block text-sm font-semibold text-green-900 group-hover:text-green-700 font-display leading-relaxed">{ex.title}</span>
-                    <span className="flex items-center justify-between gap-2 text-xs font-sans">
-                      <span className="text-gray-500">{ex.source}</span>
-                      <span className="text-amber-800">{ex.shows}</span>
-                    </span>
-                  </Link>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[MIGRATION_FILM, NUMBERING_FILM].map(film => (
+              <div key={film.src}>
+                <video controls preload="none" playsInline poster={`/media/${film.src}-poster.jpg`}
+                  aria-label={film.title}
+                  className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#faf6ec]">
+                  <source src={`/media/${film.src}.mp4`} type="video/mp4" />
+                  <track kind="captions" src={`/media/${film.src}.ar.vtt`} srcLang="ar" label="العربية" default />
+                </video>
+                <p className="text-sm font-semibold text-green-900 mt-2 font-display">{film.title}</p>
+                <p className="text-xs text-muted font-sans">{film.note}</p>
               </div>
-            </div>
+            ))}
+          </div>
+
+          <p className="text-xs font-bold text-gray-500 mt-7 mb-2 font-sans">جرّب هذه الأحاديث:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {HADITH_EXAMPLES.map(ex => (
+              <Link key={ex.id} href={`/hadith/${ex.id}`}
+                className="block bg-[#FFFDF7] border border-[#D9C9A8] rounded-xl px-4 py-2 hover:border-[#C9A96B] hover:shadow-sm transition-all group">
+                <span className="block text-sm font-semibold text-green-900 group-hover:text-green-700 font-display leading-relaxed">{ex.title}</span>
+                <span className="flex items-center justify-between gap-2 text-xs font-sans">
+                  <span className="text-gray-500">{ex.source}</span>
+                  <span className="text-amber-800">{ex.shows}</span>
+                </span>
+              </Link>
+            ))}
           </div>
 
           <h3 className="text-sm font-bold text-gray-600 mt-7 mb-3 font-sans">ميزات صفحة الحديث</h3>
