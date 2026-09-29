@@ -144,7 +144,7 @@ function IsnadRailNode({ data }: NodeProps) {
       <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-border !border-0" />
       <span
         title={nar.name}
-        className="block font-bold text-green-800 hover:text-green-600 hover:underline text-[15px] font-serif leading-snug line-clamp-2"
+        className="block font-bold text-green-800 hover:text-green-600 hover:underline text-[0.9375rem] font-serif leading-snug line-clamp-2"
       >
         {nar.abb_name || nar.name}
       </span>

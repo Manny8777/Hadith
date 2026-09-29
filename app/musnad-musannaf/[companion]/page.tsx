@@ -33,7 +33,7 @@ function FawaidText({ text }: { text: string }) {
     const parts = seg.split(/(«[^»]*»\s*[٠-٩]*\s*[/،]?\s*[٠-٩]*|\([٠-٩\s]+\))/g).filter(Boolean)
     return parts.map((p, i) =>
       (p.startsWith('«') || p.startsWith('('))
-        ? <span key={i} className="text-teal-700 text-[12px] whitespace-nowrap">{p}</span>
+        ? <span key={i} className="text-teal-700 text-[0.75rem] whitespace-nowrap">{p}</span>
         : <span key={i}>{p}</span>
     )
   }
@@ -42,7 +42,7 @@ function FawaidText({ text }: { text: string }) {
       {items.map((seg, i) => {
         const m = seg.match(/^((?:و?قلنا|و?قال(?:\s+[^\:؛]{1,28})?))\s*[:：]\s*([\s\S]*)$/)
         return (
-          <p key={i} className="text-[14px] leading-loose text-gray-800 flex flex-wrap gap-x-1">
+          <p key={i} className="text-[0.875rem] leading-loose text-gray-800 flex flex-wrap gap-x-1">
             {m
               ? <><strong className="text-gray-900">{m[1]}:</strong> {renderInline(m[2], i)}</>
               : renderInline(seg, i)}
@@ -158,7 +158,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
 
         return (
           <section key={e.id} className="mb-5">
-            <div className="text-[13px] font-bold text-gray-600 my-3 flex items-center gap-2">
+            <div className="text-[0.8125rem] font-bold text-gray-600 my-3 flex items-center gap-2">
               الحديث {e.hadith_no}
               {e.print_page && <span className="text-[11px] text-gray-400 font-normal">المطبوع ص{e.print_page}</span>}
               <span className="flex-1 h-px bg-gray-200" />
@@ -225,7 +225,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                                 <span className="inline-block text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded" title="ترقيم نسخة الموقع يختلف عن ترقيم المسند المصنف">↩ رقمه في النسخة: {toArabicDigits(rNo)}</span>
                               )}
                             </span>
-                            {t.isnad_text && <div className="text-gray-500 text-[12.5px] mt-0.5 leading-relaxed">{t.isnad_text}</div>}
+                            {t.isnad_text && <div className="text-gray-500 text-[0.7812rem] mt-0.5 leading-relaxed">{t.isnad_text}</div>}
                           </div>
                         </div>
                         )
@@ -237,7 +237,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                 {/* الفوائد — نصّ المؤلفين كاملًا (الحكم + تحليل العلل + أقوال النقاد) */}
                 {(e.fawaid || il.length > 0) && (
                   <div className="mt-4 rounded-lg border border-amber-200/70 overflow-hidden">
-                    <div className="px-3.5 py-2 bg-amber-50/70 border-b border-amber-200/70 text-[12.5px] font-bold text-amber-900 flex items-center gap-2">
+                    <div className="px-3.5 py-2 bg-amber-50/70 border-b border-amber-200/70 text-[0.7812rem] font-bold text-amber-900 flex items-center gap-2">
                       <span>الفوائد</span>
                       <span className="text-[10px] font-normal text-amber-700/70">تحليل المؤلفين وأقوال النقاد في العلل</span>
                     </div>
@@ -249,7 +249,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
                             {il.map(x => (
                               <div key={x.id} className="py-2 text-sm leading-relaxed text-gray-700">
                                 <strong className="text-gray-900">{x.scientist}:</strong> {x.say_text}
-                                {x.source_ref && <span className="text-teal-700 text-[12px]"> {x.source_ref}</span>}
+                                {x.source_ref && <span className="text-teal-700 text-[0.75rem]"> {x.source_ref}</span>}
                               </div>
                             ))}
                           </div>
@@ -260,7 +260,7 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
 
                 {/* refs */}
                 {(primaryRefs.length > 0 || secondaryRefs.length > 0) && (
-                  <div className="mt-3 text-[12px] text-gray-500 px-3 py-2 bg-[var(--color-surface-sunken)] rounded-md border border-[var(--color-border)]">
+                  <div className="mt-3 text-[0.75rem] text-gray-500 px-3 py-2 bg-[var(--color-surface-sunken)] rounded-md border border-[var(--color-border)]">
                     {primaryRefs.length > 0 && (
                       <div className="flex gap-1.5 flex-wrap items-center">
                         {primaryRefs.map(r => <span key={r.id} className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-semibold">{r.ref_book} ({r.ref_no})</span>)}

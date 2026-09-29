@@ -34,7 +34,7 @@ function cleanHadithContent(xml: string): string {
 // Reader-adjustable matn sizes (responsive clamps so every level scales on mobile).
 // The matn opens at 24px; the reader can step it down or up with أ−/أ+ (the choice is remembered
 // under MATN_SIZE_KEY — renamed whenever the default changes, so stored old defaults don't stick).
-const MATN_SIZES = ['16px', '18px', '21px', '24px', '28px']
+const MATN_SIZES = ['1rem', '1.125rem', '1.3125rem', '1.5rem', '1.75rem'] // 16–28px at full size
 const MATN_SIZE_DEFAULT = 3
 const MATN_SIZE_KEY = 'matnSize.v2'
 

@@ -287,7 +287,7 @@ export default function NavHeader() {
                 type="button"
                 onClick={() => toggle(cat.id)}
                 aria-expanded={open === cat.id}
-                className={`flex items-center gap-0.5 xl:gap-1 text-[13px] min-[960px]:max-[1050px]:text-[12.5px] xl:text-[13.5px] font-sans px-1 min-[1150px]:px-1.5 xl:px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-0.5 xl:gap-1 text-[0.8125rem] min-[960px]:max-[1050px]:text-[0.7812rem] xl:text-[0.8438rem] font-sans px-1 min-[1150px]:px-1.5 xl:px-2.5 py-2.5 rounded-md transition-colors whitespace-nowrap ${
                   open === cat.id
                     ? 'bg-[#C9A96B] text-[#0F3D2E]'
                     : 'text-[#F8F1E4]/80 hover:text-[#FFFDF7] hover:bg-white/10'
@@ -374,7 +374,7 @@ export default function NavHeader() {
                       key={link.href}
                       href={link.href}
                       onClick={() => { setOpen(null); setMobileOpen(false) }}
-                      className="flex items-center justify-between gap-1 text-[13px] text-gray-700 hover:text-green-800 active:bg-green-50 px-2 py-2.5 min-h-11 rounded transition-colors"
+                      className="flex items-center justify-between gap-1 text-[0.8125rem] text-gray-700 hover:text-green-800 active:bg-green-50 px-2 py-2.5 min-h-11 rounded transition-colors"
                     >
                       <span className="truncate">{link.label}</span>
                       {link.isNew && (

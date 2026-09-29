@@ -68,7 +68,7 @@ export default async function BooksPage() {
       </div>
 
       <div className="ui-card overflow-x-auto">
-        <table className="w-full text-[15px] min-w-[640px]" dir="rtl">
+        <table className="w-full text-[0.9375rem] min-w-[640px]" dir="rtl">
           <thead>
             <tr className="bg-green-50 border-b border-green-100 text-green-900 text-xs">
               <th className="px-3 py-2.5 text-center font-semibold w-12">م ({books.length})</th>

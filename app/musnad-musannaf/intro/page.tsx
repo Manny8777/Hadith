@@ -49,7 +49,7 @@ export default async function MusnadIntroPage() {
             {s.title}
           </h2>
           <div
-            className="intro-body text-[15px] leading-loose text-[var(--color-ink)]"
+            className="intro-body text-[0.9375rem] leading-loose text-[var(--color-ink)]"
             style={{ fontFamily: 'var(--font-body, serif)' }}
             dangerouslySetInnerHTML={{ __html: s.content || '' }}
           />

@@ -43,7 +43,7 @@ export default function CollapsibleSection({
         )}
         <span className="flex-1 min-w-0">
           <span className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
-            <span className="text-[15px] sm:text-base font-bold text-ink font-display leading-snug">{label}</span>
+            <span className="text-[0.9375rem] sm:text-base font-bold text-ink font-display leading-snug">{label}</span>
             {badges}
           </span>
           {sub && <span className="block text-xs text-gray-500 font-sans mt-0.5">{sub}</span>}
