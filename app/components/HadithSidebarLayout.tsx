@@ -330,11 +330,6 @@ export default function HadithSidebarLayout({
             )}
             {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
-          {dorarSlot && (
-            <section aria-label="حكم الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{dorarSlot}</div>
-            </section>
-          )}
         </header>
 
         {/* Hadith text — sanad then matn (matn is the hero) */}
@@ -470,8 +465,11 @@ export default function HadithSidebarLayout({
                     {applyTashkeel(tail)}
                   </div>
                 )}
+                {dorarSlot && (
+                  <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-2 font-sans" dir="rtl">{dorarSlot}</div>
+                )}
                 {(takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
-                  <p className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-sans" dir="rtl">
+                  <p className={`${dorarSlot ? 'mt-2' : 'mt-4 pt-3 border-t border-border'} flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-sans`} dir="rtl">
                     {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
                       <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
                     )}
