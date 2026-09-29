@@ -9,8 +9,6 @@ import ChainTimeline from './ChainTimeline'
 // import HadithNote from './HadithNote' // TODO: re-enable with per-user login
 import TrackHadithView from './TrackHadithView'
 import IsnadTree from './IsnadTree'
-import HadithNumber from './HadithNumber'
-import { useNumbering } from '@/lib/numberingContext'
 import UiIcon from './UiIcon'
 import MatnVariants from './MatnVariants'
 import { displayNarratorName } from '@/lib/narratorName'
@@ -170,8 +168,6 @@ export default function HadithSidebarLayout({
     localStorage.setItem(MATN_SIZE_KEY, String(matnSize))
   }, [matnSize])
 
-  const { pref: numberingPreference } = useNumbering()
-  const selectedNumber = numberingPreference === 'harf' ? h.tarqeem_harf : h.tarqeem_matboa1
   const serviceSections = activeServiceSections(hadithServices)
 
   // Sections shown in main content and sidebar TOC — dynamic based on available data
@@ -271,13 +267,20 @@ export default function HadithSidebarLayout({
               <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>{h.chapter_text.trim().startsWith('باب') ? h.chapter_text.trim() : `الباب: ${h.chapter_text.trim()}`}</span></Link>
             </>}
           </nav>
-          {(h.part_num > 0 || h.page_num > 0) && (
-            <div className="hadith-source-location">
-              {h.part_num > 0 && <span>الجزء: {h.part_num}</span>}
-              {h.part_num > 0 && h.page_num > 0 && <span aria-hidden="true">·</span>}
-              {h.page_num > 0 && <span>الصفحة: {h.page_num}</span>}
-            </div>
-          )}
+          {/* One line for the full reference: book, author, edition, part, page, and every numbering —
+              so nothing below repeats it */}
+          <p className="hadith-source-edition">
+            <strong>المرجع: </strong>{[
+              h.book_title,
+              h.takhrij_author,
+              h.print1_edition && `الطبعة: ${h.print1_edition}`,
+              h.part_num > 0 && `ج ${h.part_num}`,
+              h.page_num > 0 && `ص ${h.page_num}`,
+              h.tarqeem_matboa1?.trim() && `المطبوع: ${h.tarqeem_matboa1.trim()}`,
+              h.tarqeem_matboa2 != null && `المطبوع ٢: ${h.tarqeem_matboa2}`,
+              h.tarqeem_harf?.trim() && `حرف: ${h.tarqeem_harf.trim()}`,
+            ].filter(Boolean).join(' · ')}
+          </p>
           {/* The book is named in the breadcrumb above; the page heading stays for screen readers and search */}
           <h1 className="sr-only">{h.book_title}</h1>
           <dl className="hadith-source-hierarchy">
@@ -326,15 +329,6 @@ export default function HadithSidebarLayout({
             )}
             {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
           </dl>
-          <dl className="hadith-source-locators">
-            {(h.tarqeem_harf || h.tarqeem_matboa1 || h.tarqeem_matboa2) && <div className="hadith-source-numbering"><dt>ترقيم الحديث</dt><dd><HadithNumber layout="source" harf={h.tarqeem_harf} matboa={h.tarqeem_matboa1} matboa2={h.tarqeem_matboa2} /></dd></div>}
-          </dl>
-          <p className="hadith-source-edition" aria-live="polite">
-            <strong>المرجع: </strong>{h.book_title} · {h.takhrij_author && `${h.takhrij_author} · `}
-            {h.print1_edition && `الطبعة: ${h.print1_edition} · `}
-            {h.part_num > 0 && `ج ${h.part_num} · `}{h.page_num > 0 && `ص ${h.page_num} · `}
-            {numberingPreference === 'harf' ? 'ترقيم حرف' : 'ترقيم المطبوع'}: {selectedNumber || 'غير متوفر'}
-          </p>
           {(h.tarf?.trim() || dorarSlot || takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
             <section aria-label="ملخص الحديث" className="hadith-source-summary mt-4 border-t border-border-warm pt-4 space-y-3">
               {h.tarf?.trim() && (
