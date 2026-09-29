@@ -464,7 +464,8 @@ export default function HadithSidebarLayout({
                     {withTarf(plainMatn, 0, tarfRange, tarf, 'matn')}
                   </p>
                 )}
-                {tail && (
+                {/* a tail that is only punctuation (often a lone «.») isn't shown */}
+                {/[\p{L}\p{N}]/u.test(tail) && (
                   <div className="mt-4 pt-4 border-t border-border text-sm text-gray-700 leading-loose whitespace-pre-wrap" dir="rtl">
                     {applyTashkeel(tail)}
                   </div>
