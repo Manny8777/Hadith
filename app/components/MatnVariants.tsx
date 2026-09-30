@@ -345,9 +345,13 @@ function MapWordingBox({ data }: { data: { w: Wording; width: number; currentId:
       <p className="font-[Amiri,serif] text-[15px] leading-[24px] text-gray-800" title={w.text}>{wordingText(w)}</p>
       <div className="mt-1 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5">
         {w.sources.map(s => (
-          <a key={s.id} href={`/hadith/${s.id}`} className="nodrag inline-flex items-center gap-1 text-[11px] font-sans text-green-800 hover:underline">
+          // Opens in a new tab, so the reader keeps their place in the map; nopan/nodrag stop React
+          // Flow from treating the click as the start of a pan
+          <a key={s.id} href={`/hadith/${s.id}`} target="_blank" rel="noopener"
+            title={`فتح ${s.bookTitle}${s.num ? ` ${s.num}` : ''} في صفحة جديدة`}
+            className="nodrag nopan inline-flex items-center gap-1 text-[11px] font-sans text-green-800 hover:underline cursor-pointer">
             {s.bookTitle}
-            {s.num && <span className="rounded-full bg-green-50 border border-green-100 px-1.5 text-green-700">{s.num}</span>}
+            {s.num && <span className="rounded-full bg-green-50 border border-green-100 px-1.5 text-green-700 hover:bg-green-100 hover:border-green-300">{s.num}</span>}
           </a>
         ))}
       </div>
@@ -419,6 +423,9 @@ function VariantMap({ source, variants }: { source: TextEntry; variants: Variant
         edges={edges}
         nodeTypes={MAP_NODE_TYPES}
         onInit={onInit}
+        // React Flow gives nodes that are neither draggable nor selectable `pointer-events: none`;
+        // a click handler keeps them live so the source links inside can be clicked
+        onNodeClick={() => {}}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
