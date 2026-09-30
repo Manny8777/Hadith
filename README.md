@@ -16,17 +16,40 @@
 
 **الموقع المباشر:** https://hadith.dev
 
-**أفلام تعريفية:** [السند والمتن](motion-graphics/features/sanad-narrated.mp4) ·
-[شجرة الإسناد](motion-graphics/features/isnad-tree-narrated.mp4) ·
-[الجرح والتعديل](motion-graphics/features/narrators-narrated.mp4) ·
-[التخريج](motion-graphics/features/takhrij-narrated.mp4) ·
-[مطابقة المتون](motion-graphics/features/matn-compare-narrated.mp4) ·
-[الشروح وغريب الحديث](motion-graphics/features/sharh-gharib-narrated.mp4) ·
-[البحث](motion-graphics/features/search-narrated.mp4) ·
-[أقوال العلماء](motion-graphics/features/rulings-narrated.mp4) ·
-[من سطح المكتب إلى الويب](motion-graphics/migration-film-narrated.mp4) ·
-[ترقيم حرف والترقيم المطبوع](motion-graphics/numbering-film-narrated.mp4)
-— والتفاصيل في [motion-graphics](motion-graphics/README.md).
+## أفلام الموسوعة
+
+<p align="center">
+  <a href="https://hadith.dev/media/promo.mp4"><img src="public/media/promo-poster.jpg" width="720" alt="الفيلم الترويجي — الجامع"></a><br>
+  <sub><b>الفيلم الترويجي</b> — لمحاتٌ من ميزات الموسوعة بلقطاتٍ حقيقية من الموقع (اضغط الصورة للمشاهدة)</sub>
+</p>
+
+<table>
+<tr><td align="center" width="25%"><a href="https://hadith.dev/media/feature-sanad.mp4"><img src="public/media/feature-sanad-poster.jpg" width="200" alt="السند والمتن"></a><br><sub><b>السند والمتن</b></sub></td><td align="center" width="25%"><a href="https://hadith.dev/media/feature-isnad-tree.mp4"><img src="public/media/feature-isnad-tree-poster.jpg" width="200" alt="شجرة الإسناد"></a><br><sub><b>شجرة الإسناد</b></sub></td><td align="center" width="25%"><a href="https://hadith.dev/media/feature-narrators.mp4"><img src="public/media/feature-narrators-poster.jpg" width="200" alt="الجرح والتعديل"></a><br><sub><b>الجرح والتعديل</b></sub></td><td align="center" width="25%"><a href="https://hadith.dev/media/feature-takhrij.mp4"><img src="public/media/feature-takhrij-poster.jpg" width="200" alt="التخريج"></a><br><sub><b>التخريج</b></sub></td></tr>
+<tr><td align="center" width="25%"><a href="https://hadith.dev/media/feature-matn-compare.mp4"><img src="public/media/feature-matn-compare-poster.jpg" width="200" alt="مطابقة المتون"></a><br><sub><b>مطابقة المتون</b></sub></td><td align="center" width="25%"><a href="https://hadith.dev/media/feature-sharh-gharib.mp4"><img src="public/media/feature-sharh-gharib-poster.jpg" width="200" alt="الشروح وغريب الحديث"></a><br><sub><b>الشروح وغريب الحديث</b></sub></td><td align="center" width="25%"><a href="https://hadith.dev/media/feature-search.mp4"><img src="public/media/feature-search-poster.jpg" width="200" alt="البحث"></a><br><sub><b>البحث</b></sub></td><td align="center" width="25%"><a href="https://hadith.dev/media/feature-rulings.mp4"><img src="public/media/feature-rulings-poster.jpg" width="200" alt="أقوال العلماء"></a><br><sub><b>أقوال العلماء</b></sub></td></tr>
+</table>
+
+<table>
+<tr>
+<td align="center" width="50%"><a href="https://hadith.dev/media/migration-film.mp4"><img src="public/media/migration-film-poster.jpg" width="360" alt="من سطح المكتب إلى الويب"></a><br><sub><b>من سطح المكتب إلى الويب</b></sub></td>
+<td align="center" width="50%"><a href="https://hadith.dev/media/numbering-film.mp4"><img src="public/media/numbering-film-poster.jpg" width="360" alt="ترقيم حرف والترقيم المطبوع"></a><br><sub><b>ترقيم حرف والترقيم المطبوع</b></sub></td>
+</tr>
+</table>
+
+تُشغَّل الأفلام من الموقع بالضغط على صورها، وملفاتها في [motion-graphics](motion-graphics/README.md) مع طريقة صنعها.
+
+## للمطورين: خادم MCP
+
+تستطيع مساعدات الذكاء الاصطناعي (Claude وChatGPT وCursor وغيرها) أن تبحث في الموسوعة عبر خادم MCP:
+
+- دون حساب: `https://hadith.dev/mcp` — 50 طلبًا في اليوم
+- بحسابٍ مجاني (دخولٌ برابطٍ يُرسل إلى البريد): `https://hadith.dev/mcp/account` — 1,000 طلب في اليوم
+
+```bash
+claude mcp add --transport http hadith https://hadith.dev/mcp
+```
+
+الأدوات: البحث في الأحاديث، ونص الحديث بسنده ومتنه وحكمه في الدرر السنية، والروايات الموازية، والرواة وتراجمهم، وقائمة الكتب.
+الشرح كاملًا في [hadith.dev/developers](https://hadith.dev/developers).
 
 ## دعوة للمشاركة
 
@@ -97,6 +120,11 @@ running the Windows program. The encyclopedia includes:
 **Short films** (Arabic, narrated, with captions): one per feature — sanad &amp; matn, isnad tree,
 narrator criticism, takhrij, matn comparison, commentary &amp; rare words, search, scholars' rulings —
 plus the desktop-to-web story and hadith numbering. See [motion-graphics/](motion-graphics/README.md).
+The [promo film](https://hadith.dev/media/promo.mp4) and all the others play from the gallery at the top of this page.
+
+**For developers — MCP server:** AI assistants (Claude, ChatGPT, Cursor…) can search the encyclopedia through
+`https://hadith.dev/mcp` (50 calls a day) or, with a free account (sign-in by an emailed link),
+`https://hadith.dev/mcp/account` (1,000 a day). Setup and tools: [hadith.dev/developers](https://hadith.dev/developers).
 
 ## Call for contributors
 

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import './globals.css'
 import NavHeader from './components/NavHeader'
 import BrandMark from './components/BrandMark'
+import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSubHeader'
 import NumeralConverter from './components/NumeralConverter'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
@@ -35,10 +37,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NumberingProvider>
           <NumeralProvider>
             <NumeralConverter />
-            {/* One slim bar. The search sub-header was removed to give the page its height back;
-                search stays in the «بحث» menu and on the homepage. */}
+            {/* The slim bar, and under it the site-wide search box (useSearchParams, so in Suspense) */}
             <header className="sticky top-0 z-50 shadow-sm">
               <NavHeader />
+              <Suspense fallback={<SearchSubHeaderFallback />}>
+                <SearchSubHeader />
+              </Suspense>
             </header>
             <main className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">{children}</main>
           </NumeralProvider>

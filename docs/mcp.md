@@ -1,6 +1,6 @@
 # MCP server for الجامع (plan)
 
-Status: planned, not built. Goal: let users connect their AI assistant (Claude, ChatGPT, Cursor, VS Code…)
+Status: built (v1). Open endpoint `https://hadith.dev/mcp` (50 tool calls/day per IP, anonymous answers carry a note inviting sign-up); `https://hadith.dev/mcp/account` behind OAuth sign-in, and personal `hd_…` tokens for `/mcp` (1,000/day). Code: `lib/mcp/` (JSON-RPC over Streamable HTTP, stateless, hand-written — no SDK), `lib/oauth.ts`, `lib/auth.ts` (email-link sign-in via Resend), tables in `db/add_accounts.js`. Tools: search_hadith, get_hadith, get_parallels, search_narrators, get_narrator, list_books. The plan below is kept for reference. Goal: let users connect their AI assistant (Claude, ChatGPT, Cursor, VS Code…)
 to the encyclopedia with one URL, so it can search hadiths, read the sanad/matn/takhrij and cite
 hadith.dev pages.
 

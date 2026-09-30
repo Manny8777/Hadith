@@ -5,7 +5,7 @@ import { useNumeral } from '@/lib/numeralContext'
 import { useTheme } from '@/lib/themeContext'
 import UiIcon from './UiIcon'
 
-type NavLink = { href: string; label: string; isNew?: boolean }
+type NavLink = { href: string; label: string; isNew?: boolean; external?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
 
 const CATEGORIES: NavCategory[] = [
@@ -198,7 +198,34 @@ const CATEGORIES: NavCategory[] = [
       // { href: '/books/transmission-genealogy', label: 'تداخل الكتب', isNew: true },
     ],
   },
+  {
+    id: 'developers',
+    label: 'للمطورين',
+    links: [
+      { href: '/developers', label: 'نظرة عامة' },
+      { href: '/developers#mcp', label: 'خادم MCP', isNew: true },
+      { href: 'https://github.com/Manny8777/Hadith', label: 'المستودع على GitHub', external: true },
+      { href: '/account', label: 'حسابي والرموز الشخصية' },
+    ],
+  },
 ]
+
+// Sign-in is optional: a person icon, labelled «دخول» until the reader signs in
+function AccountButton() {
+  const [email, setEmail] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.json()).then(d => setEmail(d.user?.email ?? null)).catch(() => setEmail(null))
+  }, [])
+  const signedIn = !!email
+  return (
+    <a href={signedIn ? '/account' : '/login'} title={signedIn ? `حسابي (${email})` : 'تسجيل الدخول (اختياري)'}
+      aria-label={signedIn ? 'حسابي' : 'تسجيل الدخول'}
+      className="flex items-center justify-center gap-1 h-11 min-w-11 px-2 rounded-full text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] transition-colors shrink-0 text-[11px]">
+      <UiIcon name="narrator" size={18} className={signedIn ? 'text-[#E6C77A]' : 'text-[#C9A96B]'} />
+      {email === null && <span className="hidden min-[1150px]:inline">دخول</span>}
+    </a>
+  )
+}
 
 function NumberingToggle() {
   const { pref, toggle } = useNumbering()
@@ -306,10 +333,11 @@ export default function NavHeader() {
                       <a
                         key={link.href}
                         href={link.href}
+                        {...(link.external ? { target: '_blank', rel: 'noopener' } : {})}
                         onClick={() => setOpen(null)}
                         className="flex items-center justify-between gap-1 text-sm text-ink hover:text-primary hover:bg-paper px-3 py-2.5 rounded transition-colors"
                       >
-                        <span className="truncate">{link.label}</span>
+                        <span className="truncate">{link.label}{link.external && ' ↗'}</span>
                         {link.isNew && (
                           <span className="shrink-0 text-[9px] bg-amber-100 text-amber-700 border border-amber-200 px-1 py-0.5 rounded-sm font-bold leading-none">
                             جديد
@@ -328,6 +356,7 @@ export default function NavHeader() {
         <div className="flex-1 min-[960px]:hidden" />
 
         <div className="flex items-center gap-1.5 shrink-0">
+          <AccountButton />
           <ThemeToggle />
           <div className="hidden min-[960px]:flex items-center gap-1 xl:gap-2">
             <NumberingToggle />
@@ -373,6 +402,7 @@ export default function NavHeader() {
                     <a
                       key={link.href}
                       href={link.href}
+                      {...(link.external ? { target: '_blank', rel: 'noopener' } : {})}
                       onClick={() => { setOpen(null); setMobileOpen(false) }}
                       className="flex items-center justify-between gap-1 text-[0.8125rem] text-gray-700 hover:text-green-800 active:bg-green-50 px-2 py-2.5 min-h-11 rounded transition-colors"
                     >
