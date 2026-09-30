@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
 import UiIcon from '@/app/components/UiIcon'
+import StretchedLink from '@/app/components/StretchedLink'
 import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = 'force-dynamic'
@@ -174,9 +175,10 @@ export default async function ChapterAnalysisPage({
                     {chapters.map((ch, i) => {
                       const barW = Math.round((ch.hadith_count / maxHadiths) * 100)
                       return (
-                        <a key={i}
-                          href={`/books/chapter-analysis?book=${selectedBook}&chapter=${encodeURIComponent(ch.chapter_name || '')}`}
-                          className="flex items-center gap-2 px-4 py-2.5 hover:bg-blue-50 transition-colors">
+                        <div key={i} className="relative flex items-center gap-2 px-4 py-2.5 hover:bg-blue-50 transition-colors">
+                          <StretchedLink
+                            href={`/books/chapter-analysis?book=${selectedBook}&chapter=${encodeURIComponent(ch.chapter_name || '')}`}
+                            label={ch.chapter_name || '(بدون باب)'} />
                           <span className="text-xs text-gray-300 w-5 shrink-0">{(i + 1).toLocaleString('ar-EG')}</span>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm text-gray-800 hover:underline truncate">
@@ -193,11 +195,10 @@ export default async function ChapterAnalysisPage({
                             </div>
                           </div>
                           <Link href={`/hadith/${ch.first_hadith_id}`}
-                            className="text-xs text-green-600 hover:underline shrink-0"
-                            onClick={e => e.stopPropagation()}>
+                            className="relative z-10 text-xs text-green-600 hover:underline shrink-0">
                             ←
                           </Link>
-                        </a>
+                        </div>
                       )
                     })}
                   </div>

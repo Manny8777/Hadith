@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import HadithNumSearch from '@/app/components/HadithNumSearch'
 import HadithNumber from '@/app/components/HadithNumber'
 import { cardInfoField, cardInfoLines } from '@/lib/bookReference'
@@ -30,9 +30,15 @@ export default async function BookPage({
 }) {
   const { id } = await params
   const sp = await searchParams
-  const bookId = parseInt(id)
-  const sectionId = sp.section ? parseInt(sp.section) : null
-  const page = Math.max(1, parseInt(sp.page || '1'))
+  const bookId = Number(id)
+  // A title in place of the id (/books/موطأ مالك) reached SQL as NaN and failed the page with a 500
+  if (!Number.isInteger(bookId) || bookId <= 0) {
+    const byTitle = await pool.query<{ id: number }>('SELECT id FROM books WHERE title = $1 LIMIT 1', [decodeURIComponent(id).trim()])
+    if (byTitle.rows[0]) redirect(`/books/${byTitle.rows[0].id}`)
+    notFound()
+  }
+  const sectionId = sp.section && /^\d+$/.test(sp.section) ? Number(sp.section) : null
+  const page = Math.max(1, parseInt(sp.page || '1') || 1)
   const LIMIT = 50
   const offset = (page - 1) * LIMIT
 

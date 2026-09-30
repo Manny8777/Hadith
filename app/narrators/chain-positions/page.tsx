@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from 'next/link'
+import StretchedLink from '@/app/components/StretchedLink'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الرواة في مواضع الإسناد — جامع خادم الحرمين' }
@@ -161,8 +162,9 @@ export default async function ChainPositionsPage({
         {narrators.map((n, i) => {
           const pct = Math.round((n.hadith_count / maxCount) * 100)
           return (
-            <Link key={n.narrator_id} href={`/narrator/${n.narrator_id}`}
-              className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 hover:shadow-sm hover:border-green-200 transition-all group">
+            <div key={n.narrator_id}
+              className="relative flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 hover:shadow-sm hover:border-green-200 transition-all group">
+              <StretchedLink href={`/narrator/${n.narrator_id}`} label={n.abb_name || n.name} />
 
               <span className="text-xs text-gray-300 w-5 shrink-0 text-left">{i + 1}</span>
 
@@ -205,16 +207,12 @@ export default async function ChainPositionsPage({
                 <div className="text-xs text-gray-400">حديث</div>
               </div>
 
-              <div className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full shrink-0">
-                <Link
-                  href={`/narrators/chain-filter?seed=${n.narrator_id}`}
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  className="hover:underline"
-                >
+              <div className="relative z-10 text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full shrink-0">
+                <Link href={`/narrators/chain-filter?seed=${n.narrator_id}`} className="hover:underline">
                   تتبع الإسناد
                 </Link>
               </div>
-            </Link>
+            </div>
           )
         })}
       </div>
