@@ -134,6 +134,19 @@ const SANAD_WORDS = new Set(['حدثنا', 'حدثني', 'اخبرنا', 'اخب
 const MAX_EDGE_WORDS = 8
 const MAX_WORDS = 24
 
+// The same words at one point, whichever exact stretch of this matn they stand for (e.g. «رجل» for
+// «امرئ مسلم» in some versions and for «امرئ» in others), are one wording with all their sources
+function mergeWordings(ws: Wording[]): Wording[] {
+  const byText = new Map<string, Wording>()
+  for (const w of ws) {
+    const key = `${w.replaces ? 'r' : 'i'}|${tokenize(w.text).map(normWord).join(' ')}`
+    const have = byText.get(key)
+    if (!have) { byText.set(key, { ...w, sources: [...w.sources] }); continue }
+    for (const src of w.sources) if (!have.sources.some(x => x.id === src.id)) have.sources.push(src)
+  }
+  return [...byText.values()].sort((a, b) => b.sources.length - a.sources.length)
+}
+
 function buildVariants(source: TextEntry, others: TextEntry[]): Variant[] {
   const srcNorm = tokenize(source.matn).map(normWord)
   const byKey = new Map<string, Wording>()
@@ -201,7 +214,7 @@ function buildVariants(source: TextEntry, others: TextEntry[]): Variant[] {
       n: i + 1,
       at: Math.floor(last),
       span: spans.length ? [Math.min(...spans.map(r => r[0])), Math.max(...spans.map(r => r[1]))] : null,
-      wordings: ws.sort((a, b) => b.sources.length - a.sources.length),
+      wordings: mergeWordings(ws),
     }
   })
 }
@@ -291,7 +304,7 @@ function buildSegments(words: string[], variants: Variant[]): MapSeg[] {
   for (const v of kept) {
     const [s, e] = range(v)
     const last = points[points.length - 1]
-    if (last && s <= last.e) { last.e = Math.max(last.e, e); last.wordings.push(...v.wordings) }
+    if (last && s <= last.e) { last.e = Math.max(last.e, e); last.wordings = mergeWordings([...last.wordings, ...v.wordings]) }
     else points.push({ n: v.n, s, e, wordings: [...v.wordings] })
   }
   const segs: MapSeg[] = []
