@@ -2,6 +2,8 @@ export type SearchScope = 'both' | 'tarf'
 export type MatchMode = 'phrase' | 'all' | 'any'
 export type BookSource = 'hadith' | 'service'
 export type SearchGrade = 'sahih' | 'hasan' | 'daif' | ''
+/** نوع الحديث: to whom the chain leads (isnad_hadiths.isnad_type 1–4) */
+export type HadithType = 'marfu' | 'mawquf' | 'maqtu' | 'mursal' | ''
 
 export interface SearchUrlState {
   q: string
@@ -9,6 +11,7 @@ export interface SearchUrlState {
   grade: SearchGrade
   subjectCatId: string
   maxDepth: string
+  hadithType: HadithType
   searchScope: SearchScope
   matchMode: MatchMode
   bookSource: BookSource
@@ -25,6 +28,7 @@ const SEARCH_PARAM_NAMES: Record<keyof SearchUrlState, string> = {
   grade: 'grade',
   subjectCatId: 'subject_cat_id',
   maxDepth: 'max_depth',
+  hadithType: 'type',
   searchScope: 'search_scope',
   matchMode: 'match',
   bookSource: 'src',
@@ -54,6 +58,11 @@ function normalizeSearchGrade(raw: string | null | undefined): SearchGrade {
   return value === 'sahih' || value === 'hasan' || value === 'daif' ? value : ''
 }
 
+function normalizeHadithType(raw: string | null | undefined): HadithType {
+  const value = (raw ?? '').trim().toLowerCase()
+  return value === 'marfu' || value === 'mawquf' || value === 'maqtu' || value === 'mursal' ? value : ''
+}
+
 function normalizeMatchMode(raw: string | null | undefined): MatchMode {
   const value = (raw ?? '').trim().toLowerCase()
   return value === 'all' || value === 'any' ? value : 'phrase'
@@ -66,6 +75,7 @@ function normalizeSearchState(state: SearchUrlState): SearchUrlState {
     grade: normalizeSearchGrade(state.grade),
     subjectCatId: state.subjectCatId.trim(),
     maxDepth: state.maxDepth.trim(),
+    hadithType: normalizeHadithType(state.hadithType),
     searchScope: state.searchScope === 'tarf' ? 'tarf' : 'both',
     matchMode: normalizeMatchMode(state.matchMode),
     bookSource: state.bookSource === 'service' ? 'service' : 'hadith',
@@ -84,6 +94,7 @@ export function parseSearchUrl(input: QueryInput): SearchUrlState {
     grade: normalizeSearchGrade(params.get('grade')),
     subjectCatId: params.get('subject_cat_id') ?? '',
     maxDepth: params.get('max_depth') ?? '',
+    hadithType: normalizeHadithType(params.get('type')),
     searchScope: (params.get('search_scope') ?? '').trim().toLowerCase() === 'tarf' ? 'tarf' : 'both',
     matchMode: normalizeMatchMode(params.get('match')),
     bookSource: (params.get('src') ?? '').trim().toLowerCase() === 'service' ? 'service' : 'hadith',
@@ -118,6 +129,7 @@ export function buildSearchUrl(input: QueryInput, patch: SearchUrlPatch = {}): s
   setOptionalParam(params, SEARCH_PARAM_NAMES.grade, next.grade)
   setOptionalParam(params, SEARCH_PARAM_NAMES.subjectCatId, next.subjectCatId)
   setOptionalParam(params, SEARCH_PARAM_NAMES.maxDepth, next.maxDepth)
+  setOptionalParam(params, SEARCH_PARAM_NAMES.hadithType, next.hadithType)
     if (next.searchScope !== 'both') params.set(SEARCH_PARAM_NAMES.searchScope, next.searchScope)
     if (next.matchMode !== 'phrase') params.set(SEARCH_PARAM_NAMES.matchMode, next.matchMode)
     if (next.bookSource === 'service') params.set(SEARCH_PARAM_NAMES.bookSource, next.bookSource)
@@ -148,9 +160,11 @@ export function buildSearchApiUrl(stateInput: SearchUrlState): string {
       params.set('search_scope', state.searchScope)
       if (state.matchMode !== 'phrase') params.set('match', state.matchMode)
       if (state.grade) params.set('grade', state.grade)
+      if (state.hadithType) params.set('type', state.hadithType)
     } else {
       params.set('page', String(state.page))
       if (state.grade) params.set('grade', state.grade)
+      if (state.hadithType) params.set('type', state.hadithType)
     }
     return `/api/search?${params.toString()}`
   }
@@ -165,6 +179,7 @@ export function buildSearchApiUrl(stateInput: SearchUrlState): string {
     if (state.grade) params.set('grade', state.grade)
     if (state.subjectCatId) params.set('subject_cat_id', state.subjectCatId)
     if (state.maxDepth) params.set('max_depth', state.maxDepth)
+    if (state.hadithType) params.set('type', state.hadithType)
   }
   return `/api/search?${params.toString()}`
 }

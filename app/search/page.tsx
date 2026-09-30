@@ -61,6 +61,7 @@ function SearchInner() {
     grade: gradeFilter,
     subjectCatId,
     maxDepth,
+    hadithType,
     searchScope,
     matchMode,
     bookSource,
@@ -455,7 +456,7 @@ function SearchInner() {
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="flex flex-col gap-1 min-w-0">
               <label htmlFor="search-book" className="text-xs font-medium text-gray-500">حسب الكتاب</label>
               <select
@@ -506,6 +507,23 @@ function SearchInner() {
               </div>
             )}
             <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor="search-type" className="text-xs font-medium text-gray-500">نوع الحديث</label>
+              <select
+                id="search-type"
+                value={hadithType}
+                disabled={bookSource === 'service'}
+                onChange={e => navigate({ hadithType: e.target.value as typeof hadithType })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-50"
+                dir="rtl"
+              >
+                <option value="">جميع الأنواع</option>
+                <option value="marfu">مرفوع — إلى النبي ﷺ</option>
+                <option value="mawquf">موقوف — على الصحابي</option>
+                <option value="maqtu">مقطوع — على التابعي</option>
+                <option value="mursal">مرسل — يرفعه التابعي</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1 min-w-0">
               <label htmlFor="search-depth" className="text-xs font-medium text-gray-500">علو الإسناد</label>
               <select
                 id="search-depth"
@@ -523,7 +541,7 @@ function SearchInner() {
               </select>
             </div>
             </div>
-              {(bookId || gradeFilter || subjectCatId || maxDepth) && (
+              {(bookId || gradeFilter || subjectCatId || maxDepth || hadithType) && (
                 <button
                   type="button"
                   onClick={() => navigate({
@@ -531,6 +549,7 @@ function SearchInner() {
                     grade: '',
                     subjectCatId: '',
                     maxDepth: '',
+                    hadithType: '',
                   })}
                   className="text-sm text-gray-500 hover:text-red-600 transition-colors"
                 >

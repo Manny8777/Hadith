@@ -52,6 +52,8 @@ function wildcardToRegex(term: string): string | null {
   return `(^| )${body}( |$)`
 }
 
+const HADITH_TYPES: Record<string, number> = { marfu: 1, mawquf: 2, maqtu: 3, mursal: 4 }
+
 function parseMatch(raw: string | null): MatchMode {
   const m = (raw ?? '').trim().toLowerCase()
   // Default = the original search dialog's default: متتالية, i.e. the same words adjacent and in
@@ -71,6 +73,11 @@ export async function GET(req: Request) {
   const subjectCatId = parseIntParam(searchParams.get('subject_cat_id'), { positive: true })
   const maxDepth = parseIntParam(searchParams.get('max_depth'), { positive: true })
   const gradeFilter = normalizeGrade(searchParams.get('grade') as string | null)
+  // type: نوع الحديث — a hadith qualifies when one of its chains is of that type
+  // (isnad_hadiths.isnad_type: 1 مرفوع, 2 موقوف, 3 مقطوع, 4 مرسل; the hadith page shows the most common)
+  const hadithType = HADITH_TYPES[(searchParams.get('type') ?? '').trim().toLowerCase()] ?? null
+  const typeClause = (idExpr: string): string =>
+    hadithType === null ? '' : `EXISTS (SELECT 1 FROM isnad_hadiths ity WHERE ity.hadith_id = ${idExpr} AND ity.isnad_type = ${hadithType})`
   // search_scope: 'tarf' = أطراف فقط, 'both' (default) = متن + أطراف
   const searchScope = (searchParams.get('search_scope') ?? '').trim().toLowerCase() === 'tarf' ? 'tarf' : 'both'
   // match: 'all' (default, all words) | 'any' (أي من الكلمات) | 'phrase' (متتالية)
@@ -295,6 +302,7 @@ export async function GET(req: Request) {
              AND ht.is_leaf = true
              AND ${textMatchExpr('ht.tarf', 'ht.content', '$2')}
              ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}
+             ${hadithType !== null ? 'AND ' + typeClause('ht.main_id') : ''}
            ORDER BY ht.book_id, ht.main_id
            LIMIT $3 OFFSET $4
          )
@@ -329,7 +337,8 @@ export async function GET(req: Request) {
          WHERE ic.narrator_id_array @> ARRAY[$1::integer]
            AND ht.is_leaf = true
            AND ${textMatchExpr('ht.tarf', 'ht.content', '$2')}
-           ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}`,
+           ${gradeExistsClause2 ? 'AND ' + gradeExistsClause2 : ''}
+           ${hadithType !== null ? 'AND ' + typeClause('ht.main_id') : ''}`,
         [narratorId, q]
       ),
     ])
@@ -359,6 +368,7 @@ export async function GET(req: Request) {
            WHERE ic.narrator_id_array @> ARRAY[$1::integer]
              AND ht.is_leaf = true
              ${gradeExists ? 'AND ' + gradeExists : ''}
+             ${hadithType !== null ? 'AND ' + typeClause('ht.main_id') : ''}
            ORDER BY ht.book_id, ht.main_id
            LIMIT $2 OFFSET $3
          )
@@ -391,7 +401,8 @@ export async function GET(req: Request) {
          JOIN hadith_toc ht ON iha.hadith_id = ht.main_id
          WHERE ic.narrator_id_array @> ARRAY[$1::integer]
            AND ht.is_leaf = true
-           ${gradeExists ? 'AND ' + gradeExists : ''}`,
+           ${gradeExists ? 'AND ' + gradeExists : ''}
+           ${hadithType !== null ? 'AND ' + typeClause('ht.main_id') : ''}`,
         [narratorId]
       ),
     ])
@@ -514,6 +525,7 @@ export async function GET(req: Request) {
 
   const gradeCondition = gradeExistsClause(gradeFilter, 'h.main_id')
   if (gradeCondition) conditions.push(gradeCondition)
+  if (hadithType !== null) conditions.push(typeClause('h.main_id'))
 
   const whereClause = conditions.join(' AND ')
 
@@ -601,6 +613,7 @@ export async function GET(req: Request) {
 
   const countGradeCondition = gradeExistsClause(gradeFilter, 'main_id')
   if (countGradeCondition) countConditions.push(countGradeCondition)
+  if (hadithType !== null) countConditions.push(typeClause('main_id'))
 
   const countQuery = pool.query(
     `SELECT COUNT(*)::int AS total,
