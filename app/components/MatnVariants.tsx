@@ -9,8 +9,7 @@ import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 // The parallel narrations of a hadith, compared word for word with its own matn:
 //   · المتن المجمَّع — this hadith's matn with every other wording inline where it occurs,
 //     «[وفي رواية: …]» with a note number (as the printed takhrij editions do);
-//   · خريطة الاختلافات — how the versions word the hadith, as a tree that branches where they part;
-//   · the numbered notes — which books carry each wording;
+//   · خريطة الاختلافات — the whole matn as a line read right to left, the other wordings beneath;
 //   · نصوص الروايات — each version's own matn in full, its differing words highlighted.
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -227,9 +226,10 @@ function CompositeMatn({ source, variants, active, setActive }: {
 
   // Inline, a point shows its two most widely narrated wordings; the note lists them all
   const note = (v: Variant) => (
-    <a key={v.n} href={`#matn-variant-${v.n}`}
+    <span key={v.n} tabIndex={0}
+      title={v.wordings.map(w => `${w.text} — ${w.sources.map(x => x.bookTitle + (x.num ? ' ' + x.num : '')).join('، ')}`).join('\n')}
       onMouseEnter={() => setActive(v.n)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(v.n)} onBlur={() => setActive(null)}
-      className={`inline rounded px-0.5 mx-0.5 no-underline transition-colors text-[0.92em] ${active === v.n ? 'bg-amber-100 text-amber-950' : 'text-amber-900/80 hover:bg-amber-50'}`}>
+      className={`inline rounded px-0.5 mx-0.5 cursor-help transition-colors text-[0.92em] ${active === v.n ? 'bg-amber-100 text-amber-950' : 'text-amber-900/80 hover:bg-amber-50'}`}>
       <span className="text-gray-400">[</span>
       <span className="text-gray-500">وفي رواية: </span>
       {v.wordings.slice(0, 2).map((w, i) => (
@@ -241,7 +241,7 @@ function CompositeMatn({ source, variants, active, setActive }: {
       {v.wordings.length > 2 && <span className="text-gray-500 font-sans text-[0.8em]"> +{v.wordings.length - 2}</span>}
       <span className="text-gray-400">]</span>
       <sup className="text-[0.62em] text-amber-700 font-sans font-semibold mr-0.5">{v.n}</sup>
-    </a>
+    </span>
   )
 
   return (
@@ -261,202 +261,143 @@ function CompositeMatn({ source, variants, active, setActive }: {
   )
 }
 
-function VariantNotes({ variants, active, setActive }: {
-  variants: Variant[]
-  active: number | null
-  setActive: (n: number | null) => void
-}) {
-  return (
-    <ol className="rounded-xl border border-border bg-surface divide-y divide-border">
-      {variants.map(v => (
-        <li key={v.n} id={`matn-variant-${v.n}`}
-          onMouseEnter={() => setActive(v.n)} onMouseLeave={() => setActive(null)}
-          className={`flex gap-3 px-4 py-2 scroll-mt-24 transition-colors ${active === v.n ? 'bg-amber-50' : ''}`}>
-          <span className="shrink-0 w-8 text-xs font-semibold text-amber-700 font-sans pt-1">({v.n})</span>
-          <div className="min-w-0 flex-1 space-y-2">
-            {v.wordings.map((w, i) => (
-              <div key={i}>
-                <p className="font-[Amiri,serif] text-[0.95rem] text-gray-700 leading-relaxed">
-                  {!w.replaces && <span className="text-gray-500">زيادة: </span>}{clip(w.text, 14)}
-                </p>
-                <p className="flex flex-wrap gap-x-1.5 gap-y-1">
-                  {w.sources.map(s => (
-                    <a key={s.id} href={`/hadith/${s.id}`}
-                      className="inline-flex items-center gap-1 text-xs text-green-800 hover:underline">
-                      {s.bookTitle}
-                      {s.num && <span className="rounded-full bg-green-50 border border-green-100 px-1.5 text-[11px] text-green-700 font-sans">{s.num}</span>}
-                    </a>
-                  ))}
-                </p>
-              </div>
-            ))}
-          </div>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
 // ── خريطة الاختلافات ───────────────────────────────────────────────────────────
-// The versions' wordings as a tree read right to left: each box is a run of words that a set of versions
-// share, and it branches where their wording parts. Only the opening MAP_WORDS words are mapped — the
-// full texts diverge into as many branches as there are versions; the notes cover the rest.
-// Positions are computed, so boxes never overlap, and nothing is draggable.
+// The whole matn as a line read right to left: this hadith's wording runs along the top in boxes,
+// and wherever the versions part, the stretch they differ on is boxed (with its note number) and
+// the other wordings hang beneath it, each with its books, rejoining the line after. Positions are
+// computed, so boxes never overlap, and nothing is draggable.
 
-const MAP_WORDS = 10
-const MAP_NODE_W = 210
-const MAP_GAP_X = 36
-const MAP_GAP_Y = 14
+const MAP_GAP_X = 34
+const MAP_GAP_Y = 12
+const MAP_ALT_TOP = 36      // space between the line and the wordings beneath it
+const MAP_LONG_SPAN = 8
 
-interface MapNode {
-  id: string
-  words: string[]           // display words (with tashkeel) of this run
-  more: boolean             // a single version's run that continues past the mapped opening
-  versions: TextEntry[]     // every version through this box
-  ends: TextEntry[]         // versions whose mapped opening ends here (listed on the box)
-  children: MapNode[]
+type MapSeg =
+  | { kind: 'common'; id: string; words: string[] }
+  | { kind: 'diff'; id: string; n: number; words: string[]; wordings: Wording[] }
+
+// The matn cut into shared stretches and points of difference (overlapping points merged, so the
+// line never doubles back)
+function buildSegments(words: string[], variants: Variant[]): MapSeg[] {
+  const range = (v: Variant): [number, number] => v.span ? [v.span[0], v.span[1]] : [v.at + 1, v.at]
+  const isLong = (v: Variant) => !!v.span && v.span[1] - v.span[0] + 1 > MAP_LONG_SPAN
+  // A wording that rewrites a long passage would swallow the points inside it into one box: it is
+  // mapped only where it overlaps no other point (else it is read whole under «نصوص الروايات»)
+  const short = variants.filter(v => !isLong(v))
+  const overlaps = (v: Variant) => { const [s, e] = range(v); return short.some(o => { const [a, b] = range(o); return a <= e && s <= b }) }
+  const kept = variants.filter(v => !isLong(v) || !overlaps(v)).sort((x, y) => range(x)[0] - range(y)[0])
+
+  const points: { n: number; s: number; e: number; wordings: Wording[] }[] = []
+  for (const v of kept) {
+    const [s, e] = range(v)
+    const last = points[points.length - 1]
+    if (last && s <= last.e) { last.e = Math.max(last.e, e); last.wordings.push(...v.wordings) }
+    else points.push({ n: v.n, s, e, wordings: [...v.wordings] })
+  }
+  const segs: MapSeg[] = []
+  let cursor = 0
+  for (const p of points) {
+    if (p.s > cursor) segs.push({ kind: 'common', id: `c${cursor}`, words: words.slice(cursor, p.s) })
+    segs.push({ kind: 'diff', id: `d${p.n}`, n: p.n, words: words.slice(p.s, p.e + 1), wordings: p.wordings })
+    cursor = Math.max(cursor, p.e + 1)
+  }
+  if (cursor < words.length) segs.push({ kind: 'common', id: `c${cursor}`, words: words.slice(cursor) })
+  return segs
 }
 
-function buildMap(entries: TextEntry[]): MapNode[] {
-  const toks = new Map(entries.map(e => [e.id, tokenize(e.matn)]))
-  const norm = new Map(entries.map(e => [e.id, toks.get(e.id)!.map(normWord)]))
-  let seq = 0
-
-  const grow = (versions: TextEntry[], pos: number): MapNode[] => {
-    const groups = new Map<string, TextEntry[]>()
-    for (const v of versions) {
-      const w = norm.get(v.id)![pos]
-      if (w === undefined || pos >= MAP_WORDS) continue
-      groups.set(w, [...(groups.get(w) ?? []), v])
-    }
-    return [...groups.values()].sort((a, b) => b.length - a.length).map(g => node(g, pos))
+// Rough rendered sizes (tashkeel takes no width of its own, so it is not counted)
+const textWidth = (t: string) => t.replace(/[ً-ٰٟ]/g, '').length * 7.8
+const boxWidth = (t: string) => Math.round(Math.max(56, Math.min(250, textWidth(t) + 30)))
+const linesOf = (t: string, w: number) => Math.max(1, Math.ceil(textWidth(t) / (w - 26)))
+function chipsHeight(sources: SourceRef[], w: number): number {
+  let lines = sources.length ? 1 : 0, x = 0
+  for (const s of sources) {
+    const cw = s.bookTitle.length * 5.6 + (s.num ? s.num.length * 6.5 + 16 : 0) + 10
+    if (x + cw > w - 20 && x > 0) { lines++; x = 0 }
+    x += cw
   }
-
-  const node = (versions: TextEntry[], start: number): MapNode => {
-    const first = toks.get(versions[0].id)!
-    let pos = start
-    // extend the run while every version here has the same next word
-    while (pos < MAP_WORDS) {
-      const w = norm.get(versions[0].id)![pos]
-      if (w === undefined || !versions.every(v => norm.get(v.id)![pos] === w)) break
-      pos++
-    }
-    const ends = versions.filter(v => pos >= MAP_WORDS || norm.get(v.id)![pos] === undefined)
-    const rest = versions.filter(v => !ends.includes(v))
-    return {
-      id: `m${seq++}`,
-      words: first.slice(start, pos),
-      more: ends.length > 0 && ends.every(v => toks.get(v.id)!.length > pos),
-      versions,
-      ends,
-      children: rest.length ? grow(rest, pos) : [],
-    }
-  }
-
-  return grow(entries, 0)
+  return lines * 21
 }
+const wordingText = (w: Wording) => (w.replaces ? '' : 'زيادة: ') + w.text
 
-// Rough rendered heights, so each row of the tree is as tall as its tallest box
-// (tashkeel takes no width of its own, so it is not counted)
-const phraseHeight = (words: string[]) =>
-  Math.max(1, Math.ceil((words.join(' ').replace(/[ً-ٰٟ]/g, '').length * 7.6) / (MAP_NODE_W - 28))) * 26
-function chipsHeight(vs: TextEntry[]): number {
-  let lines = vs.length ? 1 : 0, x = 0
-  for (const v of vs) {
-    const w = v.bookTitle.length * 6.6 + (v.num ? v.num.length * 7 + 18 : 0) + 14
-    if (x + w > MAP_NODE_W - 20 && x > 0) { lines++; x = 0 }
-    x += w
-  }
-  return lines * 22
-}
-const nodeHeight = (n: MapNode) => 22 + phraseHeight(n.words) + (n.ends.length ? 8 + chipsHeight(n.ends) : 0) + (n.children.length && !n.ends.length ? 16 : 0)
-
-// Laid out sideways in reading order: each run continues to the left in the next column, and a
-// box's other continuations stack beneath its first one. A tree that grew downward would be as wide
-// as the number of versions; this one is as wide as the opening is long.
-function layoutMap(roots: MapNode[]) {
-  const depthOf = (n: MapNode): number => 1 + Math.max(0, ...n.children.map(depthOf))
-  const columns = Math.max(1, ...roots.map(depthOf))
-  const total = columns * MAP_NODE_W + (columns - 1) * MAP_GAP_X
-  const colX = (d: number) => total - (d + 1) * MAP_NODE_W - d * MAP_GAP_X
-
-  const pos = new Map<string, { x: number; y: number }>()
-  // Returns the bottom edge of the subtree placed at row y
-  const place = (n: MapNode, d: number, y: number): number => {
-    pos.set(n.id, { x: colX(d), y })
-    let bottom = y + nodeHeight(n)
-    let cy = y
-    for (const c of n.children) {
-      const b = place(c, d + 1, cy)
-      bottom = Math.max(bottom, b)
-      cy = b + MAP_GAP_Y
-    }
-    return bottom
-  }
-  let y = 0, height = 0
-  for (const r of roots) { height = place(r, 0, y); y = height + MAP_GAP_Y }
-
-  return { pos, total, height }
-}
-
-function MapBox({ data }: { data: { n: MapNode; currentId: number } }) {
-  const { n, currentId } = data
-  const isCurrent = n.versions.some(v => v.id === currentId)
+function MapLineBox({ data }: { data: { seg: MapSeg; width: number } }) {
+  const { seg, width } = data
+  const diff = seg.kind === 'diff'
   return (
-    <div dir="rtl" style={{ width: MAP_NODE_W }}
-      className={`rounded-xl border bg-surface px-3 py-2.5 text-center shadow-sm ${isCurrent ? 'border-amber-400' : 'border-border'}`}>
+    <div dir="rtl" style={{ width }}
+      className={`relative rounded-lg border px-3 py-2 text-center ${diff ? 'border-amber-400 bg-amber-50' : 'border-border bg-surface'}`}>
       <Handle type="target" position={Position.Right} style={{ opacity: 0 }} />
-      <p className="font-[Amiri,serif] text-[16px] leading-[26px] font-bold text-gray-900">
-        {n.words.join(' ')}{n.more && <span className="text-gray-400"> …</span>}
+      {diff && <span className="absolute -top-2.5 right-2 rounded-full bg-amber-600 text-white text-[10px] font-sans font-semibold px-1.5 leading-4">{seg.n}</span>}
+      <p className="font-[Amiri,serif] text-[16px] leading-[26px] text-gray-900">
+        {seg.words.length ? seg.words.join(' ') : <span className="text-amber-600 font-sans text-sm">＋</span>}
       </p>
-      {n.ends.length > 0 ? (
-        <div className="mt-2 flex flex-wrap justify-center gap-x-1.5 gap-y-1">
-          {n.ends.map(v => v.id === currentId ? (
-            <span key={v.id} className="text-[11px] font-sans font-semibold text-amber-800 bg-amber-50 rounded-full px-2">هذا الحديث</span>
-          ) : (
-            <a key={v.id} href={`/hadith/${v.id}`} className="nodrag inline-flex items-center gap-1 text-[11px] font-sans text-green-800 hover:underline">
-              {v.bookTitle}
-              {v.num && <span className="rounded-full bg-green-50 border border-green-100 px-1.5 text-green-700">{v.num}</span>}
-            </a>
-          ))}
-        </div>
-      ) : n.children.length > 0 && (
-        <p className="mt-1 text-[11px] font-sans text-gray-400">{n.versions.length} روايات</p>
-      )}
       <Handle type="source" position={Position.Left} style={{ opacity: 0 }} />
+      <Handle type="source" id="down" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   )
 }
 
-const MAP_NODE_TYPES = { box: MapBox }
+function MapWordingBox({ data }: { data: { w: Wording; width: number; currentId: number } }) {
+  const { w, width } = data
+  return (
+    <div dir="rtl" style={{ width }} className="rounded-lg border border-border bg-surface px-3 py-2 text-center shadow-sm">
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <p className="font-[Amiri,serif] text-[15px] leading-[24px] text-gray-800" title={w.text}>{wordingText(w)}</p>
+      <div className="mt-1 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5">
+        {w.sources.map(s => (
+          <a key={s.id} href={`/hadith/${s.id}`} className="nodrag inline-flex items-center gap-1 text-[11px] font-sans text-green-800 hover:underline">
+            {s.bookTitle}
+            {s.num && <span className="rounded-full bg-green-50 border border-green-100 px-1.5 text-green-700">{s.num}</span>}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-function VariantMap({ entries }: { entries: TextEntry[] }) {
+const MAP_NODE_TYPES = { line: MapLineBox, wording: MapWordingBox }
+
+function VariantMap({ source, variants }: { source: TextEntry; variants: Variant[] }) {
   const { theme } = useTheme()
   const dark = theme === 'dark'
   const touchLock = useFlowTouchLock()
   const wrap = useRef<HTMLDivElement>(null)
 
   const { nodes, edges, total, height } = useMemo(() => {
-    const roots = buildMap(entries)
-    const { pos, total, height } = layoutMap(roots)
+    const segs = buildSegments(tokenize(source.matn), variants)
+    // column widths: a point of difference is as wide as its widest wording
+    const widths = segs.map(seg => {
+      const own = seg.words.length ? boxWidth(seg.words.join(' ')) : 44
+      return seg.kind === 'diff' ? Math.max(own, ...seg.wordings.map(w => Math.max(170, boxWidth(wordingText(w))))) : own
+    })
+    const lineH = Math.max(...segs.map((seg, i) => 16 + linesOf(seg.words.join(' ') || '+', widths[i]) * 26))
+    const total = widths.reduce((a, w) => a + w, 0) + MAP_GAP_X * (segs.length - 1)
+
     const nodes: Node[] = []
     const edges: Edge[] = []
-    const add = (n: MapNode, parent: MapNode | null) => {
-      const p = pos.get(n.id)!
-      nodes.push({ id: n.id, type: 'box', position: p, data: { n, currentId: entries[0].id }, draggable: false, selectable: false })
-      if (parent) edges.push({
-        id: `${parent.id}-${n.id}`, source: parent.id, target: n.id, type: 'smoothstep',
-        style: { stroke: dark ? '#5B6470' : '#c9bfa8', strokeWidth: 1.5 },
+    const stroke = dark ? '#5B6470' : '#c9bfa8'
+    let right = total, height = lineH
+    segs.forEach((seg, i) => {
+      const w = widths[i]
+      const x = right - w
+      right = x - MAP_GAP_X
+      nodes.push({ id: seg.id, type: 'line', position: { x, y: 0 }, data: { seg, width: w }, draggable: false, selectable: false })
+      if (i > 0) edges.push({ id: `e-${segs[i - 1].id}-${seg.id}`, source: segs[i - 1].id, target: seg.id, type: 'straight', style: { stroke, strokeWidth: 1.5 } })
+      if (seg.kind !== 'diff') return
+      let y = lineH + MAP_ALT_TOP
+      seg.wordings.forEach((wd, k) => {
+        const id = `${seg.id}-w${k}`
+        nodes.push({ id, type: 'wording', position: { x, y }, data: { w: wd, width: w, currentId: source.id }, draggable: false, selectable: false })
+        edges.push({ id: `e-${id}`, source: seg.id, sourceHandle: 'down', target: id, type: 'smoothstep',
+          style: { stroke, strokeWidth: 1.2, strokeDasharray: '4 3' } })
+        y += 20 + linesOf(wordingText(wd), w) * 24 + chipsHeight(wd.sources, w) + MAP_GAP_Y
       })
-      n.children.forEach(c => add(c, n))
-    }
-    roots.forEach(r => add(r, null))
+      height = Math.max(height, y)
+    })
     return { nodes, edges, total, height }
-  }, [entries, dark])
+  }, [source, variants, dark])
 
-  // Open at a readable size, aligned to the right (where Arabic text starts), rather than shrinking
-  // a wide tree until nothing can be read
-  // The whole map shown at a readable size: as wide as the page allows, and as tall as it needs
+  // Opens at the start of the matn (the right end), at a readable size; drag to follow the text
   const [width, setWidth] = useState(900)
   useEffect(() => {
     const el = wrap.current
@@ -465,24 +406,25 @@ function VariantMap({ entries }: { entries: TextEntry[] }) {
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  const zoom = Math.max(0.7, Math.min(1, (width - 32) / total))
-  const onInit = (rf: ReactFlowInstance) => rf.setViewport({ x: width - 16 - total * zoom, y: 16, zoom })
-  const boxH = Math.min(1600, Math.max(160, height * zoom + 32))
+  const zoom = 0.9
+  const onInit = (rf: ReactFlowInstance) => rf.setViewport({ x: width - 16 - total * zoom, y: 24, zoom })
+  const boxH = Math.min(900, Math.max(200, height * zoom + 48))
 
   return (
     <div ref={wrap} style={{ height: boxH }} className="relative w-full rounded-xl border border-border overflow-hidden bg-surface">
       <FlowTouchToggle {...touchLock} />
       <ReactFlow
+        key={`${width}`}
         nodes={nodes}
         edges={edges}
         nodeTypes={MAP_NODE_TYPES}
-        key={`${width}`}
         onInit={onInit}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
         zoomOnScroll={false}
         preventScrolling={false}
+        translateExtent={[[-80, -60], [total + 80, height + 80]]}
         minZoom={0.3}
         maxZoom={1.6}
         proOptions={{ hideAttribution: true }}
@@ -491,6 +433,9 @@ function VariantMap({ entries }: { entries: TextEntry[] }) {
         <Background color={dark ? '#2A313A' : '#e7e5e4'} gap={24} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
+      <p className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 border border-border px-3 py-1 text-[11px] font-sans text-gray-500">
+        اسحب لمتابعة المتن ←
+      </p>
     </div>
   )
 }
@@ -675,7 +620,7 @@ export default function MatnVariants({
           </span>
         </div>
         <p className="text-xs text-gray-400 mb-3">
-          متن هذا الحديث ({currentBookTitle})، وألفاظ الروايات الأخرى في مواضعها — مرّر على أي اختلافٍ لترى ما يقابله في المتن ومصادره
+          متن هذا الحديث ({currentBookTitle})، وألفاظ الروايات الأخرى في مواضعها — مرّر على أي اختلافٍ لترى ما يقابله في المتن، ومصادرُه في الخريطة تحته برقمه
         </p>
         {variants.length === 0
           ? <p className="text-sm text-gray-500">الروايات متفقة في ألفاظ هذا المتن.</p>
@@ -683,23 +628,13 @@ export default function MatnVariants({
       </div>
 
       {/* ── خريطة الاختلافات ── */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-1">خريطة الاختلافات</h3>
-        <p className="text-xs text-gray-400 mb-3">
-          كيف تبدأ الروايات: كل مربعٍ ألفاظٌ تتفق عليها مجموعةٌ من الروايات، ويتفرّع حيث تختلف — والكتب تحت آخر مربعٍ لكل رواية
-        </p>
-        <VariantMap entries={textEntries} />
-      </div>
-
-      {/* ── مصادر الاختلافات ── */}
       {variants.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-gray-700 mb-1">
-            مصادر الاختلافات
-            <span className="text-xs font-normal text-gray-400 mr-2">({variants.length})</span>
-          </h3>
-          <p className="text-xs text-gray-400 mb-3">كل رقمٍ في المتن أعلاه، والكتب التي جاء فيها ذلك اللفظ</p>
-          <VariantNotes variants={variants} active={active} setActive={setActive} />
+          <h3 className="text-sm font-bold text-gray-700 mb-1">خريطة الاختلافات</h3>
+          <p className="text-xs text-gray-400 mb-3">
+            المتن كاملًا من اليمين إلى اليسار: مواضع الاختلاف مظلَّلة بأرقامها، وتحت كلٍّ منها ألفاظ الروايات الأخرى وكتبها
+          </p>
+          <VariantMap source={textEntries[0]} variants={variants} />
         </div>
       )}
 
