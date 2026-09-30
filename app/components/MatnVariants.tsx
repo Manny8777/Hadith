@@ -73,6 +73,19 @@ function resolveMatnText(content: string | null, tarf: string | null): string {
   if (content) {
     const fromContent = extractMatnForComparison(content)
     if (fromContent) return fromContent
+    if (!/<متن[\s>]/.test(content)) {
+      // Another chain of the same hadith («بهذا الإسناد… وقال في حديثه»): the book prints no matn,
+      // but the record carries the full wording of this chain in <متن_مخفي نص="…"/>. Its tarf field
+      // then holds sanad text, not matn, so without that there is nothing to compare.
+      const hidden = content.match(/<متن_مخفي[^>]*\sنص="([^"]*)"/)?.[1]
+      if (!hidden) return ''
+      return stripXmlToVerbatim(hidden)
+        .replace(/[0-9٠-٩]+/g, ' ')
+        .replace(/[-–—]/g, ' ')
+        .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    }
   }
   if (tarf) {
     const fromTarf = extractMatnForComparison(tarf)
@@ -789,7 +802,13 @@ function buildVariantFlow(
   // Cap visible source rows so the chart stays legible (the full list lives on the matn-variants page)
   const totalSources = sourceOrder.length
   const MAX_SOURCES = 12
-  const shownSources = sourceOrder.slice(0, MAX_SOURCES)
+  // Keep the sources that differ most (as the note above the chart says), in their original order
+  const divCount = new Map<number, number>()
+  for (const seg of segments) for (const div of seg.divergences) for (const src of div.sources)
+    divCount.set(src.id, (divCount.get(src.id) ?? 0) + 1)
+  const keep = new Set([...sourceOrder].sort((a, b) => (divCount.get(b.id) ?? 0) - (divCount.get(a.id) ?? 0))
+    .slice(0, MAX_SOURCES).map(s => s.id))
+  const shownSources = sourceOrder.filter(s => keep.has(s.id))
   const shownIds = new Set(shownSources.map(s => s.id))
 
   // Backbone X positions (right-to-left: segment 0 = rightmost)
@@ -1049,6 +1068,101 @@ function VariantsFlowChart({ source, others }: { source: TextEntry; others: Text
   )
 }
 
+// ── VersionList ────────────────────────────────────────────────────────────────
+// Every parallel's own matn in full, with the words that differ from this hadith's matn marked, and
+// how much of the two texts is shared. The tree above shows only where the versions part ways.
+
+interface VersionDiff {
+  entry: TextEntry
+  words: { text: string; differs: boolean }[]
+  shared: number      // % of words the two texts share (Dice over the LCS)
+  missing: number     // words of this hadith's matn this version does not have
+  partial: boolean    // the version gives only part of the matn
+}
+
+function diffVersion(sourceNorm: string[], entry: TextEntry): VersionDiff {
+  const words = tokenize(entry.matn)
+  const pairs = lcsAlign(sourceNorm, words.map(normWord))
+  const matched = new Set(pairs.map(p => p.oi))
+  const shared = Math.round((2 * pairs.length * 100) / (sourceNorm.length + words.length || 1))
+  return {
+    entry,
+    words: words.map((text, i) => ({ text, differs: !matched.has(i) })),
+    shared,
+    missing: sourceNorm.length - pairs.length,
+    partial: words.length < sourceNorm.length * 0.6,
+  }
+}
+
+function VersionList({ source, others, chainOnly }: {
+  source: TextEntry
+  others: TextEntry[]
+  chainOnly: SourceRef[]
+}) {
+  const [openAll, setOpenAll] = useState(false)
+  const diffs = useMemo(() => {
+    const sourceNorm = tokenize(source.matn).map(normWord)
+    return others.map(e => diffVersion(sourceNorm, e)).sort((a, b) => b.shared - a.shared)
+  }, [source, others])
+  if (diffs.length === 0 && chainOnly.length === 0) return null
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+        <h3 className="text-sm font-bold text-gray-700">
+          نصوص الروايات
+          <span className="text-xs font-normal text-gray-400 mr-2">({diffs.length} رواية)</span>
+        </h3>
+        <button type="button" onClick={() => setOpenAll(o => !o)} className="text-xs text-green-700 hover:underline">
+          {openAll ? 'طيّ الكل' : 'فتح الكل'}
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 mb-3">
+        متن كل روايةٍ كاملًا، والألفاظ التي تخالف متن هذا الحديث <mark className="bg-amber-100 text-amber-900 rounded px-1">مظلَّلة</mark> — مرتّبةً من الأقرب إلى الأبعد
+      </p>
+      <div className="space-y-2">
+        {diffs.map(d => (
+          <details key={`${d.entry.id}-${openAll}`} open={openAll || undefined}
+            className="group rounded-xl border border-border bg-surface open:shadow-sm">
+            <summary className="flex items-center gap-3 flex-wrap cursor-pointer list-none px-4 py-2.5">
+              <span className="text-gray-400 text-xs transition-transform group-open:rotate-90">◀</span>
+              <a href={`/hadith/${d.entry.id}`} onClick={e => e.stopPropagation()}
+                className="font-semibold text-sm text-green-800 hover:underline">
+                {d.entry.bookTitle}{d.entry.num ? ` (${d.entry.num})` : ''}
+              </a>
+              {d.entry.takhrij_death != null && <span className="text-xs text-gray-400">ت {d.entry.takhrij_death} هـ</span>}
+              <span className="flex-1" />
+              {d.partial && <span className="text-[11px] rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">طرفٌ منه</span>}
+              <span className={`text-[11px] rounded-full px-2 py-0.5 ${d.shared >= 85 ? 'bg-green-50 text-green-800' : d.shared >= 60 ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>
+                تطابق {d.shared}٪
+              </span>
+            </summary>
+            <div className="px-4 pb-3 pt-1 border-t border-border">
+              <p dir="rtl" className="font-[Amiri,serif] text-[1.0625rem] leading-loose text-gray-800">
+                {d.words.map((w, i) => (
+                  <span key={i}>{i > 0 && ' '}{w.differs ? <mark className="bg-amber-100 text-amber-900 rounded px-0.5">{w.text}</mark> : w.text}</span>
+                ))}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-1.5">
+                {d.words.filter(w => w.differs).length} لفظًا مخالفًا أو زائدًا
+                {d.missing > 0 && ` · ليس فيها ${d.missing} لفظًا من متن هذا الحديث`}
+              </p>
+            </div>
+          </details>
+        ))}
+      </div>
+      {chainOnly.length > 0 && (
+        <p className="text-xs text-gray-500 mt-3 leading-relaxed">
+          <span className="font-semibold text-gray-600">أسانيد أخرى دون متنٍ مسجَّل: </span>
+          {chainOnly.map((c, i) => (
+            <span key={c.id}>{i > 0 && '، '}<a href={`/hadith/${c.id}`} className="text-green-700 hover:underline">{c.bookTitle}{c.num ? ` (${c.num})` : ''}</a></span>
+          ))}
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ── Main export ────────────────────────────────────────────────────────────────
 
 export default function MatnVariants({
@@ -1116,6 +1230,12 @@ export default function MatnVariants({
     [textEntries]
   )
 
+  // Parallels with no matn recorded at all, listed after the comparisons
+  const chainOnly = useMemo(() => rawParallels
+    .filter(p => resolveMatnText(p.content, p.tarf).trim().length <= 3)
+    .map(p => ({ id: p.main_id, bookTitle: p.book_title, num: p.tarqeem_matboa1 ?? p.tarqeem_harf ?? null })),
+  [rawParallels])
+
   if (loading) {
     return <p className="text-xs text-gray-400 py-2">جاري تحميل المتون...</p>
   }
@@ -1152,6 +1272,9 @@ export default function MatnVariants({
         </p>
         <VariantsFlowChart source={textEntries[0]} others={textEntries.slice(1)} />
       </div>
+
+      {/* ── نصوص الروايات ── */}
+      <VersionList source={textEntries[0]} others={textEntries.slice(1)} chainOnly={chainOnly} />
 
     </div>
   )
