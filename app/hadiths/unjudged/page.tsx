@@ -30,9 +30,14 @@ const NO_JUDGMENT = `NOT EXISTS (SELECT 1 FROM hadith_judgments hj WHERE hj.hadi
 // …and, in the main list, none from al-Durar al-Saniyya either (dorar_rulings, filled by
 // scripts/dorar-crawl.mjs and keyed by book and printed number, as on the hadith page). Those with a
 // Dorar ruling are listed separately (?dorar=1), so the counts follow the crawl as it goes.
+// The key is the hadith's first printed number as it appears in its text — dorarKey() in
+// lib/dorar.ts, what the hadith page looks rulings up by — stored in hadith_toc.dorar_key by
+// db/add_dorar_key_index.js (tarqeem_matboa1 is not the same thing: «2952 (م)», or another number of
+// the group — which left 2,000+ of al-Nasa'i's here although they have a ruling).
 // The ruled numbers are gathered once and hash-joined: a lookup per hadith (EXISTS) took 30s+.
+const DORAR_KEY = `ht.dorar_key`
 const WITH_DORAR = `WITH dn AS MATERIALIZED (SELECT DISTINCT book_id, number FROM dorar_rulings)`
-const JOIN_DORAR = `LEFT JOIN dn ON dn.book_id = ht.book_id AND dn.number = btrim(ht.tarqeem_matboa1)`
+const JOIN_DORAR = `LEFT JOIN dn ON dn.book_id = ht.book_id AND dn.number = ${DORAR_KEY}`
 const HAS_DORAR = `dn.book_id IS NOT NULL`
 
 export default async function UnjudgedPage({
@@ -71,7 +76,7 @@ export default async function UnjudgedPage({
               ) AS chain_count,
               ${dorarView ? `(
                 SELECT d.hukm FROM dorar_rulings d
-                WHERE d.book_id = ht.book_id AND d.number = btrim(ht.tarqeem_matboa1)
+                WHERE d.book_id = ht.book_id AND d.number = ${DORAR_KEY}
                 ORDER BY d.dorar_source_id NULLS LAST LIMIT 1
               )` : 'NULL'} AS dorar_hukm
        FROM hadith_toc ht
