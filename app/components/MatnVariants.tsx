@@ -1,41 +1,12 @@
 'use client'
-import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { extractMatnForComparison, stripXmlToVerbatim } from '@/lib/hadithText'
-import { useTheme } from '@/lib/themeContext'
 
-// Position a popover as fixed, anchored under its wrapper span, clamped fully into the viewport.
-function useClampedPopover() {
-  const ref = useRef<HTMLSpanElement>(null)
-  const [pos, setPos] = useState<{ top: number; left: number }>({ top: -9999, left: -9999 })
-  useLayoutEffect(() => {
-    const el = ref.current
-    const anchor = el?.parentElement?.getBoundingClientRect()
-    if (!el || !anchor) return
-    const pad = 8
-    const { width: w, height: h } = el.getBoundingClientRect()
-    const vw = window.innerWidth
-    const vh = window.innerHeight
-    let top = anchor.bottom + 6
-    if (top + h > vh - pad) top = anchor.top - 6 - h   // flip above if no room below
-    top = Math.max(pad, Math.min(top, vh - h - pad))
-    const left = Math.max(pad, Math.min(anchor.right - w, vw - w - pad))
-    setPos({ top, left })
-  }, [])
-  return { ref, pos }
-}
-import ReactFlow, {
-  Background,
-  Controls,
-  useNodesState,
-  useEdgesState,
-  MarkerType,
-  type Node,
-  type Edge,
-  Position,
-  Handle,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
-import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
+// The parallel narrations of a hadith, compared word for word with its own matn:
+//   · المتن المجمَّع — this hadith's matn with every other wording inline where it occurs,
+//     «[وفي رواية: …]» with a note number (as the printed takhrij editions do);
+//   · the numbered notes — which books carry each wording;
+//   · نصوص الروايات — each version's own matn in full, its differing words highlighted.
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -63,11 +34,14 @@ interface TextEntry {
   num: string | null // display number (matboa1 preferred, else harf)
 }
 
-type DisplayItem =
-  | { type: 'word'; canonical: string; presentIn: SourceRef[]; absentIn: SourceRef[]; totalSources: number }
-  | { type: 'insertion'; words: { text: string; sources: SourceRef[] }[] }
-
 // ── Text utilities ─────────────────────────────────────────────────────────────
+
+const cleanForComparison = (s: string) => s
+  .replace(/[0-9٠-٩]+/g, ' ')
+  .replace(/[-–—]/g, ' ')
+  .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 function resolveMatnText(content: string | null, tarf: string | null): string {
   if (content) {
@@ -78,1011 +52,261 @@ function resolveMatnText(content: string | null, tarf: string | null): string {
       // but the record carries the full wording of this chain in <متن_مخفي نص="…"/>. Its tarf field
       // then holds sanad text, not matn, so without that there is nothing to compare.
       const hidden = content.match(/<متن_مخفي[^>]*\sنص="([^"]*)"/)?.[1]
-      if (!hidden) return ''
-      return stripXmlToVerbatim(hidden)
-        .replace(/[0-9٠-٩]+/g, ' ')
-        .replace(/[-–—]/g, ' ')
-        .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
+      return hidden ? cleanForComparison(stripXmlToVerbatim(hidden)) : ''
     }
   }
   if (tarf) {
     const fromTarf = extractMatnForComparison(tarf)
     if (fromTarf) return fromTarf
-    // tarf is the matn opening — no sanad
-    const plain = stripXmlToVerbatim(tarf)
-    return plain
-      .replace(/[0-9٠-٩]+/g, ' ')
-      .replace(/[-–—]/g, ' ')
-      .replace(/[،؛؟,.;:!?()\[\]{}"'«»""'']/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+    return cleanForComparison(stripXmlToVerbatim(tarf)) // the tarf is the matn's opening — no sanad
   }
   return ''
 }
 
 function normWord(w: string): string {
   return w
-    .replace(/[أإآ]/g, 'ا')
+    .replace(/[أإآٱ]/g, 'ا')
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
-    .replace(/[ًٌٍَُِّْ]/g, '')
+    .replace(/[ًٌٍَُِّْٰـ]/g, '')
 }
 
 function tokenize(s: string): string[] {
   return s.split(/\s+/).filter(w => w.length > 0)
 }
 
-// ── LCS alignment ──────────────────────────────────────────────────────────────
-// Returns list of {ai, oi} pairs: anchor index → other index matched words
+// ── Alignment ──────────────────────────────────────────────────────────────────
 
-function lcsAlign(
-  anchorNorm: string[],
-  otherNorm: string[],
-): Array<{ ai: number; oi: number }> {
-  const m = anchorNorm.length
-  const n = otherNorm.length
-  // Build DP table
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+type Pair = { ai: number; oi: number }
+
+function lcsAlign(a: string[], b: string[]): Pair[] {
+  const m = a.length, n = b.length
+  const dp: Uint16Array[] = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1))
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
-      if (anchorNorm[i - 1] === otherNorm[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
-      }
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1])
     }
   }
-  // Trace back
-  const pairs: Array<{ ai: number; oi: number }> = []
+  const pairs: Pair[] = []
   let i = m, j = n
   while (i > 0 && j > 0) {
-    if (anchorNorm[i - 1] === otherNorm[j - 1]) {
-      pairs.push({ ai: i - 1, oi: j - 1 })
-      i--; j--
-    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
-      i--
-    } else {
-      j--
-    }
+    if (a[i - 1] === b[j - 1]) { pairs.push({ ai: i - 1, oi: j - 1 }); i--; j-- }
+    else if (dp[i - 1][j] >= dp[i][j - 1]) i--
+    else j--
   }
   return pairs.reverse()
 }
 
-// ── Composite builder ──────────────────────────────────────────────────────────
+// On long texts, a lone match of a short, common word (و، قال، الله…) between two unrelated stretches
+// is a coincidence, not an alignment — it would split one difference into scattered pieces. Keep a
+// match only when it is part of a run of two or more, or the word is distinctive on its own.
+function align(a: string[], b: string[]): Pair[] {
+  const pairs = lcsAlign(a, b)
+  return pairs.filter((p, i) => {
+    const prev = pairs[i - 1], next = pairs[i + 1]
+    const inRun = (prev && prev.ai === p.ai - 1 && prev.oi === p.oi - 1) || (next && next.ai === p.ai + 1 && next.oi === p.oi + 1)
+    return inRun || a[p.ai].length >= 5
+  })
+}
 
-function buildComposite(entries: TextEntry[]): DisplayItem[] {
-  if (entries.length === 0) return []
+// ── Variants ───────────────────────────────────────────────────────────────────
 
-  // Pick the longest text as the anchor
-  const anchor = entries.reduce((a, b) => a.matn.length >= b.matn.length ? a : b)
-  const others = entries.filter(e => e.id !== anchor.id)
+interface Wording {
+  at: number                        // shown after this word of the matn (-1: before the first)
+  replaces: [number, number] | null // the matn's words it replaces (inclusive), or null for an addition
+  text: string
+  sources: SourceRef[]
+}
 
-  const anchorWords = tokenize(anchor.matn)
-  const anchorNorm = anchorWords.map(normWord)
+// One point of difference: every wording the versions give for one stretch of the matn
+interface Variant {
+  n: number
+  at: number
+  span: [number, number] | null     // the matn's words the wordings replace, if any
+  wordings: Wording[]               // most widely narrated first
+}
 
-  // presentIn[i] = all sources whose LCS matched anchor word i
-  // gaps[i] = words inserted by some source BEFORE anchor word i
-  const presentIn: SourceRef[][] = anchorWords.map(() => [])
-  const anchorRef: SourceRef = { id: anchor.id, bookTitle: anchor.bookTitle, num: anchor.num }
-  anchorWords.forEach((_, i) => presentIn[i].push(anchorRef))
+const SANAD_WORDS = new Set(['حدثنا', 'حدثني', 'اخبرنا', 'اخبرني', 'انبانا', 'انباني', 'ثنا', 'حدثناه', 'اخبرناه'])
+const MAX_EDGE_WORDS = 8
+const MAX_WORDS = 24
 
-  // insertionsBefore[i] = Map<normWord, { text: string; sources: SourceRef[] }>
-  // i = 0..anchorWords.length (index anchorWords.length = "after all anchor words")
-  const insertionsBefore: Array<Map<string, { text: string; sources: SourceRef[] }>> =
-    Array.from({ length: anchorWords.length + 1 }, () => new Map())
+function buildVariants(source: TextEntry, others: TextEntry[]): Variant[] {
+  const srcNorm = tokenize(source.matn).map(normWord)
+  const byKey = new Map<string, Wording>()
 
   for (const other of others) {
-    const otherWords = tokenize(other.matn)
-    const otherNorm = otherWords.map(normWord)
-    const pairs = lcsAlign(anchorNorm, otherNorm)
-
+    const words = tokenize(other.matn)
+    const pairs = align(srcNorm, words.map(normWord))
     const ref: SourceRef = { id: other.id, bookTitle: other.bookTitle, num: other.num }
 
-    // Mark matched anchor positions as present in this source
-    const matchedOtherSet = new Set(pairs.map(p => p.oi))
+    for (let g = 0; g <= pairs.length; g++) {
+      const prevAi = g === 0 ? -1 : pairs[g - 1].ai
+      const nextAi = g === pairs.length ? srcNorm.length : pairs[g].ai
+      const prevOi = g === 0 ? -1 : pairs[g - 1].oi
+      const nextOi = g === pairs.length ? words.length : pairs[g].oi
+      const theirs = words.slice(prevOi + 1, nextOi)
+      if (theirs.length === 0) continue // this version simply lacks these words — not a wording of its own
 
-    for (const { ai } of pairs) {
-      presentIn[ai].push(ref)
-    }
-
-    // Find insertions: other words not matched to any anchor word.
-    // For each unmatched other word, find the next anchor word it appears before
-    // and bucket it there so we can display it as an insertion at that position.
-    for (let oi = 0; oi < otherWords.length; oi++) {
-      if (matchedOtherSet.has(oi)) continue
-      // Find the next anchor position after this oi
-      let nextAi = anchorWords.length // default: after all anchor words
-      for (const p of pairs) {
-        if (p.oi > oi) { nextAi = p.ai; break }
+      const edge = g === 0 || g === pairs.length
+      // Not wordings of this matn, and shown in full under «نصوص الروايات» instead:
+      // chain text that some records carry inside their matn (a second isnad «حدثنا فلان…»),
+      if (theirs.some(w => SANAD_WORDS.has(normWord(w)))) continue
+      // a longer telling's own opening or ending (the story before or after this matn),
+      if (edge && theirs.length > MAX_EDGE_WORDS) continue
+      // and a whole passage in the middle that has no counterpart here
+      if (theirs.length > MAX_WORDS) continue
+      let at: number, replaces: [number, number] | null
+      const ours = nextAi - prevAi - 1
+      // At either end, a short stretch of this matn against a short one of theirs is another wording
+      // of the same words («نزل أهل قريظة» for «لما نزلت بنو قريظة»), not an addition
+      if (ours > 0 && (!edge || ours <= theirs.length + 2)) {
+        replaces = [prevAi + 1, nextAi - 1]; at = nextAi - 1
+      } else {
+        // An addition — or, at either end, where a version that tells only part of the story joins
+        // or leaves the text: shown at that point rather than as replacing everything before or after
+        replaces = null; at = g === 0 ? nextAi - 1 : prevAi
       }
-      const w = otherWords[oi]
-      const nw = normWord(w)
-      const bucket = insertionsBefore[nextAi]
-      if (!bucket.has(nw)) {
-        bucket.set(nw, { text: w, sources: [] })
-      }
-      bucket.get(nw)!.sources.push(ref)
+      const text = theirs.join(' ')
+      const key = `${at}|${replaces?.join('-') ?? ''}|${theirs.map(normWord).join(' ')}`
+      const v = byKey.get(key) ?? { at, replaces, text, sources: [] }
+      if (!v.sources.some(s => s.id === ref.id)) v.sources.push(ref)
+      byKey.set(key, v)
     }
   }
 
-  const totalSources = entries.length
-
-  // Build display items
-  const items: DisplayItem[] = []
-
-  for (let i = 0; i < anchorWords.length; i++) {
-    // Insertions before anchor word i (only show if ≥2 sources share them)
-    const bucket = insertionsBefore[i]
-    const sharedInsertions = Array.from(bucket.values()).filter(ins => ins.sources.length >= 2)
-    if (sharedInsertions.length > 0) {
-      items.push({ type: 'insertion', words: sharedInsertions })
+  // Group the wordings whose stretches overlap or touch into one point of difference
+  const range = (w: Wording): [number, number] => w.replaces ?? [w.at + .5, w.at + .5]
+  const sorted = [...byKey.values()].sort((a, b) => range(a)[0] - range(b)[0] || range(a)[1] - range(b)[1])
+  // (only short stretches: a wording that replaces a long passage would chain everything together,
+  // so it stands as a point of its own)
+  const SHORT = 6
+  const groups: Wording[][] = []
+  let end = -Infinity
+  for (const w of sorted) {
+    const [a, b] = range(w)
+    if (b - a + 1 > SHORT) { groups.push([w]); continue }
+    const g = groups.findLast(g => range(g[0])[1] - range(g[0])[0] + 1 <= SHORT)
+    if (g && a <= end + 1) { g.push(w); end = Math.max(end, b) }
+    else { groups.push([w]); end = b }
+  }
+  groups.sort((x, y) => Math.max(...x.map(w => range(w)[1])) - Math.max(...y.map(w => range(w)[1])))
+  return groups.map((ws, i) => {
+    const spans = ws.filter(w => w.replaces).map(w => w.replaces!)
+    const last = Math.max(...ws.map(w => range(w)[1]))
+    return {
+      n: i + 1,
+      at: Math.floor(last),
+      span: spans.length ? [Math.min(...spans.map(r => r[0])), Math.max(...spans.map(r => r[1]))] : null,
+      wordings: ws.sort((a, b) => b.sources.length - a.sources.length),
     }
-
-    // Anchor word
-    const present = presentIn[i]
-    const absent = entries
-      .filter(e => !present.some(r => r.id === e.id))
-      .map(e => ({ id: e.id, bookTitle: e.bookTitle, num: e.num }))
-
-    items.push({
-      type: 'word',
-      canonical: anchorWords[i],
-      presentIn: present,
-      absentIn: absent,
-      totalSources,
-    })
-  }
-
-  // Trailing insertions (after last anchor word)
-  const trailingBucket = insertionsBefore[anchorWords.length]
-  const trailingInsertions = Array.from(trailingBucket.values()).filter(ins => ins.sources.length >= 2)
-  if (trailingInsertions.length > 0) {
-    items.push({ type: 'insertion', words: trailingInsertions })
-  }
-
-  return items
+  })
 }
 
-// ── CompositeMatn component ────────────────────────────────────────────────────
+const clip = (text: string, n: number) => { const w = text.split(' '); return w.length > n ? w.slice(0, n).join(' ') + ' …' : text }
 
-function WordPopover({
-  presentIn,
-  absentIn,
-  onClose,
-}: {
-  presentIn: SourceRef[]
-  absentIn: SourceRef[]
-  onClose: () => void
-}) {
-  const { ref, pos } = useClampedPopover()
-  return (
-    <span
-      ref={ref}
-      className="fixed z-50 w-[min(18rem,calc(100vw-1rem))] max-h-[calc(100vh-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-right text-xs"
-      style={{ top: pos.top, left: pos.left }}
-      dir="rtl"
-      onClick={e => e.stopPropagation()}
-    >
-      {presentIn.length > 0 && (
-        <div className="mb-2">
-          <p className="font-bold text-green-800 mb-1">موجود في {presentIn.length} رواية:</p>
-          <ul className="space-y-0.5">
-            {presentIn.map(r => (
-              <li key={r.id}>
-                <a
-                  href={`/hadith/${r.id}`}
-                  className="text-green-700 hover:underline hover:text-green-900"
-                  onClick={onClose}
-                >
-                  {r.bookTitle}{r.num ? ` (${r.num})` : ''}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {absentIn.length > 0 && (
-        <div>
-          <p className="font-bold text-red-700 mb-1">غائب في {absentIn.length} رواية:</p>
-          <ul className="space-y-0.5">
-            {absentIn.map(r => (
-              <li key={r.id}>
-                <a
-                  href={`/hadith/${r.id}`}
-                  className="text-red-600 hover:underline hover:text-red-800"
-                  onClick={onClose}
-                >
-                  {r.bookTitle}{r.num ? ` (${r.num})` : ''}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <button
-        onClick={onClose}
-        className="mt-2 text-[10px] text-gray-400 hover:text-gray-600"
-      >
-        ✕ إغلاق
-      </button>
-    </span>
-  )
-}
+// ── المتن المجمَّع ─────────────────────────────────────────────────────────────
 
-function InsertionPopover({
-  words,
-  onClose,
-}: {
-  words: { text: string; sources: SourceRef[] }[]
-  onClose: () => void
+function CompositeMatn({ source, variants, active, setActive }: {
+  source: TextEntry
+  variants: Variant[]
+  active: number | null
+  setActive: (n: number | null) => void
 }) {
-  const { ref, pos } = useClampedPopover()
-  return (
-    <span
-      ref={ref}
-      className="fixed z-50 w-[min(18rem,calc(100vw-1rem))] max-h-[calc(100vh-1rem)] overflow-y-auto bg-white border border-amber-200 rounded-xl shadow-lg p-3 text-right text-xs"
-      style={{ top: pos.top, left: pos.left }}
-      dir="rtl"
-      onClick={e => e.stopPropagation()}
-    >
-      <p className="font-bold text-amber-800 mb-2">زيادة في {words[0]?.sources.length ?? 0}+ رواية</p>
-      {words.map((ins, i) => (
-        <div key={i} className="mb-1.5">
-          <p className="font-semibold text-amber-700 font-serif">{ins.text}</p>
-          <ul className="space-y-0.5 mt-0.5">
-            {ins.sources.map(r => (
-              <li key={r.id}>
-                <a
-                  href={`/hadith/${r.id}`}
-                  className="text-amber-600 hover:underline hover:text-amber-900"
-                  onClick={onClose}
-                >
-                  {r.bookTitle}{r.num ? ` (${r.num})` : ''}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+  const words = useMemo(() => tokenize(source.matn), [source])
+  const after = useMemo(() => {
+    const m = new Map<number, Variant[]>()
+    for (const v of variants) m.set(v.at, [...(m.get(v.at) ?? []), v])
+    return m
+  }, [variants])
+  const activeSpan = variants.find(v => v.n === active)?.span ?? null
+
+  // Inline, a point shows its two most widely narrated wordings; the note lists them all
+  const note = (v: Variant) => (
+    <a key={v.n} href={`#matn-variant-${v.n}`}
+      onMouseEnter={() => setActive(v.n)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(v.n)} onBlur={() => setActive(null)}
+      className={`inline rounded px-0.5 mx-0.5 no-underline transition-colors text-[0.92em] ${active === v.n ? 'bg-amber-100 text-amber-950' : 'text-amber-900/80 hover:bg-amber-50'}`}>
+      <span className="text-gray-400">[</span>
+      <span className="text-gray-500">وفي رواية: </span>
+      {v.wordings.slice(0, 2).map((w, i) => (
+        <span key={i}>
+          {i > 0 && <span className="text-gray-400"> · </span>}
+          {!w.replaces && <span className="text-gray-500">زيادة </span>}{clip(w.text, 8)}
+        </span>
       ))}
-      <button
-        onClick={onClose}
-        className="mt-2 text-[10px] text-gray-400 hover:text-gray-600"
-      >
-        ✕ إغلاق
-      </button>
-    </span>
+      {v.wordings.length > 2 && <span className="text-gray-500 font-sans text-[0.8em]"> +{v.wordings.length - 2}</span>}
+      <span className="text-gray-400">]</span>
+      <sup className="text-[0.62em] text-amber-700 font-sans font-semibold mr-0.5">{v.n}</sup>
+    </a>
   )
-}
-
-function CompositeMatn({ items, totalSources }: { items: DisplayItem[]; totalSources: number }) {
-  const [activeKey, setActiveKey] = useState<string | null>(null)
-
-  function toggle(key: string) {
-    setActiveKey(prev => prev === key ? null : key)
-  }
-
-  // Close popover when clicking elsewhere
-  useEffect(() => {
-    function handler() { setActiveKey(null) }
-    document.addEventListener('click', handler)
-    return () => document.removeEventListener('click', handler)
-  }, [])
-
-  if (items.length === 0) return null
 
   return (
-    <div
-      className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm leading-loose text-base font-serif"
-      dir="rtl"
-    >
-      {items.map((item, idx) => {
-        if (item.type === 'word') {
-          const freq = item.presentIn.length / item.totalSources
-          const showCount = freq < 1.0
-          const key = `w-${idx}`
-          const isOpen = activeKey === key
-
-          const colorCls =
-            freq === 1.0 ? 'hover:bg-gray-100' :
-            freq >= 0.7  ? 'bg-amber-50 text-amber-900 hover:bg-amber-100' :
-            freq >= 0.4  ? 'bg-orange-100 text-orange-900 hover:bg-orange-200' :
-                           'bg-red-100 text-red-800 hover:bg-red-200'
-
-          return (
-            <span key={key} className="relative inline-block">
-              <button
-                onClick={e => { e.stopPropagation(); toggle(key) }}
-                className={`rounded px-0.5 mx-px transition-colors cursor-pointer dark:text-ink ${colorCls} ${isOpen ? 'ring-2 ring-offset-1 ring-green-400' : ''}`}
-              >
-                {item.canonical}
-                {showCount && (
-                  <sup className="text-[9px] text-gray-400 ml-px">
-                    {item.presentIn.length}/{item.totalSources}
-                  </sup>
-                )}
-              </button>
-              {' '}
-              {isOpen && (
-                <WordPopover
-                  presentIn={item.presentIn}
-                  absentIn={item.absentIn}
-                  onClose={() => setActiveKey(null)}
-                />
-              )}
-            </span>
-          )
-        }
-
-        // insertion
-        const key = `ins-${idx}`
-        const isOpen = activeKey === key
-        const topCount = Math.max(...item.words.map(w => w.sources.length))
-
+    <p dir="rtl" className="font-[Amiri,serif] text-[1.125rem] leading-[2.3] text-gray-900 rounded-xl border border-border bg-surface px-5 py-4">
+      {(after.get(-1) ?? []).map(note)}
+      {words.map((w, i) => {
+        const inSpan = activeSpan && i >= activeSpan[0] && i <= activeSpan[1]
         return (
-          <span key={key} className="relative inline-block">
-            <button
-              onClick={e => { e.stopPropagation(); toggle(key) }}
-              className={`text-sm text-teal-700 dark:text-ink bg-teal-50 border border-teal-200 rounded px-1 mx-0.5 hover:bg-teal-100 transition-colors cursor-pointer ${isOpen ? 'ring-2 ring-offset-1 ring-teal-400' : ''}`}
-            >
-              [{item.words.map(w => w.text).join(' ')}]
-              <sup className="text-[9px] text-teal-500 ml-px">{topCount}</sup>
-            </button>
-            {' '}
-            {isOpen && (
-              <InsertionPopover
-                words={item.words}
-                onClose={() => setActiveKey(null)}
-              />
-            )}
+          <span key={i}>
+            {i > 0 && ' '}
+            <span className={inSpan ? 'bg-amber-200/60 rounded' : undefined}>{w}</span>
+            {(after.get(i) ?? []).map(note)}
           </span>
         )
       })}
-    </div>
+    </p>
   )
 }
 
-// ── Legend ─────────────────────────────────────────────────────────────────────
-
-function CompositeLegend() {
+function VariantNotes({ variants, active, setActive }: {
+  variants: Variant[]
+  active: number | null
+  setActive: (n: number | null) => void
+}) {
   return (
-    <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-3" dir="rtl">
-      <span className="flex items-center gap-1">
-        <span className="inline-block w-3 h-3 rounded bg-white border border-gray-200" />
-        متفق عليه في جميع الروايات
-      </span>
-      <span className="flex items-center gap-1">
-        <span className="inline-block w-3 h-3 rounded bg-amber-50 border border-amber-200" />
-        في أغلب الروايات (≥70%)
-      </span>
-      <span className="flex items-center gap-1">
-        <span className="inline-block w-3 h-3 rounded bg-orange-100 border border-orange-200" />
-        في بعض الروايات (40–70%)
-      </span>
-      <span className="flex items-center gap-1">
-        <span className="inline-block w-3 h-3 rounded bg-red-100 border border-red-200" />
-        نادر (&lt;40%)
-      </span>
-      <span className="flex items-center gap-1">
-        <span className="inline-block w-3 h-3 rounded bg-teal-50 border border-teal-200" />
-        زيادة في بعض الروايات
-      </span>
-    </div>
-  )
-}
-
-// ── Variant tree types ─────────────────────────────────────────────────────────
-
-interface Divergence {
-  type: 'variant' | 'insertion'
-  word: string
-  sources: SourceRef[]
-  replacesWords?: string[]
-}
-
-interface VariantSegment {
-  words: string[]
-  divergences: Divergence[]
-}
-
-// ── buildVariantData ───────────────────────────────────────────────────────────
-
-function buildVariantData(source: TextEntry, others: TextEntry[]): VariantSegment[] {
-  const sourceWords = tokenize(source.matn)
-  const sourceNorm = sourceWords.map(normWord)
-
-  if (sourceWords.length < 5) return []
-
-  // variantsAt[i]: variants attached to source position i (FIRST pos of its gap only)
-  // insertionsBefore[i]: insertions before source position i (full phrase per source)
-  // absorbedByGap: source positions that are part of a multi-word gap — rolled into first pos
-  const variantsAt: Array<Array<{ word: string; ref: SourceRef }>> =
-    Array.from({ length: sourceWords.length }, () => [])
-  const insertionsBefore: Array<Array<{ word: string; ref: SourceRef }>> =
-    Array.from({ length: sourceWords.length + 1 }, () => [])
-  const absorbedByGap = new Set<number>()
-
-  for (const other of others) {
-    const otherWords = tokenize(other.matn)
-    const otherNorm = otherWords.map(normWord)
-    const pairs = lcsAlign(sourceNorm, otherNorm)
-    const ref: SourceRef = { id: other.id, bookTitle: other.bookTitle, num: other.num }
-
-    const matchedSrc = new Set(pairs.map(p => p.ai))
-    const matchedOth = new Set(pairs.map(p => p.oi))
-    const sortedByAi = [...pairs].sort((a, b) => a.ai - b.ai)
-
-    // Process each gap between consecutive LCS matches (including before/after all matches)
-    for (let g = 0; g <= sortedByAi.length; g++) {
-      const prevAi = g === 0 ? -1 : sortedByAi[g - 1].ai
-      const nextAi = g === sortedByAi.length ? sourceWords.length : sortedByAi[g].ai
-      const prevOi = g === 0 ? -1 : sortedByAi[g - 1].oi
-      const nextOi = g === sortedByAi.length ? otherWords.length : sortedByAi[g].oi
-
-      // Collect unmatched source positions in this gap
-      const srcUnmatched: number[] = []
-      for (let ai = prevAi + 1; ai < nextAi; ai++) {
-        if (!matchedSrc.has(ai)) srcUnmatched.push(ai)
-      }
-
-      // Collect unmatched other words in this gap
-      const othUnmatched: string[] = []
-      for (let oi = prevOi + 1; oi < nextOi; oi++) {
-        if (!matchedOth.has(oi)) othUnmatched.push(otherWords[oi])
-      }
-
-      if (srcUnmatched.length > 0 && othUnmatched.length > 0) {
-        // Substitution: attach variant phrase to FIRST source position in the gap only.
-        // Mark remaining positions as absorbed so segmentation won't split on them.
-        variantsAt[srcUnmatched[0]].push({ word: othUnmatched.join(' '), ref })
-        for (let j = 1; j < srcUnmatched.length; j++) {
-          absorbedByGap.add(srcUnmatched[j])
-        }
-      } else if (srcUnmatched.length === 0 && othUnmatched.length > 0) {
-        // Pure insertion: join all words into one phrase attached before nextAi
-        insertionsBefore[nextAi].push({ word: othUnmatched.join(' '), ref })
-      }
-      // srcUnmatched > 0 && othUnmatched === 0: other simply skips, nothing to show
-    }
-  }
-
-  // Now build segments by walking source words and splitting at divergences
-  // Group consecutive insertions/variants by their normalized word form
-  function groupDivergences(
-    type: 'variant' | 'insertion',
-    raw: Array<{ word: string; ref: SourceRef }>,
-    replacesWords?: string[],
-  ): Divergence[] {
-    // Group by normalized word
-    const map = new Map<string, { word: string; sources: SourceRef[] }>()
-    for (const { word, ref } of raw) {
-      const nw = word.split(' ').map(normWord).join(' ')
-      if (!map.has(nw)) map.set(nw, { word, sources: [] })
-      // Avoid duplicate sources
-      const entry = map.get(nw)!
-      if (!entry.sources.some(s => s.id === ref.id)) entry.sources.push(ref)
-    }
-    return Array.from(map.values()).map(({ word, sources }) => ({
-      type,
-      word,
-      sources,
-      replacesWords,
-    }))
-  }
-
-  // Build segments
-  const segments: VariantSegment[] = []
-  let currentWords: string[] = []
-
-  for (let i = 0; i < sourceWords.length; i++) {
-    // Insertions before position i (skip if this position is absorbed mid-gap)
-    const ins = insertionsBefore[i]
-    if (ins.length > 0 && !absorbedByGap.has(i)) {
-      if (currentWords.length > 0) {
-        segments.push({ words: currentWords, divergences: [] })
-        currentWords = []
-      }
-      const insDivs = groupDivergences('insertion', ins)
-      if (insDivs.length > 0) {
-        segments.push({ words: [], divergences: insDivs })
-      }
-    }
-
-    // Add source word
-    currentWords.push(sourceWords[i])
-
-    // Variants at position i — only if this position is the START of a gap (not absorbed)
-    const vars = variantsAt[i]
-    if (vars.length > 0 && !absorbedByGap.has(i)) {
-      // Pull in all following absorbed positions so the whole replaced phrase is one segment
-      let j = i + 1
-      while (j < sourceWords.length && absorbedByGap.has(j)) {
-        currentWords.push(sourceWords[j])
-        j++
-      }
-      // Also collect variants recorded on absorbed positions (from parallels that produced
-      // a narrower gap covering only those positions) so they are not silently dropped.
-      const allVars = [...vars]
-      for (let k = i + 1; k < j; k++) allVars.push(...variantsAt[k])
-      const varDivs = groupDivergences('variant', allVars, currentWords.slice())
-      segments.push({ words: currentWords, divergences: varDivs })
-      currentWords = []
-      i = j - 1  // skip absorbed positions (already consumed)
-    }
-  }
-
-  // Trailing insertions (after last source word)
-  const trailingIns = insertionsBefore[sourceWords.length]
-  if (trailingIns.length > 0) {
-    if (currentWords.length > 0) {
-      segments.push({ words: currentWords, divergences: [] })
-      currentWords = []
-    }
-    const insDivs = groupDivergences('insertion', trailingIns)
-    if (insDivs.length > 0) {
-      segments.push({ words: [], divergences: insDivs })
-    }
-  }
-
-  if (currentWords.length > 0) {
-    segments.push({ words: currentWords, divergences: [] })
-  }
-
-  return segments
-}
-
-// ── buildVariantFlow ───────────────────────────────────────────────────────────
-
-const BACKBONE_HEIGHT = 60
-const BACKBONE_Y = 40
-const V_GAP = 18
-const H_GAP = 24
-const ROW_HEIGHT = 52
-const ROW_GAP = 10
-const LABEL_WIDTH = 140
-
-// ── Custom ReactFlow node components ─────────────────────────────────────────
-
-function BackboneNodeCmp({ data }: { data: { label: React.ReactNode; width: number } }) {
-  const { theme } = useTheme()
-  const dark = theme === 'dark'
-  const P = dark
-    ? { bg: '#1C212A', border: '#2A313A', handle: '#3A424D', text: '#ECE6DA' }
-    : { bg: '#fafaf9', border: '#d6d3d1', handle: '#a8a29e', text: '#1c1917' }
-  return (
-    <div style={{
-      background: P.bg, border: `1.5px solid ${P.border}`, borderRadius: 8, color: P.text,
-      width: data.width, height: BACKBONE_HEIGHT,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '8px 12px', textAlign: 'center', boxSizing: 'border-box',
-    }}>
-      <Handle type="target" position={Position.Right} id="right"
-        style={{ background: P.handle, width: 8, height: 8, border: 'none' }} />
-      <Handle type="source" position={Position.Left} id="left"
-        style={{ background: P.handle, width: 8, height: 8, border: 'none' }} />
-      <Handle type="source" position={Position.Bottom} id="bottom"
-        style={{ background: P.handle, width: 8, height: 8, border: 'none' }} />
-      {data.label}
-    </div>
-  )
-}
-
-function DivNodeCmp({ data }: { data: { label: React.ReactNode; isInsertion: boolean; width: number } }) {
-  const { theme } = useTheme()
-  const dark = theme === 'dark'
-  const P = dark
-    ? {
-        bg: '#1C212A', insBg: '#2A2210',
-        border: '#2A313A', insBorder: '#D9AD5B',
-        handle: '#3A424D', insHandle: '#D9AD5B', text: '#ECE6DA',
-      }
-    : {
-        bg: '#ffffff', insBg: '#fffbeb',
-        border: '#a8a29e', insBorder: '#d97706',
-        handle: '#a8a29e', insHandle: '#d97706', text: '#1c1917',
-      }
-  return (
-    <div style={{
-      background: data.isInsertion ? P.insBg : P.bg,
-      border: data.isInsertion ? `1.5px dashed ${P.insBorder}` : `1px solid ${P.border}`,
-      borderRadius: 6, width: data.width, padding: '6px 10px', color: P.text,
-      fontSize: 11, textAlign: 'right', boxSizing: 'border-box',
-    }}>
-      <Handle type="target" position={Position.Top} id="top"
-        style={{ background: data.isInsertion ? P.insHandle : P.handle, width: 8, height: 8, border: 'none' }} />
-      {data.label}
-    </div>
-  )
-}
-
-function SourceLabelCmp({ data }: { data: { label: string; num: string | null; hadithId: number; width: number; height?: number } }) {
-  const { theme } = useTheme()
-  const dark = theme === 'dark'
-  const P = dark
-    ? { bg: '#1C212A', border: '#2A313A', label: '#4DB9FF', num: '#76CBFF' }
-    : { bg: '#f8fafc', border: '#e2e8f0', label: '#3730a3', num: '#6366f1' }
-  return (
-    <a
-      href={`/hadith/${data.hadithId}`}
-      onMouseDown={e => e.stopPropagation()}
-      onClick={e => e.stopPropagation()}
-      style={{
-        background: P.bg, border: `1px solid ${P.border}`, borderRadius: 6,
-        width: data.width, height: data.height ?? ROW_HEIGHT,
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-        justifyContent: 'center', padding: '4px 10px', boxSizing: 'border-box',
-        textDecoration: 'none', cursor: 'pointer',
-      }}
-    >
-      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: P.label, textAlign: 'right', lineHeight: 1.3 }}>
-        {data.label}
-      </div>
-      {data.num && (
-        <div style={{ fontSize: 9, color: P.num, textAlign: 'right' }}>({data.num})</div>
-      )}
-    </a>
-  )
-}
-
-function BackboneLabelCmp({ data }: { data: { label: string; width: number } }) {
-  const { theme } = useTheme()
-  const dark = theme === 'dark'
-  const P = dark
-    ? { bg: '#12352A', border: '#4EBA65', current: '#4EBA65', label: '#ECE6DA' }
-    : { bg: '#f0fdf4', border: '#bbf7d0', current: '#16a34a', label: '#15803d' }
-  return (
-    <div style={{
-      background: P.bg, border: `1px solid ${P.border}`, borderRadius: 6,
-      width: data.width, height: BACKBONE_HEIGHT,
-      display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-      justifyContent: 'center', padding: '4px 10px', boxSizing: 'border-box',
-    }}>
-      <div style={{ fontSize: 9, color: P.current, fontWeight: 700, textAlign: 'right', marginBottom: 2 }}>
-        الحديث الحالي
-      </div>
-      <div style={{ fontFamily: 'Amiri, serif', fontSize: 10, fontWeight: 600, color: P.label, textAlign: 'right', lineHeight: 1.3 }}>
-        {data.label}
-      </div>
-    </div>
-  )
-}
-
-function HLineCmp({ data }: { data: { width: number } }) {
-  const { theme } = useTheme()
-  const dark = theme === 'dark'
-  const lineColor = dark ? '#2A313A' : '#e5e7eb'
-  return (
-    <div style={{
-      width: data.width, height: 1,
-      borderBottom: `1px dashed ${lineColor}`,
-      pointerEvents: 'none', boxSizing: 'border-box',
-    }} />
-  )
-}
-
-const FLOW_NODE_TYPES = {
-  backbone: BackboneNodeCmp,
-  div: DivNodeCmp,
-  sourceLabel: SourceLabelCmp,
-  backboneLabel: BackboneLabelCmp,
-  hline: HLineCmp,
-}
-
-function calcBackboneWidth(words: string[]): number {
-  if (words.length === 0) return 20  // narrow connector for pure insertions
-  const charEstimate = words.join(' ').length
-  return Math.max(80, Math.min(charEstimate * 11, 280))
-}
-
-function buildVariantFlow(
-  segments: VariantSegment[],
-  sourceBookTitle: string,
-  dark: boolean,
-): { nodes: Node[]; edges: Edge[]; numSources: number; totalSources: number; contentHeight: number } {
-  const nodes: Node[] = []
-  const edges: Edge[] = []
-
-  if (segments.length === 0) return { nodes, edges, numSources: 0, totalSources: 0, contentHeight: 300 }
-
-  // Collect unique sources in order of first appearance across all segments
-  const sourceOrder: SourceRef[] = []
-  const seenIds = new Set<number>()
-  for (const seg of segments) {
-    for (const div of seg.divergences) {
-      for (const src of div.sources) {
-        if (!seenIds.has(src.id)) {
-          seenIds.add(src.id)
-          sourceOrder.push(src)
-        }
-      }
-    }
-  }
-
-  // Cap visible source rows so the chart stays legible (the full list lives on the matn-variants page)
-  const totalSources = sourceOrder.length
-  const MAX_SOURCES = 12
-  // Keep the sources that differ most (as the note above the chart says), in their original order
-  const divCount = new Map<number, number>()
-  for (const seg of segments) for (const div of seg.divergences) for (const src of div.sources)
-    divCount.set(src.id, (divCount.get(src.id) ?? 0) + 1)
-  const keep = new Set([...sourceOrder].sort((a, b) => (divCount.get(b.id) ?? 0) - (divCount.get(a.id) ?? 0))
-    .slice(0, MAX_SOURCES).map(s => s.id))
-  const shownSources = sourceOrder.filter(s => keep.has(s.id))
-  const shownIds = new Set(shownSources.map(s => s.id))
-
-  // Backbone X positions (right-to-left: segment 0 = rightmost)
-  const widths = segments.map(s => calcBackboneWidth(s.words))
-  const totalWidth = widths.reduce((sum, w) => sum + w + H_GAP, 0) - H_GAP
-  let xCursor = totalWidth
-  const xPositions: number[] = []
-  for (let i = 0; i < segments.length; i++) {
-    xCursor -= widths[i]
-    xPositions.push(xCursor)
-    xCursor -= H_GAP
-  }
-
-  // Pre-compute per-(segment) source divergences once, so rows can be sized before placement
-  const segDivWidth = widths.map(w => Math.max(100, Math.min(w + 10, 210)))
-  const segSrcDiv: Array<Map<number, { word: string; isInsertion: boolean; src: SourceRef }>> = segments.map(seg => {
-    const m = new Map<number, { word: string; isInsertion: boolean; src: SourceRef }>()
-    for (const div of seg.divergences) {
-      const isInsertion = div.type === 'insertion'
-      for (const src of div.sources) {
-        if (!m.has(src.id)) m.set(src.id, { word: div.word, isInsertion, src })
-        else {
-          const prev = m.get(src.id)!
-          m.set(src.id, { word: prev.word + ' / ' + div.word, isInsertion: prev.isInsertion || isInsertion, src: prev.src })
-        }
-      }
-    }
-    return m
-  })
-
-  // Estimate a divergence node's rendered height so taller content never overlaps the next row
-  const estimateDivHeight = (word: string, dWidth: number, isInsertion: boolean): number => {
-    const usable = Math.max(40, dWidth - 22)
-    const lines = Math.max(1, Math.ceil((word.length * 7.4) / usable))
-    return 12 /* padding */ + (isInsertion ? 13 : 0) + lines * 18 /* word line(s) */ + 14 /* source link */
-  }
-
-  // Dynamic per-source row height = max(min row, tallest divergence node across all segments)
-  const rowHeight = new Map<number, number>()
-  for (const src of shownSources) rowHeight.set(src.id, ROW_HEIGHT)
-  for (let i = 0; i < segments.length; i++) {
-    for (const [srcId, { word, isInsertion }] of segSrcDiv[i]) {
-      if (!shownIds.has(srcId)) continue
-      rowHeight.set(srcId, Math.max(rowHeight.get(srcId) ?? ROW_HEIGHT, estimateDivHeight(word, segDivWidth[i], isInsertion)))
-    }
-  }
-
-  // Stack rows with their dynamic heights — all nodes for a source share the same Y
-  const sourceRowY = new Map<number, number>()
-  let yCursor = BACKBONE_Y + BACKBONE_HEIGHT + V_GAP
-  for (const src of shownSources) {
-    sourceRowY.set(src.id, yCursor)
-    yCursor += (rowHeight.get(src.id) ?? ROW_HEIGHT) + ROW_GAP
-  }
-  const contentHeight = yCursor + 40
-
-  // A divergence node is centred under its segment and may be wider than it, so it can
-  // overhang to the right of the backbone. Find the rightmost edge of any shown div node
-  // so the label column clears it (otherwise the source labels sit behind those nodes).
-  const NODE_GAP = 5
-  let maxContentRight = totalWidth
-  for (let i = 0; i < segments.length; i++) {
-    let hasShown = false
-    for (const srcId of segSrcDiv[i].keys()) { if (shownIds.has(srcId)) { hasShown = true; break } }
-    if (!hasShown) continue
-    maxContentRight = Math.max(maxContentRight, xPositions[i] + (widths[i] + segDivWidth[i]) / 2)
-  }
-
-  // RTL layout: the source/label column sits on the RIGHT of all content (Arabic reads right-to-left)
-  const labelX = maxContentRight + H_GAP + NODE_GAP
-  const hlineLeft = -80 // buffer for divergence nodes that overhang the leftmost segment
-  const hlineWidth = labelX + LABEL_WIDTH - hlineLeft
-
-  // Backbone row label (current hadith indicator) — right column
-  nodes.push({
-    id: 'backbone-label',
-    type: 'backboneLabel',
-    data: { label: sourceBookTitle, width: LABEL_WIDTH },
-    position: { x: labelX, y: BACKBONE_Y },
-  })
-
-  // Horizontal guide line between backbone row and source rows
-  nodes.push({
-    id: 'hline-top',
-    type: 'hline',
-    data: { width: hlineWidth },
-    position: { x: hlineLeft, y: BACKBONE_Y + BACKBONE_HEIGHT + Math.floor(V_GAP / 2) },
-  })
-
-  // Source label nodes (right column) + horizontal guide lines — one per source row
-  for (const [idx, src] of shownSources.entries()) {
-    const rowY = sourceRowY.get(src.id)!
-    const rh = rowHeight.get(src.id) ?? ROW_HEIGHT
-    nodes.push({
-      id: `label-${src.id}`,
-      type: 'sourceLabel',
-      data: { label: src.bookTitle, num: src.num, hadithId: src.id, width: LABEL_WIDTH, height: rh },
-      position: { x: labelX, y: rowY },
-    })
-    // Guide line at the bottom of this row (separates rows)
-    if (idx < shownSources.length - 1) {
-      nodes.push({
-        id: `hline-${src.id}`,
-        type: 'hline',
-        data: { width: hlineWidth },
-        position: { x: hlineLeft, y: rowY + rh + Math.floor(ROW_GAP / 2) },
-      })
-    }
-  }
-
-  // Backbone nodes and per-source divergence nodes
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i]
-    const bx = xPositions[i]
-    const bWidth = widths[i]
-    const bId = `bb-${i}`
-
-    nodes.push({
-      id: bId,
-      type: 'backbone',
-      data: {
-        label: (
-          <div dir="rtl" style={{ fontFamily: 'Amiri, serif', fontSize: 13, lineHeight: 1.4 }}>
-            {seg.words.length > 0 ? seg.words.join(' ') : '|'}
+    <ol className="rounded-xl border border-border bg-surface divide-y divide-border">
+      {variants.map(v => (
+        <li key={v.n} id={`matn-variant-${v.n}`}
+          onMouseEnter={() => setActive(v.n)} onMouseLeave={() => setActive(null)}
+          className={`flex gap-3 px-4 py-2 scroll-mt-24 transition-colors ${active === v.n ? 'bg-amber-50' : ''}`}>
+          <span className="shrink-0 w-8 text-xs font-semibold text-amber-700 font-sans pt-1">({v.n})</span>
+          <div className="min-w-0 flex-1 space-y-2">
+            {v.wordings.map((w, i) => (
+              <div key={i}>
+                <p className="font-[Amiri,serif] text-[0.95rem] text-gray-700 leading-relaxed">
+                  {!w.replaces && <span className="text-gray-500">زيادة: </span>}{clip(w.text, 14)}
+                </p>
+                <p className="flex flex-wrap gap-x-1.5 gap-y-1">
+                  {w.sources.map(s => (
+                    <a key={s.id} href={`/hadith/${s.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-green-800 hover:underline">
+                      {s.bookTitle}
+                      {s.num && <span className="rounded-full bg-green-50 border border-green-100 px-1.5 text-[11px] text-green-700 font-sans">{s.num}</span>}
+                    </a>
+                  ))}
+                </p>
+              </div>
+            ))}
           </div>
-        ),
-        width: bWidth,
-      },
-      position: { x: bx, y: BACKBONE_Y },
-    })
-
-    if (i > 0) {
-      edges.push({
-        id: `bb-edge-${i - 1}-${i}`,
-        source: `bb-${i - 1}`,
-        target: bId,
-        sourceHandle: 'left',
-        targetHandle: 'right',
-        type: 'straight',
-        style: { stroke: dark ? '#2A313A' : '#d6d3d1', strokeWidth: 1.5 },
-      })
-    }
-
-    // Per-source divergences for this segment (pre-computed above for row sizing)
-    const srcDivMap = segSrcDiv[i]
-
-    const dWidth = Math.max(100, Math.min(bWidth + 10, 210))
-    const dX = bx + (bWidth - dWidth) / 2
-
-    for (const [srcId, { word, isInsertion, src }] of srcDivMap) {
-      if (!shownIds.has(srcId)) continue
-      const dId = `div-${i}-${srcId}`
-      nodes.push({
-        id: dId,
-        type: 'div',
-        data: {
-          isInsertion,
-          width: dWidth,
-          label: (
-            <div dir="rtl" style={{ fontFamily: 'Amiri, serif', lineHeight: 1.4, textAlign: 'center' }}>
-              {isInsertion && (
-                <div style={{ fontSize: 9, color: dark ? '#D9AD5B' : '#b45309', marginBottom: 1, fontWeight: 'bold' }}>زيادة</div>
-              )}
-              <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 3, color: dark ? '#ECE6DA' : '#1c1917' }}>{word}</div>
-              <a
-                href={`/hadith/${srcId}`}
-                onMouseDown={e => e.stopPropagation()}
-                onClick={e => e.stopPropagation()}
-                style={{ fontSize: 9, color: dark ? '#4DB9FF' : '#4f46e5', textDecoration: 'underline', cursor: 'pointer', display: 'block' }}
-              >
-                {src.bookTitle}{src.num ? ` (${src.num})` : ''}
-              </a>
-            </div>
-          ),
-        },
-        position: { x: dX, y: sourceRowY.get(srcId)! },
-      })
-
-      edges.push({
-        id: `div-edge-${i}-${srcId}`,
-        source: bId,
-        target: dId,
-        sourceHandle: 'bottom',
-        targetHandle: 'top',
-        type: 'step',
-        style: isInsertion
-          ? { stroke: dark ? '#D9AD5B' : '#d97706', strokeWidth: 1, strokeDasharray: '5 3' }
-          : { stroke: dark ? '#3A424D' : '#a8a29e', strokeWidth: 1, strokeDasharray: '4 2' },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: isInsertion ? (dark ? '#D9AD5B' : '#d97706') : (dark ? '#3A424D' : '#a8a29e'),
-          width: 8,
-          height: 8,
-        },
-      })
-    }
-  }
-
-  return { nodes, edges, numSources: shownSources.length, totalSources, contentHeight }
-}
-
-// ── VariantsFlowChart ──────────────────────────────────────────────────────────
-
-function VariantsFlowChart({ source, others }: { source: TextEntry; others: TextEntry[] }) {
-  const { theme } = useTheme()
-  const dark = theme === 'dark'
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const touchLock = useFlowTouchLock()
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
-
-  const computed = useMemo(() => {
-    const segments = buildVariantData(source, others)
-    if (segments.length === 0) return { nodes: [], edges: [], empty: true, numSources: 0, totalSources: 0, contentHeight: 300 }
-    return { ...buildVariantFlow(segments, source.bookTitle, dark), empty: false }
-  }, [source, others, dark])
-
-  useEffect(() => {
-    setNodes(computed.nodes)
-    setEdges(computed.edges)
-  }, [computed]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const height = useMemo(() => {
-    return Math.max(300, Math.min(computed.contentHeight, 1100))
-  }, [computed.contentHeight])
-
-  if (computed.empty) {
-    return <p className="text-xs text-gray-400">لا توجد روايات كافية</p>
-  }
-
-  return (
-    <>
-      {computed.totalSources > computed.numSources && (
-        <p className="text-[11px] text-amber-700 mb-1.5 font-sans">
-          عرض أكثر {computed.numSources} روايةً اختلافًا من أصل {computed.totalSources} — القائمة الكاملة في صفحة «الحديث في كتب الحديث»
-        </p>
-      )}
-      <div style={{ height }} className="relative w-full rounded-xl border border-border overflow-hidden bg-surface shadow-sm">
-        <FlowTouchToggle {...touchLock} />
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={FLOW_NODE_TYPES}
-          fitView
-          fitViewOptions={{ padding: 0.12 }}
-          minZoom={0.2}
-          maxZoom={2}
-          proOptions={{ hideAttribution: true }}
-          {...touchLock.flowProps}
-        >
-          <Background color={dark ? '#2A313A' : '#e7e5e4'} gap={24} size={1} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
-      </div>
-    </>
+        </li>
+      ))}
+    </ol>
   )
 }
 
-// ── VersionList ────────────────────────────────────────────────────────────────
+// ── نصوص الروايات ──────────────────────────────────────────────────────────────
 // Every parallel's own matn in full, with the words that differ from this hadith's matn marked, and
-// how much of the two texts is shared. The tree above shows only where the versions part ways.
+// how much of the two texts is shared.
 
 interface VersionDiff {
   entry: TextEntry
   words: { text: string; differs: boolean }[]
-  shared: number      // % of words the two texts share (Dice over the LCS)
+  shared: number      // % of words the two texts share (Dice over the alignment)
   missing: number     // words of this hadith's matn this version does not have
   partial: boolean    // the version gives only part of the matn
 }
 
 function diffVersion(sourceNorm: string[], entry: TextEntry): VersionDiff {
   const words = tokenize(entry.matn)
-  const pairs = lcsAlign(sourceNorm, words.map(normWord))
+  const pairs = align(sourceNorm, words.map(normWord))
   const matched = new Set(pairs.map(p => p.oi))
   const shared = Math.round((2 * pairs.length * 100) / (sourceNorm.length + words.length || 1))
   return {
@@ -1176,6 +400,7 @@ export default function MatnVariants({
   const [rawParallels, setRawParallels] = useState<RawParallel[]>([])
   const [sourceMatn, setSourceMatn] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [active, setActive] = useState<number | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -1194,21 +419,13 @@ export default function MatnVariants({
       .finally(() => setLoading(false))
   }, [hadithId])
 
-  // Build TextEntry list for composite and tree
+  // This hadith first, then every parallel that has a matn to compare
   const textEntries = useMemo(() => {
     const sourceText = sourceMatn ?? resolveMatnText(null, currentTarf)
-
     const entries: TextEntry[] = []
     if (sourceText.trim().length > 3) {
-      entries.push({
-        id: hadithId,
-        bookTitle: currentBookTitle,
-        takhrij_death: currentDeath,
-        matn: sourceText,
-        num: null,
-      })
+      entries.push({ id: hadithId, bookTitle: currentBookTitle, takhrij_death: currentDeath, matn: sourceText, num: null })
     }
-
     for (const p of rawParallels) {
       const matn = resolveMatnText(p.content, p.tarf)
       if (matn.trim().length > 3) {
@@ -1221,20 +438,19 @@ export default function MatnVariants({
         })
       }
     }
-
     return entries
   }, [hadithId, rawParallels, sourceMatn, currentTarf, currentBookTitle, currentDeath])
-
-  const compositeItems = useMemo(
-    () => buildComposite(textEntries),
-    [textEntries]
-  )
 
   // Parallels with no matn recorded at all, listed after the comparisons
   const chainOnly = useMemo(() => rawParallels
     .filter(p => resolveMatnText(p.content, p.tarf).trim().length <= 3)
     .map(p => ({ id: p.main_id, bookTitle: p.book_title, num: p.tarqeem_matboa1 ?? p.tarqeem_harf ?? null })),
   [rawParallels])
+
+  const variants = useMemo(
+    () => textEntries.length >= 2 ? buildVariants(textEntries[0], textEntries.slice(1)) : [],
+    [textEntries],
+  )
 
   if (loading) {
     return <p className="text-xs text-gray-400 py-2">جاري تحميل المتون...</p>
@@ -1252,26 +468,28 @@ export default function MatnVariants({
         <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
           <h3 className="text-sm font-bold text-gray-700">المتن المُجمَّع</h3>
           <span className="text-xs text-gray-400">
-            {textEntries.length} رواية — اضغط على أي كلمة لرؤية مصادرها
+            {variants.length} اختلافًا في {textEntries.length - 1} رواية
           </span>
         </div>
-
-        <CompositeLegend />
-
-        <CompositeMatn items={compositeItems} totalSources={textEntries.length} />
-      </div>
-
-      {/* ── شجرة الاختلافات ── */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-1">
-          شجرة الاختلافات
-          <span className="text-xs font-normal text-gray-400 mr-2">({textEntries.length} رواية)</span>
-        </h3>
         <p className="text-xs text-gray-400 mb-3">
-          شجرة تفرعات النص — العمود الخلفي يمثل المتن الأصلي، والتفرعات تمثل الاختلافات
+          متن هذا الحديث ({currentBookTitle})، وألفاظ الروايات الأخرى في مواضعها — مرّر على أي اختلافٍ لترى ما يقابله في المتن ومصادره
         </p>
-        <VariantsFlowChart source={textEntries[0]} others={textEntries.slice(1)} />
+        {variants.length === 0
+          ? <p className="text-sm text-gray-500">الروايات متفقة في ألفاظ هذا المتن.</p>
+          : <CompositeMatn source={textEntries[0]} variants={variants} active={active} setActive={setActive} />}
       </div>
+
+      {/* ── مصادر الاختلافات ── */}
+      {variants.length > 0 && (
+        <div>
+          <h3 className="text-sm font-bold text-gray-700 mb-1">
+            مصادر الاختلافات
+            <span className="text-xs font-normal text-gray-400 mr-2">({variants.length})</span>
+          </h3>
+          <p className="text-xs text-gray-400 mb-3">كل رقمٍ في المتن أعلاه، والكتب التي جاء فيها ذلك اللفظ</p>
+          <VariantNotes variants={variants} active={active} setActive={setActive} />
+        </div>
+      )}
 
       {/* ── نصوص الروايات ── */}
       <VersionList source={textEntries[0]} others={textEntries.slice(1)} chainOnly={chainOnly} />
