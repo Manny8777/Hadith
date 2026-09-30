@@ -11,6 +11,7 @@ interface UnjudgedHadith {
   book_title: string
   book_id: number
   chain_count: number
+  dorar_hukm: string | null
 }
 
 interface BookStat {
@@ -24,16 +25,28 @@ function stripTags(s: string | null) {
   return (s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+// No ruling in the program's own judgments (hadith_judgments)…
+const NO_JUDGMENT = `NOT EXISTS (SELECT 1 FROM hadith_judgments hj WHERE hj.hadith_id = ht.main_id)`
+// …and, in the main list, none from al-Durar al-Saniyya either (dorar_rulings, filled by
+// scripts/dorar-crawl.mjs and keyed by book and printed number, as on the hadith page). Those with a
+// Dorar ruling are listed separately (?dorar=1), so the counts follow the crawl as it goes.
+// The ruled numbers are gathered once and hash-joined: a lookup per hadith (EXISTS) took 30s+.
+const WITH_DORAR = `WITH dn AS MATERIALIZED (SELECT DISTINCT book_id, number FROM dorar_rulings)`
+const JOIN_DORAR = `LEFT JOIN dn ON dn.book_id = ht.book_id AND dn.number = btrim(ht.tarqeem_matboa1)`
+const HAS_DORAR = `dn.book_id IS NOT NULL`
+
 export default async function UnjudgedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ book?: string; page?: string }>
+  searchParams: Promise<{ book?: string; page?: string; dorar?: string }>
 }) {
   const sp = await searchParams
   const bookId = sp.book ? parseInt(sp.book) : null
+  const dorarView = sp.dorar === '1'
   const pg = Math.max(1, parseInt(sp.page || '1'))
   const limit = 40
   const offset = (pg - 1) * limit
+  const viewClause = dorarView ? `AND ${HAS_DORAR}` : `AND dn.book_id IS NULL`
 
   const bookParam: (string | number)[] = []
   const bookClause = bookId
@@ -45,49 +58,58 @@ export default async function UnjudgedPage({
     ? `AND ht.book_id = $${countParams.push(bookId)}`
     : ''
 
-  const [hadiths, totalRes, booksRes] = await Promise.all([
+  const [hadiths, countsRes, booksRes] = await Promise.all([
     pool.query<UnjudgedHadith>(
-      `SELECT ht.main_id AS hadith_id,
+      `${WITH_DORAR}
+       SELECT ht.main_id AS hadith_id,
               regexp_replace(coalesce(ht.tarf,''), '<[^>]+>', ' ', 'g') AS tarf,
               b.title AS book_title, b.id AS book_id,
               (
                 SELECT COUNT(DISTINCT ih2.isnad_id)::int
                 FROM isnad_hadiths ih2
                 WHERE ih2.hadith_id = ht.main_id
-              ) AS chain_count
+              ) AS chain_count,
+              ${dorarView ? `(
+                SELECT d.hukm FROM dorar_rulings d
+                WHERE d.book_id = ht.book_id AND d.number = btrim(ht.tarqeem_matboa1)
+                ORDER BY d.dorar_source_id NULLS LAST LIMIT 1
+              )` : 'NULL'} AS dorar_hukm
        FROM hadith_toc ht
        JOIN books b ON b.id = ht.book_id
+       ${JOIN_DORAR}
        WHERE ht.is_leaf = true AND ht.is_paragraph = true
          ${bookClause}
-         AND NOT EXISTS (
-           SELECT 1 FROM hadith_judgments hj WHERE hj.hadith_id = ht.main_id
-         )
+         AND ${NO_JUDGMENT}
+         ${viewClause}
        ORDER BY ht.main_id
        LIMIT ${limit} OFFSET ${offset}`,
       bookParam
     ).catch(() => ({ rows: [] as UnjudgedHadith[] })),
 
-    pool.query<{ cnt: number }>(
-      `SELECT COUNT(*)::int AS cnt
+    // Both counts at once: with no ruling anywhere, and with a Dorar ruling only
+    pool.query<{ none: number; dorar: number }>(
+      `${WITH_DORAR}
+       SELECT COUNT(*) FILTER (WHERE dn.book_id IS NULL)::int AS none,
+              COUNT(*) FILTER (WHERE ${HAS_DORAR})::int AS dorar
        FROM hadith_toc ht
+       ${JOIN_DORAR}
        WHERE ht.is_leaf = true AND ht.is_paragraph = true
          ${countBookClause}
-         AND NOT EXISTS (
-           SELECT 1 FROM hadith_judgments hj WHERE hj.hadith_id = ht.main_id
-         )`,
+         AND ${NO_JUDGMENT}`,
       countParams
-    ).catch(() => ({ rows: [{ cnt: 0 }] })),
+    ).catch(() => ({ rows: [{ none: 0, dorar: 0 }] })),
 
     pool.query<BookStat>(
-      `SELECT b.id AS book_id, b.title,
+      `${WITH_DORAR}
+       SELECT b.id AS book_id, b.title,
               COUNT(*)::int AS unjudged_count,
               (SELECT COUNT(*)::int FROM hadith_toc ht2 WHERE ht2.book_id = b.id AND ht2.is_leaf AND ht2.is_paragraph) AS total_count
        FROM hadith_toc ht
        JOIN books b ON b.id = ht.book_id
+       ${JOIN_DORAR}
        WHERE ht.is_leaf = true AND ht.is_paragraph = true
-         AND NOT EXISTS (
-           SELECT 1 FROM hadith_judgments hj WHERE hj.hadith_id = ht.main_id
-         )
+         AND ${NO_JUDGMENT}
+         ${viewClause}
        GROUP BY b.id, b.title
        ORDER BY unjudged_count DESC
        LIMIT 30`,
@@ -95,13 +117,16 @@ export default async function UnjudgedPage({
     ).catch(() => ({ rows: [] as BookStat[] })),
   ])
 
-  const total = totalRes.rows[0]?.cnt || 0
+  const noneCount = countsRes.rows[0]?.none || 0
+  const dorarCount = countsRes.rows[0]?.dorar || 0
+  const total = dorarView ? dorarCount : noneCount
   const totalPages = Math.ceil(total / limit)
   const books = booksRes.rows
 
   function buildUrl(overrides: Record<string, string>) {
     const p = new URLSearchParams()
     if (bookId) p.set('book', String(bookId))
+    if (dorarView) p.set('dorar', '1')
     p.set('page', '1')
     Object.entries(overrides).forEach(([k, v]) => {
       if (v) p.set(k, v); else p.delete(k)
@@ -114,23 +139,54 @@ export default async function UnjudgedPage({
   return (
     <div dir="rtl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-green-900 mb-1">الأحاديث غير المحكوم عليها</h1>
+        <h1 className="text-2xl font-bold text-green-900 mb-1">
+          {dorarView ? 'أحاديث حكمُها في الدرر السنية وحدها' : 'الأحاديث غير المحكوم عليها'}
+        </h1>
         <p className="text-sm text-gray-500 mb-3">
-          أحاديث لم يُسجَّل لها حكم من المحدثين في قاعدة البيانات —
-          تمثل فرصاً للبحث العلمي والتحقيق في صحتها
+          {dorarView
+            ? 'أحاديث ليس لها حكمٌ في أحكام البرنامج، ولها خلاصة حكمٍ في الدرر السنية'
+            : 'أحاديث لم يُسجَّل لها حكمٌ في أحكام البرنامج ولا في الدرر السنية — تمثل فرصاً للبحث العلمي والتحقيق في صحتها'}
         </p>
 
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4 text-xs text-amber-800">
-          <span className="font-semibold">ملاحظة بحثية: </span>
-          غياب الحكم لا يعني ضعف الحديث — قد يكون الحديث صحيحاً لكن لم يُدرَس بعد في إطار هذه القاعدة.
-          هذه الأحاديث تستحق الدراسة المستقلة بالرجوع إلى مصادر التخريج الكلاسيكية.
+        {/* the other list, so nothing leaves this page silently */}
+        <div className="bg-green-50 border border-green-100 rounded-xl p-3 mb-3 text-xs text-green-900 flex items-center justify-between gap-3 flex-wrap">
+          {dorarView ? (
+            <>
+              <span>هذه القائمة ما استُثني من «غير المحكوم عليها» لأن له حكمًا في الدرر السنية.</span>
+              <Link href={buildUrl({ dorar: '' })} className="font-semibold text-green-800 hover:underline">
+                ← العودة إلى غير المحكوم عليها ({noneCount.toLocaleString('ar-EG')})
+              </Link>
+            </>
+          ) : (
+            <>
+              <span>
+                يُستثنى ما له حكمٌ في الدرر السنية: <b>{dorarCount.toLocaleString('ar-EG')}</b> حديثًا
+                {bookId ? ' في هذا الكتاب' : ''} — ويزيد العدد كلما جُلبت أحكامٌ جديدة.
+              </span>
+              {dorarCount > 0 && (
+                <Link href={buildUrl({ dorar: '1' })} className="font-semibold text-green-800 hover:underline">
+                  عرضها ←
+                </Link>
+              )}
+            </>
+          )}
         </div>
+
+        {!dorarView && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4 text-xs text-amber-800">
+            <span className="font-semibold">ملاحظة بحثية: </span>
+            غياب الحكم لا يعني ضعف الحديث — قد يكون الحديث صحيحاً لكن لم يُدرَس بعد في إطار هذه القاعدة.
+            هذه الأحاديث تستحق الدراسة المستقلة بالرجوع إلى مصادر التخريج الكلاسيكية.
+          </div>
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           <div className="bg-green-800 text-white rounded-xl p-3 text-center">
             <div className="text-xl font-bold">{total.toLocaleString('ar-EG')}</div>
             <div className="text-xs opacity-80">
-              {bookId ? 'غير محكوم في الكتاب' : 'إجمالي غير المحكوم'}
+              {dorarView
+                ? (bookId ? 'حكمها في الدرر وحدها في الكتاب' : 'حكمها في الدرر وحدها')
+                : (bookId ? 'غير محكوم في الكتاب' : 'إجمالي غير المحكوم')}
             </div>
           </div>
           {selectedBook && (
@@ -140,16 +196,18 @@ export default async function UnjudgedPage({
                   ? `${Math.round((selectedBook.unjudged_count / selectedBook.total_count) * 100)}%`
                   : '—'}
               </div>
-              <div className="text-xs opacity-80">نسبة غير المحكوم</div>
+              <div className="text-xs opacity-80">{dorarView ? 'من أحاديث الكتاب' : 'نسبة غير المحكوم'}</div>
             </div>
           )}
         </div>
 
         {/* Book filter */}
         <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
-          <p className="text-xs text-gray-500 mb-2">تصفية بالكتاب (أكثر الكتب في الأحاديث غير المحكومة):</p>
+          <p className="text-xs text-gray-500 mb-2">
+            {dorarView ? 'تصفية بالكتاب:' : 'تصفية بالكتاب (أكثر الكتب في الأحاديث غير المحكومة):'}
+          </p>
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href="/hadiths/unjudged"
+            <Link href={dorarView ? '/hadiths/unjudged?dorar=1' : '/hadiths/unjudged'}
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                 !bookId ? 'bg-green-800 text-white border-green-800' : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
               }`}>
@@ -186,9 +244,15 @@ export default async function UnjudgedPage({
                 {h.chain_count > 0 && (
                   <span className="text-xs text-gray-400">{h.chain_count} سند</span>
                 )}
-                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                  لم يُحكم عليه
-                </span>
+                {dorarView ? (
+                  <span className="text-xs bg-green-50 text-green-800 border border-green-100 px-2 py-0.5 rounded-full">
+                    الدرر السنية: {h.dorar_hukm || '—'}
+                  </span>
+                ) : (
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                    لم يُحكم عليه
+                  </span>
+                )}
               </div>
             </div>
             <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 group-hover:text-green-900">
@@ -200,7 +264,7 @@ export default async function UnjudgedPage({
 
       {hadiths.rows.length === 0 && (
         <div className="bg-gray-50 rounded-xl border border-gray-100 p-8 text-center text-gray-500">
-          لا توجد أحاديث غير محكوم عليها بهذا الفلتر
+          {dorarView ? 'لا توجد أحاديث بهذا الفلتر' : 'لا توجد أحاديث غير محكوم عليها بهذا الفلتر'}
         </div>
       )}
 
