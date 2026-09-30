@@ -10,7 +10,7 @@ import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 //   · المتن المجمَّع — this hadith's matn with every other wording inline where it occurs,
 //     «[وفي رواية: …]» with a note number (as the printed takhrij editions do);
 //   · خريطة الاختلافات — the whole matn as a line read right to left, the other wordings beneath;
-//   · نصوص الروايات — each version's own matn in full, its differing words highlighted.
+//   · نصوص الروايات كاملة — this hadith's matn, then each version's in full, word for word against it.
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -134,19 +134,6 @@ const SANAD_WORDS = new Set(['حدثنا', 'حدثني', 'اخبرنا', 'اخب
 const MAX_EDGE_WORDS = 8
 const MAX_WORDS = 24
 
-// The same words at one point, whichever exact stretch of this matn they stand for (e.g. «رجل» for
-// «امرئ مسلم» in some versions and for «امرئ» in others), are one wording with all their sources
-function mergeWordings(ws: Wording[]): Wording[] {
-  const byText = new Map<string, Wording>()
-  for (const w of ws) {
-    const key = `${w.replaces ? 'r' : 'i'}|${tokenize(w.text).map(normWord).join(' ')}`
-    const have = byText.get(key)
-    if (!have) { byText.set(key, { ...w, sources: [...w.sources] }); continue }
-    for (const src of w.sources) if (!have.sources.some(x => x.id === src.id)) have.sources.push(src)
-  }
-  return [...byText.values()].sort((a, b) => b.sources.length - a.sources.length)
-}
-
 function buildVariants(source: TextEntry, others: TextEntry[]): Variant[] {
   const srcNorm = tokenize(source.matn).map(normWord)
   const byKey = new Map<string, Wording>()
@@ -214,7 +201,7 @@ function buildVariants(source: TextEntry, others: TextEntry[]): Variant[] {
       n: i + 1,
       at: Math.floor(last),
       span: spans.length ? [Math.min(...spans.map(r => r[0])), Math.max(...spans.map(r => r[1]))] : null,
-      wordings: mergeWordings(ws),
+      wordings: ws.sort((a, b) => b.sources.length - a.sources.length),
     }
   })
 }
@@ -237,7 +224,8 @@ function CompositeMatn({ source, variants, active, setActive }: {
   }, [variants])
   const activeSpan = variants.find(v => v.n === active)?.span ?? null
 
-  // Inline, a point shows its two most widely narrated wordings; the note lists them all
+  // Inline, a point shows its two most widely narrated wordings (each text once); the map shows them all
+  const distinct = (ws: Wording[]) => ws.filter((w, i) => ws.findIndex(x => x.text === w.text && !x.replaces === !w.replaces) === i)
   const note = (v: Variant) => (
     <span key={v.n} tabIndex={0}
       title={v.wordings.map(w => `${w.text} — ${w.sources.map(x => x.bookTitle + (x.num ? ' ' + x.num : '')).join('، ')}`).join('\n')}
@@ -245,13 +233,13 @@ function CompositeMatn({ source, variants, active, setActive }: {
       className={`inline rounded px-0.5 mx-0.5 cursor-help transition-colors text-[0.92em] ${active === v.n ? 'bg-amber-100 text-amber-950' : 'text-amber-900/80 hover:bg-amber-50'}`}>
       <span className="text-gray-400">[</span>
       <span className="text-gray-500">وفي رواية: </span>
-      {v.wordings.slice(0, 2).map((w, i) => (
+      {distinct(v.wordings).slice(0, 2).map((w, i) => (
         <span key={i}>
           {i > 0 && <span className="text-gray-400"> · </span>}
-          {!w.replaces && <span className="text-gray-500">زيادة </span>}{clip(w.text, 8)}
+          {!w.replaces && <span className="text-gray-500">زيادة </span>}<span className={w.replaces ? 'text-amber-900' : 'text-green-800'}>{clip(w.text, 8)}</span>
         </span>
       ))}
-      {v.wordings.length > 2 && <span className="text-gray-500 font-sans text-[0.8em]"> +{v.wordings.length - 2}</span>}
+      {distinct(v.wordings).length > 2 && <span className="text-gray-500 font-sans text-[0.8em]"> +{distinct(v.wordings).length - 2}</span>}
       <span className="text-gray-400">]</span>
       <sup className="text-[0.62em] text-amber-700 font-sans font-semibold mr-0.5">{v.n}</sup>
     </span>
@@ -274,20 +262,71 @@ function CompositeMatn({ source, variants, active, setActive }: {
   )
 }
 
+// ── Legend ─────────────────────────────────────────────────────────────────────
+// One colour per kind of difference, the same in the map and in the full texts.
+
+const DIFF = {
+  added: 'bg-green-100 text-green-900 rounded px-0.5',                         // زيادة
+  changed: 'bg-amber-100 text-amber-900 rounded px-0.5',                       // لفظ مختلف
+  missing: 'text-red-700/70 line-through decoration-red-400/80 decoration-1',  // ناقص
+}
+
+function DiffLegend({ missing = false, point = false }: { missing?: boolean; point?: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500 mb-3">
+      {point && <span className="inline-flex items-center gap-1.5"><span className="inline-block w-5 h-3.5 rounded border border-amber-400 bg-amber-50" />موضع الاختلاف في هذا الحديث</span>}
+      <span><mark className={DIFF.added}>زيادة</mark> ألفاظٌ ليست في متن هذا الحديث</span>
+      <span><mark className={DIFF.changed}>لفظ مختلف</mark> في موضع لفظٍ من متن هذا الحديث</span>
+      {missing && <span><del className={DIFF.missing}>ناقص</del> من متن هذا الحديث، ليس في هذه الرواية</span>}
+    </div>
+  )
+}
+
 // ── خريطة الاختلافات ───────────────────────────────────────────────────────────
 // The whole matn as a line read right to left: this hadith's wording runs along the top in boxes,
-// and wherever the versions part, the stretch they differ on is boxed (with its note number) and
-// the other wordings hang beneath it, each with its books, rejoining the line after. Positions are
-// computed, so boxes never overlap, and nothing is draggable.
+// and wherever the versions part, the stretch they differ on is boxed (with its note number); beneath
+// it hang the other versions' readings of that same stretch — the words they share with this hadith
+// in grey, their added and changed words coloured — each with its books, rejoining the line after.
+// Positions are computed, so boxes never overlap, and nothing is draggable.
 
 const MAP_GAP_X = 34
 const MAP_GAP_Y = 12
-const MAP_ALT_TOP = 36      // space between the line and the wordings beneath it
+const MAP_ALT_TOP = 36      // space between the line and the readings beneath it
 const MAP_LONG_SPAN = 8
+
+type ReadingToken = { t: string; k: 'same' | 'added' | 'changed' }
+interface Reading {
+  kind: 'added' | 'changed'
+  tokens: ReadingToken[]
+  sources: SourceRef[]
+}
 
 type MapSeg =
   | { kind: 'common'; id: string; words: string[] }
-  | { kind: 'diff'; id: string; n: number; words: string[]; wordings: Wording[] }
+  | { kind: 'diff'; id: string; n: number; words: string[]; readings: Reading[] }
+
+// A version's reading of the stretch [s, e] of this matn: the stretch with its wording put in
+function readingOf(words: string[], s: number, e: number, w: Wording): ReadingToken[] {
+  const theirs = tokenize(w.text)
+  const same = (a: number, b: number) => words.slice(a, b + 1).map(t => ({ t, k: 'same' as const }))
+  if (w.replaces) {
+    return [...same(s, w.replaces[0] - 1), ...theirs.map(t => ({ t, k: 'changed' as const })), ...same(w.replaces[1] + 1, e)]
+  }
+  return [...same(s, w.at), ...theirs.map(t => ({ t, k: 'added' as const })), ...same(w.at + 1, e)]
+}
+
+// Readings of one stretch that come out the same (e.g. «رجل» put for «امرئ مسلم» by some versions and
+// for «امرئ» by others give «رجل يشهد» and «رجل مسلم يشهد» — two readings, not one) are one box
+function mergeReadings(rs: Reading[]): Reading[] {
+  const by = new Map<string, Reading>()
+  for (const r of rs) {
+    const key = r.tokens.map(x => normWord(x.t)).join(' ')
+    const have = by.get(key)
+    if (!have) { by.set(key, { ...r, sources: [...r.sources] }); continue }
+    for (const src of r.sources) if (!have.sources.some(x => x.id === src.id)) have.sources.push(src)
+  }
+  return [...by.values()].sort((a, b) => b.sources.length - a.sources.length)
+}
 
 // The matn cut into shared stretches and points of difference (overlapping points merged, so the
 // line never doubles back)
@@ -295,7 +334,7 @@ function buildSegments(words: string[], variants: Variant[]): MapSeg[] {
   const range = (v: Variant): [number, number] => v.span ? [v.span[0], v.span[1]] : [v.at + 1, v.at]
   const isLong = (v: Variant) => !!v.span && v.span[1] - v.span[0] + 1 > MAP_LONG_SPAN
   // A wording that rewrites a long passage would swallow the points inside it into one box: it is
-  // mapped only where it overlaps no other point (else it is read whole under «نصوص الروايات»)
+  // mapped only where it overlaps no other point (else it is read whole in the full texts below)
   const short = variants.filter(v => !isLong(v))
   const overlaps = (v: Variant) => { const [s, e] = range(v); return short.some(o => { const [a, b] = range(o); return a <= e && s <= b }) }
   const kept = variants.filter(v => !isLong(v) || !overlaps(v)).sort((x, y) => range(x)[0] - range(y)[0])
@@ -304,14 +343,19 @@ function buildSegments(words: string[], variants: Variant[]): MapSeg[] {
   for (const v of kept) {
     const [s, e] = range(v)
     const last = points[points.length - 1]
-    if (last && s <= last.e) { last.e = Math.max(last.e, e); last.wordings = mergeWordings([...last.wordings, ...v.wordings]) }
+    if (last && s <= last.e) { last.e = Math.max(last.e, e); last.wordings.push(...v.wordings) }
     else points.push({ n: v.n, s, e, wordings: [...v.wordings] })
   }
   const segs: MapSeg[] = []
   let cursor = 0
   for (const p of points) {
     if (p.s > cursor) segs.push({ kind: 'common', id: `c${cursor}`, words: words.slice(cursor, p.s) })
-    segs.push({ kind: 'diff', id: `d${p.n}`, n: p.n, words: words.slice(p.s, p.e + 1), wordings: p.wordings })
+    const readings = mergeReadings(p.wordings.map(w => ({
+      kind: w.replaces ? 'changed' as const : 'added' as const,
+      tokens: readingOf(words, p.s, p.e, w),
+      sources: w.sources,
+    })))
+    segs.push({ kind: 'diff', id: `d${p.n}`, n: p.n, words: words.slice(p.s, p.e + 1), readings })
     cursor = Math.max(cursor, p.e + 1)
   }
   if (cursor < words.length) segs.push({ kind: 'common', id: `c${cursor}`, words: words.slice(cursor) })
@@ -331,7 +375,7 @@ function chipsHeight(sources: SourceRef[], w: number): number {
   }
   return lines * 21
 }
-const wordingText = (w: Wording) => (w.replaces ? '' : 'زيادة: ') + w.text
+const readingText = (r: Reading) => r.tokens.map(x => x.t).join(' ')
 
 function MapLineBox({ data }: { data: { seg: MapSeg; width: number } }) {
   const { seg, width } = data
@@ -342,7 +386,7 @@ function MapLineBox({ data }: { data: { seg: MapSeg; width: number } }) {
       <Handle type="target" position={Position.Right} style={{ opacity: 0 }} />
       {diff && <span className="absolute -top-2.5 right-2 rounded-full bg-amber-600 text-white text-[10px] font-sans font-semibold px-1.5 leading-4">{seg.n}</span>}
       <p className="font-[Amiri,serif] text-[16px] leading-[26px] text-gray-900">
-        {seg.words.length ? seg.words.join(' ') : <span className="text-amber-600 font-sans text-sm">＋</span>}
+        {seg.words.length ? seg.words.join(' ') : <span className="text-gray-400 font-sans text-sm">＋</span>}
       </p>
       <Handle type="source" position={Position.Left} style={{ opacity: 0 }} />
       <Handle type="source" id="down" position={Position.Bottom} style={{ opacity: 0 }} />
@@ -350,14 +394,19 @@ function MapLineBox({ data }: { data: { seg: MapSeg; width: number } }) {
   )
 }
 
-function MapWordingBox({ data }: { data: { w: Wording; width: number; currentId: number } }) {
-  const { w, width } = data
+function MapReadingBox({ data }: { data: { r: Reading; width: number } }) {
+  const { r, width } = data
   return (
-    <div dir="rtl" style={{ width }} className="rounded-lg border border-border bg-surface px-3 py-2 text-center shadow-sm">
+    <div dir="rtl" style={{ width }}
+      className={`rounded-lg border bg-surface px-3 py-2 text-center shadow-sm ${r.kind === 'added' ? 'border-green-300' : 'border-amber-300'}`}>
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-      <p className="font-[Amiri,serif] text-[15px] leading-[24px] text-gray-800" title={w.text}>{wordingText(w)}</p>
+      <p className="font-[Amiri,serif] text-[15px] leading-[24px]">
+        {r.tokens.map((x, i) => (
+          <span key={i}>{i > 0 && ' '}{x.k === 'same' ? <span className="text-gray-400">{x.t}</span> : <mark className={DIFF[x.k]}>{x.t}</mark>}</span>
+        ))}
+      </p>
       <div className="mt-1 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5">
-        {w.sources.map(s => (
+        {r.sources.map(s => (
           // Opens in a new tab, so the reader keeps their place in the map; nopan/nodrag stop React
           // Flow from treating the click as the start of a pan
           <a key={s.id} href={`/hadith/${s.id}`} target="_blank" rel="noopener"
@@ -372,7 +421,7 @@ function MapWordingBox({ data }: { data: { w: Wording; width: number; currentId:
   )
 }
 
-const MAP_NODE_TYPES = { line: MapLineBox, wording: MapWordingBox }
+const MAP_NODE_TYPES = { line: MapLineBox, reading: MapReadingBox }
 
 function VariantMap({ source, variants }: { source: TextEntry; variants: Variant[] }) {
   const { theme } = useTheme()
@@ -382,10 +431,10 @@ function VariantMap({ source, variants }: { source: TextEntry; variants: Variant
 
   const { nodes, edges, total, height } = useMemo(() => {
     const segs = buildSegments(tokenize(source.matn), variants)
-    // column widths: a point of difference is as wide as its widest wording
+    // column widths: a point of difference is as wide as its widest reading
     const widths = segs.map(seg => {
       const own = seg.words.length ? boxWidth(seg.words.join(' ')) : 44
-      return seg.kind === 'diff' ? Math.max(own, ...seg.wordings.map(w => Math.max(170, boxWidth(wordingText(w))))) : own
+      return seg.kind === 'diff' ? Math.max(own, ...seg.readings.map(r => Math.max(170, boxWidth(readingText(r))))) : own
     })
     const lineH = Math.max(...segs.map((seg, i) => 16 + linesOf(seg.words.join(' ') || '+', widths[i]) * 26))
     const total = widths.reduce((a, w) => a + w, 0) + MAP_GAP_X * (segs.length - 1)
@@ -402,12 +451,12 @@ function VariantMap({ source, variants }: { source: TextEntry; variants: Variant
       if (i > 0) edges.push({ id: `e-${segs[i - 1].id}-${seg.id}`, source: segs[i - 1].id, target: seg.id, type: 'straight', style: { stroke, strokeWidth: 1.5 } })
       if (seg.kind !== 'diff') return
       let y = lineH + MAP_ALT_TOP
-      seg.wordings.forEach((wd, k) => {
-        const id = `${seg.id}-w${k}`
-        nodes.push({ id, type: 'wording', position: { x, y }, data: { w: wd, width: w, currentId: source.id }, draggable: false, selectable: false })
+      seg.readings.forEach((r, k) => {
+        const id = `${seg.id}-r${k}`
+        nodes.push({ id, type: 'reading', position: { x, y }, data: { r, width: w }, draggable: false, selectable: false })
         edges.push({ id: `e-${id}`, source: seg.id, sourceHandle: 'down', target: id, type: 'smoothstep',
           style: { stroke, strokeWidth: 1.2, strokeDasharray: '4 3' } })
-        y += 20 + linesOf(wordingText(wd), w) * 24 + chipsHeight(wd.sources, w) + MAP_GAP_Y
+        y += 20 + linesOf(readingText(r), w) * 24 + chipsHeight(r.sources, w) + MAP_GAP_Y
       })
       height = Math.max(height, y)
     })
@@ -460,30 +509,82 @@ function VariantMap({ source, variants }: { source: TextEntry; variants: Variant
   )
 }
 
-// ── نصوص الروايات ──────────────────────────────────────────────────────────────
-// Every parallel's own matn in full, with the words that differ from this hadith's matn marked, and
-// how much of the two texts is shared.
+// ── نصوص الروايات كاملة ────────────────────────────────────────────────────────
+// This hadith's matn first, then every other version's matn in full, word for word against it: the
+// words they share plain, their additions and changed words coloured, and this hadith's words they
+// lack struck through in place — so the two can be read together without opening either page.
+
+type DiffToken =
+  | { k: 'same' | 'added' | 'changed' | 'missing'; t: string }
+  | { k: 'gap'; t: string; n: number } // a long stretch of this matn the version does not have
 
 interface VersionDiff {
   entry: TextEntry
-  words: { text: string; differs: boolean }[]
+  tokens: DiffToken[]
   shared: number      // % of words the two texts share (Dice over the alignment)
-  missing: number     // words of this hadith's matn this version does not have
+  added: number
+  changed: number
+  missing: number
   partial: boolean    // the version gives only part of the matn
 }
 
-function diffVersion(sourceNorm: string[], entry: TextEntry): VersionDiff {
+const MAX_STRUCK = 8 // longer runs of this matn that a version lacks are folded into one marker
+
+function diffVersion(srcWords: string[], srcNorm: string[], entry: TextEntry): VersionDiff {
   const words = tokenize(entry.matn)
-  const pairs = align(sourceNorm, words.map(normWord))
-  const matched = new Set(pairs.map(p => p.oi))
-  const shared = Math.round((2 * pairs.length * 100) / (sourceNorm.length + words.length || 1))
+  const pairs = align(srcNorm, words.map(normWord))
+  const out: DiffToken[] = []
+  let added = 0, changed = 0, missing = 0
+  const lack = (from: number, to: number, edge: boolean) => {
+    const run = srcWords.slice(from, to)
+    if (!run.length) return
+    missing += run.length
+    if (edge || run.length > MAX_STRUCK) out.push({ k: 'gap', t: run.join(' '), n: run.length })
+    else run.forEach(t => out.push({ k: 'missing', t }))
+  }
+  for (let g = 0; g <= pairs.length; g++) {
+    const prevAi = g === 0 ? -1 : pairs[g - 1].ai
+    const nextAi = g === pairs.length ? srcWords.length : pairs[g].ai
+    const prevOi = g === 0 ? -1 : pairs[g - 1].oi
+    const nextOi = g === pairs.length ? words.length : pairs[g].oi
+    const theirs = words.slice(prevOi + 1, nextOi)
+    const ours = nextAi - prevAi - 1
+    const edge = g === 0 || g === pairs.length
+    if (theirs.length && ours && (!edge || ours <= theirs.length + 2)) {
+      // their words stand where ours were: ours struck, theirs marked as a different wording
+      lack(prevAi + 1, nextAi, false)
+      theirs.forEach(t => out.push({ k: 'changed', t })); changed += theirs.length
+    } else {
+      if (g === pairs.length) theirs.forEach(t => out.push({ k: 'added', t }))
+      lack(prevAi + 1, nextAi, edge)
+      if (g !== pairs.length) theirs.forEach(t => out.push({ k: 'added', t }))
+      added += theirs.length
+    }
+    if (g < pairs.length) out.push({ k: 'same', t: words[pairs[g].oi] })
+  }
   return {
     entry,
-    words: words.map((text, i) => ({ text, differs: !matched.has(i) })),
-    shared,
-    missing: sourceNorm.length - pairs.length,
-    partial: words.length < sourceNorm.length * 0.6,
+    tokens: out,
+    shared: Math.round((2 * pairs.length * 100) / (srcNorm.length + words.length || 1)),
+    added, changed, missing,
+    partial: words.length < srcNorm.length * 0.6,
   }
+}
+
+function DiffText({ tokens }: { tokens: DiffToken[] }) {
+  return (
+    <p dir="rtl" className="font-[Amiri,serif] text-[1.0625rem] leading-[2.1] text-gray-800">
+      {tokens.map((x, i) => (
+        <span key={i}>
+          {i > 0 && ' '}
+          {x.k === 'same' ? x.t
+            : x.k === 'gap' ? <span title={x.t} className="font-sans text-[11px] text-red-700/70 border border-dashed border-red-300 rounded px-1 cursor-help">ليس فيها {x.n} لفظًا من المتن</span>
+            : x.k === 'missing' ? <del className={DIFF.missing}>{x.t}</del>
+            : <mark className={DIFF[x.k]}>{x.t}</mark>}
+        </span>
+      ))}
+    </p>
+  )
 }
 
 function VersionList({ source, others, chainOnly }: {
@@ -491,10 +592,11 @@ function VersionList({ source, others, chainOnly }: {
   others: TextEntry[]
   chainOnly: SourceRef[]
 }) {
-  const [openAll, setOpenAll] = useState(false)
+  const [openAll, setOpenAll] = useState(true)
   const diffs = useMemo(() => {
-    const sourceNorm = tokenize(source.matn).map(normWord)
-    return others.map(e => diffVersion(sourceNorm, e)).sort((a, b) => b.shared - a.shared)
+    const srcWords = tokenize(source.matn)
+    const srcNorm = srcWords.map(normWord)
+    return others.map(e => diffVersion(srcWords, srcNorm, e)).sort((a, b) => b.shared - a.shared)
   }, [source, others])
   if (diffs.length === 0 && chainOnly.length === 0) return null
 
@@ -502,43 +604,51 @@ function VersionList({ source, others, chainOnly }: {
     <div>
       <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-gray-700">
-          نصوص الروايات
+          نصوص الروايات كاملة
           <span className="text-xs font-normal text-gray-400 mr-2">({diffs.length} رواية)</span>
         </h3>
         <button type="button" onClick={() => setOpenAll(o => !o)} className="text-xs text-green-700 hover:underline">
           {openAll ? 'طيّ الكل' : 'فتح الكل'}
         </button>
       </div>
-      <p className="text-xs text-gray-400 mb-3">
-        متن كل روايةٍ كاملًا، والألفاظ التي تخالف متن هذا الحديث <mark className="bg-amber-100 text-amber-900 rounded px-1">مظلَّلة</mark> — مرتّبةً من الأقرب إلى الأبعد
+      <p className="text-xs text-gray-400 mb-2">
+        متن هذا الحديث أولًا، ثم متن كل روايةٍ كاملًا مقابَلًا به كلمةً كلمة — مرتّبةً من الأقرب إلى الأبعد
       </p>
+      <DiffLegend missing />
+
+      {/* this hadith */}
+      <div className="rounded-xl border-2 border-amber-300 bg-surface mb-2">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+          <span className="text-[11px] font-sans font-semibold text-amber-800 bg-amber-50 rounded-full px-2 py-0.5">هذا الحديث</span>
+          <span className="font-semibold text-sm text-gray-800">{source.bookTitle}</span>
+        </div>
+        <p dir="rtl" className="px-4 py-3 font-[Amiri,serif] text-[1.0625rem] leading-[2.1] text-gray-900">{source.matn}</p>
+      </div>
+
       <div className="space-y-2">
         {diffs.map(d => (
           <details key={`${d.entry.id}-${openAll}`} open={openAll || undefined}
             className="group rounded-xl border border-border bg-surface open:shadow-sm">
             <summary className="flex items-center gap-3 flex-wrap cursor-pointer list-none px-4 py-2.5">
               <span className="text-gray-400 text-xs transition-transform group-open:rotate-90">◀</span>
-              <a href={`/hadith/${d.entry.id}`} onClick={e => e.stopPropagation()}
+              <a href={`/hadith/${d.entry.id}`} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}
                 className="font-semibold text-sm text-green-800 hover:underline">
                 {d.entry.bookTitle}{d.entry.num ? ` (${d.entry.num})` : ''}
               </a>
               {d.entry.takhrij_death != null && <span className="text-xs text-gray-400">ت {d.entry.takhrij_death} هـ</span>}
               <span className="flex-1" />
+              <span className="flex items-center gap-1.5 text-[11px] font-sans">
+                {d.added > 0 && <span className={`${DIFF.added} px-1.5`}>زيادة {d.added}</span>}
+                {d.changed > 0 && <span className={`${DIFF.changed} px-1.5`}>مختلف {d.changed}</span>}
+                {d.missing > 0 && <span className="rounded px-1.5 text-red-700/80 bg-red-50">ناقص {d.missing}</span>}
+              </span>
               {d.partial && <span className="text-[11px] rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">طرفٌ منه</span>}
               <span className={`text-[11px] rounded-full px-2 py-0.5 ${d.shared >= 85 ? 'bg-green-50 text-green-800' : d.shared >= 60 ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>
                 تطابق {d.shared}٪
               </span>
             </summary>
-            <div className="px-4 pb-3 pt-1 border-t border-border">
-              <p dir="rtl" className="font-[Amiri,serif] text-[1.0625rem] leading-loose text-gray-800">
-                {d.words.map((w, i) => (
-                  <span key={i}>{i > 0 && ' '}{w.differs ? <mark className="bg-amber-100 text-amber-900 rounded px-0.5">{w.text}</mark> : w.text}</span>
-                ))}
-              </p>
-              <p className="text-[11px] text-gray-400 mt-1.5">
-                {d.words.filter(w => w.differs).length} لفظًا مخالفًا أو زائدًا
-                {d.missing > 0 && ` · ليس فيها ${d.missing} لفظًا من متن هذا الحديث`}
-              </p>
+            <div className="px-4 pb-3 pt-2 border-t border-border">
+              <DiffText tokens={d.tokens} />
             </div>
           </details>
         ))}
@@ -547,7 +657,7 @@ function VersionList({ source, others, chainOnly }: {
         <p className="text-xs text-gray-500 mt-3 leading-relaxed">
           <span className="font-semibold text-gray-600">أسانيد أخرى دون متنٍ مسجَّل: </span>
           {chainOnly.map((c, i) => (
-            <span key={c.id}>{i > 0 && '، '}<a href={`/hadith/${c.id}`} className="text-green-700 hover:underline">{c.bookTitle}{c.num ? ` (${c.num})` : ''}</a></span>
+            <span key={c.id}>{i > 0 && '، '}<a href={`/hadith/${c.id}`} target="_blank" rel="noopener" className="text-green-700 hover:underline">{c.bookTitle}{c.num ? ` (${c.num})` : ''}</a></span>
           ))}
         </p>
       )}
@@ -652,8 +762,9 @@ export default function MatnVariants({
         <div>
           <h3 className="text-sm font-bold text-gray-700 mb-1">خريطة الاختلافات</h3>
           <p className="text-xs text-gray-400 mb-3">
-            المتن كاملًا من اليمين إلى اليسار: مواضع الاختلاف مظلَّلة بأرقامها، وتحت كلٍّ منها ألفاظ الروايات الأخرى وكتبها
+            المتن كاملًا من اليمين إلى اليسار: مواضع الاختلاف مظلَّلة بأرقامها، وتحت كلٍّ منها قراءة الروايات الأخرى لذلك الموضع وكتبها
           </p>
+          <DiffLegend point />
           <VariantMap source={textEntries[0]} variants={variants} />
         </div>
       )}
