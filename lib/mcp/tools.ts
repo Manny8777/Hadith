@@ -92,8 +92,10 @@ export const TOOLS: Tool[] = [
           : { rows: [] },
       ])
       const split = splitSanadMatn(h.content)
-      // the printed numbers the text opens with («1 1 - حدثنا…») are given separately
-      const sanad = split.sanad.replace(/^[\s\d٠-٩()\-–]+/, '')
+      // the book/chapter headings and printed numbers the text can open with («كتاب الطهارة / باب … /
+      // 223 498 - حدثنا…») are given separately (chapter, printed_number, harf_number)
+      const numbered = split.sanad.match(/^[\s\S]{0,400}?[\d٠-٩]+(?:\s+[\d٠-٩]+)*\s*[-–]\s*/)
+      const sanad = (numbered ? split.sanad.slice(numbered[0].length) : split.sanad).replace(/^[\s\d٠-٩()\-–]+/, '')
       const matn = split.matn
       const TYPE: Record<number, string> = { 1: 'مرفوع', 2: 'موقوف', 3: 'مقطوع', 4: 'مرسل' }
       return {
