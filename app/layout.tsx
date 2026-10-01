@@ -5,6 +5,7 @@ import NavHeader from './components/NavHeader'
 import BrandMark from './components/BrandMark'
 import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSubHeader'
 import NumeralConverter from './components/NumeralConverter'
+import Analytics from './components/Analytics'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
 import { ThemeProvider } from '@/lib/themeContext'
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NumberingProvider>
           <NumeralProvider>
             <NumeralConverter />
+            <Analytics />
             {/* The slim bar, and under it the site-wide search box (useSearchParams, so in Suspense) */}
             <header className="sticky top-0 z-50 shadow-sm">
               <NavHeader />

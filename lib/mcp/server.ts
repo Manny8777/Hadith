@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto'
 import pool from '@/lib/db'
 import { userForBearer, type User } from '@/lib/auth'
 import { MCP_LIMITS } from './limits'
+import { logMcpEvent } from '@/lib/analytics'
 import { TOOLS } from './tools'
 
 const SUPPORTED = ['2025-06-18', '2025-03-26', '2024-11-05']
@@ -46,6 +47,9 @@ function unauthorized(req: Request, path: string, error?: string): Response {
   })
 }
 
+const subjectOf = (user: User | null, ip: string) =>
+  user ? `u:${user.id}` : `ip:${createHash('sha256').update(ip).digest('hex').slice(0, 20)}`
+
 /** Counts one tool call; returns the calls made today (including this one). */
 async function countCall(subject: string): Promise<number> {
   const r = await pool.query<{ calls: number }>(
@@ -66,7 +70,7 @@ async function callTool(params: Record<string, unknown>, user: User | null, ip: 
   if (!tool) return { error: { code: -32602, message: `Unknown tool: ${String(params.name)}` } }
 
   const limit = user ? MCP_LIMITS.user : MCP_LIMITS.anon
-  const subject = user ? `u:${user.id}` : `ip:${createHash('sha256').update(ip).digest('hex').slice(0, 20)}`
+  const subject = subjectOf(user, ip)
   const calls = await countCall(subject)
   if (calls > limit) {
     const text = user
@@ -75,12 +79,16 @@ async function callTool(params: Record<string, unknown>, user: User | null, ip: 
     return { result: { content: [{ type: 'text', text }], isError: true } }
   }
 
+  const t0 = Date.now()
+  const log = (ok: boolean) => logMcpEvent({ subject, userId: user?.id ?? null, kind: 'call', tool: tool.name, ok, ms: Date.now() - t0 })
   try {
     const data = await tool.run((params.arguments as Record<string, unknown>) ?? {})
+    log(true)
     const content: { type: 'text'; text: string }[] = [{ type: 'text', text: JSON.stringify(data, null, 1) }]
     if (!user) content.push({ type: 'text', text: ACCOUNT_NOTE(limit - calls) })
     return { result: { content, structuredContent: Array.isArray(data) ? { items: data } : data, isError: false } }
   } catch (e) {
+    log(false)
     return { result: { content: [{ type: 'text', text: `Error: ${(e as Error).message}` }], isError: true } }
   }
 }
@@ -91,6 +99,9 @@ async function handle(msg: Rpc, user: User | null, ip: string): Promise<object |
   switch (msg.method) {
     case 'initialize': {
       const asked = String(msg.params?.protocolVersion ?? '')
+      const info = (msg.params?.clientInfo ?? {}) as { name?: string; version?: string }
+      logMcpEvent({ subject: subjectOf(user, ip), userId: user?.id ?? null, kind: 'connect',
+        client: [info.name, info.version].filter(Boolean).join(' ') || null })
       return reply({ result: {
         protocolVersion: SUPPORTED.includes(asked) ? asked : SUPPORTED[0],
         capabilities: { tools: { listChanged: false } },

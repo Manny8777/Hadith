@@ -26,9 +26,14 @@ export default async function AccountPage() {
           <h1 className="text-2xl font-bold text-green-900">حسابي</h1>
           <p className="text-sm text-gray-500" dir="ltr">{user.email}</p>
         </div>
+        <div className="flex items-center gap-2">
+        {(process.env.ADMIN_EMAILS || 'manny@vcdesks.com').split(',').map(x => x.trim().toLowerCase()).includes(user.email.toLowerCase()) && (
+          <a href="/admin" className="rounded-lg border border-green-300 px-4 py-2 text-sm text-green-800 hover:bg-green-50">الإحصاءات</a>
+        )}
         <form action="/api/auth/logout" method="post">
           <button type="submit" className="rounded-lg border border-border px-4 py-2 text-sm text-gray-700 hover:border-red-300 hover:text-red-700">تسجيل الخروج</button>
         </form>
+        </div>
       </div>
 
       <section className="ui-card rounded-2xl p-5">
