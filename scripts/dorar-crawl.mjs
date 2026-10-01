@@ -80,6 +80,13 @@ function shareHashes(words, sources) {
 }
 
 // The page's search misses words written with a hamza on the alef (إنكم), so the alef is plain.
+// Share of the shorter text's words found in the other (for sources matched by wording); a result
+// counts when it has at least 4 words and ≥ 70% of them match
+function overlap(a, b) {
+  const short = a.length <= b.length ? a : b, long = new Set(a.length <= b.length ? b : a)
+  return short.length < 4 ? 0 : short.filter(w => long.has(w)).length / short.length
+}
+
 const plainWords = text => text
   .replace(/[ً-ْٰـ]/g, '')
   .replace(/[أإآ]/g, 'ا')
@@ -119,6 +126,7 @@ async function main() {
   let errorsInRow = 0
   for (const bookId of BOOKS) {
     const sources = DORAR_SOURCES[bookId]
+    const textSources = new Set(sources.filter(s => s.byText).map(s => s.name))
     const { rows } = await pool.query(
       `SELECT main_id, content FROM hadith_toc
        WHERE book_id = $1 AND (content LIKE '%نوع="مطبوع"%' OR content LIKE '%نوع="طبعة_ثانية"%')
@@ -148,6 +156,7 @@ async function main() {
       if (done >= LIMIT) break
       done++
       const numbers = [...g.numbers]
+      const ourWords = plainWords(g.wordLists[0].join(' '))
       let found = null
       let lastQuery = ''
       let failed = false
@@ -175,10 +184,19 @@ async function main() {
           const seen = new Set()
           const exact = results.filter(r => {
             const k = `${r.source}|${r.number}`
-            if (!numbers.includes(r.number) || seen.has(k)) return false
+            if (textSources.has(r.source) || !numbers.includes(r.number) || seen.has(k)) return false
             seen.add(k)
             return true
           })
+          // Sources with their own numbering: the result whose wording best matches our matn
+          for (const name of textSources) {
+            let best = null
+            for (const r of results.filter(r => r.source === name)) {
+              const score = overlap(plainWords(r.text), ourWords)
+              if (score >= 0.7 && (!best || score > best.score)) best = { r, score }
+            }
+            if (best) exact.push(best.r)
+          }
           if (exact.length > 0) { found = { exact, ws, allWords }; break search }
         }
       }

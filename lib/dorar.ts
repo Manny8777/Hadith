@@ -4,12 +4,14 @@
 // from our server (Cloudflare answers Node's fetch with 403), so scripts/dorar-crawl.mjs fetches the
 // rulings offline into dorar_rulings and the hadith page reads them from there.
 
-export interface DorarSource { id: number; name: string }
+// byText: the source numbers the hadiths its own way (al-Albani's صحيح/ضعيف ابن ماجه), so a result
+// is matched to our hadith by its wording rather than its number, and Dorar's number is kept as is.
+export interface DorarSource { id: number; name: string; byText?: boolean }
 
 // Our book id → the Dorar sources numbered like that book: the book itself plus the later gradings
 // printed in its numbering (al-Albani's صحيح/ضعيف, Shu'ayb's تخريج). `name` is Dorar's «المصدر» text.
-// Left out on purpose: al-Albani's صحيح/ضعيف ابن ماجه (his own numbering) and Shakir's Musnad
-// (cited by volume/page) — a number match there would not identify the hadith.
+// al-Albani's صحيح/ضعيف ابن ماجه follow his own sequence (Ibn Majah 100 is «صحيح ابن ماجه 82»),
+// so they are matched by wording (byText). Left out: Shakir's Musnad (cited by volume/page).
 export const DORAR_SOURCES: Record<number, DorarSource[]> = {
   1: [{ id: 6216, name: 'صحيح البخاري' }],
   2: [{ id: 3088, name: 'صحيح مسلم' }],
@@ -22,7 +24,7 @@ export const DORAR_SOURCES: Record<number, DorarSource[]> = {
     { id: 3641, name: 'ضعيف الترمذي' }, { id: 13502, name: 'تخريج سنن الترمذي' },
   ],
   5: [{ id: 13508, name: 'سنن النسائي' }, { id: 13561, name: 'صحيح النسائي' }, { id: 3675, name: 'ضعيف النسائي' }],
-  6: [{ id: 6264, name: 'سنن ابن ماجه' }, { id: 13560, name: 'صحيح ابن ماجه' }, { id: 3645, name: 'ضعيف ابن ماجه' }],
+  6: [{ id: 6264, name: 'سنن ابن ماجه' }, { id: 13560, name: 'صحيح ابن ماجه', byText: true }, { id: 3645, name: 'ضعيف ابن ماجه', byText: true }],
   8: [{ id: 64, name: 'تخريج المسند لشعيب' }],
   10: [{ id: 16582, name: 'صحيح ابن حبان' }, { id: 17576, name: 'تخريج صحيح ابن حبان' }],
   11: [{ id: 13558, name: 'صحيح ابن خزيمة' }],
