@@ -33,6 +33,9 @@
 <td align="center" width="50%"><a href="https://hadith.dev/media/migration-film.mp4"><img src="public/media/migration-film-poster.jpg" width="360" alt="من سطح المكتب إلى الويب"></a><br><sub><b>من سطح المكتب إلى الويب</b></sub></td>
 <td align="center" width="50%"><a href="https://hadith.dev/media/numbering-film.mp4"><img src="public/media/numbering-film-poster.jpg" width="360" alt="ترقيم حرف والترقيم المطبوع"></a><br><sub><b>ترقيم حرف والترقيم المطبوع</b></sub></td>
 </tr>
+<tr>
+<td align="center" colspan="2"><a href="https://hadith.dev/media/mcp.mp4"><img src="public/media/mcp-poster.jpg" width="560" alt="الجامع في مساعدك الذكي — خادم MCP"></a><br><sub><b>الجامع في مساعدك الذكي</b> — إعداد خادم MCP في Claude وClaude Code وغيرهما، وما يجيب به</sub></td>
+</tr>
 </table>
 
 تُشغَّل الأفلام من الموقع بالضغط على صورها، وملفاتها في [motion-graphics](motion-graphics/README.md) مع طريقة صنعها.

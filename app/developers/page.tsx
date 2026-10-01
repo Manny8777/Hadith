@@ -37,6 +37,12 @@ export default function DevelopersPage() {
       </section>
 
       <section id="mcp" className="ui-card rounded-2xl p-5 scroll-mt-28 space-y-4">
+        <video controls preload="metadata" playsInline poster="/media/mcp-poster.jpg"
+          aria-label="الجامع في مساعدك الذكي — خادم MCP"
+          className="w-full aspect-video rounded-xl border border-[#D9C9A8] bg-[#0F3D2E]">
+          <source src="/media/mcp.mp4" type="video/mp4" />
+          <track kind="captions" src="/media/mcp.ar.vtt" srcLang="ar" label="العربية" />
+        </video>
         <div>
           <h2 className="text-lg font-bold text-green-900 mb-2">خادم MCP</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
