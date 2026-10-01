@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 interface Props {
   prevId: number | null

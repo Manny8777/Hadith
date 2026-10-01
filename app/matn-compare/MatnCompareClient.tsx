@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 interface ParallelHadith {
   main_id: number

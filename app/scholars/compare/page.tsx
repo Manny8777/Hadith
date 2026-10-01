@@ -1,7 +1,7 @@
 'use client'
 import { useState, useCallback } from 'react'
 import { Suspense } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 interface Scholar {
   scientist_id: number

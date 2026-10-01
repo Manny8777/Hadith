@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import pool from '@/lib/db'
 import NarratorNetworkGraph from '@/app/components/NarratorNetworkGraph'
 import { pageMeta } from '@/lib/siteMeta'

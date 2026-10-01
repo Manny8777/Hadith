@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import HadithNumber from '@/app/components/HadithNumber'
 import UiIcon from '@/app/components/UiIcon'
 

@@ -1,5 +1,5 @@
 ﻿import pool from "@/lib/db"
-import Link from "next/link"
+import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
 
 export const dynamic = "force-dynamic"

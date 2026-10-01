@@ -1,5 +1,5 @@
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'فهرس علل الحديث — جامع خادم الحرمين' }

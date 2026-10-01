@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { Suspense } from 'react'
 import HadithNumber from '@/app/components/HadithNumber'
 

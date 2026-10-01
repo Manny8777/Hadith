@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { useNumbering } from '@/lib/numberingContext'
 
 interface Book { id: number; title: string; takhrij_author: string | null; takhrij_death: number | null }

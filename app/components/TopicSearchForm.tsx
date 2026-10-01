@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { useRouter } from 'next/navigation'
 import { buildTopicUrl } from '@/lib/urlState'
 

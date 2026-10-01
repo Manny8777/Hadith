@@ -1,5 +1,5 @@
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { attachMatnSnippets, snipColumns, type SnipPart } from '@/lib/matnSnippet'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
 import UiIcon from '@/app/components/UiIcon'

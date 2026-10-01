@@ -19,7 +19,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import dagre from 'dagre'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { useTheme } from '@/lib/themeContext'
 import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 import type { Chain, NarratorInChain, CriticismGroup } from './HadithSidebarLayout'

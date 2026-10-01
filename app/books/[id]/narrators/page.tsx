@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import NavCheckbox from '@/app/components/NavCheckbox'
 import { notFound } from 'next/navigation'
 import { bookMeta } from '@/lib/entityMeta'

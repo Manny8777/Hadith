@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { Suspense } from 'react'
 import HadithNumber from '@/app/components/HadithNumber'
 import SaveHadith from '@/app/components/SaveHadith'

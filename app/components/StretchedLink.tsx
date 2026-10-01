@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 /**
  * A whole-card link rendered as an absolutely positioned overlay.

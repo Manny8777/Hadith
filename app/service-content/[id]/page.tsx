@@ -1,5 +1,5 @@
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { cardInfoField, cardInfoLines } from '@/lib/bookReference'
 import ServiceContentRenderer from '@/app/components/ServiceContentRenderer'

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useCallback, useEffect } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 interface HadithData {
   id: number

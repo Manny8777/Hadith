@@ -1,6 +1,6 @@
 import pool from '@/lib/db'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'مشكل الحديث — شجرة مختلف الحديث — جامع خادم الحرمين' }

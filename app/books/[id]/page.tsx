@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { notFound, redirect } from 'next/navigation'
 import HadithNumSearch from '@/app/components/HadithNumSearch'
 import HadithNumber from '@/app/components/HadithNumber'

@@ -1,5 +1,5 @@
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import NavigateSelect from '@/app/components/NavigateSelect'
 import { pageMeta } from '@/lib/siteMeta'
 

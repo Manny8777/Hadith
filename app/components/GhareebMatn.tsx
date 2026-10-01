@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { findTarfRange, withTarf } from '@/lib/tarf'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { findGhareebMatches, stripTashkeel, type GhareebWord } from '@/lib/ghareeb'
 
 interface GhareebMatnProps {

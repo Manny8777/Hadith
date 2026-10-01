@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 // Strip diacritics for grouping key so "مختصراً" and "مختصرا" cluster together
 function normDescKey(desc: string): string {

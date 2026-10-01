@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { findGhareebMatches, type GhareebWord } from '@/lib/ghareeb'
 
 export default function GhareebInline({ hadithId }: { hadithId: number }) {

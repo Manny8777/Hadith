@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import pool from '@/lib/db'
 import NarratorHadiths from '@/app/components/NarratorHadiths'
 import NarratorExport from '@/app/components/NarratorExport'

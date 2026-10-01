@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 export interface CompanionRow {
   id: number

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { buildSearchUrl } from '@/lib/urlState'
 import UiIcon from './UiIcon'

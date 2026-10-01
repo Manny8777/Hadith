@@ -1,5 +1,5 @@
 import pool from '@/lib/db'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { hadithSectionMeta } from '@/lib/entityMeta'
 
 export const dynamic = 'force-dynamic'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import type { LexiconHadithRef } from '@/lib/ghareeb'
 
 function stripHtml(text: string | null): string {

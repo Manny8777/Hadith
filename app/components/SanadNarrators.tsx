@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import { stripTashkeel } from '@/lib/ghareeb'
 import type { SanadNarratorPreview, SanadSegment } from '@/lib/sanadNarrators'
 

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import HadithNumber from '@/app/components/HadithNumber'
 
 interface Book { id: number; title: string; takhrij_author: string | null; hadith_count: number }

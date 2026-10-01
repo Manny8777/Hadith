@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 
 interface TopicResult {
   id: number

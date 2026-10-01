@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/Link'
 import HadithNumber from '@/app/components/HadithNumber'
 
 const STORAGE_KEY = 'hadith_collection'
