@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import pool from '@/lib/db'
 import { currentUser } from '@/lib/auth'
+import { isAdmin } from '@/lib/adminGate'
 import { MCP_LIMITS } from '@/lib/mcp/limits'
 import TokenManager from './TokenManager'
 
@@ -27,7 +28,7 @@ export default async function AccountPage() {
           <p className="text-sm text-gray-500" dir="ltr">{user.email}</p>
         </div>
         <div className="flex items-center gap-2">
-        {(process.env.ADMIN_EMAILS || 'manny@vcdesks.com').split(',').map(x => x.trim().toLowerCase()).includes(user.email.toLowerCase()) && (
+        {isAdmin(user) && (
           <a href="/admin" className="rounded-lg border border-green-300 px-4 py-2 text-sm text-green-800 hover:bg-green-50">الإحصاءات</a>
         )}
         <form action="/api/auth/logout" method="post">
