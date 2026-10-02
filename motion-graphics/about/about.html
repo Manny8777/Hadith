@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>ما الجامع؟</title>
+<link rel="stylesheet" href="../features/base.css">
+<style>
+  /* «ما الجامع؟» (1920×1080): what the site is — a tool that shows the books of the Sunnah as they
+     are; it rules on no hadith and no narrator; narrators' grades are quoted from the imams' books,
+     hadith rulings from al-Durar al-Saniyya. Real page shots (shots/, from capture.mjs; positions in
+     shots/marks.json). Captions are drawn in the bar at the bottom. */
+  #stage { width: 1920px; height: 1080px; color: #faf6ec;
+    background: radial-gradient(ellipse 80% 90% at 70% 40%, #235238 0%, #163826 55%, #0c2014 100%); }
+  .pattern { opacity: .07; filter: invert(1) sepia(1) saturate(3) hue-rotate(5deg); }
+  #caption { left: 300px; right: 300px; bottom: 34px; min-height: 96px; background: rgba(8,22,14,.86); border: 1px solid rgba(201,164,92,.35); }
+  #caption span { font-size: 34px; }
+
+  .sc { position: absolute; inset: 0; }
+  .an { will-change: transform, opacity; }
+  .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .h { font-family: 'Amiri', serif; font-weight: 700; color: #fffaf0; line-height: 1.25; }
+  .sub { font-size: 34px; color: #cfe0d4; line-height: 1.6; }
+  .kick { font-size: 30px; font-weight: 600; color: var(--gold); }
+  .plate { display: inline-block; background: #faf6ec; border-radius: 30px; padding: 22px 52px; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
+  .plate img { height: 140px; display: block; }
+
+  .stat { position: absolute; top: 330px; width: 520px; text-align: center; }
+  .stat .big { font-family: 'Amiri', serif; font-size: 190px; font-weight: 700; color: var(--gold); line-height: 1; }
+  .stat .u { font-size: 44px; color: #fffaf0; margin-top: 10px; }
+
+  .win { position: absolute; border-radius: 22px; overflow: hidden; background: #fffdf7; color: var(--ink); box-shadow: 0 40px 90px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); }
+  .bar { height: 48px; background: #efe9da; display: flex; align-items: center; gap: 10px; padding: 0 18px; direction: ltr; }
+  .bar i { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+  .bar i:nth-child(1) { background: #e0796a; } .bar i:nth-child(2) { background: #e5bf5c; } .bar i:nth-child(3) { background: #7dbb73; }
+  .bar span { margin-left: 18px; font: 500 18px 'JetBrains Mono', monospace; color: #5b6b60; }
+  .vp { position: relative; overflow: hidden; }
+  .vp img { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+  .tag { position: absolute; display: inline-flex; align-items: center; gap: 14px; padding: 14px 30px; border-radius: 999px; background: var(--gold); color: #13261b; font-size: 32px; font-weight: 700; box-shadow: 0 16px 40px rgba(0,0,0,.35); white-space: nowrap; }
+  .tags { position: absolute; right: 110px; top: 250px; width: 470px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+  .tags .tag { position: static; }
+
+  .no { position: absolute; top: 260px; width: 700px; height: 420px; border-radius: 34px; background: rgba(255,253,247,.06); border: 2px solid rgba(255,253,247,.2); text-align: center; padding-top: 40px; }
+  .no .x { width: 110px; height: 110px; border-radius: 50%; background: #a3342a; color: #fff; font: 700 70px/110px 'IBM Plex Sans Arabic'; margin: 0 auto 24px; }
+  .no .t { font-family: 'Amiri', serif; font-size: 62px; font-weight: 700; color: #fffaf0; }
+  .no .w { margin-top: 26px; font-size: 40px; color: #cfe0d4; }
+  .no .w s { text-decoration-color: #e0796a; text-decoration-thickness: 4px; }
+  .yes { position: absolute; top: 740px; left: 0; right: 0; text-align: center; }
+  .yes span { display: inline-flex; align-items: center; gap: 16px; padding: 16px 40px; border-radius: 999px; background: #e3efe6; color: var(--green); font-size: 38px; font-weight: 700; }
+
+  .url-big { font: 600 120px 'JetBrains Mono', monospace; direction: ltr; color: #fffaf0; letter-spacing: -2px; }
+  .url-big span { color: var(--gold); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- 0 · what is it -->
+  <div class="sc" id="s0">
+    <div class="center an" style="top:180px"><span class="plate"><img src="../../public/assets/brand/al-jami-horizontal.png"></span></div>
+    <div class="center h an" style="top:420px;font-size:130px">ما الجامع؟</div>
+    <div class="center sub an" style="top:610px">أداةٌ للباحث في السنة النبوية</div>
+  </div>
+
+  <!-- 1 · the books, as they are -->
+  <div class="sc" id="s1">
+    <div class="center kick an" style="top:160px">كتب السنة كما هي في مصادرها</div>
+    <div class="stat an" style="right:300px"><div class="big">٢٤٥</div><div class="u">كتابًا</div></div>
+    <div class="stat an" style="left:300px"><div class="big">٣٠٠</div><div class="u">ألف حديثٍ وأكثر</div></div>
+  </div>
+
+  <!-- 2 · what it does: makes things easier -->
+  <div class="sc" id="s2">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/hadith/5</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/hadith.png" style="width:1280px" id="img2"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">التيسير</div>
+      <div class="tag an">السند والمتن مفصولان</div>
+      <div class="tag an">المصدر والطبعة والرقم</div>
+      <div class="tag an">الروايات في كتب السنة</div>
+    </div>
+  </div>
+
+  <!-- 3 · what it does not do -->
+  <div class="sc" id="s3">
+    <div class="no an" style="right:170px"><div class="x">✕</div><div class="t">لا حكم على حديث</div><div class="w"><s>صحيح</s> · <s>ضعيف</s></div></div>
+    <div class="no an" style="left:170px"><div class="x">✕</div><div class="t">لا حكم على راوٍ</div><div class="w"><s>جرح</s> · <s>تعديل</s></div></div>
+  </div>
+
+  <!-- 4 · narrators: quoted, attributed -->
+  <div class="sc" id="s4">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/narrator/2472</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/narrator.png" style="width:1280px" id="img4"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">أقوال الأئمة في الرواة</div>
+      <div class="tag an">منقولةٌ من كتبهم</div>
+      <div class="tag an">منسوبةٌ إلى قائليها</div>
+    </div>
+  </div>
+
+  <!-- 5 · hadith rulings: from al-Durar al-Saniyya -->
+  <div class="sc" id="s5">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/hadith/5</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/hadith.png" style="width:1280px" id="img5"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">الحكم على الحديث</div>
+      <div class="tag an">خلاصة حكم المحدث</div>
+      <div class="tag an">من الدرر السنية</div>
+      <div class="tag an" style="background:#e3efe6;color:#1f4a33;direction:ltr">dorar.net ↗</div>
+    </div>
+  </div>
+
+  <!-- 6 · back to the source -->
+  <div class="sc" id="s6">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/hadith/5</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/hadith.png" style="width:1280px" id="img6"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">تحقّق بنفسك</div>
+      <div class="tag an">الكتاب</div>
+      <div class="tag an">الطبعة</div>
+      <div class="tag an">الجزء والصفحة</div>
+      <div class="tag an">الرقم المطبوع وحرف</div>
+    </div>
+  </div>
+
+  <!-- 7 · closing -->
+  <div class="sc" id="s7">
+    <div class="center h an" style="top:200px;font-size:96px">الجامع: أداةٌ للباحث</div>
+    <div class="center h an" style="top:340px;font-size:96px;color:var(--gold)">والحكمُ لأهله</div>
+    <div class="center url-big an" style="top:560px">hadith<span>.</span>dev</div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 11, 19, 26, 33, 40, 46, 51],
+  lengths: [5.98,10.04,11.92,8.8,7.6,9.44,9.92,7.72], // @narration-timing
+  captions: [[0.4,5.08,"مَا الْجَامِعُ؟ أَدَاةٌ لِلْبَاحِثِ فِي السُّنَّةِ النَّبَوِيَّةِ."],[6.28,15.12,"يَعْرِضُ مَا فِي كُتُبِ السُّنَّةِ كَمَا هُوَ: مِائَتَانِ وَخَمْسَةٌ وَأَرْبَعُونَ كِتَابًا، وَأَكْثَرُ مِنْ ثَلَاثِمِائَةِ أَلْفِ حَدِيثٍ."],[16.32,27.04,"وَعَمَلُهُ التَّيْسِيرُ: يَفْصِلُ السَّنَدَ عَنِ الْمَتْنِ، وَيَذْكُرُ مَصْدَرَ كُلِّ حَدِيثٍ وَطَبْعَتَهُ وَرَقْمَهُ، وَيَرْبِطُ بَيْنَ رِوَايَاتِهِ فِي الْكُتُبِ."],[28.24,35.84,"وَلَا يَحْكُمُ الْجَامِعُ عَلَى حَدِيثٍ بِصِحَّةٍ وَلَا ضَعْفٍ، وَلَا عَلَى رَاوٍ بِجَرْحٍ وَلَا تَعْدِيلٍ."],[37.04,43.44,"فَأَقْوَالُ الْأَئِمَّةِ فِي الرُّوَاةِ مَنْقُولَةٌ مِنْ كُتُبِهِمْ، مَنْسُوبَةٌ إِلَى قَائِلِيهَا."],[44.64,52.88,"وَأَمَّا الْحُكْمُ عَلَى الْحَدِيثِ، فَنَنْقُلُ خُلَاصَةَ حُكْمِ الْمُحَدِّثِ مِنْ مَوْسُوعَةِ الدُّرَرِ السَّنِيَّةِ، مَعَ رَابِطٍ إِلَيْهَا."],[54.08,62.8,"وَكُلُّ نَصٍّ يَعُودُ بِكَ إِلَى مَصْدَرِهِ: الْكِتَابِ وَالطَّبْعَةِ وَالْجُزْءِ وَالصَّفْحَةِ، لِتَتَحَقَّقَ بِنَفْسِكَ."],[64.1,69.42,"الْجَامِعُ: أَدَاةٌ لِلْبَاحِثِ، وَالْحُكْمُ لِأَهْلِهِ."]], // @narration-captions
+}
+</script>
+<script src="../features/engine.js"></script>
+<script>
+const B = FILM.bounds
+const scn = i => $('s' + i)
+const kids = i => [...scn(i).querySelectorAll('.an')]
+function rise(i, delay = .1, gap = .25, y = 36) {
+  kids(i).forEach((el, k) => tw(el, B[i] + delay + k * gap, .6, { o: 0, y }, { o: 1, y: 0 }, 'out'))
+}
+for (let i = 0; i < 8; i++) scene(scn(i), B[i], i === 7 ? null : B[i + 1] - .45)
+for (let i = 0; i < 8; i++) rise(i, .1, i === 2 || i === 4 || i === 5 || i === 6 ? .45 : .3)
+
+// The window shows a shot (1280 css px wide, drawn 1280 wide) zoomed onto a region of it:
+// the region's centre at the viewport's centre, scaled to fit its width (vp 1160 × 712)
+const VW = 1160, VH = 712
+function focus(r, fit = .92) {
+  const s = Math.min(VW * fit / r[2], VH * fit / r[3], 2.6)
+  return { s, x: VW / 2 - s * (r[0] + r[2] / 2), y: VH / 2 - s * (r[1] + r[3] / 2) }
+}
+function pan(img, i, from, to, start = .4) {
+  const a = focus(from), b = focus(to)
+  tw(img, B[i], 0, a, a)
+  const end = B[i + 1] - .9
+  tw(img, B[i] + start, (end - .6) - (B[i] + start), a, b, 'inOut')
+  // a gold outline settles on the region once the zoom arrives
+  const ring = document.createElement('div')
+  const w = b.s * to[2] + 28, h = b.s * to[3] + 22
+  ring.style.cssText = `position:absolute;left:${(VW - w) / 2}px;top:${(VH - h) / 2}px;width:${w}px;height:${h}px;border:4px solid #c9a45c;border-radius:16px;box-shadow:0 0 0 9999px rgba(19,38,27,.28);pointer-events:none;transform-origin:center`
+  $(img).parentElement.appendChild(ring)
+  tw(ring, B[i], 0, { o: 0 }, { o: 0 })
+  tw(ring, end - .5, .5, { o: 0, s: 1.06 }, { o: 1, s: 1 }, 'out')
+}
+// regions (CSS px of the shots; from shots/marks.json)
+pan('img2', 2, [0, 110, 1280, 620], [170, 375, 930, 230])        // the page → sanad and matn
+pan('img4', 4, [180, 120, 920, 560], [600, 565, 470, 50])        // the profile → Ibn Hajar's and al-Dhahabi's grades
+pan('img5', 5, [100, 360, 1000, 300], [630, 600, 470, 40])       // the matn → the Dorar line under it
+pan('img6', 6, [0, 110, 1280, 220], [520, 158, 590, 40])         // the source card → the «المرجع» line
+startFilm()
+</script>
+</body>
+</html>

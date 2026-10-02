@@ -34,6 +34,9 @@
 <td align="center" width="50%"><a href="https://hadith.dev/media/numbering-film.mp4"><img src="public/media/numbering-film-poster.jpg" width="360" alt="ترقيم حرف والترقيم المطبوع"></a><br><sub><b>ترقيم حرف والترقيم المطبوع</b></sub></td>
 </tr>
 <tr>
+<td align="center" colspan="2"><a href="https://hadith.dev/media/about.mp4"><img src="public/media/about-poster.jpg" width="560" alt="ما الجامع؟"></a><br><sub><b>ما الجامع؟</b> — أداةٌ للباحث تعرض كتب السنة كما هي: لا تحكم على حديثٍ ولا على راوٍ؛ أقوال الأئمة منقولةٌ منسوبة، والحكم على الحديث من الدرر السنية</sub></td>
+</tr>
+<tr>
 <td align="center" colspan="2"><a href="https://hadith.dev/media/mcp.mp4"><img src="public/media/mcp-poster.jpg" width="560" alt="الجامع في مساعدك الذكي — خادم MCP"></a><br><sub><b>الجامع في مساعدك الذكي</b> — إعداد خادم MCP في Claude وClaude Code وغيرهما، وما يجيب به</sub></td>
 </tr>
 </table>
