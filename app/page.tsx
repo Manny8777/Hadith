@@ -17,7 +17,7 @@ const GRADE_SHORTCUTS = [
 // Films in public/media/ (made in motion-graphics/; see its README). The main film is the hero; the
 // wide ones carry an .ar.vtt caption track, the square feature films have their captions drawn in.
 const MAIN_FILM = { src: 'promo', title: 'الجامع — موسوعة الحديث النبوي الشريف' }
-const ABOUT_FILM = { src: 'about', title: 'ما الجامع؟', note: 'أداةٌ تعرض كتب السنة كما هي؛ لا تحكم على حديثٍ ولا راوٍ، والحكم من الدرر السنية' }
+const ABOUT_FILM = { src: 'about', title: 'ما الجامع؟', note: 'منصّةٌ تعرض كتب السنة كما هي؛ لا تحكم على حديثٍ ولا راوٍ، والحكم من الدرر السنية' }
 const MIGRATION_FILM = { src: 'migration-film', title: 'من سطح المكتب إلى الويب', note: 'كيف نُقل البرنامج من تطبيق ويندوز إلى موقعٍ على الويب' }
 const NUMBERING_FILM = { src: 'numbering-film', title: 'ترقيم حرف والترقيم المطبوع', note: 'لماذا يختلف رقم الحديث من طبعةٍ لأخرى، وكيف تعزو بدقة' }
 const FEATURE_FILMS = [

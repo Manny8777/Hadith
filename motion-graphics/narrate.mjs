@@ -36,7 +36,8 @@ function apiKey() {
 }
 
 // <film>.lines.json: { sceneBounds (as SCENE_BOUNDS in <film>.html), lines: [[scene index,
-// delay into the scene (s), text], …] } — one line per scene.
+// delay into the scene (s), text, caption?], …] } — one line per scene; the caption, when given,
+// is what is shown in place of the spoken text (e.g. «hadith.dev» for a name spelled out to be read).
 const { sceneBounds: SCENE_BOUNDS, lines: LINES } = JSON.parse(readFileSync(path.join(here, `${FILM}.lines.json`), 'utf8'))
 const TAIL = 0.9      // after a line ends, before the scene's exit finishes
 const LAST_TAIL = 2   // the closing frame holds a little longer
@@ -81,7 +82,7 @@ const dir = path.join(here, FILM === 'migration-film' ? 'audio' : `audio-${FILM.
 mkdirSync(dir, { recursive: true })
 const lengths = SCENE_BOUNDS.slice(1).map((b, i) => b - SCENE_BOUNDS[i])
 const clips = []
-for (const [i, [scene, lead, text]] of LINES.entries()) {
+for (const [i, [scene, lead, text, caption]] of LINES.entries()) {
   const f = path.join(dir, `${String(i + 1).padStart(2, '0')}.wav`)
   if (ONLY ? String(i + 1) === ONLY : !existsSync(f)) {
     process.stdout.write(`line ${i + 1}: generating… `)
@@ -91,7 +92,7 @@ for (const [i, [scene, lead, text]] of LINES.entries()) {
   const len = duration(f)
   const last = scene === lengths.length - 1
   lengths[scene] = Math.max(lengths[scene], +(lead + len + (last ? LAST_TAIL : TAIL)).toFixed(2))
-  clips.push({ f, scene, lead, len, text })
+  clips.push({ f, scene, lead, len, text: caption ?? text })
 }
 const starts = lengths.map((_, i) => lengths.slice(0, i).reduce((a, b) => a + b, 0))
 clips.forEach(c => console.log(`line ${c.scene + 1}: ${c.len.toFixed(2)}s · scene ${lengths[c.scene].toFixed(2)}s from ${starts[c.scene].toFixed(2)}s`))
