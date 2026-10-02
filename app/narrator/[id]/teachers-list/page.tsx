@@ -24,7 +24,7 @@ interface TeacherRow {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  return narratorMeta(id, `/narrator/${id}/teachers-list`, 'شيوخ')
+  return narratorMeta(id, `/narrator/${id}/teachers-list`, 'روى عن')
 }
 
 export default async function NarratorTeachersPage({
@@ -37,8 +37,8 @@ export default async function NarratorTeachersPage({
   if (isNaN(narId)) notFound()
 
   const [narratorRes, teachersRes] = await Promise.all([
-    pool.query<{ id: number; name: string; abb_name: string | null; death_year: string | null; martaba_ibn_hajar: string | null }>(
-      `SELECT id, name, abb_name, death_year, martaba_ibn_hajar FROM narrators WHERE id = $1`,
+    pool.query<{ id: number; name: string; abb_name: string | null; death_year: string | null; martaba_ibn_hajar: string | null; is_female: boolean }>(
+      `SELECT id, name, abb_name, death_year, martaba_ibn_hajar, is_female FROM narrators WHERE id = $1`,
       [narId]
     ).catch(() => ({ rows: [] })),
 
@@ -70,6 +70,7 @@ export default async function NarratorTeachersPage({
 
   const narrator = narratorRes.rows[0]
   if (!narrator) notFound()
+  const f = narrator.is_female
 
   const teachers = teachersRes.rows
 
@@ -107,20 +108,20 @@ export default async function NarratorTeachersPage({
           )}
         </div>
         <h1 className="text-xl font-bold text-green-900 mb-1">
-          الشيوخ — روى عنهم
+          {f ? 'روت عن' : 'روى عن'}
         </h1>
         <p className="text-sm text-gray-500">
-          الرواة الذين روى عنهم {narrator.abb_name || narrator.name} — قائمة الشيوخ ومروياتهم في الموسوعة
+          الرواة الذين {f ? 'روت' : 'روى'} عنهم {narrator.abb_name || narrator.name}، و{f ? 'مروياتها' : 'مروياته'} عن كلٍّ منهم في الموسوعة
         </p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
-          { label: 'عدد الشيوخ', value: teachers.length.toLocaleString('ar-EG') },
+          { label: 'العدد', value: teachers.length.toLocaleString('ar-EG') },
           { label: 'إجمالي الأحاديث', value: totalHadiths.toLocaleString('ar-EG') },
-          { label: 'روى عن الصحابة', value: companionTeachers.length.toLocaleString('ar-EG'), color: 'text-amber-700' },
-          { label: 'شيوخه الثقات', value: thiqaTeachers.length.toLocaleString('ar-EG'), color: 'text-green-700' },
+          { label: f ? 'روت عن الصحابة' : 'روى عن الصحابة', value: companionTeachers.length.toLocaleString('ar-EG'), color: 'text-amber-700' },
+          { label: 'منهم ثقات', value: thiqaTeachers.length.toLocaleString('ar-EG'), color: 'text-green-700' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-3 text-center">
             <div className={`text-xl font-bold ${s.color || 'text-green-900'}`}>{s.value}</div>
@@ -147,7 +148,7 @@ export default async function NarratorTeachersPage({
 
       {teachers.length === 0 ? (
         <div className="bg-gray-50 rounded-xl p-8 text-center text-sm text-gray-400">
-          لم يُعثر على شيوخ لهذا الراوي في الأسانيد المسجَّلة
+          لم يُعثر على من {f ? 'روت' : 'روى'} عنهم في الأسانيد المسجَّلة
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -211,7 +212,7 @@ export default async function NarratorTeachersPage({
 
       <div className="mt-6 flex items-center gap-4 text-sm flex-wrap">
         <Link href={`/narrator/${narId}`} className="text-green-700 hover:underline">← الراوي الكامل</Link>
-        <Link href={`/narrator/${narId}/students-list`} className="text-green-700 hover:underline">← التلاميذ</Link>
+        <Link href={`/narrator/${narId}/students-list`} className="text-green-700 hover:underline">← {f ? 'روى عنها' : 'روى عنه'}</Link>
         <Link href={`/narrator/${narId}/criticism-history`} className="text-green-700 hover:underline">← الجرح والتعديل</Link>
       </div>
     </div>

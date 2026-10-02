@@ -34,7 +34,9 @@ export async function narratorMeta(idParam: string, path: string, section?: stri
   ].filter(Boolean)
   // Grades first: the full lineage can be long enough to push them out of a preview
   const full = name === n.name.trim() ? '' : ` — ${n.name.trim()}`
-  return pageMeta({ title: withSection(name, section), description: clip(facts.join(' · ') + full, 240), path, type: 'profile' })
+  // «روى عن / روى عنه» sections take the narrator's gender
+  const sec = n.is_female ? ({ 'روى عن': 'روت عن', 'روى عنه': 'روى عنها' } as Record<string, string>)[section ?? ''] ?? section : section
+  return pageMeta({ title: withSection(name, sec), description: clip(facts.join(' · ') + full, 240), path, type: 'profile' })
 }
 
 const getBook = cache(async (id: number) => (await pool.query<{

@@ -297,10 +297,10 @@ export default async function NarratorPage({
               الموثوقية
             </Link>
             <Link href={`/narrator/${narratorId}/teachers-list`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
-              الشيوخ
+              {narrator.is_female ? 'روت عن' : 'روى عن'}
             </Link>
             <Link href={`/narrator/${narratorId}/students-list`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
-              التلاميذ
+              {narrator.is_female ? 'روى عنها' : 'روى عنه'}
             </Link>
             <Link href={`/narrator/${narratorId}/peer-network`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
               الشبكة
@@ -707,7 +707,7 @@ export default async function NarratorPage({
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
                 <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
-                {narrator.is_female ? 'شيوخها' : 'شيوخه'}
+                {narrator.is_female ? 'روت عن' : 'روى عن'}
                 <span className="text-sm text-gray-400 font-normal">({teachers.length})</span>
               </h3>
               <ul className="space-y-1.5 max-h-80 overflow-y-auto">
@@ -732,7 +732,7 @@ export default async function NarratorPage({
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
                 <span className="w-1 h-5 bg-green-500 rounded-full inline-block"></span>
-                {narrator.is_female ? 'تلاميذها' : 'تلاميذه'}
+                {narrator.is_female ? 'روى عنها' : 'روى عنه'}
                 <span className="text-sm text-gray-400 font-normal">({students.length})</span>
               </h3>
               <ul className="space-y-1.5 max-h-80 overflow-y-auto">

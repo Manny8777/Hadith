@@ -25,7 +25,7 @@ interface StudentRow {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  return narratorMeta(id, `/narrator/${id}/students-list`, 'تلاميذ')
+  return narratorMeta(id, `/narrator/${id}/students-list`, 'روى عنه')
 }
 
 export default async function NarratorStudentsPage({
@@ -38,8 +38,8 @@ export default async function NarratorStudentsPage({
   if (isNaN(narId)) notFound()
 
   const [narratorRes, studentsRes, positionRes] = await Promise.all([
-    pool.query<{ id: number; name: string; abb_name: string | null; death_year: string | null; martaba_ibn_hajar: string | null }>(
-      `SELECT id, name, abb_name, death_year, martaba_ibn_hajar FROM narrators WHERE id = $1`,
+    pool.query<{ id: number; name: string; abb_name: string | null; death_year: string | null; martaba_ibn_hajar: string | null; is_female: boolean }>(
+      `SELECT id, name, abb_name, death_year, martaba_ibn_hajar, is_female FROM narrators WHERE id = $1`,
       [narId]
     ).catch(() => ({ rows: [] })),
 
@@ -81,6 +81,7 @@ export default async function NarratorStudentsPage({
 
   const narrator = narratorRes.rows[0]
   if (!narrator) notFound()
+  const f = narrator.is_female
 
   const students = studentsRes.rows
   const positions = positionRes.rows
@@ -119,10 +120,10 @@ export default async function NarratorStudentsPage({
           )}
         </div>
         <h1 className="text-xl font-bold text-green-900 mb-1">
-          التلاميذ — من روى عنه
+          {f ? 'روى عنها' : 'روى عنه'}
         </h1>
         <p className="text-sm text-gray-500">
-          الرواة الذين رووا عن {narrator.abb_name || narrator.name} — قائمة التلاميذ ومروياتهم في الموسوعة
+          الرواة الذين رووا عن {narrator.abb_name || narrator.name}، ومروياتهم {f ? 'عنها' : 'عنه'} في الموسوعة
         </p>
       </div>
 
@@ -143,7 +144,7 @@ export default async function NarratorStudentsPage({
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
-          { label: 'عدد التلاميذ', value: students.length.toLocaleString('ar-EG') },
+          { label: 'العدد', value: students.length.toLocaleString('ar-EG') },
           { label: 'إجمالي الأحاديث', value: totalHadiths.toLocaleString('ar-EG') },
           { label: 'الثقات منهم', value: thiqaStudents.length.toLocaleString('ar-EG'), color: 'text-green-700' },
           { label: 'الضعفاء منهم', value: weakStudents.length.toLocaleString('ar-EG'), color: 'text-red-600' },
@@ -157,7 +158,7 @@ export default async function NarratorStudentsPage({
 
       {students.length === 0 ? (
         <div className="bg-gray-50 rounded-xl p-8 text-center text-sm text-gray-400">
-          لم يُعثر على تلاميذ لهذا الراوي في الأسانيد المسجَّلة
+          لم يُعثر على من روى {f ? 'عنها' : 'عنه'} في الأسانيد المسجَّلة
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
