@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import { ANY_GRADE, gradeExistsClause, gradeHintCase, normalizeGrade } from '@/lib/searchGrades'
 import { attachMatnSnippets, snipColumns } from '@/lib/matnSnippet'
+import { hasHarakat, tashkeelRegexes } from '@/lib/tashkeelMatch'
 
 export const dynamic = 'force-dynamic'
 
@@ -266,6 +267,12 @@ export async function GET(req: Request) {
   const useBoolean = booleanTerms.length > 1
     || (booleanTerms.length === 1 && (booleanTerms[0].regex !== null || booleanTerms[0].conn === 'NOT'))
 
+  // tashkeel=1 (مطابقة التشكيل): only when the query carries harakat, and not with و/أو/ليس or
+  // wildcards (those terms take their own path)
+  const tashkeelRx = searchParams.get('tashkeel') === '1' && !useBoolean && hasHarakat(q)
+    ? tashkeelRegexes(q, matchMode)
+    : []
+
   // Helper: build the text-match SQL expression based on scope and match mode.
   // Scope `both` stays an OR of the two tsvector predicates so the planner can combine
   // idx_hadith_toc_tarf_norm with the stripped-content index (a concatenated document would
@@ -279,12 +286,18 @@ export async function GET(req: Request) {
       return `(${composeBooleanExpr(booleanTerms, tarfAlias, contentAlias)} AND (${param}::text IS NOT NULL))`
     }
     const q = queryExpr(param)
-    if (searchScope === 'tarf')
-      return `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
-    return `(
+    const base = searchScope === 'tarf'
+      ? `to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}`
+      : `(
       to_tsvector('simple', normalize_hadith(coalesce(${tarfAlias},''))) @@ ${q}
       OR ${visibleMatch(contentAlias, param)}
     )`
+    if (!tashkeelRx.length) return base
+    // مطابقة التشكيل: the indexed match above, narrowed by the typed harakat over the raw text
+    const one = (rx: string) => searchScope === 'tarf'
+      ? `coalesce(${tarfAlias},'') ~ ${sqlLit(rx)}`
+      : `(coalesce(${tarfAlias},'') ~ ${sqlLit(rx)} OR ${visibleText(contentAlias)} ~ ${sqlLit(rx)})`
+    return `(${base} AND (${tashkeelRx.map(one).join(matchMode === 'any' ? ' OR ' : ' AND ')}))`
   }
 
   // Combined narrator + text search

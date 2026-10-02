@@ -14,6 +14,8 @@ export interface SearchUrlState {
   hadithType: HadithType
   searchScope: SearchScope
   matchMode: MatchMode
+  /** مطابقة التشكيل: the harakat typed in the query must match (lib/tashkeelMatch.ts) */
+  tashkeel: boolean
   bookSource: BookSource
   narratorId: string
   narratorName: string
@@ -31,6 +33,7 @@ const SEARCH_PARAM_NAMES: Record<keyof SearchUrlState, string> = {
   hadithType: 'type',
   searchScope: 'search_scope',
   matchMode: 'match',
+  tashkeel: 'tashkeel',
   bookSource: 'src',
   narratorId: 'narrator_id',
   narratorName: 'narrator_name',
@@ -78,6 +81,7 @@ function normalizeSearchState(state: SearchUrlState): SearchUrlState {
     hadithType: normalizeHadithType(state.hadithType),
     searchScope: state.searchScope === 'tarf' ? 'tarf' : 'both',
     matchMode: normalizeMatchMode(state.matchMode),
+    tashkeel: state.tashkeel === true,
     bookSource: state.bookSource === 'service' ? 'service' : 'hadith',
     narratorId: state.narratorId.trim(),
     narratorName: state.narratorName.trim(),
@@ -97,6 +101,7 @@ export function parseSearchUrl(input: QueryInput): SearchUrlState {
     hadithType: normalizeHadithType(params.get('type')),
     searchScope: (params.get('search_scope') ?? '').trim().toLowerCase() === 'tarf' ? 'tarf' : 'both',
     matchMode: normalizeMatchMode(params.get('match')),
+    tashkeel: params.get('tashkeel') === '1',
     bookSource: (params.get('src') ?? '').trim().toLowerCase() === 'service' ? 'service' : 'hadith',
     narratorId: params.get('narrator_id') ?? '',
     narratorName: params.get('narrator_name') ?? '',
@@ -132,6 +137,7 @@ export function buildSearchUrl(input: QueryInput, patch: SearchUrlPatch = {}): s
   setOptionalParam(params, SEARCH_PARAM_NAMES.hadithType, next.hadithType)
     if (next.searchScope !== 'both') params.set(SEARCH_PARAM_NAMES.searchScope, next.searchScope)
     if (next.matchMode !== 'phrase') params.set(SEARCH_PARAM_NAMES.matchMode, next.matchMode)
+    if (next.tashkeel) params.set(SEARCH_PARAM_NAMES.tashkeel, '1')
     if (next.bookSource === 'service') params.set(SEARCH_PARAM_NAMES.bookSource, next.bookSource)
   setOptionalParam(params, SEARCH_PARAM_NAMES.narratorId, next.narratorId)
   setOptionalParam(params, SEARCH_PARAM_NAMES.narratorName, next.narratorName)
@@ -159,6 +165,7 @@ export function buildSearchApiUrl(stateInput: SearchUrlState): string {
       params.set('page', String(state.page))
       params.set('search_scope', state.searchScope)
       if (state.matchMode !== 'phrase') params.set('match', state.matchMode)
+      if (state.tashkeel) params.set('tashkeel', '1')
       if (state.grade) params.set('grade', state.grade)
       if (state.hadithType) params.set('type', state.hadithType)
     } else {
@@ -173,6 +180,7 @@ export function buildSearchApiUrl(stateInput: SearchUrlState): string {
   params.set('page', String(state.page))
   params.set('search_scope', state.searchScope)
   if (state.matchMode !== 'phrase') params.set('match', state.matchMode)
+  if (state.tashkeel) params.set('tashkeel', '1')
   if (state.bookSource === 'service') params.set('src', 'service')
   if (state.bookId) params.set('book_id', state.bookId)
   if (state.bookSource === 'hadith') {

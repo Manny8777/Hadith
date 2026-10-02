@@ -7,6 +7,7 @@ import HadithNumber from '@/app/components/HadithNumber'
 import SaveHadith from '@/app/components/SaveHadith'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
 import SearchHistoryPanel from '@/app/components/SearchHistoryPanel'
+import { hasHarakat } from '@/lib/tashkeelMatch'
 import {
   buildSearchApiUrl,
   buildSearchUrl,
@@ -64,6 +65,7 @@ function SearchInner() {
     hadithType,
     searchScope,
     matchMode,
+    tashkeel,
     bookSource,
     narratorId: narratorIdParam,
     narratorName: narratorNameParam,
@@ -332,6 +334,32 @@ function SearchInner() {
             <span className="text-xs text-gray-400">
               — يشمل المتن كاملاً والأطراف
             </span>
+          )}
+        </div>
+
+        {/* مطابقة التشكيل — the harakat typed must match (زُبْد ≠ زَبَد ≠ زَبْد) */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => navigate({ tashkeel: !tashkeel })}
+            aria-pressed={tashkeel}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+              tashkeel ? 'bg-green-800 border-green-800 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <span aria-hidden className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[10px] leading-none ${tashkeel ? 'bg-white text-green-800 border-white' : 'border-gray-300'}`}>
+              {tashkeel ? '✓' : ''}
+            </span>
+            مطابقة التشكيل
+          </button>
+          {tashkeel ? (
+            hasHarakat(q) ? (
+              <span className="text-xs text-green-700">— تُطابَق الحركات التي كتبتها كما هي: «زَبَد» غير «زَبْد» غير «زُبْد»؛ والحرف غير المشكول يقبل أي حركة</span>
+            ) : (
+              <span className="text-xs text-amber-600">— اكتب الكلمة بتشكيلها، مثل «زَبْد»، ليُطابَق التشكيل</span>
+            )
+          ) : (
+            <span className="text-xs text-gray-400">— البحث العادي لا يفرّق بين الحركات</span>
           )}
         </div>
 

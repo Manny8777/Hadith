@@ -46,6 +46,7 @@ export const TOOLS: Tool[] = [
         match: { type: 'string', enum: ['phrase', 'all', 'any'], description: 'phrase (default): words adjacent and in order; all: every word anywhere; any: any of the words.' },
         book_id: { type: 'integer', description: 'Only this book (ids from list_books), e.g. 1 = Sahih al-Bukhari, 2 = Sahih Muslim.' },
         tarf_only: { type: 'boolean', description: 'Search only the openings (أطراف) of hadiths.' },
+        match_tashkeel: { type: 'boolean', description: 'Respect the harakat written in the query (مطابقة التشكيل): زَبْد matches only زَبْد, not زَبَد or زُبْد. Letters written without harakat match any vowelling. Default false (the search ignores tashkeel).' },
         limit: { type: 'integer', minimum: 1, maximum: 20, description: 'Results per page (default 10, max 20).' },
         page: { type: 'integer', minimum: 1, description: 'Page of results (default 1).' },
       },
@@ -58,6 +59,7 @@ export const TOOLS: Tool[] = [
       if (a.match === 'all' || a.match === 'any') p.set('match', a.match)
       if (a.book_id) p.set('book_id', String(int(a.book_id, 0, 1, 100000)))
       if (a.tarf_only) p.set('search_scope', 'tarf')
+      if (a.match_tashkeel) p.set('tashkeel', '1')
       const r = await api<{ results: Record<string, unknown>[]; total: number; page: number }>(`/api/search?${p}`)
       return {
         total: r.total, page: r.page,
