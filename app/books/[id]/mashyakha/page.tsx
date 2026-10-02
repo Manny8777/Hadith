@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { bookMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,8 @@ interface NarratorRow {
   tabaqa: string | null
   tabaqa_num: number | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   death_year_num: number | null
   hadith_cnt: number
   min_pos: number
@@ -70,7 +73,7 @@ export default async function MashyakhaPage({
 
   const narratorsRes = await pool.query<NarratorRow>(
     `SELECT n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.tabaqa, n.tabaqa_num,
-            n.is_companion, n.death_year_num,
+            n.is_companion, n.companion_title, n.is_female, n.death_year_num,
             COUNT(DISTINCT iha.hadith_id)::int AS hadith_cnt,
             MIN(pos.ord)::int AS min_pos
      FROM isnad_hadiths iha
@@ -79,7 +82,7 @@ export default async function MashyakhaPage({
      JOIN LATERAL unnest(ic.narrator_id_array) WITH ORDINALITY AS pos(nar_id, ord) ON true
      JOIN narrators n ON n.id = pos.nar_id
      GROUP BY n.id, n.name, n.martaba_ibn_hajar, n.martaba_zahabi, n.tabaqa, n.tabaqa_num,
-              n.is_companion, n.death_year_num
+              n.is_companion, n.companion_title, n.is_female, n.death_year_num
      ORDER BY ${orderClause}
      LIMIT $2 OFFSET $3`,
     [bookId, limit, offset]
@@ -188,7 +191,7 @@ export default async function MashyakhaPage({
       {/* Narrator grid */}
       <div className="grid grid-cols-1 gap-2">
         {narrators.map((n, idx) => {
-          const grade = n.is_companion ? 'صحابي' : n.martaba_ibn_hajar
+          const grade = companionTitle(n) ?? n.martaba_ibn_hajar
           return (
             <Link
               key={n.id}

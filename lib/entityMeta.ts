@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { cache } from 'react'
 import pool from '@/lib/db'
 import { pageMeta, clip } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 // Page metadata (title, description, link preview) for the pages about one narrator, book or hadith.
 // `section` names the sub-page («شيوخه», «تحليل الكتاب»…) and is prefixed to the title.
@@ -11,8 +12,10 @@ const withSection = (name: string, section?: string) => (section ? `${section}: 
 const getNarrator = cache(async (id: number) => (await pool.query<{
   name: string; abb_name: string | null; kunia: string | null; death_year: string | null
   tabaqa: string | null; martaba_ibn_hajar: string | null; martaba_zahabi: string | null; is_companion: boolean | null
+  companion_title: string | null; is_female: boolean | null
 }>(
-  `SELECT name, abb_name, kunia, death_year, tabaqa, martaba_ibn_hajar, martaba_zahabi, is_companion
+  `SELECT name, abb_name, kunia, death_year, tabaqa, martaba_ibn_hajar, martaba_zahabi, is_companion,
+          companion_title, is_female
    FROM narrators WHERE id = $1`, [id]
 ).catch(() => ({ rows: [] }))).rows[0])
 
@@ -22,7 +25,7 @@ export async function narratorMeta(idParam: string, path: string, section?: stri
   if (!n) return {}
   const name = (n.abb_name || n.name).trim()
   const facts = [
-    n.is_companion ? 'صحابي' : null,
+    companionTitle(n),
     n.kunia?.trim(),
     n.tabaqa?.trim() && !n.is_companion ? `الطبقة: ${n.tabaqa.trim()}` : null,
     n.death_year?.trim() ? `الوفاة: ${n.death_year.trim()}` : null,
@@ -141,9 +144,9 @@ export const hadithTermMeta = (id: string, path: string) =>
 export const lexiconMeta = (id: string, path: string) =>
   treeMeta('lexicon_items', id, path, 'المعجم', 'مادة فرعية')
 
-const getIlalCompanion = cache(async (slug: string) => (await pool.query<{ name: string; tarjama: string | null; entries: number }>(
-  `SELECT c.name, c.tarjama, (SELECT COUNT(*)::int FROM ilal_entries e WHERE e.companion_id = c.id) AS entries
-   FROM ilal_companions c WHERE c.slug = $1`, [slug]
+const getIlalCompanion = cache(async (slug: string) => (await pool.query<{ name: string; tarjama: string | null; entries: number; is_female: boolean | null }>(
+  `SELECT c.name, c.tarjama, (SELECT COUNT(*)::int FROM ilal_entries e WHERE e.companion_id = c.id) AS entries, n.is_female
+   FROM ilal_companions c LEFT JOIN narrators n ON n.id = c.narrator_id WHERE c.slug = $1`, [slug]
 ).catch(() => ({ rows: [] }))).rows[0])
 
 // A companion in «المسند المصنف المعلل»
@@ -151,7 +154,7 @@ export async function musnadMusannafMeta(slug: string, path: string): Promise<Me
   const c = await getIlalCompanion(slug)
   if (!c) return {}
   const facts = [`${fmt(c.entries)} أحاديث مسندة في المسند المصنف المعلل`, clip(c.tarjama?.replace(/\(¬?[\d٠-٩]+\)/g, ''), 160)].filter(Boolean)
-  return pageMeta({ title: `${c.name.trim()} ﵁`, description: clip(facts.join(' · '), 220), path, type: 'profile' })
+  return pageMeta({ title: `${c.name.trim()} ${c.is_female ? '﵂' : '﵁'}`, description: clip(facts.join(' · '), 220), path, type: 'profile' })
 }
 
 const getSura = cache(async (id: number) => (await pool.query<{ name: string; ayat: number; tafseer: number }>(

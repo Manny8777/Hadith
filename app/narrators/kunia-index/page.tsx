@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'فهرس الكنى — جامع خادم الحرمين' }
@@ -18,6 +19,8 @@ interface NarratorRow {
   death_year: string | null
   death_year_num: number | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadiths_count: number | null
   tabaqa: string | null
   living_city: string | null
@@ -66,7 +69,7 @@ export default async function KuniaIndexPage({
     selectedKunia
       ? pool.query<NarratorRow>(
           `SELECT id, name, abb_name, martaba_ibn_hajar, death_year_num AS death_year, death_year_num,
-                  is_companion, hadiths_count, tabaqa, living_city
+                  is_companion, companion_title, is_female, hadiths_count, tabaqa, living_city
            FROM narrators
            WHERE kunia = $1
            ORDER BY death_year_num ASC NULLS LAST, name
@@ -193,7 +196,7 @@ export default async function KuniaIndexPage({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {n.is_companion && (
-                            <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">صحابي</span>
+                            <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{companionTitle(n)}</span>
                           )}
                           <span className="font-semibold text-sm text-green-900 group-hover:text-green-700">
                             {n.name}

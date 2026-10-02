@@ -237,7 +237,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     if (allIds.size > 0) {
       const [narRes, tahdethTypesRes] = await Promise.all([
         pool.query<NarratorInChain>(
-          `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion, tabaqa, death_year_num, death_year
+          `SELECT id, name, abb_name, martaba_ibn_hajar, martaba_zahabi, is_companion, companion_title, is_female, tabaqa, death_year_num, death_year
            FROM narrators WHERE id = ANY($1)`,
           [Array.from(allIds)]
         ),
@@ -390,7 +390,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   if (sanadNarratorIds.length > 0) {
     const sanadNarRes = await pool.query<SanadNarratorPreview>(
       `SELECT id, name, abb_name, kunia, tabaqa, death_year, death_year_num,
-              martaba_ibn_hajar, martaba_zahabi, is_companion
+              martaba_ibn_hajar, martaba_zahabi, is_companion, companion_title, is_female
        FROM narrators WHERE id = ANY($1::int[])`,
       [sanadNarratorIds]
     )

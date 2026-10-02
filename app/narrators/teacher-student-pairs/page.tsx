@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,7 @@ interface TSPair {
   teacher_grade: string | null
   teacher_death: string | null
   teacher_companion: boolean
+  teacher_companion_title: string | null
   student_id: number
   student_name: string
   student_abb: string | null
@@ -54,6 +56,7 @@ export default async function TeacherStudentPairsPage({
          n_teacher.martaba_ibn_hajar AS teacher_grade,
          n_teacher.death_year_num::text AS teacher_death,
          n_teacher.is_companion AS teacher_companion,
+         n_teacher.companion_title AS teacher_companion_title,
          n_student.id AS student_id,
          n_student.name AS student_name,
          n_student.abb_name AS student_abb,
@@ -76,7 +79,7 @@ export default async function TeacherStudentPairsPage({
        JOIN hadith_toc ht ON ht.main_id = ih.hadith_id
        WHERE ($1::int IS NULL OR n_teacher.id = $1)
          AND ($2::int IS NULL OR n_student.id = $2)
-       GROUP BY n_teacher.id, n_teacher.name, n_teacher.abb_name, n_teacher.martaba_ibn_hajar, n_teacher.death_year_num, n_teacher.is_companion,
+       GROUP BY n_teacher.id, n_teacher.name, n_teacher.abb_name, n_teacher.martaba_ibn_hajar, n_teacher.death_year_num, n_teacher.is_companion, n_teacher.companion_title,
                 n_student.id, n_student.name, n_student.abb_name, n_student.martaba_ibn_hajar, n_student.death_year_num
        HAVING COUNT(DISTINCT ic.id) >= $3
        ORDER BY COUNT(DISTINCT ic.id) DESC
@@ -185,7 +188,7 @@ export default async function TeacherStudentPairsPage({
                         <span className={`text-sm font-semibold ${p.teacher_companion ? 'text-amber-800' : 'text-green-900'}`}>
                           {p.teacher_abb || p.teacher_name.split(' ').slice(0, 3).join(' ')}
                         </span>
-                        {p.teacher_companion && <span className="text-xs text-amber-600">صحابي</span>}
+                        {p.teacher_companion && <span className="text-xs text-amber-600">{companionTitle({ is_companion: p.teacher_companion, companion_title: p.teacher_companion_title })}</span>}
                         {p.teacher_grade && !p.teacher_companion && (
                           <span className={`text-xs ${gradeColor(p.teacher_grade, false)}`}>{p.teacher_grade.slice(0, 6)}</span>
                         )}

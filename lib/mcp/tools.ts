@@ -96,9 +96,9 @@ export const TOOLS: Tool[] = [
           ? pool.query(`SELECT source, muhaddith, rawi, hukm, dorar_hash FROM dorar_rulings WHERE book_id = $1 AND number = $2 ORDER BY dorar_source_id NULLS LAST`, [h.book_id, h.dorar_key]).catch(() => ({ rows: [] }))
           : { rows: [] },
         // the chains, each as its narrators from the top (the Companion) down, with their ids
-        pool.query<{ isnad_type: number | null; narrators: { id: number; name: string }[] | null }>(
+        pool.query<{ isnad_type: number | null; narrators: { id: number; name: string; title?: string }[] | null }>(
           `SELECT ih.isnad_type,
-                  (SELECT json_agg(json_build_object('id', n.id, 'name', n.abb_name) ORDER BY u.ord)
+                  (SELECT json_agg(json_strip_nulls(json_build_object('id', n.id, 'name', n.abb_name, 'title', n.companion_title)) ORDER BY u.ord)
                    FROM unnest(ic.narrator_id_array) WITH ORDINALITY u(nid, ord) JOIN narrators n ON n.id = u.nid) AS narrators
            FROM isnad_hadiths ih JOIN isnad_chains ic ON ic.id = ih.isnad_id
            WHERE ih.hadith_id = $1 ORDER BY ih.isnad_id LIMIT 5`, [id]).catch(() => ({ rows: [] })),
@@ -158,7 +158,7 @@ export const TOOLS: Tool[] = [
   {
     name: 'search_narrators',
     title: 'البحث عن راوٍ',
-    description: 'Find narrators (رواة) by name among ~30,000: returns id, full and short name, Ibn Hajar\'s grade (مرتبة), tabaqa, death year, whether a Companion.',
+    description: 'Find narrators (رواة) by name among ~30,000: returns id, full and short name, gender, Ibn Hajar\'s grade (مرتبة), tabaqa, death, and for Companions their title — «صحابي», «صحابية», or «أم المؤمنين» for the Prophet\'s wives ﷺ.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -171,16 +171,21 @@ export const TOOLS: Tool[] = [
       const q = String(a.name ?? '').trim()
       if (q.length < 2) throw new Error('name must be at least 2 characters')
       const rows = await api<Record<string, unknown>[]>(`/api/narrators-search?${new URLSearchParams({ q, limit: String(int(a.limit, 8, 1, 10)) })}`)
+      const g = await pool.query<{ id: number; is_female: boolean; companion_title: string | null }>(
+        `SELECT id, is_female, companion_title FROM narrators WHERE id = ANY($1::int[])`, [rows.map(n => n.id)])
+      const by = new Map(g.rows.map(r => [r.id, r]))
       return rows.map(n => ({
         id: n.id, name: n.name, short_name: n.abb_name, grade_ibn_hajar: n.martaba_ibn_hajar,
-        tabaqa: n.tabaqa, death: n.death_year, companion: n.is_companion, url: `${SITE}/narrator/${n.id}`,
+        tabaqa: n.tabaqa, death: n.death_year, gender: by.get(n.id as number)?.is_female ? 'female' : 'male',
+        companion: n.is_companion, companion_title: by.get(n.id as number)?.companion_title ?? null,
+        url: `${SITE}/narrator/${n.id}`,
       }))
     },
   },
   {
     name: 'get_narrator',
     title: 'ترجمة راوٍ',
-    description: 'A narrator\'s profile: names and kunya, birth/death and cities, tabaqa, the grades of Ibn Hajar and al-Dhahabi, what the imams said of him (جرح وتعديل, quoted and attributed), his main teachers and students, and how often he appears in the chains — overall, by role (heading the chain: مرفوع/موقوف/مقطوع/مرسل; or further down, passing on what others narrate) and book by book. The counts are of hadith entries in the books, repetitions included (the same hadith in al-Bukhari, Muslim and Ahmad counts three times), not distinct hadiths. Use narrator_hadiths to list them.',
+    description: 'A narrator\'s profile: names and kunya, gender, birth/death and cities, tabaqa, the Companion\'s title («صحابي», «صحابية», «أم المؤمنين» for the Prophet\'s wives ﷺ), the grades of Ibn Hajar and al-Dhahabi, what the imams said of the narrator (جرح وتعديل, quoted and attributed), main teachers and students, and how often the narrator appears in the chains — overall, by role (heading the chain: مرفوع/موقوف/مقطوع/مرسل; or further down, passing on what others narrate) and book by book. The counts are of hadith entries in the books, repetitions included (the same hadith in al-Bukhari, Muslim and Ahmad counts three times), not distinct hadiths. Use narrator_hadiths to list them.',
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'integer', description: 'Narrator id (from search_narrators).' } },
@@ -189,8 +194,8 @@ export const TOOLS: Tool[] = [
     async run(a) {
       const id = int(a.id, 0, 1, 2_000_000_000)
       const nr = await pool.query(
-        `SELECT id, name, abb_name, kunia, birth_year, birth_city, death_year_num, death_city, tabaqa,
-                martaba_ibn_hajar, martaba_zahabi, is_companion
+        `SELECT id, name, abb_name, kunia, birth_year, birth_city, death_year, death_year_num, death_city, tabaqa,
+                martaba_ibn_hajar, martaba_zahabi, is_companion, is_female, companion_title
          FROM narrators WHERE id = $1`, [id])
       const n = nr.rows[0]
       if (!n) throw new Error(`no narrator with id ${id}`)
@@ -234,16 +239,19 @@ export const TOOLS: Tool[] = [
       }
       return {
         id: n.id, url: `${SITE}/narrator/${n.id}`, name: n.name, short_name: n.abb_name, kunya: n.kunia || null,
+        gender: n.is_female ? 'female' : 'male',
         birth: n.birth_year || null, birth_city: n.birth_city || null,
-        death_year_hijri: n.death_year_num ?? null, death_city: n.death_city || null,
-        tabaqa: n.tabaqa || null, companion: n.is_companion,
+        // the death as written («قبل الهجرة بثلاث سنين …»); the year alone only when there is one
+        death: n.death_year?.trim() || null, death_year_hijri: n.death_year_num > 0 ? n.death_year_num : null,
+        death_city: n.death_city || null,
+        tabaqa: n.tabaqa || n.companion_title || null, companion: n.is_companion, companion_title: n.companion_title || null,
         grades: { ibn_hajar: n.martaba_ibn_hajar || null, dhahabi: n.martaba_zahabi || null },
         what_the_imams_said: sayings,
         hadith_entries: {
           total: books.rows.reduce((s, b) => s + b.entries, 0),
           heading_the_chain: atTop,
           further_down_the_chain: further,
-          note: 'Entries in the books, repetitions included — not distinct hadiths. heading_the_chain: he is at the top of the chain (for a Companion, what he narrates: from the Prophet ﷺ when marfu, his own words or deeds when mawquf). further_down_the_chain: he passes on what narrators above him narrate. An entry with several chains can count under more than one heading.',
+          note: 'Entries in the books, repetitions included — not distinct hadiths. heading_the_chain: the narrator is at the top of the chain (for a Companion, what they narrate: from the Prophet ﷺ when marfu, their own words or deeds when mawquf). further_down_the_chain: the narrator passes on what those above them narrate. An entry with several chains can count under more than one heading.',
         },
         by_book: books.rows.map(b => ({ book_id: b.id, title: b.title, entries: b.entries, heading_the_chain: b.at_top, marfu_heading: b.marfu_at_top })),
         teachers: teachers.rows, students: students.rows,
@@ -253,13 +261,13 @@ export const TOOLS: Tool[] = [
   {
     name: 'narrator_hadiths',
     title: 'أحاديث الراوي',
-    description: 'The hadiths a narrator appears in, page by page: id, book, printed and Harf numbers, the tarf, link. Filter by book, by role (top: he heads the chain; any: anywhere in it) and by type (marfu/mawquf/maqtu/mursal) — e.g. a Companion\'s marfu hadiths in Sahih Muslim.',
+    description: 'The hadiths a narrator appears in, page by page: id, book, printed and Harf numbers, the tarf, link. Filter by book, by role (top: the narrator heads the chain; any: anywhere in it) and by type (marfu/mawquf/maqtu/mursal) — e.g. a Companion\'s marfu hadiths in Sahih Muslim.',
     inputSchema: {
       type: 'object',
       properties: {
         id: { type: 'integer', description: 'Narrator id (from search_narrators).' },
         book_id: { type: 'integer', description: 'Only this book (ids from list_books, or by_book in get_narrator).' },
-        role: { type: 'string', enum: ['any', 'top'], description: 'any (default): anywhere in the chain; top: he heads the chain.' },
+        role: { type: 'string', enum: ['any', 'top'], description: 'any (default): anywhere in the chain; top: the narrator heads the chain.' },
         type: { type: 'string', enum: ['marfu', 'mawquf', 'maqtu', 'mursal'], description: 'Only chains of this type.' },
         limit: { type: 'integer', minimum: 1, maximum: 50, description: 'Results per page (default 20, max 50).' },
         page: { type: 'integer', minimum: 1, description: 'Page (default 1).' },

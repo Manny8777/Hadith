@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import UiIcon from './UiIcon'
+import { companionTitle } from '@/lib/narratorTitle'
 
 interface NarratorInChain {
   id: number
@@ -8,6 +9,8 @@ interface NarratorInChain {
   abb_name: string | null
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title?: string | null
+  is_female?: boolean | null
   tabaqa: string | null
   death_year_num: number | null
 }
@@ -96,7 +99,7 @@ function buildCitation(
     lines.push('رجال السند:')
     chain.forEach((n, i) => {
       const grade = n.martaba_ibn_hajar ? ` [${n.martaba_ibn_hajar}]` : ''
-      const suffix = n.is_companion ? ' (صحابي)' : ''
+      const suffix = n.is_companion ? ` (${companionTitle(n)})` : ''
       const tabaqa = n.tabaqa ? ` {${n.tabaqa.split('،')[0].trim()}}` : ''
       const death = n.death_year_num ? ` (ت ${n.death_year_num} هـ)` : ''
       lines.push(`  ${i + 1}. ${n.name}${grade}${suffix}${tabaqa}${death}`)

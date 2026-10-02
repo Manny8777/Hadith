@@ -5,6 +5,7 @@ import Link from '@/app/components/Link'
 import NavCheckbox from '@/app/components/NavCheckbox'
 import { notFound } from 'next/navigation'
 import { bookMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 interface NarratorRow {
   id: number
@@ -13,6 +14,8 @@ interface NarratorRow {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   death_year_num: number | null
   hadiths_count: number | null
 }
@@ -68,7 +71,7 @@ export default async function BookNarratorsPage({
   const [narRes, countRes, statsRes] = await Promise.all([
     pool.query<NarratorRow>(
       `SELECT n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.martaba_zahabi,
-              n.is_companion, n.death_year_num, n.hadiths_count
+              n.is_companion, n.companion_title, n.is_female, n.death_year_num, n.hadiths_count
        FROM narrator_books nb
        JOIN narrators n ON n.id = nb.narrator_id
        WHERE ${where}
@@ -187,7 +190,7 @@ export default async function BookNarratorsPage({
             >
               <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                 {n.is_companion && (
-                  <span className="shrink-0 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">صحابي</span>
+                  <span className="shrink-0 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{companionTitle(n)}</span>
                 )}
                 <span className="text-green-900 font-medium group-hover:text-green-700 transition-colors">
                   {n.name}

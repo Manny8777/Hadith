@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { narratorMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,8 @@ interface StudentRow {
   student_death_num: number | null
   student_city: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   chain_count: number
   hadith_count: number
   book_count: number
@@ -51,6 +54,7 @@ export default async function NarratorStudentsPage({
          n.death_year_num AS student_death_num,
          COALESCE(n.birth_city, n.death_city) AS student_city,
          COALESCE(n.is_companion, false) AS is_companion,
+         n.companion_title, n.is_female,
          0::int AS chain_count,
          nt.hadiths_count::int AS hadith_count,
          0::int AS book_count,
@@ -173,7 +177,7 @@ export default async function NarratorStudentsPage({
                     </Link>
                     {s.student_grade && (
                       <span className={`text-xs px-1.5 py-0.5 rounded border ${gradeColor(s.student_grade, s.is_companion)}`}>
-                        {s.is_companion ? 'صحابي' : s.student_grade}
+                        {s.is_companion ? companionTitle(s) : s.student_grade}
                       </span>
                     )}
                   </div>

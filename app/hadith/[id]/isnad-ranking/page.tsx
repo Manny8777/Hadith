@@ -12,6 +12,7 @@ interface ChainRow {
   narrator_names: string[]
   narrator_grades: (string | null)[]
   is_companions: boolean[]
+  companion_titles: (string | null)[]
   death_years: (number | null)[]
 }
 
@@ -31,8 +32,8 @@ function gradeScore(g: string | null, isCompanion: boolean): number {
   return 0
 }
 
-function gradeLabel(g: string | null, isCompanion: boolean): string {
-  if (isCompanion) return 'صحابي'
+function gradeLabel(g: string | null, isCompanion: boolean, companionLabel?: string | null): string {
+  if (isCompanion) return companionLabel || 'صحابي'
   if (!g) return 'غير مقيَّم'
   return g
 }
@@ -100,6 +101,10 @@ export default async function IsnadRankingPage({ params }: { params: Promise<{ i
               SELECT n.is_companion FROM unnest(ic.narrator_id_array) AS nar_id
               JOIN narrators n ON n.id = nar_id
             ) AS is_companions,
+            ARRAY(
+              SELECT n.companion_title FROM unnest(ic.narrator_id_array) AS nar_id
+              JOIN narrators n ON n.id = nar_id
+            ) AS companion_titles,
             ARRAY(
               SELECT n.death_year_num FROM unnest(ic.narrator_id_array) AS nar_id
               JOIN narrators n ON n.id = nar_id
@@ -231,7 +236,7 @@ export default async function IsnadRankingPage({ params }: { params: Promise<{ i
                         className={`text-xs px-2 py-1 rounded-lg border transition-colors hover:shadow-sm ${badge} ${
                           isWorst ? 'ring-2 ring-red-400' : ''
                         }`}
-                        title={gradeLabel(chain.narrator_grades?.[i] ?? null, chain.is_companions?.[i] ?? false)}>
+                        title={gradeLabel(chain.narrator_grades?.[i] ?? null, chain.is_companions?.[i] ?? false, chain.companion_titles?.[i])}>
                         {chain.narrator_names?.[i]?.split('،')[0]?.trim()?.split(' ').slice(0, 2).join(' ') || '—'}
                         <span className="opacity-60 text-xs mr-1">({score > 0 ? '+' : ''}{score})</span>
                       </Link>

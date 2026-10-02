@@ -2,6 +2,7 @@ import Link from '@/app/components/Link'
 import pool from '@/lib/db'
 import CompareSearch from './CompareSearch'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,8 @@ interface Narrator {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadiths_count: number | null
 }
 
@@ -70,7 +73,7 @@ export default async function ComparePage({
       pool.query<Narrator>(
         `SELECT id, name, abb_name, kunia, laqab, tabaqa, tabaqa_num,
                 birth_year, death_year, death_year_num, birth_city, death_city,
-                martaba_ibn_hajar, martaba_zahabi, is_companion, hadiths_count
+                martaba_ibn_hajar, martaba_zahabi, is_companion, companion_title, is_female, hadiths_count
          FROM narrators WHERE id = $1`, [idA]
       ),
       pool.query<{ scientist_name: string; say_text: string; say_sort: number }>(
@@ -92,7 +95,7 @@ export default async function ComparePage({
       pool.query<Narrator>(
         `SELECT id, name, abb_name, kunia, laqab, tabaqa, tabaqa_num,
                 birth_year, death_year, death_year_num, birth_city, death_city,
-                martaba_ibn_hajar, martaba_zahabi, is_companion, hadiths_count
+                martaba_ibn_hajar, martaba_zahabi, is_companion, companion_title, is_female, hadiths_count
          FROM narrators WHERE id = $1`, [idB]
       ),
       pool.query<{ scientist_name: string; say_text: string; say_sort: number }>(
@@ -190,7 +193,7 @@ export default async function ComparePage({
       <div>
         <div className="flex items-start gap-2 flex-wrap mb-2">
           {n.is_companion && (
-            <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0">صحابي</span>
+            <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0">{companionTitle(n)}</span>
           )}
           <Link href={`/narrator/${n.id}`} className="text-lg font-bold text-green-900 hover:underline leading-snug">
             {n.name}

@@ -16,10 +16,10 @@ export async function GET(
     `SELECT ic.id AS chain_id, ic.chain_length,
             pos.ord::int AS pos,
             n.id AS narrator_id, n.name, n.abb_name,
-            n.is_companion, n.martaba_ibn_hajar, n.martaba_zahabi,
+            n.is_companion, n.companion_title, n.is_female, n.martaba_ibn_hajar, n.martaba_zahabi,
             n.tabaqa, n.death_year,
             CASE
-              WHEN n.is_companion THEN 'صحابي'
+              WHEN n.is_companion THEN COALESCE(n.companion_title, 'صحابي')
               WHEN n.martaba_ibn_hajar ~* 'ثقة|ثبت|حجة|عدل' THEN 'ثقة'
               WHEN n.martaba_ibn_hajar ~* 'صدوق|مقبول|لا بأس' THEN 'صدوق'
               WHEN n.martaba_ibn_hajar ~* 'ضعيف|منكر|متروك|كذاب|مجهول' THEN 'ضعيف'

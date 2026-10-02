@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { bookMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,8 @@ interface BookNarrator {
   death_year_num: number | null
   tabaqa: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   chain_appearances: number
   hadith_count: number
 }
@@ -62,7 +65,7 @@ export default async function BookIsnadProfilePage({
 
     pool.query<BookNarrator>(
       `SELECT n.id, n.name, n.abb_name, n.martaba_ibn_hajar,
-              n.death_year_num, n.tabaqa, n.is_companion,
+              n.death_year_num, n.tabaqa, n.is_companion, n.companion_title, n.is_female,
               COUNT(DISTINCT ic.id)::int AS chain_appearances,
               COUNT(DISTINCT ih.hadith_id)::int AS hadith_count
        FROM hadith_toc ht
@@ -72,7 +75,7 @@ export default async function BookIsnadProfilePage({
        JOIN narrators n ON n.id = pos.nar_id
        WHERE ht.book_id = $1 AND ht.is_leaf = true AND ht.is_paragraph = true
          ${gradeClause}
-       GROUP BY n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.death_year_num, n.tabaqa, n.is_companion
+       GROUP BY n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.death_year_num, n.tabaqa, n.is_companion, n.companion_title, n.is_female
        ORDER BY hadith_count DESC, chain_appearances DESC
        LIMIT ${limit} OFFSET ${offset}`,
       gradeParams
@@ -218,7 +221,7 @@ export default async function BookIsnadProfilePage({
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
               {n.is_companion && (
-                <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">صحابي</span>
+                <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">{companionTitle(n)}</span>
               )}
               {n.martaba_ibn_hajar && !n.is_companion && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${gradeClass(n.martaba_ibn_hajar, false)}`}>

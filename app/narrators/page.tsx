@@ -2,6 +2,7 @@ import Link from '@/app/components/Link'
 import pool from '@/lib/db'
 import { displayNarratorName } from '@/lib/narratorName'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,8 @@ interface Narrator {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   is_mobham: boolean
   tabaqa: string | null
 }
@@ -156,7 +159,7 @@ export default async function NarratorsPage({
       pool.query(`SELECT COUNT(*) FROM narrators ${where}`, queryParams),
       pool.query<Narrator>(
         `SELECT id, name, abb_name, death_year_num, hadiths_count,
-                martaba_ibn_hajar, martaba_zahabi, is_companion, is_mobham, tabaqa
+                martaba_ibn_hajar, martaba_zahabi, is_companion, companion_title, is_female, is_mobham, tabaqa
          FROM narrators ${where}
          ORDER BY ${orderClause}
          LIMIT $${pi} OFFSET $${pi + 1}`,
@@ -486,7 +489,7 @@ export default async function NarratorsPage({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                     {narrator.is_companion && (
-                      <span className="shrink-0 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">صحابي</span>
+                      <span className="shrink-0 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{companionTitle(narrator)}</span>
                     )}
                     {narrator.is_mobham && (
                       <span className="shrink-0 bg-gray-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">مبهم</span>

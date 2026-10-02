@@ -35,6 +35,8 @@ export async function GET(req: Request) {
            n.name,
            n.abb_name,
            n.is_companion,
+           n.companion_title,
+           n.is_female,
            (
              SELECT count(*)
              FROM isnad_chains ic2

@@ -17,6 +17,8 @@ export interface SanadNarratorPreview {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title?: string | null
+  is_female?: boolean | null
 }
 
 const NARRATOR_TAG_RE =

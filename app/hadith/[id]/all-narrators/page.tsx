@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { hadithSectionMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,8 @@ interface HadithNarrator {
   death_year_num: number | null
   tabaqa: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   chain_appearances: number
   min_position: number
   max_position: number
@@ -52,7 +55,7 @@ export default async function AllNarratorsPage({ params }: { params: Promise<{ i
 
     pool.query<HadithNarrator>(
       `SELECT n.id, n.name, n.abb_name, n.martaba_ibn_hajar,
-              n.death_year_num AS death_year, n.death_year_num, n.tabaqa, n.is_companion,
+              n.death_year_num AS death_year, n.death_year_num, n.tabaqa, n.is_companion, n.companion_title, n.is_female,
               COUNT(DISTINCT ic.id)::int AS chain_appearances,
               MIN(pos.ord)::int AS min_position,
               MAX(pos.ord)::int AS max_position
@@ -61,7 +64,7 @@ export default async function AllNarratorsPage({ params }: { params: Promise<{ i
        JOIN LATERAL unnest(ic.narrator_id_array) WITH ORDINALITY AS pos(nar_id, ord) ON true
        JOIN narrators n ON n.id = pos.nar_id
        WHERE ih.hadith_id = $1
-       GROUP BY n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.death_year_num, n.tabaqa, n.is_companion
+       GROUP BY n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.death_year_num, n.tabaqa, n.is_companion, n.companion_title, n.is_female
        ORDER BY n.is_companion DESC, MIN(pos.ord) ASC, chain_appearances DESC`,
       [hadithId]
     ).catch(() => ({ rows: [] as HadithNarrator[] })),
@@ -272,7 +275,7 @@ function NarratorRow({ n }: { n: HadithNarrator }) {
           <span className="text-xs opacity-70">— {n.martaba_ibn_hajar}</span>
         )}
         {n.is_companion && (
-          <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">صحابي</span>
+          <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">{companionTitle(n)}</span>
         )}
       </div>
       <div className="text-xs opacity-60 shrink-0 text-left">

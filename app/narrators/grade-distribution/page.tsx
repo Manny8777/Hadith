@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,8 @@ interface CenturyNarrator {
   death_year: string | null
   death_year_num: number | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadith_count: number
   grade_category: string
 }
@@ -63,7 +66,7 @@ export default async function GradeDistributionPage({
 
     selectedCentury !== null ? pool.query<CenturyNarrator>(
       `SELECT
-         n.id, n.name, n.abb_name, n.grade, n.death_year, n.death_year_num, n.is_companion,
+         n.id, n.name, n.abb_name, n.grade, n.death_year, n.death_year_num, n.is_companion, n.companion_title, n.is_female,
          COALESCE(stats.hadith_count, 0)::int AS hadith_count,
          CASE
            WHEN n.is_companion THEN 'companion'
@@ -226,7 +229,7 @@ export default async function GradeDistributionPage({
                       <span className={`font-medium text-sm hover:underline ${n.is_companion ? 'text-amber-800' : 'text-green-900'}`}>
                         {n.abb_name || n.name.split(' ').slice(0, 3).join(' ')}
                       </span>
-                      {n.is_companion && <span className="text-xs text-amber-600">صحابي</span>}
+                      {n.is_companion && <span className="text-xs text-amber-600">{companionTitle(n)}</span>}
                     </div>
                     <div className="flex gap-2 text-xs mt-0.5">
                       {n.death_year && <span className="text-gray-400">ت {n.death_year}</span>}

@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react'
 import Link from '@/app/components/Link'
 import { Suspense } from 'react'
+import { companionTitle } from '@/lib/narratorTitle'
 
 const BIO_BOOKS = [
   'تقريب التهذيب',
@@ -29,6 +30,8 @@ interface BioResult {
   abb_name: string | null
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title?: string | null
+  is_female?: boolean | null
 }
 
 function gradeColor(grade: string | null) {
@@ -147,7 +150,7 @@ function BioSearchInner() {
                       {r.narrator_name}
                     </Link>
                     {r.is_companion && (
-                      <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">صحابي</span>
+                      <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">{companionTitle(r)}</span>
                     )}
                     {r.martaba_ibn_hajar && (
                       <span className={`text-xs px-2 py-0.5 rounded-full ${gradeColor(r.martaba_ibn_hajar)}`}>

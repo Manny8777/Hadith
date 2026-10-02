@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import Link from '@/app/components/Link'
 import { stripTashkeel } from '@/lib/ghareeb'
 import type { SanadNarratorPreview, SanadSegment } from '@/lib/sanadNarrators'
+import { companionTitle, narratorWord } from '@/lib/narratorTitle'
 
 interface SanadNarratorsProps {
   segments: SanadSegment[]
@@ -72,7 +73,7 @@ function NarratorPopover({
     >
       <div className="px-4 pt-3 pb-2 border-b border-gray-700/80">
         <span className="text-[10px] font-bold tracking-wider text-teal-300 uppercase">
-          راوٍ
+          {narratorWord(narrator)}
         </span>
         <p className="text-base font-bold text-teal-50 mt-0.5 font-serif leading-snug">
           {narrator.name}
@@ -85,7 +86,7 @@ function NarratorPopover({
       <div className="px-4 py-3 space-y-1.5 text-xs text-gray-300">
         {narrator.is_companion && (
           <span className="inline-block bg-amber-500/20 text-amber-200 border border-amber-500/40 px-2 py-0.5 rounded-full text-[11px] mb-1">
-            صحابي
+            {companionTitle(narrator)}
           </span>
         )}
         {narrator.tabaqa && (
@@ -181,7 +182,7 @@ export default function SanadNarrators({
             }}
             role="button"
             tabIndex={0}
-            aria-label={`راوٍ: ${narrators[id].name}`}
+            aria-label={`${narratorWord(narrators[id])}: ${narrators[id].name}`}
           >
             {text}
           </span>

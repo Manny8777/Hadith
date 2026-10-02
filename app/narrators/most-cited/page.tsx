@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import UiIcon from '@/app/components/UiIcon'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,8 @@ interface MostCitedNarrator {
   death_year_num: number | null
   grade: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   book_count: number
   hadith_count: number
   chain_count: number
@@ -58,7 +61,7 @@ export default async function MostCitedPage({
   const [narratorsRes, booksRes] = await Promise.all([
     pool.query<MostCitedNarrator>(
       `SELECT
-         n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion,
+         n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion, n.companion_title, n.is_female,
          COUNT(DISTINCT ht.book_id)::int AS book_count,
          COUNT(DISTINCT ih.hadith_id)::int AS hadith_count,
          COUNT(DISTINCT ic.id)::int AS chain_count,
@@ -72,7 +75,7 @@ export default async function MostCitedPage({
        JOIN hadith_toc ht ON ht.main_id = ih.hadith_id
        LEFT JOIN narrator_criticism nc ON nc.narrator_id = n.id
        WHERE true ${roleFilter}
-       GROUP BY n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion
+       GROUP BY n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion, n.companion_title, n.is_female
        HAVING COUNT(DISTINCT ht.book_id) >= 2
        ORDER BY ${orderSql}, hadith_count DESC
        LIMIT $1 OFFSET $2`,
@@ -81,7 +84,7 @@ export default async function MostCitedPage({
       // Simpler fallback without lateral
       return pool.query<MostCitedNarrator>(
         `SELECT
-           n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion,
+           n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion, n.companion_title, n.is_female,
            COUNT(DISTINCT ht.book_id)::int AS book_count,
            COUNT(DISTINCT ih.hadith_id)::int AS hadith_count,
            COUNT(DISTINCT ic.id)::int AS chain_count,
@@ -91,7 +94,7 @@ export default async function MostCitedPage({
          JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
          JOIN hadith_toc ht ON ht.main_id = ih.hadith_id
          WHERE true ${roleFilter}
-         GROUP BY n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion
+         GROUP BY n.id, n.name, n.abb_name, n.city, n.death_year_num, n.grade, n.is_companion, n.companion_title, n.is_female
          HAVING COUNT(DISTINCT ht.book_id) >= 2
          ORDER BY ${orderSql}, hadith_count DESC
          LIMIT $1 OFFSET $2`,
@@ -195,7 +198,7 @@ export default async function MostCitedPage({
                           {n.abb_name || n.name.split(' ').slice(0, 3).join(' ')}
                         </span>
                         {n.is_companion && (
-                          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">صحابي</span>
+                          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">{companionTitle(n)}</span>
                         )}
                         {n.grade && (
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${gradeColor(n.grade)}`}>

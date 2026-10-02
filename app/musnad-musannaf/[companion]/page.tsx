@@ -7,8 +7,9 @@ import IsnadTree from '@/app/components/IsnadTree'
 import UiIcon from '@/app/components/UiIcon'
 import { getChainsForHadith } from '@/lib/isnadChains'
 import { musnadMusannafMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
-interface Companion { id: number; seq: number; name: string; slug: string; tarjama: string | null; narrator_id: number | null }
+interface Companion { id: number; seq: number; name: string; slug: string; tarjama: string | null; narrator_id: number | null; companion_title: string | null; is_female: boolean | null }
 interface Entry {
   id: number; seq: number; hadith_no: number; isnad_context: string | null; matn: string | null
   lafz_attr: string | null; judgment: string | null; fawaid: string | null; print_page: number | null
@@ -73,7 +74,8 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
   const sp = await searchParams
   const page = Math.max(1, parseInt(sp.page || '1') || 1)
 
-  const compRes = await pool.query<Companion>(`SELECT * FROM ilal_companions WHERE slug = $1`, [slug])
+  const compRes = await pool.query<Companion>(
+    `SELECT c.*, n.companion_title, n.is_female FROM ilal_companions c LEFT JOIN narrators n ON n.id = c.narrator_id WHERE c.slug = $1`, [slug])
   const companion = compRes.rows[0]
   if (!companion) notFound()
 
@@ -130,9 +132,9 @@ export default async function MusnadCompanionPage({ params, searchParams }: { pa
       {/* companion banner */}
       <header className="ui-card mb-3 flex items-center justify-between gap-4 !p-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>{companion.name} ﵁</h1>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>{companion.name} {companion.is_female ? '﵂' : '﵁'}</h1>
           <div className="flex gap-3 text-xs text-gray-500 mt-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-600 inline-block" />صحابي</span>
+            <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-600 inline-block" />{companionTitle({ is_companion: true, companion_title: companion.companion_title })}</span>
             <span className="inline-flex items-center gap-1.5"><UiIcon name="books" size={16} /> {totalEntries} أحاديث مسندة</span>
             {totalPages > 1 && <span>صفحة {page} من {totalPages}</span>}
             {companion.narrator_id && <Link href={`/narrator/${companion.narrator_id}`} className="ui-link">ترجمة الراوي ↗</Link>}

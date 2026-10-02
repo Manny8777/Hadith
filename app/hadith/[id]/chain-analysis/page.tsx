@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { hadithSectionMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,8 @@ interface ChainNarrator {
   martaba_ibn_hajar: string | null
   tabaqa: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   ord: number
 }
 
@@ -87,7 +90,7 @@ export default async function ChainAnalysisPage({
 
     pool.query<ChainNarrator>(
       `SELECT n.id, n.name, n.abb_name, n.death_year_num,
-              n.martaba_ibn_hajar, n.tabaqa, n.is_companion, pos.ord::int AS ord
+              n.martaba_ibn_hajar, n.tabaqa, n.is_companion, n.companion_title, n.is_female, pos.ord::int AS ord
        FROM isnad_chains ic
        JOIN LATERAL unnest(ic.narrator_id_array) WITH ORDINALITY AS pos(nar_id, ord) ON true
        JOIN narrators n ON n.id = pos.nar_id
@@ -220,7 +223,7 @@ export default async function ChainAnalysisPage({
                         </div>
                         <div className="flex items-center gap-1 flex-wrap shrink-0">
                           {n.is_companion && (
-                            <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">صحابي</span>
+                            <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">{companionTitle(n)}</span>
                           )}
                           {n.martaba_ibn_hajar && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/70 border border-current opacity-80">

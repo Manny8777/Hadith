@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { hadithSectionMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,7 @@ interface NarratorInChain {
   abb_name: string | null
   grade: string | null
   is_companion: boolean
+  companion_title: string | null
   death_year: string | null
   city: string | null
   position: number
@@ -24,14 +26,14 @@ interface ChainRow {
   judgment_text: string | null
 }
 
-function gradeStrength(grade: string | null, isCompanion: boolean): {
+function gradeStrength(grade: string | null, isCompanion: boolean, companionLabel?: string | null): {
   level: 'gold' | 'thiqa' | 'saduq' | 'weak' | 'unknown'
   label: string
   color: string
   bgColor: string
   score: number
 } {
-  if (isCompanion) return { level: 'gold', label: 'صحابي', color: 'text-amber-900', bgColor: 'bg-amber-100 border-amber-300', score: 5 }
+  if (isCompanion) return { level: 'gold', label: companionLabel || 'صحابي', color: 'text-amber-900', bgColor: 'bg-amber-100 border-amber-300', score: 5 }
   if (!grade) return { level: 'unknown', label: 'غير مُقيَّم', color: 'text-gray-500', bgColor: 'bg-gray-100 border-gray-300', score: 1 }
 
   if (/ثقة ثبت|ثقة حافظ|إمام|حافظ/.test(grade)) return { level: 'gold', label: grade.slice(0, 20), color: 'text-green-900', bgColor: 'bg-green-100 border-green-300', score: 5 }
@@ -76,6 +78,7 @@ export default async function ChainWeaknessPage({
       abb_names: (string | null)[]
       grades: (string | null)[]
       companions: boolean[]
+      companion_titles: (string | null)[]
       death_years: (string | null)[]
       cities: (string | null)[]
     }>(
@@ -105,6 +108,10 @@ export default async function ChainWeaknessPage({
            SELECT n.is_companion FROM unnest(ic.narrator_id_array) WITH ORDINALITY AS t(nid, ord)
            JOIN narrators n ON n.id = nid ORDER BY ord
          ) AS companions,
+         ARRAY(
+           SELECT n.companion_title FROM unnest(ic.narrator_id_array) WITH ORDINALITY AS t(nid, ord)
+           JOIN narrators n ON n.id = nid ORDER BY ord
+         ) AS companion_titles,
          ARRAY(
            SELECT n.death_year_num FROM unnest(ic.narrator_id_array) WITH ORDINALITY AS t(nid, ord)
            JOIN narrators n ON n.id = nid ORDER BY ord
@@ -139,6 +146,7 @@ export default async function ChainWeaknessPage({
       abb_name: row.abb_names[i] || null,
       grade: row.grades[i] || null,
       is_companion: row.companions[i] || false,
+      companion_title: row.companion_titles[i] || null,
       death_year: row.death_years[i] || null,
       city: row.cities[i] || null,
       position: i + 1,
@@ -219,7 +227,7 @@ export default async function ChainWeaknessPage({
               <div className="px-4 py-3">
                 <div className="flex flex-wrap items-center gap-1">
                   {chain.narrators.map((n, ni) => {
-                    const gs = gradeStrength(n.grade, n.is_companion)
+                    const gs = gradeStrength(n.grade, n.is_companion, companionTitle(n))
                     return (
                       <div key={n.nar_id} className="flex items-center gap-1">
                         <Link href={`/narrator/${n.nar_id}`}

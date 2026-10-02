@@ -37,7 +37,7 @@ export async function GET(req: Request) {
               'MaxWords=60, MinWords=20, ShortWord=2, MaxFragments=2, FragmentDelimiter='' ... '', StartSel=''【'', StopSel=''】''
             ) as excerpt,
             n.name as narrator_name, n.abb_name,
-            n.martaba_ibn_hajar, n.is_companion
+            n.martaba_ibn_hajar, n.is_companion, n.companion_title, n.is_female
      FROM narrator_biography nb
      JOIN narrators n ON n.id = nb.narrator_id
      WHERE ${where}

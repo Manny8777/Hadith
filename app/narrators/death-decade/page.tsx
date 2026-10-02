@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,8 @@ interface NarratorInDecade {
   grade: string | null
   city: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadith_count: number
   death_year_num: number
 }
@@ -75,7 +78,7 @@ export default async function DeathDecadePage({
 
     selectedDecade !== null ? pool.query<NarratorInDecade>(
       `SELECT
-         n.id, n.name, n.abb_name, n.martaba_ibn_hajar AS grade, n.city, n.is_companion, n.death_year_num,
+         n.id, n.name, n.abb_name, n.martaba_ibn_hajar AS grade, n.city, n.is_companion, n.companion_title, n.is_female, n.death_year_num,
          COALESCE(stats.hadith_count, 0)::int AS hadith_count
        FROM narrators n
        LEFT JOIN (
@@ -178,7 +181,7 @@ export default async function DeathDecadePage({
                     <span className={`font-medium text-sm hover:underline ${n.is_companion ? 'text-amber-800' : 'text-green-900'}`}>
                       {n.abb_name || n.name.split(' ').slice(0, 3).join(' ')}
                     </span>
-                    {n.is_companion && <span className="text-xs text-amber-600">صحابي</span>}
+                    {n.is_companion && <span className="text-xs text-amber-600">{companionTitle(n)}</span>}
                     {n.grade && !n.is_companion && <span className={`text-xs ${gradeColor(n.grade, false)}`}>{n.grade.slice(0, 10)}</span>}
                   </div>
                   <div className="flex gap-2 text-xs text-gray-400 mt-0.5">

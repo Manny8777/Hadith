@@ -2,6 +2,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { hadithSectionMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,8 @@ interface PivotNarrator {
   abb_name: string | null
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   tabaqa: string | null
   death_year_num: number | null
   chains_with_narrator: number
@@ -90,7 +93,7 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
   // All narrators with their chain coverage
   const allNarratorsRes = await pool.query<PivotNarrator>(
     `SELECT pos.nar_id,
-            n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.tabaqa, n.death_year_num,
+            n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.companion_title, n.is_female, n.tabaqa, n.death_year_num,
             COUNT(DISTINCT ic.id)::int AS chains_with_narrator,
             MIN(pos.ord)::int AS min_position,
             MAX(pos.ord)::int AS max_position
@@ -99,7 +102,7 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
      JOIN LATERAL unnest(ic.narrator_id_array) WITH ORDINALITY AS pos(nar_id, ord) ON true
      JOIN narrators n ON n.id = pos.nar_id
      WHERE ih.hadith_id = $1
-     GROUP BY pos.nar_id, n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.tabaqa, n.death_year_num
+     GROUP BY pos.nar_id, n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.companion_title, n.is_female, n.tabaqa, n.death_year_num
      ORDER BY chains_with_narrator DESC, n.is_companion DESC, n.death_year_num ASC NULLS LAST
      LIMIT 80`,
     [hadithId]
@@ -288,7 +291,7 @@ function NarratorRow({
             <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded-full font-bold">مدار</span>
           )}
           {n.is_companion && (
-            <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full">صحابي</span>
+            <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full">{companionTitle(n)}</span>
           )}
           <Link href={`/narrator/${n.nar_id}`}
             className="font-bold text-green-900 hover:underline text-sm">

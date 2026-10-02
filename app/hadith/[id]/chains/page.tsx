@@ -3,6 +3,7 @@ import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import HadithNumber from '@/app/components/HadithNumber'
 import { hadithSectionMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,8 @@ interface ChainNarrator {
   name: string
   abb_name: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   tabaqa: string | null
@@ -148,7 +151,7 @@ export default async function HadithChainsPage({
                 iha.isnad_type,
                 pos.ord::int AS pos,
                 n.id AS narrator_id, n.name, n.abb_name,
-                n.is_companion, n.martaba_ibn_hajar, n.martaba_zahabi,
+                n.is_companion, n.companion_title, n.is_female, n.martaba_ibn_hajar, n.martaba_zahabi,
                 n.tabaqa, n.death_year_num AS death_year
          FROM isnad_hadiths iha
          JOIN isnad_chains ic ON ic.id = iha.isnad_id
@@ -301,7 +304,7 @@ export default async function HadithChainsPage({
                               className={`text-xs px-2 py-0.5 rounded-full border transition-colors hover:opacity-80 ${narratorBadge(n)} ${
                                 sharedNarratorIds.has(n.narrator_id) ? 'ring-1 ring-purple-400 ring-offset-1' : ''
                               }`}
-                              title={`${n.name}${n.is_companion ? ' — صحابي' : n.martaba_ibn_hajar ? ` — ${n.martaba_ibn_hajar}` : ''}`}
+                              title={`${n.name}${n.is_companion ? ` — ${companionTitle(n)}` : n.martaba_ibn_hajar ? ` — ${n.martaba_ibn_hajar}` : ''}`}
                             >
                               {(n.abb_name || n.name).split('،')[0].trim().split(' ').slice(0, 2).join(' ')}
                             </Link>

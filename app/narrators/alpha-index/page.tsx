@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الفهرس الأبجدي للرواة — جامع خادم الحرمين' }
@@ -11,6 +12,8 @@ interface NarratorRow {
   martaba_ibn_hajar: string | null
   death_year: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadiths_count: number | null
 }
 
@@ -42,7 +45,7 @@ export default async function AlphaIndexPage({
 
   const [narratorsRes, countsRes, totalRes] = await Promise.all([
     pool.query<NarratorRow>(
-      `SELECT id, name, abb_name, martaba_ibn_hajar, death_year, is_companion, hadiths_count
+      `SELECT id, name, abb_name, martaba_ibn_hajar, death_year, is_companion, companion_title, is_female, hadiths_count
        FROM narrators
        WHERE left(name, 1) = $1
        ORDER BY name
@@ -134,7 +137,7 @@ export default async function AlphaIndexPage({
                   {n.name}
                 </span>
                 {n.is_companion && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full border border-amber-200">صحابي</span>
+                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full border border-amber-200">{companionTitle(n)}</span>
                 )}
                 {n.abb_name && n.abb_name !== n.name && (
                   <span className="text-xs text-gray-400">({n.abb_name})</span>

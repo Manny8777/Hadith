@@ -46,6 +46,8 @@ export interface NarratorInChain {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title?: string | null
+  is_female?: boolean | null
   tabaqa: string | null
   death_year_num: number | null
   death_year: string | null

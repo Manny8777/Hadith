@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from '@/app/components/Link'
 import HadithNumber from '@/app/components/HadithNumber'
 import UiIcon from '@/app/components/UiIcon'
+import { companionTitle } from '@/lib/narratorTitle'
 
-type NarratorLike = { id: number; name: string; abb_name: string; is_companion?: boolean; death_year_num?: number | null }
+type NarratorLike = { id: number; name: string; abb_name: string; is_companion?: boolean; companion_title?: string | null; is_female?: boolean | null; death_year_num?: number | null }
 type Narrator = NarratorLike & { hadiths_count?: number }
 type Candidate = NarratorLike & { pair_count: number }
 type ResultRow = {
@@ -245,7 +246,7 @@ export default function SanadBuilderPage() {
                           <span className="text-[10px] text-gray-500">ت {arNum(n.death_year_num)} هـ</span>
                         )}
                         {n.is_companion && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">صاحب</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">{n.is_female ? companionTitle(n) : 'صاحب'}</span>
                         )}
                       </span>
                     </button>
@@ -340,7 +341,7 @@ export default function SanadBuilderPage() {
                         <span className="truncate max-w-[22rem]">{n.name}</span>
                         <span className="flex items-center gap-2 shrink-0">
                           {n.is_companion && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">صاحب</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">{n.is_female ? companionTitle(n) : 'صاحب'}</span>
                           )}
                           <span className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full font-medium" title={arNum(n.pair_count) + ' نقلات متتالية'}>
                             ×{arNum(n.pair_count)}

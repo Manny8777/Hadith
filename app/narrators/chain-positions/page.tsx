@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import StretchedLink from '@/app/components/StretchedLink'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الرواة في مواضع الإسناد — جامع خادم الحرمين' }
@@ -11,6 +12,8 @@ interface PositionNarrator {
   abb_name: string | null
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   tabaqa: string | null
   death_year: string | null
   hadith_count: number
@@ -49,7 +52,7 @@ export default async function ChainPositionsPage({
     pool.query<PositionNarrator>(
       `SELECT
          pos.nar_id AS narrator_id,
-         n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion,
+         n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.companion_title, n.is_female,
          n.tabaqa, n.death_year_num AS death_year,
          COUNT(DISTINCT ih.hadith_id)::int AS hadith_count
        FROM isnad_chains ic
@@ -64,7 +67,7 @@ export default async function ChainPositionsPage({
        JOIN narrators n ON n.id = pos.nar_id
        WHERE ht.is_leaf = true AND ht.is_paragraph = true
          ${bookClause}
-       GROUP BY pos.nar_id, n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.tabaqa, n.death_year
+       GROUP BY pos.nar_id, n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.companion_title, n.is_female, n.tabaqa, n.death_year
        ORDER BY hadith_count DESC
        LIMIT 50`,
       params
@@ -184,7 +187,7 @@ export default async function ChainPositionsPage({
                     {n.abb_name || n.name}
                   </span>
                   {n.is_companion && (
-                    <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">صحابي</span>
+                    <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">{companionTitle(n)}</span>
                   )}
                   {n.martaba_ibn_hajar && (
                     <span className={`text-xs px-1.5 py-0.5 rounded-full border ${gradeClass(n.martaba_ibn_hajar)}`}>

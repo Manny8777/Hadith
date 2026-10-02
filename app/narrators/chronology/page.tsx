@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'تسلسل الرواية — جامع خادم الحرمين' }
@@ -21,6 +22,8 @@ interface TopNarrator {
   death_year_num: number
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   city: string | null
   hadith_count: number
 }
@@ -58,6 +61,7 @@ export default async function NarratorsChronologyPage({
     focusDecade > 0 ? pool.query<TopNarrator>(
       `SELECT n.id, n.name, n.abb_name, n.death_year_num, n.martaba_ibn_hajar,
               COALESCE(n.is_companion, false) AS is_companion,
+              n.companion_title, n.is_female,
               n.city,
               COALESCE(n.hadiths_count, 0)::int AS hadith_count
        FROM narrators n
@@ -212,7 +216,7 @@ export default async function NarratorsChronologyPage({
                       {n.name}
                     </Link>
                     <span className={`text-xs px-1.5 py-0.5 rounded border ${gradeColor(n.martaba_ibn_hajar, n.is_companion)}`}>
-                      {n.is_companion ? 'صحابي' : (n.martaba_ibn_hajar || '—')}
+                      {n.is_companion ? companionTitle(n) : (n.martaba_ibn_hajar || '—')}
                     </span>
                   </div>
                   <div className="text-xs text-gray-400 flex gap-3">

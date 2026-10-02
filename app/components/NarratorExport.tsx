@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import ReportPrintButton, { type PrintableReport } from '@/app/components/ReportPrintButton'
 import { downloadUtf8TextFile } from '@/lib/downloadTextFile'
+import { companionTitle } from '@/lib/narratorTitle'
 
 interface NarratorInfo {
   id?: number
@@ -26,6 +27,8 @@ interface NarratorInfo {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title?: string | null
+  is_female?: boolean | null
 }
 
 interface CriticismEntry {
@@ -114,7 +117,7 @@ function buildResearchText(
   addField(lines, 'تاريخ الرحلة', narrator.journey_date)
   addField(lines, 'المذهب', narrator.mazhb)
   addField(lines, 'علاقات الراوي', narrator.selat_karaba)
-  if (narrator.is_companion) lines.push('الطبقة: صحابي')
+  if (narrator.is_companion) lines.push(`الطبقة: ${companionTitle(narrator)}`)
 
   lines.push('', 'الحكم على الراوي')
   addField(lines, 'ابن حجر في تقريب التهذيب', narrator.martaba_ibn_hajar)

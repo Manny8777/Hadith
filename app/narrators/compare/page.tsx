@@ -4,6 +4,7 @@ import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 interface Narrator {
   id: number
@@ -20,6 +21,8 @@ interface Narrator {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadiths_count: number | null
   mazhb: string | null
 }
@@ -67,7 +70,7 @@ export default async function NarratorComparePage({
            birth_year, death_year, death_year_num,
            birth_city, living_city, death_city,
            martaba_ibn_hajar, martaba_zahabi,
-           is_companion, hadiths_count, mazhb
+           is_companion, companion_title, is_female, hadiths_count, mazhb
     FROM narrators WHERE id = $1`
 
   const teachersQuery = `
@@ -178,7 +181,7 @@ export default async function NarratorComparePage({
             {n.abb_name && <p className="text-sm text-gray-500 mb-2">{n.abb_name}</p>}
             {(n.martaba_ibn_hajar || n.is_companion) && (
               <span className={`text-xs px-2 py-0.5 rounded-full border ${gradeBadge(n.martaba_ibn_hajar, n.is_companion)}`}>
-                {n.is_companion ? 'صحابي' : n.martaba_ibn_hajar}
+                {n.is_companion ? companionTitle(n) : n.martaba_ibn_hajar}
               </span>
             )}
           </div>

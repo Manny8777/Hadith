@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الرواة في مصادر متعددة — جامع خادم الحرمين' }
@@ -10,6 +11,8 @@ interface NarratorRow {
   abb_name: string | null
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   death_year: string | null
   tabaqa: string | null
   hadiths_count: number | null
@@ -59,7 +62,7 @@ export default async function MultiBookNarratorsPage({
 
   const [narratorsRes, totalRes, bookDistRes] = await Promise.all([
     pool.query<NarratorRow>(
-      `SELECT n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion,
+      `SELECT n.id, n.name, n.abb_name, n.martaba_ibn_hajar, n.is_companion, n.companion_title, n.is_female,
               n.death_year, n.tabaqa, n.hadiths_count,
               book_stats.book_count, book_stats.book_titles
        FROM (
@@ -220,7 +223,7 @@ export default async function MultiBookNarratorsPage({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 {n.is_companion && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full border border-amber-200">صحابي</span>
+                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full border border-amber-200">{companionTitle(n)}</span>
                 )}
                 <span className="font-semibold text-sm text-green-900 group-hover:text-green-700">
                   {n.abb_name || n.name}

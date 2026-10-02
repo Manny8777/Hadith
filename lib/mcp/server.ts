@@ -21,6 +21,8 @@ const INSTRUCTIONS =
   'Search texts with search_hadith, read one with get_hadith, its other narrations with get_parallels, ' +
   'narrators with search_narrators / get_narrator, and the hadiths a narrator appears in with narrator_hadiths. ' +
   'Narrator counts are of entries in the books, repetitions included, not distinct hadiths — say so when you give them. ' +
+  'Call the Prophet\'s wives ﷺ «أم المؤمنين» and women Companions «صحابية» (companion_title), and write of each narrator ' +
+  'in their own gender (gender: female → she/her). ' +
   'Quote texts exactly as returned and cite the hadith.dev link; rulings are those of the named muhaddith as summarised by ' +
   'al-Durar al-Saniyya, and what the imams said of a narrator is quoted and attributed — do not grade hadiths or narrators yourself.'
 

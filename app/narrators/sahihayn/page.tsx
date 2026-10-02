@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'رجال الصحيحين — جامع خادم الحرمين' }
@@ -29,6 +30,8 @@ interface NarratorRow {
   tabaqa_num: number | null
   death_year_num: number | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   in_bukhari: boolean
@@ -111,7 +114,7 @@ export default async function RijalSahihaynPage({
   const [narratorsRes, countRes, tabaqaListRes] = await Promise.all([
     pool.query<NarratorRow>(
       `SELECT n.id, n.name, n.abb_name, n.tabaqa, n.tabaqa_num,
-              n.death_year_num, n.is_companion,
+              n.death_year_num, n.is_companion, n.companion_title, n.is_female,
               n.martaba_ibn_hajar, n.martaba_zahabi, n.hadiths_count,
               EXISTS (SELECT 1 FROM narrator_books WHERE narrator_id = n.id AND book_id = ${bukhariId}) AS in_bukhari,
               EXISTS (SELECT 1 FROM narrator_books WHERE narrator_id = n.id AND book_id = ${muslimId}) AS in_muslim
@@ -265,7 +268,7 @@ export default async function RijalSahihaynPage({
                   {n.abb_name || n.name}
                 </span>
                 {n.is_companion && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">صحابي</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">{companionTitle(n)}</span>
                 )}
                 {n.martaba_ibn_hajar && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full border ${gradeClass(n.martaba_ibn_hajar)}`}>

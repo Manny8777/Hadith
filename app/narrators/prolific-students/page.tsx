@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,8 @@ interface ProlificStudent {
   grade: string | null
   city: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   unique_teachers: number
   companion_teachers: number
   total_hadiths: number
@@ -26,6 +29,8 @@ interface TeacherDetail {
   teacher_death: string | null
   teacher_grade: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   chain_count: number
 }
 
@@ -52,7 +57,7 @@ export default async function ProlificStudentsPage({
   const [studentsRes, teachersRes] = await Promise.all([
     pool.query<ProlificStudent>(
       `SELECT
-         n.id, n.name, n.abb_name, n.death_year_num::text AS death_year, n.death_year_num, n.martaba_ibn_hajar AS grade, n.death_city AS city, n.is_companion,
+         n.id, n.name, n.abb_name, n.death_year_num::text AS death_year, n.death_year_num, n.martaba_ibn_hajar AS grade, n.death_city AS city, n.is_companion, n.companion_title, n.is_female,
          COUNT(DISTINCT ic.narrator_id_array[pos.ord - 1])::int AS unique_teachers,
          COUNT(DISTINCT ic.narrator_id_array[pos.ord - 1]) FILTER (
            WHERE (SELECT n2.is_companion FROM narrators n2 WHERE n2.id = ic.narrator_id_array[pos.ord - 1]) = true
@@ -69,7 +74,7 @@ export default async function ProlificStudentsPage({
        JOIN hadith_toc ht ON ht.main_id = ih.hadith_id
        WHERE ic.narrator_id_array[pos.ord - 1] IS NOT NULL
          AND n.death_year_num IS NOT NULL
-       GROUP BY n.id, n.name, n.abb_name, n.death_year_num, n.martaba_ibn_hajar, n.death_city, n.is_companion
+       GROUP BY n.id, n.name, n.abb_name, n.death_year_num, n.martaba_ibn_hajar, n.death_city, n.is_companion, n.companion_title, n.is_female
        HAVING COUNT(DISTINCT ic.narrator_id_array[pos.ord - 1]) >= 5
        ORDER BY ${orderSql}
        LIMIT $1`,
@@ -83,7 +88,7 @@ export default async function ProlificStudentsPage({
          n2.abb_name AS teacher_abb,
          n2.death_year_num::text AS teacher_death,
          n2.martaba_ibn_hajar AS teacher_grade,
-         n2.is_companion,
+         n2.is_companion, n2.companion_title, n2.is_female,
          COUNT(DISTINCT ic.id)::int AS chain_count
        FROM isnad_chains ic
        CROSS JOIN LATERAL (
@@ -92,7 +97,7 @@ export default async function ProlificStudentsPage({
        ) pos
        JOIN narrators n2 ON n2.id = ic.narrator_id_array[pos.ord - 1]
        WHERE $1 = ANY(ic.narrator_id_array)
-       GROUP BY n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion
+       GROUP BY n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion, n2.companion_title, n2.is_female
        ORDER BY n2.is_companion DESC, COUNT(DISTINCT ic.id) DESC
        LIMIT 30`,
       [selectedId]
@@ -167,7 +172,7 @@ export default async function ProlificStudentsPage({
                       </span>
                       {s.death_year && <span className="text-xs text-gray-400">ت {s.death_year}</span>}
                       {s.grade && <span className={`text-xs ${gradeColor(s.grade)}`}>{s.grade.slice(0, 10)}</span>}
-                      {s.is_companion && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded-full">صحابي</span>}
+                      {s.is_companion && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded-full">{companionTitle(s)}</span>}
                     </div>
                     <div className="flex items-center gap-1 mt-1">
                       <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-24">
@@ -210,7 +215,7 @@ export default async function ProlificStudentsPage({
                         {t.teacher_abb || t.teacher_name.split(' ').slice(0, 3).join(' ')}
                       </Link>
                       <div className="flex gap-2 text-xs mt-0.5">
-                        {t.is_companion && <span className="text-amber-600 text-xs">صحابي</span>}
+                        {t.is_companion && <span className="text-amber-600 text-xs">{companionTitle(t)}</span>}
                         {t.teacher_death && <span className="text-gray-400">ت {t.teacher_death}</span>}
                         {t.teacher_grade && <span className={`${gradeColor(t.teacher_grade)}`}>{t.teacher_grade.slice(0, 10)}</span>}
                       </div>

@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'الرواة الشاملون — في كتب متعددة — جامع خادم الحرمين' }
@@ -13,6 +14,8 @@ interface NarratorRow {
   martaba_ibn_hajar: string | null
   tabaqa: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadiths_count: number
   book_count: number
   chain_count: number
@@ -94,7 +97,7 @@ export default async function UniversalNarratorsPage({
     pool.query<NarratorRow>(
       `SELECT
          n.id, n.name, n.abb_name, n.death_year_num AS death_year, n.death_year_num,
-         n.martaba_ibn_hajar, n.tabaqa, n.is_companion,
+         n.martaba_ibn_hajar, n.tabaqa, n.is_companion, n.companion_title, n.is_female,
          COALESCE(n.hadiths_count, 0) AS hadiths_count,
          COUNT(DISTINCT ht.book_id)::int AS book_count,
          COUNT(DISTINCT ic.id)::int AS chain_count,
@@ -107,7 +110,7 @@ export default async function UniversalNarratorsPage({
        WHERE ht.book_id = ANY($1::int[])
          ${companionClause}
        GROUP BY n.id, n.name, n.abb_name, n.death_year, n.death_year_num,
-                n.martaba_ibn_hajar, n.tabaqa, n.is_companion, n.hadiths_count
+                n.martaba_ibn_hajar, n.tabaqa, n.is_companion, n.companion_title, n.is_female, n.hadiths_count
        HAVING COUNT(DISTINCT ht.book_id) >= $2
        ORDER BY ${orderBy}
        LIMIT ${limit} OFFSET ${offset}`,
@@ -219,7 +222,7 @@ export default async function UniversalNarratorsPage({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   {r.is_companion && (
-                    <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full">صحابي</span>
+                    <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full">{companionTitle(r)}</span>
                   )}
                   <Link href={`/narrator/${r.id}`}
                     className="font-bold text-green-900 hover:underline text-sm">

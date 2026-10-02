@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'أزواج الرواة في الأسانيد — جامع خادم الحرمين' }
@@ -10,6 +11,7 @@ interface PairRow {
   teacher_abb: string | null
   teacher_grade: string | null
   teacher_companion: boolean
+  teacher_companion_title: string | null
   student_id: number
   student_name: string
   student_abb: string | null
@@ -53,6 +55,7 @@ export default async function TransmissionPairsPage({
          ic.narrator_id_array[g.idx] AS teacher_id,
          comp.name AS teacher_name, comp.abb_name AS teacher_abb,
          comp.martaba_ibn_hajar AS teacher_grade, comp.is_companion AS teacher_companion,
+         comp.companion_title AS teacher_companion_title,
          ic.narrator_id_array[g.idx + 1] AS student_id,
          n2.name AS student_name, n2.abb_name AS student_abb,
          n2.martaba_ibn_hajar AS student_grade,
@@ -66,7 +69,7 @@ export default async function TransmissionPairsPage({
        WHERE ic.narrator_id_array[g.idx] IS NOT NULL
          AND ic.narrator_id_array[g.idx + 1] IS NOT NULL
          ${positionClause}
-       GROUP BY teacher_id, teacher_name, teacher_abb, teacher_grade, teacher_companion,
+       GROUP BY teacher_id, teacher_name, teacher_abb, teacher_grade, teacher_companion, teacher_companion_title,
                 student_id, student_name, student_abb, student_grade
        HAVING COUNT(DISTINCT ic.id) >= $1
        ORDER BY pair_count DESC
@@ -167,7 +170,7 @@ export default async function TransmissionPairsPage({
               {/* Teacher */}
               <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                 {r.teacher_companion && (
-                  <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full shrink-0">صحابي</span>
+                  <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full shrink-0">{companionTitle({ is_companion: r.teacher_companion, companion_title: r.teacher_companion_title })}</span>
                 )}
                 <Link href={`/narrator/${r.teacher_id}`}
                   className="text-sm font-bold text-green-900 hover:underline truncate max-w-[120px]">

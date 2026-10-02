@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,7 @@ interface BookCompanion {
   companion_id: number
   companion_name: string
   companion_abb: string | null
+  companion_title: string | null
   hadith_count: number
   chain_count: number
   pct_of_book: number
@@ -89,6 +91,7 @@ export default async function BookCompanionMatrixPage({
          n.id AS companion_id,
          n.name AS companion_name,
          n.abb_name AS companion_abb,
+         n.companion_title,
          COUNT(DISTINCT ih.hadith_id)::int AS hadith_count,
          COUNT(DISTINCT ic.id)::int AS chain_count,
          ROUND(100.0 * COUNT(DISTINCT ih.hadith_id) /
@@ -100,7 +103,7 @@ export default async function BookCompanionMatrixPage({
        JOIN books b ON b.id = ht.book_id
        WHERE ($1::int IS NULL OR b.id = $1)
          AND ($2::int IS NULL OR n.id = $2)
-       GROUP BY b.id, b.title, n.id, n.name, n.abb_name
+       GROUP BY b.id, b.title, n.id, n.name, n.abb_name, n.companion_title
        HAVING COUNT(DISTINCT ih.hadith_id) >= $3
        ORDER BY b.id, COUNT(DISTINCT ih.hadith_id) DESC`,
       [selectedBook || null, selectedCompanion || null, minHadiths]
@@ -187,7 +190,7 @@ export default async function BookCompanionMatrixPage({
                       className="text-sm font-medium text-amber-800 hover:underline">
                       {row.companion_abb || row.companion_name.split(' ').slice(0, 3).join(' ')}
                     </Link>
-                    <span className="text-xs text-amber-500">صحابي</span>
+                    <span className="text-xs text-amber-500">{companionTitle({ is_companion: true, companion_title: row.companion_title })}</span>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-48">

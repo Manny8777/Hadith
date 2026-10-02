@@ -23,6 +23,7 @@ import Link from '@/app/components/Link'
 import { useTheme } from '@/lib/themeContext'
 import { useFlowTouchLock, FlowTouchToggle } from './FlowTouchLock'
 import type { Chain, NarratorInChain, CriticismGroup } from './HadithSidebarLayout'
+import { companionTitle } from '@/lib/narratorTitle'
 
 interface Narrator {
   id: number
@@ -156,9 +157,9 @@ function IsnadRailNode({ data }: NodeProps) {
           {nar.is_companion ? (
             <span
               className="inline-flex items-center gap-1 text-[11px] font-sans font-medium text-amber-800 cursor-help"
-              title="صحابي — والصحابة كلهم عدول"
+              title={`${companionTitle(nar)} — والصحابة كلهم عدول`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> صحابي
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {companionTitle(nar)}
             </span>
           ) : null}
           {nar.tabaqa && <span className="text-[11px] text-gray-500 font-sans">{nar.tabaqa}</span>}

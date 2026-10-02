@@ -8,6 +8,7 @@ import NarratorTopics from '@/app/components/NarratorTopics'
 import BrandMark from '@/app/components/BrandMark'
 import UiIcon from '@/app/components/UiIcon'
 import { narratorMeta } from '@/lib/entityMeta'
+import { companionTitle, narratorWord } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,8 @@ interface Narrator {
   martaba_ibn_hajar: string | null
   martaba_zahabi: string | null
   is_companion: boolean
+  is_female: boolean
+  companion_title: string | null
   is_noun: boolean
   is_scientist: boolean
   is_has_rwaya: boolean
@@ -77,7 +80,7 @@ export default async function NarratorPage({
               tabaqa, tabaqa_num, birth_year, death_year, death_year_num,
               birth_city, death_city, living_city, journey_city,
               selat_karaba, mazhb, hadiths_count,
-              martaba_ibn_hajar, martaba_zahabi, is_companion,
+              martaba_ibn_hajar, martaba_zahabi, is_companion, is_female, companion_title,
               is_noun, is_scientist, is_has_rwaya, is_mobham, journey_date,
               user_comments
        FROM narrators WHERE id = $1`,
@@ -303,7 +306,7 @@ export default async function NarratorPage({
               الشبكة
             </Link>
             <Link href={`/scholar/${narratorId}`} className="text-[#E6C77A] hover:text-[#FFFDF7] text-xs transition-colors border border-[#C9A96B]/45 px-2 py-1 rounded-full">
-              أحكامه
+              {narrator.is_female ? 'أحكامها' : 'أحكامه'}
             </Link>
           </div>
         </div>
@@ -314,8 +317,8 @@ export default async function NarratorPage({
         {/* Name Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-wrap items-start gap-3 mb-4">
-            {narrator.is_companion && (
-              <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">صحابي</span>
+            {companionTitle(narrator) && (
+              <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">{companionTitle(narrator)}</span>
             )}
             <h2 className="text-2xl font-bold text-green-900 leading-snug flex-1">{narrator.name}</h2>
           </div>
@@ -330,10 +333,10 @@ export default async function NarratorPage({
                 <span className="bg-blue-100 text-blue-800 border border-blue-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">عالم حديث</span>
               )}
               {narrator.is_noun && (
-                <span className="bg-green-100 text-green-800 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">راوٍ</span>
+                <span className="bg-green-100 text-green-800 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">{narratorWord(narrator)}</span>
               )}
               {narrator.is_has_rwaya && (
-                <span className="bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full">له رواية</span>
+                <span className="bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-0.5 rounded-full">{narrator.is_female ? 'لها رواية' : 'له رواية'}</span>
               )}
             </div>
           )}
@@ -704,7 +707,7 @@ export default async function NarratorPage({
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
                 <span className="w-1 h-5 bg-amber-500 rounded-full inline-block"></span>
-                شيوخه
+                {narrator.is_female ? 'شيوخها' : 'شيوخه'}
                 <span className="text-sm text-gray-400 font-normal">({teachers.length})</span>
               </h3>
               <ul className="space-y-1.5 max-h-80 overflow-y-auto">
@@ -729,7 +732,7 @@ export default async function NarratorPage({
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
                 <span className="w-1 h-5 bg-green-500 rounded-full inline-block"></span>
-                تلاميذه
+                {narrator.is_female ? 'تلاميذها' : 'تلاميذه'}
                 <span className="text-sm text-gray-400 font-normal">({students.length})</span>
               </h3>
               <ul className="space-y-1.5 max-h-80 overflow-y-auto">

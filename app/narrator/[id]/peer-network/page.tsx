@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { narratorMeta } from '@/lib/entityMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,9 +75,9 @@ export default async function PeerNetworkPage({
     ).catch(() => ({ rows: [] as PeerRow[] })),
 
     // Most common teachers (narrators before this one in chains)
-    pool.query<{ id: number; name: string; abb_name: string | null; death_year_num: number | null; martaba_ibn_hajar: string | null; is_companion: boolean; count: number }>(
+    pool.query<{ id: number; name: string; abb_name: string | null; death_year_num: number | null; martaba_ibn_hajar: string | null; is_companion: boolean; companion_title: string | null; is_female: boolean | null; count: number }>(
       `SELECT
-         n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion,
+         n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion, n2.companion_title, n2.is_female,
          COUNT(DISTINCT ic.id)::int AS count
        FROM isnad_chains ic
        CROSS JOIN LATERAL (
@@ -85,7 +86,7 @@ export default async function PeerNetworkPage({
        ) pos
        JOIN narrators n2 ON n2.id = ic.narrator_id_array[pos.ord - 1]
        WHERE $1 = ANY(ic.narrator_id_array) AND pos.ord > 1
-       GROUP BY n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion
+       GROUP BY n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion, n2.companion_title, n2.is_female
        ORDER BY count DESC
        LIMIT 10`,
       [narratorId]
@@ -165,7 +166,7 @@ export default async function PeerNetworkPage({
                   className={`text-sm hover:underline shrink-0 ${t.is_companion ? 'text-amber-700 font-medium' : 'text-green-800'}`}>
                   {t.abb_name || t.name}
                 </Link>
-                {t.is_companion && <span className="text-xs text-amber-600">(صحابي)</span>}
+                {t.is_companion && <span className="text-xs text-amber-600">({companionTitle(t)})</span>}
                 {t.martaba_ibn_hajar && <span className={`text-xs ${gradeColor(t.martaba_ibn_hajar, t.is_companion)}`}>{t.martaba_ibn_hajar.slice(0, 15)}</span>}
                 <span className="text-xs text-gray-400 mr-auto">{t.count} سند</span>
               </div>

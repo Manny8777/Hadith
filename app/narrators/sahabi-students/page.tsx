@@ -1,6 +1,7 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { pageMeta } from '@/lib/siteMeta'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,8 @@ interface StudentDetail {
   student_grade: string | null
   hadith_count: number
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
 }
 
 export const metadata = pageMeta({
@@ -67,14 +70,14 @@ export default async function SahabiStudentsPage({
          n2.abb_name AS student_abb,
          n2.death_year_num AS student_death,
          n2.martaba_ibn_hajar AS student_grade,
-         n2.is_companion,
+         n2.is_companion, n2.companion_title, n2.is_female,
          COUNT(DISTINCT ih.hadith_id)::int AS hadith_count
        FROM isnad_chains ic
        JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
        JOIN narrators n2 ON n2.id = ic.narrator_id_array[2]
        WHERE ic.narrator_id_array[1] = $1
          AND ic.narrator_id_array[2] IS NOT NULL
-       GROUP BY n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion
+       GROUP BY n2.id, n2.name, n2.abb_name, n2.death_year_num, n2.martaba_ibn_hajar, n2.is_companion, n2.companion_title, n2.is_female
        ORDER BY COUNT(DISTINCT ih.hadith_id) DESC
        LIMIT $2`,
       [selectedId, limitCount]
@@ -171,7 +174,7 @@ export default async function SahabiStudentsPage({
                           className={`text-sm font-medium hover:underline ${s.is_companion ? 'text-amber-800' : 'text-green-900'}`}>
                           {s.student_abb || s.student_name.split(' ').slice(0, 3).join(' ')}
                         </Link>
-                        {s.is_companion && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">صحابي</span>}
+                        {s.is_companion && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">{companionTitle(s)}</span>}
                         {s.student_death && <span className="text-xs text-gray-400">ت {s.student_death}</span>}
                         {s.student_grade && !s.is_companion && (
                           <span className={`text-xs ${gradeColor(s.student_grade)}`}>{s.student_grade.slice(0, 15)}</span>

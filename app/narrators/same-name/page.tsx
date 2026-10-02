@@ -1,5 +1,6 @@
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
+import { companionTitle } from '@/lib/narratorTitle'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'تمييز الرواة المتشابهة أسماؤهم — جامع خادم الحرمين' }
@@ -19,6 +20,8 @@ interface NarratorInGroup {
   tabaqa: string | null
   martaba_ibn_hajar: string | null
   is_companion: boolean
+  companion_title: string | null
+  is_female: boolean | null
   hadiths_count: number
 }
 
@@ -63,7 +66,7 @@ export default async function SameNamePage({
 
     selectedName ? pool.query<NarratorInGroup>(
       `SELECT id, name, abb_name, kunia, death_year_num AS death_year, tabaqa, martaba_ibn_hajar,
-              is_companion, hadiths_count
+              is_companion, companion_title, is_female, hadiths_count
        FROM narrators
        WHERE name = $1
        ORDER BY is_companion DESC, hadiths_count DESC`,
@@ -215,7 +218,7 @@ export default async function SameNamePage({
                     </Link>
                     <div className="flex items-center gap-1 shrink-0">
                       {n.is_companion && (
-                        <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">صحابي</span>
+                        <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-medium">{companionTitle(n)}</span>
                       )}
                       {n.martaba_ibn_hajar && !n.is_companion && (
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${gradeClass(n.martaba_ibn_hajar)}`}>
