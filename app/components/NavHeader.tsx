@@ -4,6 +4,7 @@ import { useNumbering } from '@/lib/numberingContext'
 import { useNumeral } from '@/lib/numeralContext'
 import { useTheme } from '@/lib/themeContext'
 import UiIcon from './UiIcon'
+import { InstallButton } from './InstallApp'
 
 type NavLink = { href: string; label: string; isNew?: boolean; external?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
@@ -379,9 +380,10 @@ export default function NavHeader() {
       {/* Mobile: collapsible category menu (accordion — avoids clipping dropdowns) */}
       {mobileOpen && (
         <div className="min-[960px]:hidden border-t border-[#C9A96B]/30 bg-surface text-ink max-h-[72vh] overflow-y-auto overscroll-contain">
-          <div className="flex gap-3 p-3 bg-[#0F3D2E]">
+          <div className="flex flex-wrap items-center gap-3 p-3 bg-[#0F3D2E]">
             <NumberingToggle />
             <NumeralToggle />
+            <InstallButton className="inline-flex items-center gap-1.5 rounded-full bg-[#C9A96B] text-[#13261b] text-xs font-bold px-3 py-1.5" />
           </div>
           {CATEGORIES.map(cat => (
             <div key={cat.id} className="border-b border-border/60">

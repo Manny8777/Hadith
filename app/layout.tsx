@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Suspense } from 'react'
 import './globals.css'
 import NavHeader from './components/NavHeader'
@@ -6,6 +6,7 @@ import BrandMark from './components/BrandMark'
 import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSubHeader'
 import NumeralConverter from './components/NumeralConverter'
 import Analytics from './components/Analytics'
+import InstallApp, { InstallButton } from './components/InstallApp'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
 import { ThemeProvider } from '@/lib/themeContext'
@@ -20,12 +21,20 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || 'https://hadith.dev'),
   title: SITE_NAME,
   description: SITE_DESCRIPTION,
-  icons: { icon: { url: '/assets/brand/al-jami-icon.svg', type: 'image/svg+xml' } },
+  icons: {
+    icon: { url: '/assets/brand/al-jami-icon.svg', type: 'image/svg+xml' },
+    apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180' },
+  },
+  // Installed on iOS («إضافة إلى الشاشة الرئيسية»): opens full-screen, named «الجامع»
+  appleWebApp: { capable: true, title: 'الجامع', statusBarStyle: 'default' },
   // No preview title/description here: pages inherit the image and site name, while previews of a
   // page that only sets its own <title>/description fall back to those rather than the site's.
   openGraph: openGraph(),
   twitter: twitter(),
 }
+
+// The browser bar and the installed app's title bar take the site's green
+export const viewport: Viewport = { themeColor: '#0F3D2E' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -39,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NumeralProvider>
             <NumeralConverter />
             <Analytics />
+            <InstallApp />
             {/* The slim bar, and under it the site-wide search box (useSearchParams, so in Suspense) */}
             <header className="sticky top-0 z-50 shadow-sm">
               <NavHeader />
@@ -64,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   +61 426 047 327
                 </a>
               </p>
+              <InstallButton label="ثبّت الجامع كتطبيق" className="font-sans text-xs mt-2 inline-flex items-center gap-1.5 underline underline-offset-2 hover:opacity-80" />
             </div>
             <img src="/assets/theme-ornament.svg" alt="" width="240" height="24" className="site-footer-ornament" />
           </div>
