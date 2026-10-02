@@ -128,7 +128,7 @@ async function main() {
     const sources = DORAR_SOURCES[bookId]
     const textSources = new Set(sources.filter(s => s.byText).map(s => s.name))
     const { rows } = await pool.query(
-      `SELECT main_id, content FROM hadith_toc
+      `SELECT main_id, content, part_num, page_num FROM hadith_toc
        WHERE book_id = $1 AND (content LIKE '%نوع="مطبوع"%' OR content LIKE '%نوع="طبعة_ثانية"%')
        ORDER BY main_id`, [bookId])
 
@@ -138,9 +138,10 @@ async function main() {
       const numbers = printedNumbers(r.content)
       const key = dorarKey(r.content)
       if (!key) continue
-      if (!groups.has(key)) groups.set(key, { numbers: new Set(), wordLists: [] })
+      if (!groups.has(key)) groups.set(key, { numbers: new Set(), wordLists: [], pages: [] })
       const g = groups.get(key)
       numbers.forEach(n => g.numbers.add(n))
+      if (r.part_num && r.page_num) g.pages.push([Number(r.part_num), Number(r.page_num)])
       const words = matnSearchWords(r.content)
       if (words.length >= 3 && g.wordLists.length < 2) g.wordLists.push(words)
     }
@@ -157,6 +158,20 @@ async function main() {
       done++
       const numbers = [...g.numbers]
       const ourWords = plainWords(g.wordLists[0].join(' '))
+      // Dorar often cites a book by volume/page («2/139») rather than hadith number, from another
+      // edition whose pages are a little off ours: the same volume, the page within ±3, and the
+      // wording agreeing (≥ 60% of the shorter text's words). Neighbouring pages often hold other
+      // versions of the same hadith, so only the best of these is kept: the closest wording, then
+      // the nearest page.
+      const pageScore = r => {
+        const m = r.number.match(/^(\d+)\/(\d+)$/)
+        if (!m) return null
+        const [v, pg] = [Number(m[1]), Number(m[2])]
+        const dist = Math.min(...g.pages.filter(([pv]) => pv === v).map(([, pp]) => Math.abs(pp - pg)))
+        if (!(dist <= 3)) return null
+        const score = overlap(plainWords(r.text), ourWords)
+        return score >= 0.6 ? score - dist / 100 : null
+      }
       let found = null
       let lastQuery = ''
       let failed = false
@@ -188,6 +203,13 @@ async function main() {
             seen.add(k)
             return true
           })
+          let bestPage = null
+          for (const r of results) {
+            if (textSources.has(r.source)) continue
+            const s = pageScore(r)
+            if (s !== null && (!bestPage || s > bestPage.s)) bestPage = { r, s }
+          }
+          if (bestPage) exact.push(bestPage.r)
           // Sources with their own numbering: the result whose wording best matches our matn
           for (const name of textSources) {
             let best = null
