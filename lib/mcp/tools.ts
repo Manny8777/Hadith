@@ -13,7 +13,9 @@ async function api<T>(path: string): Promise<T> {
 }
 
 const clip = (s: string | null | undefined, n: number) => {
-  const t = (s ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  const t = (s ?? '').replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ').trim()
   return t.length > n ? t.slice(0, n) + ' …' : t
 }
 const int = (v: unknown, def: number, min: number, max: number) => {
