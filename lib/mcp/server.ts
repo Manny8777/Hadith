@@ -15,12 +15,14 @@ import { logMcpEvent } from '@/lib/analytics'
 import { TOOLS } from './tools'
 
 const SUPPORTED = ['2025-06-18', '2025-03-26', '2024-11-05']
-const SERVER_INFO = { name: 'hadith-dev', title: 'الجامع — موسوعة الحديث النبوي', version: '1.0.0', websiteUrl: 'https://hadith.dev' }
+const SERVER_INFO = { name: 'hadith-dev', title: 'الجامع — موسوعة الحديث النبوي', version: '1.1.0', websiteUrl: 'https://hadith.dev' }
 const INSTRUCTIONS =
   'Al-Jami\' hadith encyclopedia (hadith.dev): 339,607 hadiths in 245 books, 30,087 narrators. ' +
   'Search texts with search_hadith, read one with get_hadith, its other narrations with get_parallels, ' +
-  'narrators with search_narrators / get_narrator. Quote texts exactly as returned and cite the hadith.dev link; ' +
-  'rulings are those of the named muhaddith as summarised by al-Durar al-Saniyya — do not grade hadiths yourself.'
+  'narrators with search_narrators / get_narrator, and the hadiths a narrator appears in with narrator_hadiths. ' +
+  'Narrator counts are of entries in the books, repetitions included, not distinct hadiths — say so when you give them. ' +
+  'Quote texts exactly as returned and cite the hadith.dev link; rulings are those of the named muhaddith as summarised by ' +
+  'al-Durar al-Saniyya, and what the imams said of a narrator is quoted and attributed — do not grade hadiths or narrators yourself.'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

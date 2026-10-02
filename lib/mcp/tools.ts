@@ -21,6 +21,9 @@ const int = (v: unknown, def: number, min: number, max: number) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
 }
 
+// isnad_hadiths.isnad_type
+const TYPE_KEY: Record<number, string> = { 1: 'marfu', 2: 'mawquf', 3: 'maqtu', 4: 'mursal' }
+
 export interface Tool {
   name: string
   title: string
@@ -70,7 +73,7 @@ export const TOOLS: Tool[] = [
   {
     name: 'get_hadith',
     title: 'نص الحديث',
-    description: 'One hadith in full: its sanad and matn (with tashkeel as printed), book and author, printed (مطبوع) and Harf numbers, part/page, chapter, hadith type (مرفوع/موقوف/مقطوع/مرسل), and al-Durar al-Saniyya\'s ruling summary where one exists (quoted, attributed — never a ruling of this server).',
+    description: 'One hadith in full: its sanad and matn (with tashkeel as printed), book and author, printed (مطبوع) and Harf numbers, part/page, chapter, hadith type (مرفوع/موقوف/مقطوع/مرسل), its chains as lists of narrators with ids (for get_narrator), and al-Durar al-Saniyya\'s ruling summary where one exists (quoted, attributed — never a ruling of this server).',
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'integer', description: 'The hadith id (from search_hadith, or the number in hadith.dev/hadith/<id>).' } },
@@ -84,12 +87,19 @@ export const TOOLS: Tool[] = [
          FROM hadith_toc ht JOIN books b ON b.id = ht.book_id WHERE ht.main_id = $1`, [id])
       const h = r.rows[0]
       if (!h) throw new Error(`no hadith with id ${id}`)
-      const [types, rulings] = await Promise.all([
+      const [types, rulings, chains] = await Promise.all([
         pool.query<{ isnad_type: number; n: number }>(
           `SELECT isnad_type, COUNT(*)::int AS n FROM isnad_hadiths WHERE hadith_id = $1 AND isnad_type IS NOT NULL GROUP BY 1 ORDER BY 2 DESC`, [id]),
         h.dorar_key
           ? pool.query(`SELECT source, muhaddith, rawi, hukm, dorar_hash FROM dorar_rulings WHERE book_id = $1 AND number = $2 ORDER BY dorar_source_id NULLS LAST`, [h.book_id, h.dorar_key]).catch(() => ({ rows: [] }))
           : { rows: [] },
+        // the chains, each as its narrators from the top (the Companion) down, with their ids
+        pool.query<{ isnad_type: number | null; narrators: { id: number; name: string }[] | null }>(
+          `SELECT ih.isnad_type,
+                  (SELECT json_agg(json_build_object('id', n.id, 'name', n.abb_name) ORDER BY u.ord)
+                   FROM unnest(ic.narrator_id_array) WITH ORDINALITY u(nid, ord) JOIN narrators n ON n.id = u.nid) AS narrators
+           FROM isnad_hadiths ih JOIN isnad_chains ic ON ic.id = ih.isnad_id
+           WHERE ih.hadith_id = $1 ORDER BY ih.isnad_id LIMIT 5`, [id]).catch(() => ({ rows: [] })),
       ])
       const split = splitSanadMatn(h.content)
       // the book/chapter headings and printed numbers the text can open with («كتاب الطهارة / باب … /
@@ -106,6 +116,7 @@ export const TOOLS: Tool[] = [
         chapter: clip(h.chapter_text, 300) || null,
         hadith_type: types.rows[0] ? TYPE[types.rows[0].isnad_type] ?? null : null,
         sanad, matn,
+        chains: chains.rows.map(c => ({ type: c.isnad_type ? TYPE[c.isnad_type] ?? null : null, narrators_top_down: c.narrators ?? [] })),
         dorar_rulings: rulings.rows.map((d: Record<string, unknown>) => ({
           muhaddith: d.muhaddith, source: d.source, ruling: d.hukm, narrator: d.rawi,
           url: d.dorar_hash ? `https://dorar.net/h/${d.dorar_hash}` : null,
@@ -167,7 +178,7 @@ export const TOOLS: Tool[] = [
   {
     name: 'get_narrator',
     title: 'ترجمة راوٍ',
-    description: 'A narrator\'s profile: names and kunya, birth/death and cities, tabaqa, grades by Ibn Hajar and al-Dhahabi, number of hadiths, and the books he narrates in.',
+    description: 'A narrator\'s profile: names and kunya, birth/death and cities, tabaqa, the grades of Ibn Hajar and al-Dhahabi, what the imams said of him (جرح وتعديل, quoted and attributed), his main teachers and students, and how often he appears in the chains — overall, by role (heading the chain: مرفوع/موقوف/مقطوع/مرسل; or further down, passing on what others narrate) and book by book. The counts are of hadith entries in the books, repetitions included (the same hadith in al-Bukhari, Muslim and Ahmad counts three times), not distinct hadiths. Use narrator_hadiths to list them.',
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'integer', description: 'Narrator id (from search_narrators).' } },
@@ -175,15 +186,110 @@ export const TOOLS: Tool[] = [
     },
     async run(a) {
       const id = int(a.id, 0, 1, 2_000_000_000)
-      const r = await api<{ narrator: Record<string, unknown>; books?: { id: number; title: string; count?: number }[] }>(`/api/narrator/${id}`)
-      if (!r.narrator) throw new Error(`no narrator with id ${id}`)
-      const n = r.narrator
+      const nr = await pool.query(
+        `SELECT id, name, abb_name, kunia, birth_year, birth_city, death_year_num, death_city, tabaqa,
+                martaba_ibn_hajar, martaba_zahabi, is_companion
+         FROM narrators WHERE id = $1`, [id])
+      const n = nr.rows[0]
+      if (!n) throw new Error(`no narrator with id ${id}`)
+      // Every entry whose chain holds him — by role and type, and by book. narrator_id_array[1] is
+      // the top of the chain (the Companion's end).
+      const [roles, books, teachers, students, crit] = await Promise.all([
+        pool.query<{ top: boolean; isnad_type: number | null; n: number }>(
+          `SELECT ic.narrator_id_array[1] = $1 AS top, ih.isnad_type, COUNT(DISTINCT ih.hadith_id)::int AS n
+           FROM isnad_chains ic JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+           WHERE ic.narrator_id_array @> ARRAY[$1::int] GROUP BY 1, 2`, [id]),
+        pool.query<{ id: number; title: string; entries: number; at_top: number; marfu_at_top: number }>(
+          `SELECT b.id, b.title, COUNT(DISTINCT ih.hadith_id)::int AS entries,
+                  COUNT(DISTINCT ih.hadith_id) FILTER (WHERE ic.narrator_id_array[1] = $1)::int AS at_top,
+                  COUNT(DISTINCT ih.hadith_id) FILTER (WHERE ic.narrator_id_array[1] = $1 AND ih.isnad_type = 1)::int AS marfu_at_top
+           FROM isnad_chains ic JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+           JOIN hadith_toc ht ON ht.main_id = ih.hadith_id JOIN books b ON b.id = ht.book_id
+           WHERE ic.narrator_id_array @> ARRAY[$1::int] GROUP BY b.id, b.title ORDER BY entries DESC`, [id]),
+        pool.query(
+          `SELECT n.id, n.abb_name AS name, nt.hadiths_count::int AS hadiths FROM narrator_teachers nt JOIN narrators n ON n.id = nt.shyoukh_id
+           WHERE nt.rawy_id = $1 ORDER BY nt.hadiths_count DESC NULLS LAST LIMIT 10`, [id]),
+        pool.query(
+          `SELECT n.id, n.abb_name AS name, nt.hadiths_count::int AS hadiths FROM narrator_teachers nt JOIN narrators n ON n.id = nt.rawy_id
+           WHERE nt.shyoukh_id = $1 ORDER BY nt.hadiths_count DESC NULLS LAST LIMIT 10`, [id]),
+        pool.query<{ scientist_name: string | null; say_text: string | null }>(
+          `SELECT scientist_name, say_text FROM narrator_criticism
+           WHERE narrator_id = $1 AND say_text IS NOT NULL ORDER BY say_sort, scientist_name LIMIT 40`, [id]),
+      ])
+      const atTop: Record<string, number> = {}
+      let further = 0
+      for (const r of roles.rows) {
+        if (!r.top) { further += r.n; continue }
+        const k = TYPE_KEY[r.isnad_type ?? 0] ?? 'unspecified'
+        atTop[k] = (atTop[k] ?? 0) + r.n
+      }
+      const sayings: { scholar: string; said: string[] }[] = []
+      for (const c of crit.rows) {
+        const who = c.scientist_name || 'غير مسمّى'
+        let e = sayings.find(x => x.scholar === who)
+        if (!e) sayings.push(e = { scholar: who, said: [] })
+        e.said.push(clip(c.say_text, 300))
+      }
       return {
-        id: n.id, url: `${SITE}/narrator/${n.id}`, name: n.name, short_name: n.abb_name, kunya: n.kunia,
-        birth: n.birth_year || null, death_year_hijri: n.death_year_num ?? null, death_city: n.death_city || null,
-        tabaqa: n.tabaqa, grade_ibn_hajar: n.martaba_ibn_hajar || null, grade_dhahabi: n.martaba_zahabi || null,
-        companion: n.is_companion, hadiths: n.hadiths_count,
-        books: (r.books ?? []).slice(0, 40).map(b => ({ id: b.id, title: b.title, ...(b.count != null ? { hadiths: b.count } : {}) })),
+        id: n.id, url: `${SITE}/narrator/${n.id}`, name: n.name, short_name: n.abb_name, kunya: n.kunia || null,
+        birth: n.birth_year || null, birth_city: n.birth_city || null,
+        death_year_hijri: n.death_year_num ?? null, death_city: n.death_city || null,
+        tabaqa: n.tabaqa || null, companion: n.is_companion,
+        grades: { ibn_hajar: n.martaba_ibn_hajar || null, dhahabi: n.martaba_zahabi || null },
+        what_the_imams_said: sayings,
+        hadith_entries: {
+          total: books.rows.reduce((s, b) => s + b.entries, 0),
+          heading_the_chain: atTop,
+          further_down_the_chain: further,
+          note: 'Entries in the books, repetitions included — not distinct hadiths. heading_the_chain: he is at the top of the chain (for a Companion, what he narrates: from the Prophet ﷺ when marfu, his own words or deeds when mawquf). further_down_the_chain: he passes on what narrators above him narrate. An entry with several chains can count under more than one heading.',
+        },
+        by_book: books.rows.map(b => ({ book_id: b.id, title: b.title, entries: b.entries, heading_the_chain: b.at_top, marfu_heading: b.marfu_at_top })),
+        teachers: teachers.rows, students: students.rows,
+      }
+    },
+  },
+  {
+    name: 'narrator_hadiths',
+    title: 'أحاديث الراوي',
+    description: 'The hadiths a narrator appears in, page by page: id, book, printed and Harf numbers, the tarf, link. Filter by book, by role (top: he heads the chain; any: anywhere in it) and by type (marfu/mawquf/maqtu/mursal) — e.g. a Companion\'s marfu hadiths in Sahih Muslim.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'integer', description: 'Narrator id (from search_narrators).' },
+        book_id: { type: 'integer', description: 'Only this book (ids from list_books, or by_book in get_narrator).' },
+        role: { type: 'string', enum: ['any', 'top'], description: 'any (default): anywhere in the chain; top: he heads the chain.' },
+        type: { type: 'string', enum: ['marfu', 'mawquf', 'maqtu', 'mursal'], description: 'Only chains of this type.' },
+        limit: { type: 'integer', minimum: 1, maximum: 50, description: 'Results per page (default 20, max 50).' },
+        page: { type: 'integer', minimum: 1, description: 'Page (default 1).' },
+      },
+      required: ['id'],
+    },
+    async run(a) {
+      const id = int(a.id, 0, 1, 2_000_000_000)
+      const limit = int(a.limit, 20, 1, 50), page = int(a.page, 1, 1, 10_000)
+      const params: unknown[] = [id]
+      let where = 'ic.narrator_id_array @> ARRAY[$1::int]'
+      if (a.role === 'top') where += ' AND ic.narrator_id_array[1] = $1'
+      const type = Object.entries(TYPE_KEY).find(([, k]) => k === a.type)?.[0]
+      if (type) { params.push(Number(type)); where += ` AND ih.isnad_type = $${params.length}` }
+      let book = ''
+      if (a.book_id) { params.push(int(a.book_id, 0, 1, 100000)); book = ` AND ht.book_id = $${params.length}` }
+      const ids = `SELECT ih.hadith_id FROM isnad_chains ic JOIN isnad_hadiths ih ON ih.isnad_id = ic.id WHERE ${where}`
+      const [rows, count] = await Promise.all([
+        pool.query(
+          `SELECT ht.main_id, b.title AS book, ht.tarqeem_matboa1, ht.tarqeem_harf, ht.tarf
+           FROM hadith_toc ht JOIN books b ON b.id = ht.book_id
+           WHERE ht.main_id IN (${ids})${book}
+           ORDER BY ht.book_id, ht.main_id LIMIT ${limit} OFFSET ${(page - 1) * limit}`, params),
+        pool.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM hadith_toc ht WHERE ht.main_id IN (${ids})${book}`, params),
+      ])
+      return {
+        total: count.rows[0]?.n ?? 0, page,
+        results: rows.rows.map(h => ({
+          id: h.main_id, book: h.book,
+          printed_number: h.tarqeem_matboa1?.trim() || null, harf_number: h.tarqeem_harf?.trim() || null,
+          tarf: clip(h.tarf, 220), url: `${SITE}/hadith/${h.main_id}`,
+        })),
       }
     },
   },
