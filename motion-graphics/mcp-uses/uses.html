@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>ماذا تسأل مساعدك؟ — أمثلة لخادم MCP</title>
+<link rel="stylesheet" href="../features/base.css">
+<style>
+  /* Uses film (1920×1080): four questions put to an assistant connected to hadith.dev/mcp — two from a
+     general reader, two from a researcher. Every answer on screen is the real result of the MCP tools
+     (search_hadith, get_hadith, get_parallels, get_narrator), as of October 2026. Look follows mcp/mcp.html. */
+  #stage { width: 1920px; height: 1080px; color: #faf6ec;
+    background: radial-gradient(ellipse 80% 90% at 70% 40%, #235238 0%, #163826 55%, #0c2014 100%); }
+  .pattern { opacity: .07; filter: invert(1) sepia(1) saturate(3) hue-rotate(5deg); }
+  #caption { left: 300px; right: 300px; bottom: 34px; min-height: 96px; background: rgba(8,22,14,.86); border: 1px solid rgba(201,164,92,.35); }
+  #caption span { font-size: 34px; }
+
+  .sc { position: absolute; inset: 0; }
+  .an { will-change: transform, opacity; }
+  .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .h { font-family: 'Amiri', serif; font-weight: 700; color: #fffaf0; line-height: 1.25; }
+  .sub { font-size: 32px; color: #cfe0d4; line-height: 1.6; }
+  .plate { display: inline-block; background: #faf6ec; border-radius: 30px; padding: 22px 52px; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
+  .plate img { height: 140px; display: block; }
+  .mono { font-family: 'JetBrains Mono', monospace; direction: ltr; unicode-bidi: isolate; }
+
+  /* who is asking (top right) */
+  .who { position: absolute; top: 64px; right: 110px; display: flex; align-items: center; gap: 18px; }
+  .who b { padding: 10px 30px; border-radius: 999px; font: 700 34px 'Amiri', serif; }
+  .who.reader b { background: #e3efe6; color: #13261b; }
+  .who.researcher b { background: var(--gold); color: #13261b; }
+  .who span { font-family: 'Amiri', serif; font-size: 46px; font-weight: 700; color: #fffaf0; }
+
+  .personas { position: absolute; top: 660px; left: 0; right: 0; display: flex; justify-content: center; gap: 40px; }
+  .persona { width: 520px; border-radius: 28px; padding: 30px 36px; text-align: center; }
+  .persona .t { font-family: 'Amiri', serif; font-size: 50px; font-weight: 700; }
+  .persona .d { font-size: 26px; margin-top: 8px; line-height: 1.5; }
+  .persona.reader { background: #fffdf7; color: var(--ink); }
+  .persona.reader .t { color: var(--green); }
+  .persona.researcher { background: rgba(201,164,92,.16); border: 2px solid var(--gold); color: #fffaf0; }
+  .persona.researcher .t { color: var(--gold); }
+
+  /* app window + chat */
+  .win { position: absolute; border-radius: 22px; overflow: hidden; background: #fffdf7; color: var(--ink); box-shadow: 0 40px 90px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); }
+  .bar { height: 48px; background: #efe9da; display: flex; align-items: center; gap: 10px; padding: 0 18px; direction: ltr; }
+  .bar i { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+  .bar i:nth-child(1) { background: #e0796a; } .bar i:nth-child(2) { background: #e5bf5c; } .bar i:nth-child(3) { background: #7dbb73; }
+  .bar span { margin-left: 18px; font: 500 18px 'IBM Plex Sans Arabic'; color: #5b6b60; }
+  .chat { padding: 30px 44px; display: flex; flex-direction: column; gap: 20px; }
+  .msg-u { align-self: flex-start; max-width: 82%; background: #e3efe6; color: #13261b; border-radius: 24px 24px 24px 6px; padding: 20px 32px; font-size: 38px; line-height: 1.6; }
+  .tool { display: inline-flex; align-items: center; gap: 16px; align-self: flex-end; border: 2px solid #d9d2bf; border-radius: 16px; padding: 12px 24px; font-size: 28px; color: #5b6b60; background: #faf6ec; }
+  .tool code { font: 600 27px 'JetBrains Mono', monospace; color: var(--green); direction: ltr; }
+  .tool .tick { color: #2d6a4a; font-weight: 700; }
+  .answer { align-self: stretch; font-size: 35px; line-height: 1.75; color: #1c1c1c; }
+  .answer p { margin-bottom: 18px; }
+  .q { font-family: 'Amiri', serif; font-size: 42px; color: var(--green); font-weight: 700; }
+  .r { display: inline-block; background: #e3efe6; color: var(--green); border-radius: 10px; padding: 0 12px; font-weight: 700; }
+  .lnk { font: 500 26px 'JetBrains Mono', monospace; color: #2f5f8a; direction: ltr; unicode-bidi: isolate; }
+  .zero { font-family: 'Amiri', serif; font-size: 96px; font-weight: 700; color: #8a5a14; line-height: 1; }
+  .note { font-size: 28px; color: #5b6b60; }
+
+  /* variant wordings */
+  .vlist { position: absolute; top: 300px; left: 230px; right: 230px; display: flex; flex-direction: column; gap: 22px; }
+  .vrow { display: flex; align-items: center; justify-content: space-between; background: #fffdf7; color: var(--ink); border-radius: 22px; padding: 22px 36px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .vrow .q { font-size: 46px; }
+  .vrow .src { font-size: 28px; color: #5b6b60; }
+  .vrow .src b { color: var(--green); }
+  .count { position: absolute; top: 175px; left: 0; right: 0; text-align: center; }
+  .count .n { font-family: 'Amiri', serif; font-size: 84px; font-weight: 700; color: var(--gold); }
+  .count .u { font-family: 'Amiri', serif; font-size: 52px; color: #fffaf0; }
+
+  /* narrator card */
+  .ncard { position: absolute; top: 190px; left: 200px; right: 200px; background: #fffdf7; color: var(--ink); border-radius: 28px; padding: 36px 48px; box-shadow: 0 40px 90px rgba(0,0,0,.45); }
+  .ncard .nm { font-family: 'Amiri', serif; font-size: 62px; font-weight: 700; color: var(--green); }
+  .ncard .meta { font-size: 27px; color: #5b6b60; margin-top: 4px; }
+  .said { display: flex; gap: 26px; align-items: baseline; margin-top: 26px; padding-top: 22px; border-top: 1px solid #ece4d0; }
+  .said .by { flex: 0 0 230px; font-size: 30px; font-weight: 700; color: #8a5a14; }
+  .said .w { font-family: 'Amiri', serif; font-size: 44px; color: #1c1c1c; line-height: 1.5; }
+
+  /* Muslim vs al-Bukhari */
+  .vs { position: absolute; top: 200px; width: 640px; height: 420px; border-radius: 32px; text-align: center; padding-top: 50px; }
+  .vs .big { font-family: 'Amiri', serif; font-size: 190px; font-weight: 700; line-height: 1; }
+  .vs .u { font-family: 'Amiri', serif; font-size: 50px; margin-top: 20px; }
+  .vs .d { font-size: 26px; margin-top: 10px; opacity: .8; }
+  .vs.m { right: 250px; background: #fffdf7; color: var(--ink); box-shadow: 0 30px 70px rgba(0,0,0,.4); }
+  .vs.m .big { color: var(--green); }
+  .vs.b { left: 250px; background: rgba(255,253,247,.08); border: 2px solid rgba(255,253,247,.25); color: #fffaf0; }
+  .vs.b .big { color: var(--gold); }
+  .quote { position: absolute; top: 690px; left: 260px; right: 260px; text-align: center; }
+  .quote .w { font-family: 'Amiri', serif; font-size: 58px; font-weight: 700; color: #fffaf0; }
+  .quote .by { font-size: 28px; color: #cfe0d4; margin-top: 8px; }
+
+  /* principle */
+  .rule { position: absolute; top: 330px; left: 280px; right: 280px; display: flex; flex-direction: column; gap: 26px; }
+  .rule div { display: flex; align-items: center; gap: 24px; font-size: 40px; color: #fffaf0; }
+  .rule i { flex: 0 0 56px; height: 56px; border-radius: 50%; background: var(--gold); color: #13261b; font: 700 32px 'Amiri', serif; font-style: normal; display: grid; place-items: center; }
+  .url-big { font: 600 120px 'JetBrains Mono', monospace; direction: ltr; color: #fffaf0; letter-spacing: -2px; }
+  .url-big span { color: var(--gold); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- 0 · title -->
+  <div class="sc" id="s0">
+    <div class="center el" style="top:110px"><span class="plate"><img src="../../public/assets/brand/al-jami-horizontal.png"></span></div>
+    <div class="center h el" style="top:340px;font-size:104px">ماذا تسأل مساعدك؟</div>
+    <div class="center sub el" style="top:500px">أمثلةٌ حقيقية من خادم MCP — والأجوبة من الموسوعة</div>
+    <div class="personas">
+      <div class="persona reader an"><div class="t">القارئ</div><div class="d">أهذا حديث؟ وما أصله؟</div></div>
+      <div class="persona researcher an"><div class="t">الباحث</div><div class="d">أين رُوي؟ وما حال رواته؟</div></div>
+    </div>
+  </div>
+
+  <!-- 1 · reader: is it a hadith? -->
+  <div class="sc" id="s1">
+    <div class="who reader el"><b>القارئ</b><span>أهذا حديث؟</span></div>
+    <div class="win el" style="top:190px;left:260px;width:1400px;height:640px">
+      <div class="bar"><i></i><i></i><i></i><span>مساعدك</span></div>
+      <div class="chat">
+        <div class="msg-u an" id="q1">سمعتُ «النظافة من الإيمان» — هل هو حديث؟</div>
+        <div class="tool an" id="q1t"><span class="tick">✓</span><code>search_hadith</code> «النظافة من الإيمان» — لا نتائج</div>
+        <div class="answer an" id="q1a">
+          <p><span class="zero">لا نتائج</span></p>
+          <p>لم أجده بهذا اللفظ في متون الموسوعة: <b>٣٣٩٬٦٠٧</b> أحاديث في <b>٢٤٥</b> كتابًا.</p>
+          <p class="note">الخادم يخبرك بما في الكتب، ولا يحكم على الحديث بنفسه.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · reader: what is its source? -->
+  <div class="sc" id="s2">
+    <div class="who reader el"><b>القارئ</b><span>ما أصله؟</span></div>
+    <div class="win el" style="top:250px;left:260px;width:1400px;height:440px">
+      <div class="bar"><i></i><i></i><i></i><span>مساعدك</span></div>
+      <div class="chat">
+        <div class="msg-u an" id="q2">ما أصل «من غشّنا فليس منّا»؟</div>
+        <div class="tool an" id="q2t1"><span class="tick">✓</span><code>search_hadith</code> «من غشنا فليس منا» — ٢٨ نتيجة</div>
+        <div class="tool an" id="q2t2"><span class="tick">✓</span><code>get_hadith</code> صحيح مسلم ١٠١ — السند والمتن والحكم</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 · reader: the answer (get_hadith 11864, get_parallels → Muslim 102) -->
+  <div class="sc" id="s3">
+    <div class="win el" style="top:150px;left:260px;width:1400px;height:680px">
+      <div class="bar"><i></i><i></i><i></i><span>مساعدك</span></div>
+      <div class="chat">
+        <div class="answer">
+          <p class="an">أخرجه <b>مسلم (١٠١)</b> عن أبي هريرة: <span class="q">«مَنْ حَمَلَ عَلَيْنَا السِّلَاحَ فَلَيْسَ مِنَّا، وَمَنْ غَشَّنَا فَلَيْسَ مِنَّا»</span></p>
+          <p class="an">خلاصة حكم المحدث (مسلم): <span class="r">صحيح</span> — كما في الدرر السنية</p>
+          <p class="an">وعند مسلم (١٠٢) قصّته: مرّ النبي صلى الله عليه وسلم على <b>صُبرة طعام</b> فأدخل يده فيها فنالت أصابعه بللًا، فقال: <span class="q">«أَفَلَا جَعَلْتَهُ فَوْقَ الطَّعَامِ كَيْ يَرَاهُ النَّاسُ، مَنْ غَشَّ فَلَيْسَ مِنِّي»</span></p>
+          <p class="an"><span class="lnk">hadith.dev/hadith/11864</span> · <span class="lnk">dorar.net/h/xNJyF35K</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · researcher: where else, and the wordings (get_parallels 11864: 27 narrations) -->
+  <div class="sc" id="s4">
+    <div class="who researcher el"><b>الباحث</b><span>أين رُوي؟ وبأيّ لفظ؟</span></div>
+    <div class="count el"><span class="n">٢٧</span> <span class="u">روايةً في كتب السنة</span></div>
+    <div class="vlist">
+      <div class="vrow an"><span class="q">«مَنْ غَشَّنَا فَلَيْسَ مِنَّا»</span><span class="src"><b>مسلم ١٠١</b> · ابن أبي شيبة · البزار</span></div>
+      <div class="vrow an"><span class="q">«مَنْ غَشَّ فَلَيْسَ مِنِّي»</span><span class="src"><b>مسلم ١٠٢</b> · البيهقي</span></div>
+      <div class="vrow an"><span class="q">«لَيْسَ مِنَّا مَنْ غَشَّ»</span><span class="src"><b>أبو داود ٣٤٥٢</b> · ابن ماجه · أحمد</span></div>
+      <div class="vrow an"><span class="q">«مَنْ غَشَّ فَلَيْسَ مِنَّا»</span><span class="src"><b>الترمذي ١٣١٥</b></span></div>
+    </div>
+  </div>
+
+  <!-- 5 · researcher: a narrator in the chain (get_narrator 2690) -->
+  <div class="sc" id="s5">
+    <div class="who researcher el" style="top:64px"><b>الباحث</b><span>ما حال رواته؟</span></div>
+    <div class="ncard el">
+      <div class="nm">سهيل بن أبي صالح</div>
+      <div class="meta">من رجال سند مسلم ١٠١ · الطبقة السادسة · ت ١٣٨ هـ</div>
+      <div class="said an"><span class="by">ابن حجر</span><span class="w">«صدوق، تغيّر حفظه بآخره»</span></div>
+      <div class="said an"><span class="by">أبو حاتم</span><span class="w">«يُكتب حديثه، ولا يُحتجّ به»</span></div>
+      <div class="said an"><span class="by">أحمد بن حنبل</span><span class="w">«ما أصلحَ حديثه!»</span></div>
+      <div class="said an"><span class="by">ابن عدي</span><span class="w">«ثبتٌ لا بأس به، مقبول الأخبار»</span></div>
+    </div>
+  </div>
+
+  <!-- 6 · researcher: Muslim 142 entries, al-Bukhari 1 (get_narrator by_book) -->
+  <div class="sc" id="s6">
+    <div class="vs m el"><div class="big">١٤٢</div><div class="u">موضعًا في صحيح مسلم</div><div class="d">«أكثر مسلم الرواية عنه… وغالبها في الشواهد» — الحاكم</div></div>
+    <div class="vs b el"><div class="big">١</div><div class="u">في صحيح البخاري</div><div class="d">«روى له البخاري مقرونًا بغيره»</div></div>
+    <div class="quote el"><div class="w">«لا أعرف له فيه عذرًا»</div><div class="by">الدارقطني، لمّا سُئل: لِمَ ترك البخاري حديث سهيل؟</div></div>
+  </div>
+
+  <!-- 7 · the principle -->
+  <div class="sc" id="s7">
+    <div class="center h el" style="top:170px;font-size:80px">كل جوابٍ من الكتب</div>
+    <div class="rule">
+      <div class="an"><i>١</i>النص بسنده ومتنه ورقمه في كتابه</div>
+      <div class="an"><i>٢</i>كل حكمٍ وكل قولٍ منسوبٌ إلى قائله</div>
+      <div class="an"><i>٣</i>ورابطٌ إلى الموسوعة لتتحقق بنفسك</div>
+    </div>
+  </div>
+
+  <!-- 8 · outro -->
+  <div class="sc" id="s8">
+    <div class="center el" style="top:200px"><span class="plate"><img src="../../public/assets/brand/al-jami-horizontal.png"></span></div>
+    <div class="center url-big el" style="top:450px">hadith<span>.</span>dev<span>/</span>developers</div>
+    <div class="center sub el" style="top:640px">أضِف الجامع إلى Claude أو ChatGPT أو غيرهما — مجانًا</div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 14, 20, 29, 38, 47, 56, 62, 67],
+  lengths: [11.22,13.42,6.48,15.52,11.64,14.76,16.44,12.32,7.52], // @narration-timing
+  captions: [[0.4,10.32,"مَاذَا تَسْأَلُ مُسَاعِدَكَ الذَّكِيَّ عَنِ السُّنَّةِ؟ أَمْثِلَةٌ لِلْقَارِئِ وَلِلْبَاحِثِ، وَالْأَجْوِبَةُ مِنْ مَوْسُوعَةِ الْجَامِعِ."],[11.62,23.74,"سَمِعْتَ «النَّظَافَةُ مِنَ الْإِيمَانِ»، فَسَأَلْتَ: أَهُوَ حَدِيثٌ؟ فَبَحَثَ فِي ثَلَاثِمِائَةٍ وَتِسْعَةٍ وَثَلَاثِينَ أَلْفَ حَدِيثٍ، فَلَمْ يَجِدْهُ بِهَذَا اللَّفْظِ."],[24.94,30.22,"وَسَأَلْتَ عَنْ «مَنْ غَشَّنَا فَلَيْسَ مِنَّا»: مَا أَصْلُهُ؟"],[31.42,45.74,"فَأَجَابَ: أَخْرَجَهُ مُسْلِمٌ عَنْ أَبِي هُرَيْرَةَ، وَحُكْمُهُ عِنْدَ مُسْلِمٍ صَحِيحٌ كَمَا فِي الدُّرَرِ السَّنِيَّةِ، وَذَكَرَ قِصَّتَهُ: صُبْرَةَ الطَّعَامِ الْمَبْلُولَةَ فِي السُّوقِ."],[46.94,57.38,"وَالْبَاحِثُ يَسْأَلُ: أَيْنَ رُوِيَ؟ فَيَجِدُ سَبْعًا وَعِشْرِينَ رِوَايَةً فِي كُتُبِ السُّنَّةِ، وَيُقَابِلُ بَيْنَ أَلْفَاظِهَا."],[58.58,72.14,"وَفِي سَنَدِهِ سُهَيْلُ بْنُ أَبِي صَالِحٍ، فَيَسْأَلُ عَنْهُ: قَالَ ابْنُ حَجَرٍ: صَدُوقٌ تَغَيَّرَ حِفْظُهُ بِآخِرِهِ، وَقَالَ أَبُو حَاتِمٍ: يُكْتَبُ حَدِيثُهُ وَلَا يُحْتَجُّ بِهِ."],[73.34,88.58,"وَيَلْحَظُ أَنَّ لَهُ فِي صَحِيحِ مُسْلِمٍ مِائَةً وَاثْنَيْنِ وَأَرْبَعِينَ مَوْضِعًا، وَفِي الْبُخَارِيِّ مَوْضِعًا وَاحِدًا؛ وَسُئِلَ الدَّارَقُطْنِيُّ عَنْ ذَلِكَ فَقَالَ: لَا أَعْرِفُ لَهُ فِيهِ عُذْرًا."],[89.78,100.9,"كُلُّ جَوَابٍ مِنَ الْكُتُبِ: النَّصُّ بِرَقْمِهِ، وَكُلُّ قَوْلٍ مَنْسُوبٌ إِلَى قَائِلِهِ، مَعَ رَابِطٍ لِتَتَحَقَّقَ بِنَفْسِكَ."],[102.2,107.32,"أَضِفِ الْجَامِعَ إِلَى مُسَاعِدِكَ مِنْ صَفْحَةِ الْمُطَوِّرِينَ."]], // @narration-captions
+}
+</script>
+<script src="../features/engine.js"></script>
+<script>
+const B = FILM.bounds
+const scn = i => $('s' + i)
+const kids = i => [...scn(i).querySelectorAll('.el, .an')]
+function rise(i, delay = .1, gap = .18, opts = {}) {
+  kids(i).forEach((el, k) => tw(el, B[i] + delay + k * gap, .6, { o: 0, y: opts.y ?? 36, s: opts.s ?? 1 }, { o: 1, y: 0, s: 1 }, 'out'))
+}
+// a chat scene: window and label, then each listed element in turn
+function chat(i, ids, first = .9, gap = 1.1) {
+  scn(i).querySelectorAll('.el').forEach((el, k) => tw(el, B[i] + .1 + k * .15, .7, { o: 0, s: .96, y: 20 }, { o: 1, s: 1, y: 0 }))
+  ids.forEach((id, k) => tw(id, B[i] + first + k * gap, .5, { o: 0, y: 20 }, { o: 1, y: 0 }))
+}
+for (let i = 0; i < 9; i++) scene(scn(i), B[i], i === 8 ? null : B[i + 1] - .45)
+
+/* 0 */ rise(0, .1, .3)
+/* 1 */ chat(1, ['q1', 'q1t', 'q1a'], .8, 1.4)
+/* 2 */ chat(2, ['q2', 'q2t1', 'q2t2'], .8, 1.3)
+/* 3 */ rise(3, .1, 1.2, { y: 20 })
+/* 4 */ rise(4, .1, .9, { y: 24 })
+/* 5 */ rise(5, .1, .95, { y: 20 })
+/* 6 */ rise(6, .1, 1.4, { s: .94 })
+/* 7 */ rise(7, .1, .6)
+/* 8 */ rise(8, .1, .35)
+
+startFilm()
+</script>
+</body>
+</html>
