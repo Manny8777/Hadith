@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مطابقة التشكيل</title>
+<link rel="stylesheet" href="../features/base.css">
+<style>
+  /* «مطابقة التشكيل» (1920×1080): زُبْد، زَبَد، زَبْد — one set of letters, three words — and the search
+     option that tells them apart. Real page shots (shots/, from capture.mjs; positions in
+     shots/marks.json). Captions are drawn in the bar at the bottom. */
+  #stage { width: 1920px; height: 1080px; color: #faf6ec;
+    background: radial-gradient(ellipse 80% 90% at 70% 40%, #235238 0%, #163826 55%, #0c2014 100%); }
+  .pattern { opacity: .07; filter: invert(1) sepia(1) saturate(3) hue-rotate(5deg); }
+  #caption { left: 300px; right: 300px; bottom: 34px; min-height: 96px; background: rgba(8,22,14,.86); border: 1px solid rgba(201,164,92,.35); }
+  #caption span { font-size: 34px; }
+
+  .sc { position: absolute; inset: 0; }
+  .an { will-change: transform, opacity; }
+  .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .h { font-family: 'Amiri', serif; font-weight: 700; color: #fffaf0; line-height: 1.25; }
+  .kick { font-size: 34px; font-weight: 600; color: var(--gold); }
+
+  /* the three words */
+  .words { position: absolute; top: 330px; left: 0; right: 0; display: flex; justify-content: center; gap: 120px; }
+  .word { font-family: 'Amiri', serif; font-weight: 700; font-size: 230px; line-height: 1.3; color: #fffaf0; }
+  .word:nth-child(2) { color: var(--gold); }
+
+  .win { position: absolute; border-radius: 22px; overflow: hidden; background: #fffdf7; color: var(--ink); box-shadow: 0 40px 90px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); }
+  .bar { height: 48px; background: #efe9da; display: flex; align-items: center; gap: 10px; padding: 0 18px; direction: ltr; }
+  .bar i { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+  .bar i:nth-child(1) { background: #e0796a; } .bar i:nth-child(2) { background: #e5bf5c; } .bar i:nth-child(3) { background: #7dbb73; }
+  .bar span { margin-left: 18px; font: 500 18px 'JetBrains Mono', monospace; color: #5b6b60; }
+  .vp { position: relative; overflow: hidden; }
+  .vp img { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+  .tag { display: inline-flex; align-items: center; gap: 14px; padding: 14px 30px; border-radius: 999px; background: var(--gold); color: #13261b; font-size: 34px; font-weight: 700; box-shadow: 0 16px 40px rgba(0,0,0,.35); white-space: nowrap; }
+  .tag.am { font-family: 'Amiri', serif; font-size: 40px; padding: 8px 30px; }
+  .tag.light { background: #e3efe6; color: #1f4a33; }
+  .tags { position: absolute; right: 100px; top: 250px; width: 480px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+
+  /* meanings */
+  .card { position: absolute; top: 230px; width: 520px; height: 560px; border-radius: 34px; background: rgba(255,253,247,.06); border: 2px solid rgba(201,164,92,.35); text-align: center; padding-top: 40px; }
+  .card .w { font-family: 'Amiri', serif; font-size: 150px; font-weight: 700; color: #fffaf0; line-height: 1.25; }
+  .card .m { margin-top: 18px; font-size: 46px; font-weight: 700; color: var(--gold); }
+  .card .q { margin: 42px 34px 0; font-family: 'Amiri', serif; font-size: 40px; color: #cfe0d4; line-height: 1.6; }
+
+  /* counts */
+  .count { position: absolute; top: 250px; width: 480px; text-align: center; }
+  .count .n { font-family: 'Amiri', serif; font-size: 210px; font-weight: 700; color: var(--gold); line-height: 1; }
+  .count .w { font-family: 'Amiri', serif; font-size: 96px; font-weight: 700; color: #fffaf0; margin-top: 20px; }
+  .count .m { font-size: 36px; color: #cfe0d4; margin-top: 6px; }
+
+  /* the partly voweled word */
+  .big { font-family: 'Amiri', serif; font-weight: 700; font-size: 300px; color: #fffaf0; line-height: 1.2; }
+
+  .url-big { font: 600 120px 'JetBrains Mono', monospace; direction: ltr; color: #fffaf0; letter-spacing: -2px; }
+  .url-big span { color: var(--gold); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- 0 · one set of letters, three words -->
+  <div class="sc" id="s0">
+    <div class="center kick an" style="top:200px">حروفٌ واحدة… ومعانٍ مختلفة</div>
+    <div class="words">
+      <div class="word an">زُبْد</div>
+      <div class="word an">زَبَد</div>
+      <div class="word an">زَبْد</div>
+    </div>
+  </div>
+
+  <!-- 1 · the ordinary search drops the vowels -->
+  <div class="sc" id="s1">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/search?q=زبد</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/plain.png" style="width:1280px" id="img1"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">البحث العادي</div>
+      <div class="tag an">يُسقِط الحركات</div>
+      <div class="tag an">١١٢ حديثًا معًا</div>
+    </div>
+  </div>
+
+  <!-- 2 · three meanings -->
+  <div class="sc" id="s2">
+    <div class="card an" style="right:120px"><div class="w">الزُّبْد</div><div class="m">ما يُستخرَج من اللبن</div><div class="q">«فَلَا يَأْكُلِ الزُّبْدَ»</div></div>
+    <div class="card an" style="right:700px"><div class="w">الزَّبَد</div><div class="m">رغوة البحر</div><div class="q">«مِثْلَ زَبَدِ الْبَحْرِ»</div></div>
+    <div class="card an" style="right:1280px"><div class="w">الزَّبْد</div><div class="m">العطيّة</div><div class="q">«نُهِيتُ عَنْ زَبْدِ الْمُشْرِكِينَ»</div></div>
+  </div>
+
+  <!-- 3 · the new option -->
+  <div class="sc" id="s3">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/search?q=زَبْدِ&amp;tashkeel=1</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/zabd.png" style="width:1280px" id="img3"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">جديد في البحث</div>
+      <div class="tag an">✓ مطابقة التشكيل</div>
+      <div class="tag am an">زَبْدِ ← ١٠ أحاديث</div>
+      <div class="tag am light an">نُهِيتُ عَنْ زَبْدِ الْمُشْرِكِينَ</div>
+    </div>
+  </div>
+
+  <!-- 4 · each word on its own -->
+  <div class="sc" id="s4">
+    <div class="center kick an" style="top:150px">كلُّ كلمةٍ وحدها — من ١١٢ حديثًا</div>
+    <div class="count an" style="right:150px"><div class="n">٨٣</div><div class="w">زَبَدِ</div><div class="m">رغوة البحر</div></div>
+    <div class="count an" style="right:720px"><div class="n">١٠</div><div class="w">زَبْدِ</div><div class="m">العطيّة</div></div>
+    <div class="count an" style="right:1290px"><div class="n">١٦</div><div class="w">الزُّبْد</div><div class="m">ما يُستخرَج من اللبن</div></div>
+  </div>
+
+  <!-- 5 · vowel only what matters -->
+  <div class="sc" id="s5">
+    <div class="center big an" style="top:150px">زُبد</div>
+    <div class="center an" style="top:560px"><span class="tag">ضمّةُ الزاي: مطلوبة</span></div>
+    <div class="center an" style="top:670px"><span class="tag light">الباء والدال: تقبلان أيَّ حركة</span></div>
+  </div>
+
+  <!-- 6 · closing -->
+  <div class="sc" id="s6">
+    <div class="center h an" style="top:210px;font-size:110px">مطابقة التشكيل</div>
+    <div class="center h an" style="top:370px;font-size:64px;color:var(--gold)">في بحث الجامع</div>
+    <div class="center url-big an" style="top:560px">hadith<span>.</span>dev</div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 11, 20, 28, 34, 40, 45],
+  lengths: [8.5,8.76,10.76,8.96,9.64,8.12,7.24], // @narration-timing
+  captions: [[0.4,7.6,"زُبْدٌ، وَزَبَدٌ، وَزَبْدٌ: حُرُوفُهَا وَاحِدَةٌ، وَمَعَانِيهَا مُخْتَلِفَةٌ."],[8.8,16.36,"وَالْبَحْثُ الْعَادِيُّ يُسْقِطُ الْحَرَكَاتِ، فَيَجْمَعُهَا كُلَّهَا: مِائَةٌ وَاثْنَا عَشَرَ حَدِيثًا مَعًا."],[17.56,27.12,"فَالزُّبْدُ مَا يُسْتَخْرَجُ مِنَ اللَّبَنِ، وَالزَّبَدُ رَغْوَةُ الْبَحْرِ، وَالزَّبْدُ الْعَطِيَّةُ: نُهِيتُ عَنْ زَبْدِ الْمُشْرِكِينَ."],[28.32,36.08,"فَأَضَفْنَا إِلَى الْبَحْثِ مُطَابَقَةَ التَّشْكِيلِ: اكْتُبِ الْكَلِمَةَ بِحَرَكَاتِهَا، فَلَا يَأْتِيكَ إِلَّا مَا شُكِّلَ مِثْلَهَا."],[37.28,45.72,"زَبَدِ: ثَلَاثَةٌ وَثَمَانُونَ حَدِيثًا. زَبْدِ: عَشَرَةٌ. الزُّبْدُ: سِتَّةَ عَشَرَ."],[46.92,53.84,"وَالْحَرْفُ الَّذِي تَتْرُكُهُ بِلَا حَرَكَةٍ يَقْبَلُ أَيَّ حَرَكَةٍ؛ فَشَكِّلْ مَا يَهُمُّكَ وَحْدَهُ."],[55.14,59.98,"مُطَابَقَةُ التَّشْكِيلِ، فِي بَحْثِ الْجَامِعِ — hadith.dev"]], // @narration-captions
+}
+</script>
+<script src="../features/engine.js"></script>
+<script>
+const B = FILM.bounds
+const N = B.length - 1
+const scn = i => $('s' + i)
+const kids = i => [...scn(i).querySelectorAll('.an')]
+function rise(i, delay = .1, gap = .25, y = 36) {
+  kids(i).forEach((el, k) => tw(el, B[i] + delay + k * gap, .6, { o: 0, y }, { o: 1, y: 0 }, 'out'))
+}
+for (let i = 0; i < N; i++) scene(scn(i), B[i], i === N - 1 ? null : B[i + 1] - .45)
+for (let i = 0; i < N; i++) rise(i, .1, i === 1 || i === 3 ? .45 : .35)
+
+// The window shows a shot (1280 css px wide) zoomed onto a region of it: the region's centre at the
+// viewport's centre, scaled to fit (vp 1160 × 712)
+const VW = 1160, VH = 712
+function focus(r, fit = .92) {
+  const s = Math.min(VW * fit / r[2], VH * fit / r[3], 2.6)
+  return { s, x: VW / 2 - s * (r[0] + r[2] / 2), y: VH / 2 - s * (r[1] + r[3] / 2) }
+}
+function ring(img, i, to, at) {
+  const b = focus(to)
+  const el = document.createElement('div')
+  const w = b.s * to[2] + 28, h = b.s * to[3] + 22
+  el.style.cssText = `position:absolute;left:${(VW - w) / 2}px;top:${(VH - h) / 2}px;width:${w}px;height:${h}px;border:4px solid #c9a45c;border-radius:16px;box-shadow:0 0 0 9999px rgba(19,38,27,.28);pointer-events:none;transform-origin:center`
+  $(img).parentElement.appendChild(el)
+  tw(el, B[i], 0, { o: 0 }, { o: 0 })
+  tw(el, at, .5, { o: 0, s: 1.06 }, { o: 1, s: 1 }, 'out')
+  return el
+}
+// regions (CSS px of the shots; from shots/marks.json)
+const TOP = [0, 110, 1280, 620]            // the page as it opens
+const BOX = [860, 160, 410, 310]           // the query, the toggle and the count
+const TOGGLE = [840, 160, 430, 115]        // the query and «مطابقة التشكيل»
+const RESULT = [700, 440, 570, 200]        // the count and the first result
+// 1: the ordinary search — the page, then the query and its 112 results
+tw('img1', B[1], 0, focus(TOP), focus(TOP))
+tw('img1', B[1] + .5, (B[2] - 1.6) - (B[1] + .5), focus(TOP), focus(BOX), 'inOut')
+// 3: the toggle, then the one result set it leaves
+tw('img3', B[3], 0, focus(TOP), focus(TOP))
+const mid = B[3] + (B[4] - B[3]) * .45
+tw('img3', B[3] + .4, mid - (B[3] + .4), focus(TOP), focus(TOGGLE), 'inOut')
+const r1 = ring('img3', 3, TOGGLE, mid - .3)
+tw(r1, mid + .4, .3, { o: 1 }, { o: 0 })
+tw('img3', mid + .5, (B[4] - 1.4) - (mid + .5), focus(TOGGLE), focus(RESULT), 'inOut')
+ring('img3', 3, RESULT, B[4] - 1.3)
+startFilm()
+</script>
+</body>
+</html>

@@ -37,6 +37,9 @@
 <td align="center" colspan="2"><a href="https://hadith.dev/media/about.mp4"><img src="public/media/about-poster.jpg" width="560" alt="ما الجامع؟"></a><br><sub><b>ما الجامع؟</b> — hadith.dev منصّةٌ للباحث تعرض كتب السنة كما هي: لا تحكم على حديثٍ ولا على راوٍ؛ أقوال الأئمة منقولةٌ منسوبة، والحكم على الحديث من الدرر السنية</sub></td>
 </tr>
 <tr>
+<td align="center" colspan="2"><a href="https://hadith.dev/media/tashkeel.mp4"><img src="public/media/tashkeel-poster.jpg" width="560" alt="مطابقة التشكيل"></a><br><sub><b>مطابقة التشكيل</b> — زُبْد (ما يُستخرَج من اللبن) وزَبَد (رغوة البحر) وزَبْد (العطيّة): حروفٌ واحدة، والبحث بمطابقة التشكيل يفرّق بينها</sub></td>
+</tr>
+<tr>
 <td align="center" colspan="2"><a href="https://hadith.dev/media/mcp.mp4"><img src="public/media/mcp-poster.jpg" width="560" alt="الجامع في مساعدك الذكي — خادم MCP"></a><br><sub><b>الجامع في مساعدك الذكي</b> — إعداد خادم MCP في Claude وClaude Code وغيرهما، وما يجيب به</sub></td>
 </tr>
 </table>
