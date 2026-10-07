@@ -18,6 +18,7 @@ const GRADE_SHORTCUTS = [
 // wide ones carry an .ar.vtt caption track, the square feature films have their captions drawn in.
 const MAIN_FILM = { src: 'promo', title: 'الجامع — موسوعة الحديث النبوي الشريف' }
 const ABOUT_FILM = { src: 'about', title: 'ما الجامع؟', note: 'منصّةٌ تعرض كتب السنة كما هي؛ لا تحكم على حديثٍ ولا راوٍ، والحكم من الدرر السنية' }
+const LIBRARY_FILM = { src: 'library', title: 'مكتبتي', note: 'مكتبة بحثية في حسابك: احفظ، ودوّن، وظلّل، ووثّق إلى Zotero وEndNote وLaTeX، وشارك مشرفك' }
 const TASHKEEL_FILM = { src: 'tashkeel', title: 'مطابقة التشكيل', note: 'زُبْد وزَبَد وزَبْد: حروفٌ واحدة ومعانٍ مختلفة — بحثٌ يفرّق بينها بحركاتها' }
 const MCP_USES_FILM = { src: 'mcp-uses', title: 'ماذا تسأل مساعدك؟', note: 'أسئلةٌ حقيقية لمساعدٍ متصلٍ بالموسوعة: «أهذا حديث؟»، و«ما أصله؟»، والروايات وأحوال الرواة' }
 const MIGRATION_FILM ={ src: 'migration-film', title: 'من سطح المكتب إلى الويب', note: 'كيف نُقل البرنامج من تطبيق ويندوز إلى موقعٍ على الويب' }
@@ -125,7 +126,7 @@ export default async function Home() {
           <p className="text-sm text-muted mb-4 font-sans">جولةٌ في ميزات الموسوعة، وأحاديث تكشف ما تتيحه صفحة الحديث</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {[ABOUT_FILM, TASHKEEL_FILM, MCP_USES_FILM, MIGRATION_FILM, NUMBERING_FILM].map(film => (
+            {[ABOUT_FILM, LIBRARY_FILM, TASHKEEL_FILM, MCP_USES_FILM, MIGRATION_FILM, NUMBERING_FILM].map(film => (
               <div key={film.src}>
                 <video controls preload="none" playsInline poster={`/media/${film.src}-poster.jpg`}
                   aria-label={film.title}

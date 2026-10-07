@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مكتبتي</title>
+<link rel="stylesheet" href="../features/base.css">
+<style>
+  /* «مكتبتي» (1920×1080): the research library from a researcher's side — save, note, highlight,
+     organise, export to reference managers, Arabic footnotes, share with a supervisor, and the AI
+     assistant. Real page shots of a demo account (shots/, from capture.mjs; positions in
+     shots/marks.json). Captions are drawn in the bar at the bottom. */
+  #stage { width: 1920px; height: 1080px; color: #faf6ec;
+    background: radial-gradient(ellipse 80% 90% at 70% 40%, #235238 0%, #163826 55%, #0c2014 100%); }
+  .pattern { opacity: .07; filter: invert(1) sepia(1) saturate(3) hue-rotate(5deg); }
+  #caption { left: 300px; right: 300px; bottom: 34px; min-height: 96px; background: rgba(8,22,14,.86); border: 1px solid rgba(201,164,92,.35); }
+  #caption span { font-size: 34px; }
+
+  .sc { position: absolute; inset: 0; }
+  .an { will-change: transform, opacity; }
+  .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .h { font-family: 'Amiri', serif; font-weight: 700; color: #fffaf0; line-height: 1.25; }
+  .kick { font-size: 34px; font-weight: 600; color: var(--gold); }
+
+  .win { position: absolute; border-radius: 22px; overflow: hidden; background: #fffdf7; color: var(--ink); box-shadow: 0 40px 90px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); }
+  .bar { height: 48px; background: #efe9da; display: flex; align-items: center; gap: 10px; padding: 0 18px; direction: ltr; }
+  .bar i { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+  .bar i:nth-child(1) { background: #e0796a; } .bar i:nth-child(2) { background: #e5bf5c; } .bar i:nth-child(3) { background: #7dbb73; }
+  .bar span { margin-left: 18px; font: 500 18px 'JetBrains Mono', monospace; color: #5b6b60; }
+  .vp { position: relative; overflow: hidden; }
+  .vp img { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+  .tag { display: inline-flex; align-items: center; gap: 14px; padding: 14px 30px; border-radius: 999px; background: var(--gold); color: #13261b; font-size: 34px; font-weight: 700; box-shadow: 0 16px 40px rgba(0,0,0,.35); white-space: nowrap; }
+  .tag.light { background: #e3efe6; color: #1f4a33; }
+  .tag.mono { font-family: 'JetBrains Mono', monospace; direction: ltr; font-size: 30px; }
+  .tags { position: absolute; right: 100px; top: 250px; width: 480px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+
+  /* the footnote and the reference managers */
+  .paper { position: absolute; left: 220px; right: 220px; top: 220px; border-radius: 26px; background: #fffdf7; color: #14151a; padding: 54px 64px; box-shadow: 0 40px 90px rgba(0,0,0,.45); }
+  .paper .lbl { font-size: 26px; color: #7b6a46; font-weight: 700; margin-bottom: 18px; }
+  .paper .fn { font-family: 'Amiri', serif; font-size: 44px; line-height: 1.75; }
+  .paper .fn b { color: #0f3d2e; }
+  .apps { position: absolute; left: 0; right: 0; top: 700px; display: flex; justify-content: center; gap: 22px; direction: ltr; }
+
+  /* the assistant */
+  .chat { position: absolute; left: 330px; right: 330px; top: 170px; display: flex; flex-direction: column; gap: 30px; }
+  .bub { max-width: 1000px; border-radius: 28px; padding: 30px 40px; font-size: 38px; line-height: 1.6; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .bub.me { align-self: flex-start; background: #fffdf7; color: #14151a; border-bottom-right-radius: 8px; }
+  .bub.ai { align-self: flex-end; background: #0f3d2e; color: #f8f1e4; border: 2px solid rgba(201,164,92,.5); border-bottom-left-radius: 8px; }
+  .bub .tool { display: block; margin-bottom: 12px; font: 600 26px 'JetBrains Mono', monospace; color: #e6c77a; direction: ltr; text-align: right; }
+  .who { font-size: 24px; color: #cfe0d4; margin-bottom: -18px; }
+  .who.ai { align-self: flex-end; }
+
+  .url-big { font: 600 120px 'JetBrains Mono', monospace; direction: ltr; color: #fffaf0; letter-spacing: -2px; }
+  .url-big span { color: var(--gold); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- 0 · one place for your research -->
+  <div class="sc" id="s0">
+    <div class="center kick an" style="top:250px">بحثُك في الحديث… في مكانٍ واحد</div>
+    <div class="center h an" style="top:360px;font-size:190px">مكتبتي</div>
+    <div class="center an" style="top:700px"><span class="tag light">جمعٌ · تدوين · تظليل · توثيق · مشاركة</span></div>
+  </div>
+
+  <!-- 1 · save -->
+  <div class="sc" id="s1">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/hadith/9</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/save.png" style="width:1280px" id="img1"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">الحفظ</div>
+      <div class="tag an">☆ حفظ — بنقرة</div>
+      <div class="tag an">في مجموعةٍ أو أكثر</div>
+      <div class="tag light an">أو أنشئ مجموعةً جديدة</div>
+    </div>
+  </div>
+
+  <!-- 2 · note and tags -->
+  <div class="sc" id="s2">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/hadith/5</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/note.png" style="width:1280px" id="img2"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">التدوين</div>
+      <div class="tag an">ملاحظتك البحثية</div>
+      <div class="tag an">ووسومك</div>
+      <div class="tag light an">#النية #ماجستير</div>
+    </div>
+  </div>
+
+  <!-- 3 · highlight -->
+  <div class="sc" id="s3">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/hadith/5</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/highlight.png" style="width:1280px" id="img3"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">التظليل</div>
+      <div class="tag an">موضع الشاهد</div>
+      <div class="tag an">في المتن أو السند</div>
+      <div class="tag light an">مع تعليقك عليه</div>
+    </div>
+  </div>
+
+  <!-- 4 · collections -->
+  <div class="sc" id="s4">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/library</span></div>
+      <div class="vp" style="width:1160px;height:712px">
+        <img src="shots/library.png" style="width:1280px" id="img4a">
+        <img src="shots/collection.png" style="width:1280px" id="img4b">
+      </div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">مجموعاتك</div>
+      <div class="tag an">مرتّبةٌ كما تريد</div>
+      <div class="tag an">أحاديث · رواة · بحوث</div>
+      <div class="tag light an">على كل أجهزتك</div>
+    </div>
+  </div>
+
+  <!-- 5 · export -->
+  <div class="sc" id="s5">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/library</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/export.png" style="width:1280px" id="img5"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">التوثيق</div>
+      <div class="tag mono an">BibTeX · LaTeX</div>
+      <div class="tag mono an">RIS · EndNote</div>
+      <div class="tag mono an">Zotero · Mendeley</div>
+    </div>
+  </div>
+
+  <!-- 6 · the Arabic footnote -->
+  <div class="sc" id="s6">
+    <div class="paper an">
+      <div class="lbl">حاشيةٌ جاهزة لرسالتك</div>
+      <div class="fn">أخرجه <b>البخاري</b> في <b>صحيح البخاري</b> (دار طوق النجاة، بيروت، ط. الأولى، 1422هـ)، كتاب أحاديث الأنبياء، <b>4/139</b>، رقم <b>(3350)</b>.</div>
+    </div>
+    <div class="apps">
+      <span class="tag light an">Word</span>
+      <span class="tag light an">Zotero</span>
+      <span class="tag light an">EndNote</span>
+      <span class="tag light an">LaTeX</span>
+    </div>
+  </div>
+
+  <!-- 7 · share -->
+  <div class="sc" id="s7">
+    <div class="win an" style="top:150px;left:120px;width:1160px;height:760px">
+      <div class="bar"><i></i><i></i><i></i><span>hadith.dev/library/shared/…</span></div>
+      <div class="vp" style="width:1160px;height:712px"><img src="shots/shared.png" style="width:1280px" id="img7"></div>
+    </div>
+    <div class="tags">
+      <div class="kick an" style="margin-bottom:6px">المشاركة</div>
+      <div class="tag an">مع مشرفك</div>
+      <div class="tag an">برابطٍ للقراءة فقط</div>
+      <div class="tag light an">توقفه متى شئت</div>
+    </div>
+  </div>
+
+  <!-- 8 · the AI assistant -->
+  <div class="sc" id="s8">
+    <div class="chat">
+      <div class="who an">أنت</div>
+      <div class="bub me an">احفظ حديث «إنما الأعمال بالنيات» من صحيح البخاري في مجموعة «أحاديث النية»، واكتب: موضع الشاهد الحصر بـ«إنما».</div>
+      <div class="who ai an">المساعد</div>
+      <div class="bub ai an"><span class="tool">save_to_my_collection ✓</span>حُفظ في «أحاديث النية — بحث الماجستير» مع ملاحظتك. وهذه حاشيته:<br>أخرجه البخاري في صحيح البخاري، 1/6، رقم (1).</div>
+    </div>
+  </div>
+
+  <!-- 9 · closing -->
+  <div class="sc" id="s9">
+    <div class="center h an" style="top:230px;font-size:130px">مكتبتي</div>
+    <div class="center h an" style="top:420px;font-size:60px;color:var(--gold)">مجانًا بحسابٍ على</div>
+    <div class="center url-big an" style="top:560px">hadith<span>.</span>dev</div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 11, 17, 23, 29, 36, 42, 48, 55, 60],
+  lengths: [6.58,6.48,7.44,6.44,7.84,9.68,6,6,7.24,7.84], // @narration-timing
+  captions: [[0.4,5.68,"فِي «مَكْتَبَتِي» عَلَى الْجَامِعِ، يَجْتَمِعُ بَحْثُكَ فِي الْحَدِيثِ فِي مَكَانٍ وَاحِدٍ."],[6.88,12.16,"احْفَظِ الْحَدِيثَ بِنَقْرَةٍ فِي مَجْمُوعَةِ بَحْثِكَ، أَوْ فِي أَكْثَرَ مِنْ مَجْمُوعَةٍ."],[13.36,19.6,"وَدَوِّنْ مُلَاحَظَتَكَ عَلَيْهِ، وَصَنِّفْهَا بِوُسُومٍ تَجِدُهَا بِهَا مَتَى شِئْتَ."],[20.8,26.04,"وَظَلِّلْ مَوْضِعَ الشَّاهِدِ مِنَ الْمَتْنِ أَوِ السَّنَدِ، وَعَلِّقْ عَلَيْهِ."],[27.24,33.88,"مَجْمُوعَاتُكَ مُرَتَّبَةٌ كَمَا تُرِيدُ، وَمَحْفُوظَةٌ فِي حِسَابِكَ عَلَى كُلِّ أَجْهِزَتِكَ."],[35.08,43.56,"وَحِينَ تَكْتُبُ، صَدِّرْ مَرَاجِعَكَ إِلَى Zotero وEndNote وLaTeX بِالْكِتَابِ وَالطَّبْعَةِ وَالْجُزْءِ وَالصَّفْحَةِ وَالرَّقْمِ."],[44.76,48.96,"أَوِ انْسَخْهَا حَوَاشِيَ عَرَبِيَّةً جَاهِزَةً لِرِسَالَتِكَ."],[50.76,55.48,"وَشَارِكْ مَجْمُوعَتَكَ مَعَ مُشْرِفِكَ بِرَابِطٍ لِلْقِرَاءَةِ فَقَطْ."],[56.76,62.8,"وَمِنْ مُسَاعِدِكَ الذَّكِيِّ أَيْضًا: احْفَظْ، وَدَوِّنْ، وَوَثِّقْ، بِكَلِمَةٍ."],[64.1,69.54,"مَكْتَبَتِي: مَجَّانًا بِحِسَابٍ عَلَى hadith.dev"]], // @narration-captions
+}
+</script>
+<script src="../features/engine.js"></script>
+<script>
+const B = FILM.bounds
+const N = B.length - 1
+const scn = i => $('s' + i)
+const kids = i => [...scn(i).querySelectorAll('.an')]
+function rise(i, delay = .1, gap = .25, y = 36) {
+  kids(i).forEach((el, k) => tw(el, B[i] + delay + k * gap, .6, { o: 0, y }, { o: 1, y: 0 }, 'out'))
+}
+for (let i = 0; i < N; i++) scene(scn(i), B[i], i === N - 1 ? null : B[i + 1] - .45)
+for (let i = 0; i < N; i++) rise(i, .1, [1, 2, 3, 4, 5, 7].includes(i) ? .45 : i === 8 ? .7 : .35)
+
+// The window shows a shot (1280 css px wide) zoomed onto a region of it
+const VW = 1160, VH = 712
+function focus(r, fit = .92) {
+  const s = Math.min(VW * fit / r[2], VH * fit / r[3], 2.6)
+  return { s, x: VW / 2 - s * (r[0] + r[2] / 2), y: VH / 2 - s * (r[1] + r[3] / 2) }
+}
+function ring(img, i, to, at) {
+  const b = focus(to)
+  const el = document.createElement('div')
+  const w = b.s * to[2] + 28, h = b.s * to[3] + 22
+  el.style.cssText = `position:absolute;left:${(VW - w) / 2}px;top:${(VH - h) / 2}px;width:${w}px;height:${h}px;border:4px solid #c9a45c;border-radius:16px;box-shadow:0 0 0 9999px rgba(19,38,27,.28);pointer-events:none;transform-origin:center`
+  $(img).parentElement.appendChild(el)
+  tw(el, B[i], 0, { o: 0 }, { o: 0 })
+  tw(el, at, .5, { o: 0, s: 1.06 }, { o: 1, s: 1 }, 'out')
+  return el
+}
+function pan(img, i, from, to, withRing = true) {
+  tw(img, B[i], 0, focus(from), focus(from))
+  tw(img, B[i] + .5, (B[i + 1] - 1.6) - (B[i] + .5), focus(from), focus(to), 'inOut')
+  if (withRing) ring(img, i, to, B[i + 1] - 1.4)
+}
+// regions (CSS px of the shots; from shots/marks.json)
+const PAGE = [0, 110, 1280, 760]
+pan('img1', 1, PAGE, [560, 270, 560, 250])                 // the «حفظ» menu
+pan('img2', 2, PAGE, [40, 300, 1080, 270])                 // the note and its tags
+pan('img3', 3, [0, 300, 1280, 760], [40, 680, 1080, 280])  // the highlight in the matn and its note
+// 4: the library, then a collection
+tw('img4a', B[4], 0, focus([220, 100, 840, 560]), focus([220, 100, 840, 560]))
+tw('img4b', B[4], 0, { o: 0, ...focus([270, 100, 750, 600]) }, { o: 0, ...focus([270, 100, 750, 600]) })
+const mid4 = B[4] + (B[5] - B[4]) * .45
+tw('img4b', mid4, .6, { o: 0, ...focus([270, 100, 750, 600]) }, { o: 1, ...focus([270, 100, 750, 600]) })
+pan('img5', 5, PAGE, [560, 150, 560, 340])                 // the export menu
+pan('img7', 7, [0, 60, 1280, 760], [280, 100, 720, 560], false)
+startFilm()
+</script>
+</body>
+</html>
