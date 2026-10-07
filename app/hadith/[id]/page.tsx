@@ -13,6 +13,7 @@ import { sectionBadgeSlots } from '@/app/components/SectionBadges'
 import { activeServiceSections, INLINE_SERVICE_CONFIGS } from '@/app/components/HadithServiceSection'
 import DorarJudgment from '@/app/components/DorarJudgment'
 import type { DorarRuling } from '@/app/components/DorarJudgment'
+import EnglishTranslation, { type EnglishTranslationData } from '@/app/components/EnglishTranslation'
 import { DORAR_SOURCES, dorarKey, matnSearchWords, dorarSearchUrl } from '@/lib/dorar'
 import {
   parseSanadNarratorSegments,
@@ -425,9 +426,20 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     dorarRulings = [...rulingsRes.rows].sort((a, b) => order(a.dorar_source_id) - order(b.dorar_source_id))
   }
 
+  // The English translation from Sunnah.com (scripts/sunnah-import.mjs + sunnah-match.mjs; tables
+  // absent until their first run)
+  const english = (await pool.query<EnglishTranslationData>(
+    `SELECT t.collection, t.hadith_number, s.en_body, s.en_chapter
+     FROM hadith_translations t
+     JOIN sunnah_hadiths s ON s.collection = t.collection AND s.hadith_number = t.hadith_number
+     WHERE t.main_id = $1 AND t.source = 'sunnah' AND t.lang = 'en'`,
+    [mainId]
+  ).catch(() => ({ rows: [] as EnglishTranslationData[] }))).rows[0]
+
   return (
     <>
       <HadithSidebarLayout
+        translationSlot={english ? <EnglishTranslation data={english} /> : undefined}
         relatedTopicsSlot={musakaratNodes.length > 0 && (
         <div className="hadith-related-topics mb-5 flex items-center gap-2 flex-wrap border-t border-border pt-4">
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600">

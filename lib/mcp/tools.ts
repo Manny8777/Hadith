@@ -77,7 +77,7 @@ export const TOOLS: Tool[] = [
   {
     name: 'get_hadith',
     title: 'نص الحديث',
-    description: 'One hadith in full: its sanad and matn (with tashkeel as printed), book and author, printed (مطبوع) and Harf numbers, part/page, chapter, hadith type (مرفوع/موقوف/مقطوع/مرسل), its chains as lists of narrators with ids (for get_narrator), and al-Durar al-Saniyya\'s ruling summary where one exists (quoted, attributed — never a ruling of this server).',
+    description: 'One hadith in full: its sanad and matn (with tashkeel as printed), book and author, printed (مطبوع) and Harf numbers, part/page, chapter, hadith type (مرفوع/موقوف/مقطوع/مرسل), its chains as lists of narrators with ids (for get_narrator), the English translation from Sunnah.com where there is one (quote it with its source link), and al-Durar al-Saniyya\'s ruling summary where one exists (quoted, attributed — never a ruling of this server).',
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'integer', description: 'The hadith id (from search_hadith, or the number in hadith.dev/hadith/<id>).' } },
@@ -91,7 +91,7 @@ export const TOOLS: Tool[] = [
          FROM hadith_toc ht JOIN books b ON b.id = ht.book_id WHERE ht.main_id = $1`, [id])
       const h = r.rows[0]
       if (!h) throw new Error(`no hadith with id ${id}`)
-      const [types, rulings, chains] = await Promise.all([
+      const [types, rulings, chains, english] = await Promise.all([
         pool.query<{ isnad_type: number; n: number }>(
           `SELECT isnad_type, COUNT(*)::int AS n FROM isnad_hadiths WHERE hadith_id = $1 AND isnad_type IS NOT NULL GROUP BY 1 ORDER BY 2 DESC`, [id]),
         h.dorar_key
@@ -104,7 +104,13 @@ export const TOOLS: Tool[] = [
                    FROM unnest(ic.narrator_id_array) WITH ORDINALITY u(nid, ord) JOIN narrators n ON n.id = u.nid) AS narrators
            FROM isnad_hadiths ih JOIN isnad_chains ic ON ic.id = ih.isnad_id
            WHERE ih.hadith_id = $1 ORDER BY ih.isnad_id LIMIT 5`, [id]).catch(() => ({ rows: [] })),
+        // the English translation from Sunnah.com (scripts/sunnah-import.mjs + sunnah-match.mjs)
+        pool.query<{ collection: string; hadith_number: string; en_body: string }>(
+          `SELECT t.collection, t.hadith_number, s.en_body FROM hadith_translations t
+           JOIN sunnah_hadiths s ON s.collection = t.collection AND s.hadith_number = t.hadith_number
+           WHERE t.main_id = $1 AND t.source = 'sunnah' AND t.lang = 'en'`, [id]).catch(() => ({ rows: [] })),
       ])
+      const en = english.rows[0]
       const split = splitSanadMatn(h.content)
       // the book/chapter headings and printed numbers the text can open with («كتاب الطهارة / باب … /
       // 223 498 - حدثنا…») are given separately (chapter, printed_number, harf_number)
@@ -126,6 +132,11 @@ export const TOOLS: Tool[] = [
           url: d.dorar_hash ? `https://dorar.net/h/${d.dorar_hash}` : null,
         })),
         dorar_note: rulings.rows.length ? 'Rulings as summarised by al-Durar al-Saniyya (dorar.net), attributed to the muhaddith named.' : undefined,
+        english: en ? {
+          text: clip(en.en_body.replace(/<\/p>/gi, '\n'), 4000),
+          source: 'Sunnah.com',
+          url: `https://sunnah.com/${en.collection}:${encodeURIComponent(en.hadith_number)}`,
+        } : undefined,
       }
     },
   },

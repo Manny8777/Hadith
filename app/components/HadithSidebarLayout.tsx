@@ -127,6 +127,8 @@ export interface HadithSidebarLayoutProps {
   // Dorar's ruling (stored by scripts/dorar-crawl.mjs), shown in the line under the hadith title
   relatedTopicsSlot?: ReactNode
   dorarSlot?: ReactNode
+  // The English translation (Sunnah.com), under the matn
+  translationSlot?: ReactNode
 }
 
 const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string }> = {
@@ -148,6 +150,7 @@ export default function HadithSidebarLayout({
   sectionBadges = {},
   dorarSlot,
   relatedTopicsSlot,
+  translationSlot,
 }: HadithSidebarLayoutProps) {
   const [showTashkeel, setShowTashkeel] = useState(true)
   const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
@@ -487,6 +490,7 @@ export default function HadithSidebarLayout({
                     {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
                   </p>
                 )}
+                {translationSlot}
                 {footnotes.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1" dir="rtl">
                     {footnotes.map(f => (
