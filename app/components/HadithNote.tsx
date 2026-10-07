@@ -58,7 +58,7 @@ export default function HadithNote({ hadithId, kind = 'hadith', itemRef }: Props
   const hasNote = note.trim().length > 0
 
   return (
-    <div>
+    <div className={open ? 'basis-full order-last text-right' : ''}>
       <button
         onClick={() => setOpen(o => !o)}
         className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
