@@ -429,7 +429,7 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
   // The English translation from Sunnah.com (scripts/sunnah-import.mjs + sunnah-match.mjs; tables
   // absent until their first run)
   const english = (await pool.query<EnglishTranslationData>(
-    `SELECT t.collection, t.hadith_number, s.en_body, s.en_chapter
+    `SELECT t.collection, t.hadith_number, s.en_body, s.en_chapter, s.en_grades
      FROM hadith_translations t
      JOIN sunnah_hadiths s ON s.collection = t.collection AND s.hadith_number = t.hadith_number
      WHERE t.main_id = $1 AND t.source = 'sunnah' AND t.lang = 'en'`,

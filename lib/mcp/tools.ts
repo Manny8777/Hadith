@@ -105,8 +105,8 @@ export const TOOLS: Tool[] = [
            FROM isnad_hadiths ih JOIN isnad_chains ic ON ic.id = ih.isnad_id
            WHERE ih.hadith_id = $1 ORDER BY ih.isnad_id LIMIT 5`, [id]).catch(() => ({ rows: [] })),
         // the English translation from Sunnah.com (scripts/sunnah-import.mjs + sunnah-match.mjs)
-        pool.query<{ collection: string; hadith_number: string; en_body: string }>(
-          `SELECT t.collection, t.hadith_number, s.en_body FROM hadith_translations t
+        pool.query<{ collection: string; hadith_number: string; en_body: string; en_grades: { graded_by: string | null; grade: string | null }[] | null }>(
+          `SELECT t.collection, t.hadith_number, s.en_body, s.en_grades FROM hadith_translations t
            JOIN sunnah_hadiths s ON s.collection = t.collection AND s.hadith_number = t.hadith_number
            WHERE t.main_id = $1 AND t.source = 'sunnah' AND t.lang = 'en'`, [id]).catch(() => ({ rows: [] })),
       ])
@@ -135,6 +135,7 @@ export const TOOLS: Tool[] = [
         english: en ? {
           text: clip(en.en_body.replace(/<\/p>/gi, '\n'), 4000),
           source: 'Sunnah.com',
+          grades: (en.en_grades ?? []).filter(g => g.grade).map(g => ({ grade: clip(g.grade, 300), graded_by: g.graded_by || 'as given on Sunnah.com' })),
           url: `https://sunnah.com/${en.collection}:${encodeURIComponent(en.hadith_number)}`,
         } : undefined,
       }
