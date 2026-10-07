@@ -12,14 +12,18 @@ import pool from '@/lib/db'
 import { userForBearer, type User } from '@/lib/auth'
 import { MCP_LIMITS } from './limits'
 import { logMcpEvent } from '@/lib/analytics'
-import { TOOLS } from './tools'
+import { TOOLS as SITE_TOOLS } from './tools'
+import { LIBRARY_TOOLS } from './libraryTools'
+
+const TOOLS = [...SITE_TOOLS, ...LIBRARY_TOOLS]
 
 const SUPPORTED = ['2025-06-18', '2025-03-26', '2024-11-05']
-const SERVER_INFO = { name: 'hadith-dev', title: 'الجامع — موسوعة الحديث النبوي', version: '1.1.0', websiteUrl: 'https://hadith.dev' }
+const SERVER_INFO = { name: 'hadith-dev', title: 'الجامع — موسوعة الحديث النبوي', version: '1.2.0', websiteUrl: 'https://hadith.dev' }
 const INSTRUCTIONS =
   'Al-Jami\' hadith encyclopedia (hadith.dev): 339,607 hadiths in 245 books, 30,087 narrators. ' +
   'Search texts with search_hadith, read one with get_hadith, its other narrations with get_parallels, ' +
   'narrators with search_narrators / get_narrator, and the hadiths a narrator appears in with narrator_hadiths. ' +
+  'With an account, the reader\'s own research library: list_my_collections, get_my_collection, search_my_notes, and — only when the reader asks — save_to_my_collection, write_my_note, create_my_collection, remove_from_my_collection; cite_hadiths gives BibTeX, RIS, CSL-JSON or Arabic footnotes. ' +
   'Narrator counts are of entries in the books, repetitions included, not distinct hadiths — say so when you give them. ' +
   'Call the Prophet\'s wives ﷺ «أم المؤمنين» and women Companions «صحابية» (companion_title), and write of each narrator ' +
   'in their own gender (gender: female → she/her). ' +
@@ -86,7 +90,7 @@ async function callTool(params: Record<string, unknown>, user: User | null, ip: 
   const t0 = Date.now()
   const log = (ok: boolean) => logMcpEvent({ subject, userId: user?.id ?? null, kind: 'call', tool: tool.name, ok, ms: Date.now() - t0 })
   try {
-    const data = await tool.run((params.arguments as Record<string, unknown>) ?? {})
+    const data = await tool.run((params.arguments as Record<string, unknown>) ?? {}, { user })
     log(true)
     const content: { type: 'text'; text: string }[] = [{ type: 'text', text: JSON.stringify(data, null, 1) }]
     if (!user) content.push({ type: 'text', text: ACCOUNT_NOTE(limit - calls) })
@@ -114,7 +118,7 @@ async function handle(msg: Rpc, user: User | null, ip: string): Promise<object |
       } })
     }
     case 'ping': return reply({ result: {} })
-    case 'tools/list': return reply({ result: { tools: TOOLS.map(({ run: _run, ...t }) => ({ ...t, annotations: { readOnlyHint: true, openWorldHint: false } })) } })
+    case 'tools/list': return reply({ result: { tools: TOOLS.map(({ run: _run, readOnly, ...t }) => ({ ...t, annotations: { readOnlyHint: readOnly !== false, destructiveHint: false, openWorldHint: false } })) } })
     case 'tools/call': return reply(await callTool(msg.params ?? {}, user, ip))
     case 'resources/list': return reply({ result: { resources: [] } })
     case 'prompts/list': return reply({ result: { prompts: [] } })

@@ -1,5 +1,8 @@
 import { MCP_LIMITS } from '@/lib/mcp/limits'
-import { TOOLS } from '@/lib/mcp/tools'
+import { TOOLS as SITE_TOOLS } from '@/lib/mcp/tools'
+import { LIBRARY_TOOLS } from '@/lib/mcp/libraryTools'
+
+const TOOLS = [...SITE_TOOLS, ...LIBRARY_TOOLS]
 import { pageMeta } from '@/lib/siteMeta'
 
 export const metadata = pageMeta({

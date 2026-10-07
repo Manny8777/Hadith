@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from '@/app/components/Link'
 import { currentUser } from '@/lib/auth'
-import { allTags, listCollections, listNotes } from '@/lib/library'
+import { allTags, hadithInfo, listCollections, listHighlights, listNotes } from '@/lib/library'
 import NewCollection from './NewCollection'
 import ItemSummary from './ItemSummary'
 
@@ -13,7 +13,9 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
   const user = await currentUser()
   if (!user) redirect('/login?next=/library')
   const q = (await searchParams).q?.trim() || ''
-  const [collections, tags, notes] = await Promise.all([listCollections(user.id), allTags(user.id), listNotes(user.id, q, 50)])
+  const [collections, tags, notes, highlights] = await Promise.all([listCollections(user.id), allTags(user.id), listNotes(user.id, q, 50), listHighlights(user.id)])
+  const recent = [...highlights].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 30)
+  const hInfo = new Map((await hadithInfo([...new Set(recent.map(h => h.hadith_id))])).map(h => [h.main_id, h]))
   const fmt = (d: string) => new Date(d).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
 
   return (
@@ -80,6 +82,27 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
           ))}
         </div>
       </section>
+
+      {recent.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl sm:text-[1.7rem] font-bold text-green-900">التظليلات</h2>
+          <div className="ui-card rounded-xl divide-y divide-border">
+            {recent.map(h => {
+              const info = hInfo.get(h.hadith_id)
+              return (
+                <div key={h.id} className="p-4 space-y-1">
+                  <div className="text-xs sm:text-[1.05rem] text-gray-500 font-sans">
+                    <Link href={`/hadith/${h.hadith_id}`} className="font-semibold text-green-800 hover:underline">{info?.book ?? 'حديث'}{info?.printed_number ? ` ${info.printed_number}` : ''}</Link>
+                    <span> · {h.part === 'sanad' ? 'السند' : 'المتن'}</span>
+                  </div>
+                  <p className="text-[0.95rem] sm:text-[1.3rem]"><span className="bg-amber-100/80 rounded px-1">{h.quote.trim()}</span></p>
+                  {h.note && <p className="text-sm sm:text-[1.15rem] text-gray-600 whitespace-pre-wrap">{h.note}</p>}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

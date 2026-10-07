@@ -23,6 +23,7 @@ import Chips from './Chips'
 import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
 import type { HadithServiceKey } from './HadithServiceSection'
 import { stripTashkeel } from '@/lib/ghareeb'
+import HadithHighlights from './HadithHighlights'
 import { splitSanadMatn, stripXmlToVerbatim, extractTarf } from '@/lib/hadithText'
 import { findTarfRange, withTarf } from '@/lib/tarf'
 import type { SanadNarratorPreview, SanadSegment } from '@/lib/sanadNarrators'
@@ -490,6 +491,7 @@ export default function HadithSidebarLayout({
                     {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
                   </p>
                 )}
+                <HadithHighlights hadithId={hadithId} />
                 {translationSlot}
                 {footnotes.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1" dir="rtl">

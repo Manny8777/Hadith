@@ -1,6 +1,7 @@
 // The MCP server's tools: read-only views of the encyclopedia. Most reuse the site's own API routes
 // (called on this server itself), so the answers match what the pages show.
 import pool from '@/lib/db'
+import type { User } from '@/lib/auth'
 import { extractMatnForComparison, splitSanadMatn } from '@/lib/hadithText'
 
 const SITE = 'https://hadith.dev'
@@ -31,7 +32,9 @@ export interface Tool {
   title: string
   description: string
   inputSchema: Record<string, unknown>
-  run: (args: Record<string, unknown>) => Promise<unknown>
+  // false for tools that change the reader's library (assistants ask before calling them)
+  readOnly?: boolean
+  run: (args: Record<string, unknown>, ctx: { user: User | null }) => Promise<unknown>
 }
 
 export const TOOLS: Tool[] = [

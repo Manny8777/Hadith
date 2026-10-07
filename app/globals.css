@@ -1110,3 +1110,7 @@ html.dark .theme-texture {
     color: #000 !important;
   }
 }
+
+/* The reader's own highlights on a hadith (HadithHighlights, CSS Custom Highlight API) */
+::highlight(hd-user) { background-color: rgba(201, 169, 107, 0.45); }
+.dark ::highlight(hd-user) { background-color: rgba(201, 169, 107, 0.35); }
