@@ -4,6 +4,8 @@ import pool from '@/lib/db'
 import NarratorHadiths from '@/app/components/NarratorHadiths'
 import NarratorExport from '@/app/components/NarratorExport'
 import CompareNarratorPicker from '@/app/components/CompareNarratorPicker'
+import SaveToLibrary from '@/app/components/SaveToLibrary'
+import HadithNote from '@/app/components/HadithNote'
 import NarratorTopics from '@/app/components/NarratorTopics'
 import BrandMark from '@/app/components/BrandMark'
 import UiIcon from '@/app/components/UiIcon'
@@ -346,6 +348,7 @@ export default async function NarratorPage({
               <p className="text-gray-500 text-sm">الاسم المختصر: {narrator.abb_name}</p>
             ) : <span />}
             <div className="flex items-center gap-2 flex-wrap">
+              <SaveToLibrary kind="narrator" itemRef={String(narrator.id)} label={narrator.abb_name || narrator.name} />
               <CompareNarratorPicker
                 currentNarratorId={narrator.id}
                 currentNarratorName={narrator.abb_name || narrator.name}
@@ -361,6 +364,7 @@ export default async function NarratorPage({
               />
             </div>
           </div>
+          <div className="mb-3"><HadithNote kind="narrator" itemRef={String(narrator.id)} /></div>
           {narrator.esm_shuhra && narrator.esm_shuhra.trim() && (
             <p className="text-gray-500 text-sm mb-3">اشتهر بـ: {narrator.esm_shuhra}</p>
           )}

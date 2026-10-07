@@ -1,6 +1,7 @@
 import Link from '@/app/components/Link'
 import pool from '@/lib/db'
 import CompareSearch from './CompareSearch'
+import SaveToLibrary from '@/app/components/SaveToLibrary'
 import { pageMeta } from '@/lib/siteMeta'
 import { companionTitle } from '@/lib/narratorTitle'
 
@@ -264,6 +265,11 @@ export default async function ComparePage({
 
         {/* Search selectors */}
         <CompareSearch initialA={sp.a || ''} initialB={sp.b || ''} />
+        {narratorA && narratorB && (
+          <div className="flex justify-end">
+            <SaveToLibrary kind="compare" itemRef={`a=${narratorA.id}&b=${narratorB.id}`} label={`${narratorA.abb_name || narratorA.name} × ${narratorB.abb_name || narratorB.name}`} />
+          </div>
+        )}
 
         {/* Relation badge */}
         {relation && (

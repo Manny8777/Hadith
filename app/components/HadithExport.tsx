@@ -241,8 +241,10 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
     }
   }
 
+  // BibTeX from the same engine as the collection exports and the Zotero metadata (lib/citation.ts):
+  // ASCII key, @inbook with publisher, edition, volume, page and the printed number
   async function handleCopyBibTeX() {
-    const text = buildBibTeX(hadith, chain)
+    const text = await fetch(`/api/cite?ids=${hadith.main_id}&format=bib`).then(r => r.ok ? r.text() : buildBibTeX(hadith, chain)).catch(() => buildBibTeX(hadith, chain))
     try {
       await navigator.clipboard.writeText(text)
       setCopiedBib(true)
@@ -298,6 +300,13 @@ export default function HadithExport({ hadith, chain, takhrijBooks, takhrijSumma
       >
         <UiIcon name="clipboard" size={14} className="inline-block align-[-3px] ml-1" />{copiedBib ? 'Copied' : 'BibTeX'}
       </button>
+      <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+        تنزيل:
+        {([['ris', 'RIS', 'EndNote، Mendeley، Zotero'], ['bib', '.bib', 'BibTeX / BibLaTeX'], ['json', 'CSL-JSON', 'Zotero، Pandoc']] as const).map(([f, label, hint]) => (
+          <a key={f} href={`/api/cite?ids=${hadith.main_id}&format=${f}&download=1`} title={hint} dir="ltr"
+            className="font-mono border border-gray-200 hover:border-purple-300 hover:text-purple-800 px-2 py-1 rounded-md bg-white">{label}</a>
+        ))}
+      </span>
       <button
         onClick={handleCopyLink}
         className="text-xs text-gray-700 hover:text-green-800 border border-gray-200 hover:border-green-300 px-3 py-1.5 rounded-lg transition-colors bg-gray-50 hover:bg-green-50"

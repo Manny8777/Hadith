@@ -8,6 +8,7 @@ import SaveHadith from '@/app/components/SaveHadith'
 import MatnMatchLine from '@/app/components/MatnMatchLine'
 import SearchHistoryPanel from '@/app/components/SearchHistoryPanel'
 import { hasHarakat } from '@/lib/tashkeelMatch'
+import SaveToLibrary from '@/app/components/SaveToLibrary'
 import {
   buildSearchApiUrl,
   buildSearchUrl,
@@ -644,6 +645,12 @@ function SearchInner() {
         }
       </div>
 
+      {/* «حفظ البحث»: the search itself (its filters, not the page) into a collection */}
+      {!loading && searched && total > 0 && !isNarratorMode && urlQ && (
+        <div className="flex justify-end mb-2">
+          <SaveToLibrary kind="search" itemRef={(() => { const p = new URLSearchParams(searchParamsString); p.delete('page'); return p.toString() })()} label={`«${urlQ}»`} />
+        </div>
+      )}
       {!loading && searched && (
         <p className="text-gray-600 mb-4">
           {total > 0 ? (

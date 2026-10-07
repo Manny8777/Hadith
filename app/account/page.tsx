@@ -28,6 +28,7 @@ export default async function AccountPage() {
           <p className="text-sm text-gray-500" dir="ltr">{user.email}</p>
         </div>
         <div className="flex items-center gap-2">
+        <a href="/library" className="rounded-lg bg-green-800 px-4 py-2 text-sm text-white hover:bg-green-700">مكتبتي</a>
         {isAdmin(user) && (
           <a href="/admin" className="rounded-lg border border-green-300 px-4 py-2 text-sm text-green-800 hover:bg-green-50">الإحصاءات</a>
         )}

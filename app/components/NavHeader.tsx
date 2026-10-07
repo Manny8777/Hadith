@@ -5,6 +5,7 @@ import { useNumeral } from '@/lib/numeralContext'
 import { useTheme } from '@/lib/themeContext'
 import UiIcon from './UiIcon'
 import { InstallButton } from './InstallApp'
+import { useMe } from '@/lib/useLibrary'
 
 type NavLink = { href: string; label: string; isNew?: boolean; external?: boolean }
 type NavCategory = { id: string; label: string; links: NavLink[] }
@@ -213,14 +214,12 @@ const CATEGORIES: NavCategory[] = [
 
 // Sign-in is optional: a person icon, labelled «دخول» until the reader signs in
 function AccountButton() {
-  const [email, setEmail] = useState<string | null | undefined>(undefined)
-  useEffect(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(d => setEmail(d.user?.email ?? null)).catch(() => setEmail(null))
-  }, [])
+  const me = useMe()
+  const email = me === undefined ? undefined : me?.email ?? null
   const signedIn = !!email
   return (
-    <a href={signedIn ? '/account' : '/login'} title={signedIn ? `حسابي (${email})` : 'تسجيل الدخول (اختياري)'}
-      aria-label={signedIn ? 'حسابي' : 'تسجيل الدخول'}
+    <a href={signedIn ? '/library' : '/login'} title={signedIn ? `مكتبتي (${email})` : 'تسجيل الدخول (اختياري): مكتبة بحثية تُحفظ في حسابك'}
+      aria-label={signedIn ? 'مكتبتي' : 'تسجيل الدخول'}
       className="flex items-center justify-center gap-1 h-11 min-w-11 px-2 rounded-full text-[#F8F1E4]/80 hover:text-[#FFFDF7] border border-[#C9A96B]/35 hover:border-[#C9A96B] transition-colors shrink-0 text-[11px]">
       <UiIcon name="narrator" size={18} className={signedIn ? 'text-[#E6C77A]' : 'text-[#C9A96B]'} />
       {email === null && <span className="hidden min-[1150px]:inline">دخول</span>}

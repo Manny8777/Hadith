@@ -14,6 +14,7 @@ import { activeServiceSections, INLINE_SERVICE_CONFIGS } from '@/app/components/
 import DorarJudgment from '@/app/components/DorarJudgment'
 import type { DorarRuling } from '@/app/components/DorarJudgment'
 import EnglishTranslation, { type EnglishTranslationData } from '@/app/components/EnglishTranslation'
+import { citeItems } from '@/lib/citation'
 import { DORAR_SOURCES, dorarKey, matnSearchWords, dorarSearchUrl } from '@/lib/dorar'
 import {
   parseSanadNarratorSegments,
@@ -53,12 +54,35 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
   const description = clip(matn || source, 220) + ruling
 
+  // Citation metadata (Highwire «citation_*», read by Zotero's browser button and by Google Scholar):
+  // the hadith as a section of its printed book (lib/citation.ts)
+  const cite = (await citeItems([mainId]).catch(() => []))[0]
+  const citationMeta: Record<string, string | number | (string | number)[]> = cite ? Object.fromEntries(Object.entries({
+    citation_title: cite.title,
+    citation_author: cite.author ?? undefined,
+    citation_inbook_title: cite.book,
+    citation_book_title: cite.book,
+    citation_publisher: cite.publisher ?? undefined,
+    citation_date: cite.year ?? undefined,
+    citation_volume: cite.volume ?? undefined,
+    citation_firstpage: cite.page ?? undefined,
+    citation_edition: cite.edition ?? undefined,
+    citation_language: 'ar',
+    citation_public_url: cite.url,
+    'DC.identifier': cite.number ? `${cite.book} ${cite.number}` : undefined,
+  }).filter(([, v]) => v !== undefined) as [string, string | number][]) : {}
+
   return {
     title,
     description,
-    alternates: { canonical: `/hadith/${mainId}` },
+    alternates: {
+      canonical: `/hadith/${mainId}`,
+      // reference-manager files of this hadith (lib/citation.ts, /api/cite)
+      types: { 'application/x-bibtex': `/api/cite?ids=${mainId}&format=bib`, 'application/x-research-info-systems': `/api/cite?ids=${mainId}&format=ris` },
+    },
     openGraph: openGraph({ title, description, url: `/hadith/${mainId}`, type: 'article' }),
     twitter: twitter({ title, description }),
+    other: citationMeta,
   }
 }
 

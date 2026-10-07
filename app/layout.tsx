@@ -7,6 +7,7 @@ import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSub
 import NumeralConverter from './components/NumeralConverter'
 import Analytics from './components/Analytics'
 import InstallApp, { InstallButton } from './components/InstallApp'
+import LibraryImport from './components/LibraryImport'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
 import { ThemeProvider } from '@/lib/themeContext'
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NumeralConverter />
             <Analytics />
             <InstallApp />
+            <LibraryImport />
             {/* The slim bar, and under it the site-wide search box (useSearchParams, so in Suspense) */}
             <header className="sticky top-0 z-50 shadow-sm">
               <NavHeader />
