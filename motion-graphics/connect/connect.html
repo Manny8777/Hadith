@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>اربط الجامع بمساعدك</title>
+<link rel="stylesheet" href="../features/base.css">
+<style>
+  /* «اربط الجامع بمساعدك» (1920×1080): the simplest way to connect the MCP server — copy one link,
+     add it in Claude / ChatGPT, or let Claude Code / Codex add it (then restart), and ask. The menus
+     are drawn, not screenshots; the answer is the encyclopedia's (get_parallels on hadith 5, search
+     in Sahih Muslim). Captions are drawn in the bar at the bottom. */
+  #stage { width: 1920px; height: 1080px; color: #faf6ec;
+    background: radial-gradient(ellipse 80% 90% at 70% 40%, #235238 0%, #163826 55%, #0c2014 100%); }
+  .pattern { opacity: .07; filter: invert(1) sepia(1) saturate(3) hue-rotate(5deg); }
+  #caption { left: 300px; right: 300px; bottom: 34px; min-height: 96px; background: rgba(8,22,14,.86); border: 1px solid rgba(201,164,92,.35); }
+  #caption span { font-size: 34px; }
+
+  .sc { position: absolute; inset: 0; }
+  .an { will-change: transform, opacity; }
+  .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .h { font-family: 'Amiri', serif; font-weight: 700; color: #fffaf0; line-height: 1.25; }
+  .kick { font-size: 38px; font-weight: 600; color: var(--gold); }
+
+  .step { position: absolute; right: 150px; top: 110px; display: flex; align-items: center; gap: 26px; }
+  .step .n { width: 96px; height: 96px; border-radius: 50%; background: var(--gold); color: #13261b; font: 700 58px 'Amiri', serif; display: flex; align-items: center; justify-content: center; }
+  .step .t { font-family: 'Amiri', serif; font-size: 66px; font-weight: 700; color: #fffaf0; }
+
+  .url { display: inline-flex; align-items: center; gap: 30px; padding: 30px 46px; border-radius: 28px; background: #fffdf7; color: #14151a; box-shadow: 0 40px 90px rgba(0,0,0,.45); direction: ltr; }
+  .url code { font: 600 92px 'JetBrains Mono', monospace; letter-spacing: -2px; }
+  .url code span { color: #b08a3e; }
+  .copy { font: 700 40px 'Tajawal', sans-serif; background: #0f3d2e; color: #fff; padding: 16px 32px; border-radius: 16px; direction: rtl; }
+
+  /* drawn menus: one card per click */
+  .flow { position: absolute; left: 120px; right: 120px; top: 320px; display: flex; flex-direction: row; gap: 26px; justify-content: center; align-items: stretch; }
+  .card { flex: 1; max-width: 400px; min-height: 380px; border-radius: 26px; background: #fffdf7; color: #14151a; padding: 36px 30px; box-shadow: 0 30px 70px rgba(0,0,0,.4); display: flex; flex-direction: column; gap: 14px; }
+  .card .i { width: 70px; height: 70px; border-radius: 50%; background: #c9a45c; color: #13261b; font: 700 40px 'Amiri', serif; display: flex; align-items: center; justify-content: center; }
+  .card .m { font: 700 40px 'Tajawal', sans-serif; direction: ltr; text-align: right; color: #0f3d2e; }
+  .card .d { font-size: 32px; color: #4b5a50; line-height: 1.5; }
+  .card .d code { font: 600 26px 'JetBrains Mono', monospace; direction: ltr; color: #8a6a2c; }
+  .app { position: absolute; left: 150px; top: 128px; font: 700 54px 'Tajawal', sans-serif; direction: ltr; color: var(--gold); }
+
+  /* the terminal and the message */
+  .term { position: absolute; left: 160px; width: 1600px; border-radius: 22px; background: #0d1a13; box-shadow: 0 40px 90px rgba(0,0,0,.45); overflow: hidden; direction: ltr; }
+  .term .bar { height: 46px; background: #1c2e24; display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+  .term .bar i { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+  .term .bar i:nth-child(1) { background: #e0796a; } .term .bar i:nth-child(2) { background: #e5bf5c; } .term .bar i:nth-child(3) { background: #7dbb73; }
+  .term pre { margin: 0; padding: 30px 36px; font: 500 31px/1.6 'JetBrains Mono', monospace; color: #e8f0ea; white-space: pre-wrap; }
+  .term .p { color: #c9a45c; } .term .ok { color: #8fd19e; }
+  .msg { position: absolute; right: 160px; width: 1600px; border-radius: 26px; background: #fffdf7; color: #14151a; padding: 30px 40px; font-size: 34px; line-height: 1.6; box-shadow: 0 30px 70px rgba(0,0,0,.4); }
+  .msg .lbl { display: block; font-size: 24px; font-weight: 700; color: #7b6a46; margin-bottom: 6px; }
+  .msg code.blk { display: block; margin-top: 12px; font: 600 30px 'JetBrains Mono', monospace; direction: ltr; text-align: left; color: #8a6a2c; background: #f4efe3; border-radius: 12px; padding: 12px 18px; }
+  .restart { position: absolute; left: 0; right: 0; text-align: center; }
+  .tag { display: inline-flex; align-items: center; gap: 14px; padding: 16px 34px; border-radius: 999px; background: var(--gold); color: #13261b; font-size: 40px; font-weight: 700; box-shadow: 0 16px 40px rgba(0,0,0,.35); white-space: nowrap; }
+  .tag.light { background: #e3efe6; color: #1f4a33; }
+
+  /* the conversation */
+  .chat { position: absolute; left: 300px; right: 300px; top: 250px; display: flex; flex-direction: column; gap: 30px; }
+  .bub { max-width: 1100px; border-radius: 28px; padding: 30px 40px; font-size: 40px; line-height: 1.6; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .bub.me { align-self: flex-start; background: #fffdf7; color: #14151a; border-bottom-right-radius: 8px; }
+  .bub.ai { align-self: flex-end; background: #0f3d2e; color: #f8f1e4; border: 2px solid rgba(201,164,92,.5); border-bottom-left-radius: 8px; }
+  .bub .tool { display: block; margin-bottom: 12px; font: 600 26px 'JetBrains Mono', monospace; color: #e6c77a; direction: ltr; text-align: right; }
+
+  .url-big { font: 600 110px 'JetBrains Mono', monospace; direction: ltr; color: #fffaf0; letter-spacing: -2px; }
+  .url-big span { color: var(--gold); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="pattern"></div>
+
+  <!-- 0 · title -->
+  <div class="sc" id="s0">
+    <div class="center kick an" style="top:260px">في ثلاث خطوات · دون حساب</div>
+    <div class="center h an" style="top:370px;font-size:150px">الجامع في مساعدك الذكي</div>
+    <div class="center an" style="top:700px"><span class="tag light">Claude · ChatGPT · Claude Code · Codex</span></div>
+  </div>
+
+  <!-- 1 · copy the link -->
+  <div class="sc" id="s1">
+    <div class="step an"><span class="n">١</span><span class="t">انسخ الرابط</span></div>
+    <div class="center an" style="top:420px"><span class="url"><code>hadith<span>.</span>dev/mcp</code><span class="copy">نسخ</span></span></div>
+  </div>
+
+  <!-- 2 · Claude -->
+  <div class="sc" id="s2">
+    <div class="step an"><span class="n">٢</span><span class="t">أضِفه إلى مساعدك</span></div>
+    <div class="app an">Claude</div>
+    <div class="flow">
+      <div class="card an"><span class="i">١</span><span class="m">Customize › Connectors</span><span class="d">الموصِّلات</span></div>
+      <div class="card an"><span class="i">٢</span><span class="m">+ Add custom connector</span><span class="d">موصِّلٌ مخصّص</span></div>
+      <div class="card an"><span class="i">٣</span><span class="m">URL</span><span class="d">الاسم: الجامع<br>الرابط: <code>hadith.dev/mcp</code></span></div>
+      <div class="card an"><span class="i">٤</span><span class="m">No sign in › Add</span><span class="d">بلا تسجيل دخول</span></div>
+    </div>
+  </div>
+
+  <!-- 3 · ChatGPT -->
+  <div class="sc" id="s3">
+    <div class="step an"><span class="n">٢</span><span class="t">أضِفه إلى مساعدك</span></div>
+    <div class="app an">ChatGPT</div>
+    <div class="flow">
+      <div class="card an"><span class="i">١</span><span class="m" style="font-size:32px">chatgpt.com/<br>plugins</span><span class="d">صفحة الإضافات</span></div>
+      <div class="card an"><span class="i">٢</span><span class="m">+ Add custom MCP server</span><span class="d">خادمٌ مخصّص</span></div>
+      <div class="card an"><span class="i">٣</span><span class="m">Public endpoint</span><span class="d">الرابط: <code>hadith.dev/mcp</code><br>المصادقة: None</span></div>
+      <div class="card an"><span class="i">٤</span><span class="m">Create › Install</span><span class="d">ثم اكتب @ في المحادثة واختر «الجامع»</span></div>
+    </div>
+  </div>
+
+  <!-- 4 · Claude Code / Codex: paste a message, it adds it, restart -->
+  <div class="sc" id="s4">
+    <div class="step an"><span class="n">٢</span><span class="t">أو دَعْه يضيفه بنفسه</span></div>
+    <div class="app an">Claude Code · Codex</div>
+    <div class="msg an" style="top:250px"><span class="lbl">رسالتك إليه</span>أضف خادم MCP «الجامع» بهذا الأمر، ثم أخبرني أن أعيد تشغيلك:<code class="blk">claude mcp add --transport http --scope user hadith https://hadith.dev/mcp</code></div>
+    <div class="term an" style="top:600px">
+      <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="p">$</span> claude mcp add --transport http --scope user hadith https://hadith.dev/mcp
+<span class="ok">✓ Added HTTP MCP server hadith</span></pre>
+    </div>
+    <div class="restart an" style="top:830px"><span class="tag">⟳ ثم أعد تشغيله</span></div>
+  </div>
+
+  <!-- 5 · ask -->
+  <div class="sc" id="s5">
+    <div class="step an"><span class="n">٣</span><span class="t">اسأله</span></div>
+    <div class="chat">
+      <div class="bub me an">خرّج حديث «إنما الأعمال بالنيات» من الجامع</div>
+      <div class="bub ai an"><span class="tool">search_hadith ✓  get_parallels ✓</span>أخرجه البخاري (1) ومسلم (1907)، وله في الموسوعة 53 روايةً أخرى — مع روابطها.</div>
+    </div>
+  </div>
+
+  <!-- 6 · closing -->
+  <div class="sc" id="s6">
+    <div class="center h an" style="top:240px;font-size:84px">الخطوات لكل منصة على صفحة المطورين</div>
+    <div class="center url-big an" style="top:470px">hadith<span>.</span>dev/developers</div>
+  </div>
+</div>
+
+<script>
+const FILM = {
+  bounds: [0, 5, 10, 17, 24, 32, 39, 44],
+  lengths: [7.74,5,11.4,8.16,9.84,8.44,8.72], // @narration-timing
+  captions: [[0.4,6.84,"اِرْبِطِ الْجَامِعَ بِمُسَاعِدِكَ الذَّكِيِّ فِي ثَلَاثِ خُطُوَاتٍ، دُونَ حِسَابٍ."],[8.04,11.52,"أَوَّلًا: انْسَخْ هَذَا الرَّابِطَ: hadith.dev/mcp"],[13.04,23.24,"ثَانِيًا، فِي Claude: مِنَ الْمُوَصِّلَاتِ أَضِفْ مُوَصِّلًا مُخَصَّصًا، وَالْصِقِ الرَّابِطَ، دُونَ تَسْجِيلِ دُخُولٍ."],[24.44,31.4,"وَفِي ChatGPT: مِنْ صَفْحَةِ الْإِضَافَاتِ أَضِفْ خَادِمًا مُخَصَّصًا بِالرَّابِطِ نَفْسِهِ."],[32.6,41.24,"وَفِي Claude Code وCodex: الْصِقْ لَهُ رِسَالَةً جَاهِزَةً فَيُضِيفُهُ بِنَفْسِهِ، ثُمَّ أَعِدْ تَشْغِيلَهُ."],[42.44,49.68,"ثَالِثًا: اسْأَلْهُ، فَيُجِيبُكَ مِنَ الْمَوْسُوعَةِ، بِالْأَرْقَامِ وَالرَّوَابِطِ."],[50.98,57.3,"الْخُطُوَاتُ لِكُلِّ مَنَصَّةٍ عَلَى صَفْحَةِ الْمُطَوِّرِينَ: hadith.dev/developers"]], // @narration-captions
+}
+</script>
+<script src="../features/engine.js"></script>
+<script>
+const B = FILM.bounds
+const N = B.length - 1
+const scn = i => $('s' + i)
+const kids = i => [...scn(i).querySelectorAll('.an')]
+function rise(i, delay = .1, gap = .25, y = 36) {
+  kids(i).forEach((el, k) => tw(el, B[i] + delay + k * gap, .6, { o: 0, y }, { o: 1, y: 0 }, 'out'))
+}
+for (let i = 0; i < N; i++) scene(scn(i), B[i], i === N - 1 ? null : B[i + 1] - .45)
+// the clicks come one after another, through the length of the line
+for (let i = 0; i < N; i++) if (![2, 3].includes(i)) rise(i, .1, i === 4 ? 1.4 : i === 5 ? 1.6 : .4)
+for (const i of [2, 3]) kids(i).forEach((el, k) => tw(el, B[i] + (k < 2 ? .1 + k * .2 : .3 + (k - 1) * 1.1), .6, { o: 0, y: 36 }, { o: 1, y: 0 }, 'out'))
+// «نسخ» → «✓ نُسخ»
+const cp = scn(1).querySelector('.copy')
+tw(cp, B[1] + 2.6, .25, { s: 1 }, { s: .92 })
+tw(cp, B[1] + 2.85, .25, { s: .92 }, { s: 1 })
+hooks.push(t => { cp.textContent = t >= B[1] + 2.8 ? '✓ نُسخ' : 'نسخ' })
+startFilm()
+</script>
+</body>
+</html>
