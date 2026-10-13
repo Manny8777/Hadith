@@ -88,7 +88,7 @@ const fetchTakhrij = cache(async (hadithId: number): Promise<{
        CASE WHEN t.hadith_id = $2 THEN 0 ELSE 1 END,
        b.strong ASC NULLS LAST,
        b.takhrij_death ASC NULLS LAST
-     LIMIT 501`,
+     LIMIT 1501`,
     [groupIds, hadithId, refCompoundIds]
   )
 
@@ -96,8 +96,8 @@ const fetchTakhrij = cache(async (hadithId: number): Promise<{
     companion_id: number | null
   }>
 
-  const truncated = allRows.length > 500
-  const sliced = truncated ? allRows.slice(0, 500) : allRows
+  const truncated = allRows.length > 1500
+  const sliced = truncated ? allRows.slice(0, 1500) : allRows
 
   const classified: TakhrijRow[] = sliced.map(r => ({
     main_id: Number(r.main_id),
