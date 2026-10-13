@@ -27,12 +27,16 @@ function Copy({ text, label, plain }: { text: string; label?: string; plain?: bo
 function Block({ children }: { children: string }) {
   const [done, setDone] = useState(false)
   return (
-    <div className="relative">
-      <pre dir="ltr" className="rounded-xl bg-[#1d3a2f] text-[#e8f0ea] text-xs sm:text-[1rem] leading-relaxed p-4 pe-20 overflow-x-auto whitespace-pre">{children}</pre>
-      <button type="button" className="absolute top-2 end-2 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs px-2.5 py-1"
-        onClick={() => { navigator.clipboard?.writeText(children); setDone(true); setTimeout(() => setDone(false), 1500) }}>
-        {done ? '✓' : 'نسخ'}
-      </button>
+    // The copy button sits in its own bar on the right, above the command, so it never covers it;
+    // the command itself stays selectable with the mouse
+    <div className="rounded-xl bg-[#1d3a2f] overflow-hidden">
+      <div className="flex justify-start border-b border-white/10 px-2 py-1.5">
+        <button type="button" className="rounded-md bg-white/10 hover:bg-white/20 text-white text-xs sm:text-[0.95rem] px-3 py-1"
+          onClick={() => { navigator.clipboard?.writeText(children); setDone(true); setTimeout(() => setDone(false), 1500) }}>
+          {done ? '✓ نُسخ' : 'نسخ'}
+        </button>
+      </div>
+      <pre dir="ltr" className="select-text cursor-text text-[#e8f0ea] selection:bg-amber-300 selection:text-gray-900 text-xs sm:text-[1rem] leading-relaxed p-4 overflow-x-auto whitespace-pre">{children}</pre>
     </div>
   )
 }
@@ -42,7 +46,44 @@ const Steps = ({ children }: { children: React.ReactNode }) => (
 )
 const K = ({ children }: { children: React.ReactNode }) => <b className="text-gray-900" dir="auto">{children}</b>
 
-const PLATFORMS = ['Claude', 'ChatGPT', 'Claude Code', 'Codex', 'Cursor', 'VS Code', 'Gemini CLI', 'غيرها'] as const
+// The other way for agents that run commands: a message to paste into the agent itself. It runs the
+// command, checks it, and tells the reader to restart — the new tools load only in a new session.
+function AgentPrompt({ app, cmd, check, signIn }: { app: string; cmd: string; check: string; signIn?: string }) {
+  const text = `أضف خادم MCP «الجامع» (موسوعة الحديث النبوي) بتشغيل هذا الأمر في الطرفية:\n${cmd}\n`
+    + `ثم تأكّد أنه أُضيف بالأمر: ${check}\n`
+    + `وبعدها أخبرني أن أعيد تشغيل ${app} (أغلقه ثم افتحه من جديد) لأن أدوات الجامع لا تُحمَّل إلا في جلسة جديدة`
+    + (signIn ? `، وأن أسجّل الدخول بعد ذلك من ${signIn} (بريدي ثم الرمز الذي يصلني)` : '')
+    + `، ثم أن أسألك: «خرّج حديث إنما الأعمال بالنيات من الجامع».`
+  const [done, setDone] = useState(false)
+  return (
+    <div className="rounded-xl border border-green-200 bg-green-50/50 p-3 space-y-2">
+      <p className="text-sm sm:text-[1.15rem] font-bold text-green-900">أو دَعْه يضيفه لك: انسخ هذه الرسالة والصقها في {app}</p>
+      <p dir="rtl" className="whitespace-pre-wrap text-xs sm:text-[1rem] text-gray-700 bg-white border border-border rounded-lg p-3 leading-relaxed">{text}</p>
+      <button type="button" className="rounded-lg bg-green-800 hover:bg-green-900 text-white text-xs sm:text-[1rem] px-3 py-1.5"
+        onClick={() => { navigator.clipboard?.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500) }}>
+        {done ? '✓ نُسخت الرسالة' : 'نسخ الرسالة'}
+      </button>
+      <p className="text-xs sm:text-[0.95rem] text-gray-500">سيطلب إذنك قبل تشغيل الأمر. وبعد إضافته <b>أعد تشغيل {app}</b> — وإلا فلن يرى الأدوات.</p>
+    </div>
+  )
+}
+
+// One-click install links (Cursor: base64 of the server's mcp.json entry; VS Code: the URL-encoded
+// object that `code --add-mcp` takes). They open the installed app, which asks before adding.
+const cursorLink = (url: string) =>
+  `cursor://anysphere.cursor-deeplink/mcp/install?name=hadith&config=${encodeURIComponent(btoa(JSON.stringify({ url })))}`
+const vscodeLink = (url: string) =>
+  `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: 'hadith', type: 'http', url }))}`
+
+function InstallButton({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a href={href} className="inline-flex items-center gap-2 rounded-lg bg-green-800 hover:bg-green-900 text-white text-sm sm:text-[1.1rem] font-semibold px-4 py-2">
+      {children}
+    </a>
+  )
+}
+
+const PLATFORMS =['Claude', 'ChatGPT', 'Claude Code', 'Codex', 'Cursor', 'VS Code', 'Gemini CLI', 'غيرها'] as const
 type Platform = typeof PLATFORMS[number]
 
 export default function McpSetup() {
@@ -116,37 +157,47 @@ export default function McpSetup() {
           </>)}
 
           {platform === 'Claude Code' && (<>
-            <p className="text-sm sm:text-[1.15rem] text-gray-700">في الطرفية:</p>
-            <Block>{`claude mcp add --transport http hadith ${url}`}</Block>
-            {signIn
-              ? <p className="text-sm sm:text-[1.15rem] text-gray-700">ثم داخل Claude Code اكتب <code dir="ltr">/mcp</code> واختر <K>hadith</K> لتسجيل الدخول. أو استعمل رمزًا شخصيًا من <a href="/account" className="text-green-700 underline">حسابي</a> بدل ذلك:</p>
-              : <p className="text-xs sm:text-[1rem] text-gray-500">ولحدٍّ أعلى بلا نافذة دخول: رمزٌ شخصي من <a href="/account" className="text-green-700 underline">حسابي</a>:</p>}
-            <Block>{`claude mcp add --transport http hadith ${OPEN} --header "Authorization: Bearer hd_…"`}</Block>
+            <p className="text-sm sm:text-[1.15rem] text-gray-700">أمرٌ واحد في الطرفية (يُضاف لكل مشاريعك):</p>
+            <Block>{`claude mcp add --transport http --scope user hadith ${url}`}</Block>
+            <p className="text-xs sm:text-[1rem] text-gray-500">ثم أعد تشغيل Claude Code{signIn ? <>، واكتب داخله <code dir="ltr">/mcp</code> واختر <K>hadith</K> لتسجيل الدخول</> : null}.</p>
+            <AgentPrompt app="Claude Code" cmd={`claude mcp add --transport http --scope user hadith ${url}`} check="claude mcp list" signIn={signIn ? '/mcp ثم hadith' : undefined} />
+            <details className="text-xs sm:text-[1rem] text-gray-500">
+              <summary className="cursor-pointer">برمزٍ شخصي بدل نافذة الدخول</summary>
+              <p className="my-2">أنشئ رمزًا من <a href="/account" className="text-green-700 underline">حسابي</a> ثم:</p>
+              <Block>{`claude mcp add --transport http --scope user hadith ${OPEN} --header "Authorization: Bearer hd_…"`}</Block>
+            </details>
           </>)}
 
           {platform === 'Codex' && (<>
-            <p className="text-sm sm:text-[1.15rem] text-gray-700">في الطرفية:</p>
+            <p className="text-sm sm:text-[1.15rem] text-gray-700">أمرٌ واحد في الطرفية:</p>
             <Block>{`codex mcp add hadith --url ${url}`}</Block>
             {signIn && <><p className="text-sm sm:text-[1.15rem] text-gray-700">ثم سجّل الدخول (بريدك، ثم الرمز):</p><Block>{'codex mcp login hadith'}</Block></>}
-            <p className="text-xs sm:text-[1rem] text-gray-500">تأكّد بـ <code dir="ltr">codex mcp list</code>. وإن اختلفت الصيغة في إصدارك فانظر <code dir="ltr">codex mcp add --help</code>.</p>
+            <p className="text-xs sm:text-[1rem] text-gray-500">ثم أعد تشغيل Codex. تأكّد بـ <code dir="ltr">codex mcp list</code>، وإن اختلفت الصيغة في إصدارك فانظر <code dir="ltr">codex mcp add --help</code>.</p>
+            <AgentPrompt app="Codex" cmd={`codex mcp add hadith --url ${url}`} check="codex mcp list" signIn={signIn ? 'الأمر codex mcp login hadith' : undefined} />
           </>)}
 
           {platform === 'Cursor' && (<>
-            <p className="text-sm sm:text-[1.15rem] text-gray-700">أضف إلى <code dir="ltr">~/.cursor/mcp.json</code> (أو <code dir="ltr">.cursor/mcp.json</code> في المشروع):</p>
+            <InstallButton href={cursorLink(url)}>أضِفه إلى Cursor بضغطة</InstallButton>
+            <p className="text-xs sm:text-[1rem] text-gray-500">يفتح Cursor ويسألك قبل الإضافة. إن لم يعمل الزر فأضف يدويًا إلى <code dir="ltr">~/.cursor/mcp.json</code>:</p>
             <Block>{`{\n  "mcpServers": {\n    "hadith": { "url": "${url}" }\n  }\n}`}</Block>
             {signIn && <p className="text-xs sm:text-[1rem] text-gray-500">يطلب Cursor الدخول عند أول اتصال: بريدك، ثم الرمز.</p>}
           </>)}
 
           {platform === 'VS Code' && (<>
-            <p className="text-sm sm:text-[1.15rem] text-gray-700">أضف إلى <code dir="ltr">.vscode/mcp.json</code> في المشروع (أو من الأمر <K>MCP: Add Server</K>):</p>
+            <InstallButton href={vscodeLink(url)}>أضِفه إلى VS Code بضغطة</InstallButton>
+            <p className="text-xs sm:text-[1rem] text-gray-500">يفتح VS Code ويسألك قبل الإضافة. أو أمرٌ واحد في الطرفية:</p>
+            <Block>{`code --add-mcp '${JSON.stringify({ name: 'hadith', type: 'http', url })}'`}</Block>
+            <p className="text-xs sm:text-[1rem] text-gray-500">أو يدويًا في <code dir="ltr">.vscode/mcp.json</code>:</p>
             <Block>{`{\n  "servers": {\n    "hadith": { "type": "http", "url": "${url}" }\n  }\n}`}</Block>
             {signIn && <p className="text-xs sm:text-[1rem] text-gray-500">يطلب VS Code الدخول عند أول اتصال: بريدك، ثم الرمز.</p>}
           </>)}
 
           {platform === 'Gemini CLI' && (<>
-            <p className="text-sm sm:text-[1.15rem] text-gray-700">أضف إلى <code dir="ltr">~/.gemini/settings.json</code>:</p>
+            <p className="text-sm sm:text-[1.15rem] text-gray-700">أمرٌ واحد في الطرفية:</p>
+            <Block>{`gemini mcp add --transport http --scope user hadith ${url}`}</Block>
+            <p className="text-xs sm:text-[1rem] text-gray-500">ثم أعد تشغيله واكتب <code dir="ltr">/mcp</code> للتأكد{signIn ? <>، و<code dir="ltr">/mcp auth hadith</code> لتسجيل الدخول</> : null}. أو يدويًا في <code dir="ltr">~/.gemini/settings.json</code>:</p>
             <Block>{`{\n  "mcpServers": {\n    "hadith": { "httpUrl": "${url}" }\n  }\n}`}</Block>
-            <p className="text-xs sm:text-[1rem] text-gray-500">ثم أعد تشغيله واكتب <code dir="ltr">/mcp</code> للتأكد{signIn ? <>، و<code dir="ltr">/mcp auth hadith</code> لتسجيل الدخول</> : null}.</p>
+            <AgentPrompt app="Gemini CLI" cmd={`gemini mcp add --transport http --scope user hadith ${url}`} check="gemini mcp list" signIn={signIn ? '/mcp auth hadith' : undefined} />
           </>)}
 
           {platform === 'غيرها' && (<>
