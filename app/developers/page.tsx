@@ -20,7 +20,7 @@ function Code({ children }: { children: React.ReactNode }) {
 
 export default function DevelopersPage() {
   return (
-    <div dir="rtl" className="max-w-3xl mx-auto space-y-8">
+    <div dir="rtl" className="max-w-6xl mx-auto space-y-8">
       <header>
         <h1 className="text-2xl font-bold text-green-900 mb-1">للمطورين</h1>
         <p className="text-sm text-gray-600 leading-relaxed">
