@@ -1,7 +1,7 @@
 // Optional accounts: sign in by a link sent to your email (no passwords). A signed-in reader gets a
 // session cookie; MCP clients authenticate with a personal token or an OAuth access token instead
 // (see lib/mcp). Tables: db/add_accounts.js. Only SHA-256 hashes of tokens are stored.
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, randomInt } from 'node:crypto'
 import { cookies, headers } from 'next/headers'
 import pool from '@/lib/db'
 
@@ -35,18 +35,43 @@ export async function siteOrigin(): Promise<string> {
 
 // ── Sign-in links ──────────────────────────────────────────────────────────────
 
-/** Creates a one-time link; returns it, or null when this email/IP asked too often (5 per hour). */
-export async function createLoginLink(email: string, next: string, ip: string): Promise<string | null> {
+const codeHash = (email: string, code: string) => sha256(`${email}:${code}`)
+
+/** Creates a one-time link, and a 6-digit code for the same sign-in (typed into the window that asked —
+ *  an assistant's connection window, where a link would open somewhere else); null when this email/IP
+ *  asked too often (5 per hour). */
+export async function createLoginLink(email: string, next: string, ip: string): Promise<{ link: string; code: string } | null> {
   const recent = await pool.query<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM login_links
      WHERE (email = $1 OR ip = $2) AND created_at > now() - interval '1 hour'`, [email, ip])
   if (recent.rows[0].n >= 5) return null
   const token = newToken()
+  const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
   await pool.query(
-    `INSERT INTO login_links (token_hash, email, next_path, ip, expires_at)
-     VALUES ($1, $2, $3, $4, now() + ($5 || ' minutes')::interval)`,
-    [sha256(token), email, next, ip, String(LINK_MINUTES)])
-  return `${await siteOrigin()}/api/auth/verify?token=${token}`
+    `INSERT INTO login_links (token_hash, email, next_path, ip, expires_at, code_hash)
+     VALUES ($1, $2, $3, $4, now() + ($5 || ' minutes')::interval, $6)`,
+    [sha256(token), email, next, ip, String(LINK_MINUTES), codeHash(email, code)])
+  return { link: `${await siteOrigin()}/api/auth/verify?token=${token}`, code }
+}
+
+/** Spends the code of the newest unused link for this email; five wrong codes end that link. */
+export async function redeemLoginCode(email: string, code: string): Promise<{ user: User; next: string } | 'wrong' | 'expired'> {
+  const link = (await pool.query<{ token_hash: string; code_hash: string | null; next_path: string | null }>(
+    `SELECT token_hash, code_hash, next_path FROM login_links
+     WHERE email = $1 AND used_at IS NULL AND expires_at > now() AND code_tries < 5
+     ORDER BY created_at DESC LIMIT 1`, [email])).rows[0]
+  if (!link?.code_hash) return 'expired'
+  if (link.code_hash !== codeHash(email, code.replace(/[^0-9]/g, ''))) {
+    await pool.query(`UPDATE login_links SET code_tries = code_tries + 1 WHERE token_hash = $1`, [link.token_hash])
+    return 'wrong'
+  }
+  const r = await pool.query(`UPDATE login_links SET used_at = now() WHERE token_hash = $1 AND used_at IS NULL RETURNING 1`, [link.token_hash])
+  if (!r.rowCount) return 'expired'
+  const u = await pool.query<User>(
+    `INSERT INTO users (email, last_login_at) VALUES ($1, now())
+     ON CONFLICT (email) DO UPDATE SET last_login_at = now()
+     RETURNING id, email`, [email])
+  return { user: u.rows[0], next: safeNext(link.next_path) }
 }
 
 /** Spends a sign-in link: returns the user (created on first sign-in) and where to go next. */
@@ -66,23 +91,26 @@ export async function redeemLoginLink(token: string): Promise<{ user: User; next
 
 /** Sends the link with Resend (RESEND_API_KEY, EMAIL_FROM). Without a key: logged in development,
  *  an error in production. */
-export async function sendLoginEmail(email: string, link: string): Promise<'sent' | 'logged' | 'unconfigured' | 'failed'> {
+export async function sendLoginEmail(email: string, link: string, code: string): Promise<'sent' | 'logged' | 'unconfigured' | 'failed'> {
   const key = process.env.RESEND_API_KEY
   if (!key) {
-    if (process.env.NODE_ENV !== 'production') { console.log(`[login link for ${email}] ${link}`); return 'logged' }
+    if (process.env.NODE_ENV !== 'production') { console.log(`[login for ${email}] code ${code} · ${link}`); return 'logged' }
     return 'unconfigured'
   }
   const from = process.env.EMAIL_FROM || 'الجامع <login@hadith.dev>'
   const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;font-size:16px;line-height:1.8;color:#14151a">
     <p>السلام عليكم،</p>
-    <p>اضغط الزر التالي لتسجيل الدخول إلى «الجامع — موسوعة الحديث النبوي». الرابط صالحٌ ${LINK_MINUTES} دقيقة، ويُستعمل مرةً واحدة.</p>
+    <p>رمز الدخول إلى «الجامع — موسوعة الحديث النبوي»:</p>
+    <p style="font-size:32px;font-weight:bold;letter-spacing:8px;direction:ltr;text-align:center;background:#f4efe3;border-radius:12px;padding:12px 0;margin:8px 0">${code}</p>
+    <p>اكتبه في الصفحة التي طلبتَه منها — وهذا هو الأنسب إن كنتَ تربط الجامع بمساعدك الذكي (Claude أو ChatGPT). أو اضغط الزر:</p>
     <p><a href="${link}" style="display:inline-block;background:#0F3D2E;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none">تسجيل الدخول</a></p>
+    <p style="color:#6b7a70;font-size:13px">الرمز والرابط صالحان ${LINK_MINUTES} دقيقة، ويُستعملان مرةً واحدة.</p>
     <p style="color:#6b7a70;font-size:13px">إن لم تطلب هذا فتجاهل الرسالة.</p></div>`
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [email], subject: 'رابط تسجيل الدخول إلى الجامع', html,
-      text: `رابط تسجيل الدخول إلى الجامع (صالح ${LINK_MINUTES} دقيقة):\n${link}` }),
+    body: JSON.stringify({ from, to: [email], subject: `رمز الدخول إلى الجامع: ${code}`, html,
+      text: `رمز الدخول إلى الجامع: ${code}\n(اكتبه في الصفحة التي طلبتَه منها؛ صالح ${LINK_MINUTES} دقيقة)\n\nأو افتح الرابط:\n${link}` }),
   }).catch(() => null)
   if (!res?.ok) console.error('[login email] failed', res?.status, await res?.text().catch(() => ''))
   return res?.ok ? 'sent' : 'failed'

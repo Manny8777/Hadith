@@ -4,6 +4,7 @@ import { LIBRARY_TOOLS } from '@/lib/mcp/libraryTools'
 
 const TOOLS = [...SITE_TOOLS, ...LIBRARY_TOOLS]
 import { pageMeta } from '@/lib/siteMeta'
+import McpSetup from './McpSetup'
 
 export const metadata = pageMeta({
   title: 'للمطورين — الجامع',
@@ -54,40 +55,7 @@ export default function DevelopersPage() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3 text-sm">
-          <div className="rounded-xl border border-border p-3">
-            <p className="font-semibold text-gray-800 mb-1">دون حساب</p>
-            <code dir="ltr" className="text-xs bg-paper px-1.5 py-0.5 rounded">https://hadith.dev/mcp</code>
-            <p className="text-xs text-gray-500 mt-1.5">{MCP_LIMITS.anon} طلبًا في اليوم</p>
-          </div>
-          <div className="rounded-xl border border-green-300 bg-green-50/40 p-3">
-            <p className="font-semibold text-gray-800 mb-1">بحسابٍ مجاني</p>
-            <code dir="ltr" className="text-xs bg-paper px-1.5 py-0.5 rounded">https://hadith.dev/mcp/account</code>
-            <p className="text-xs text-gray-500 mt-1.5">{MCP_LIMITS.user.toLocaleString('ar-EG')} طلب في اليوم — <a href="/login?next=/account" className="text-green-700 hover:underline">أنشئ حسابًا</a></p>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-bold text-gray-800">Claude (الموقع أو التطبيق)</h3>
-          <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-            الإعدادات ← الموصِّلات (Connectors) ← إضافة موصِّل مخصص، والصق أحد الرابطين أعلاه. برابط الحساب يفتح Claude صفحة الدخول ثم يطلب إذنك.
-          </p>
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-gray-800">Claude Code</h3>
-          <Code>claude mcp add --transport http hadith https://hadith.dev/mcp</Code>
-          <p className="text-xs text-gray-500 mt-1.5">وللحد الأعلى: أنشئ رمزًا شخصيًا من <a href="/account" className="text-green-700 hover:underline">حسابي</a> وأضِفه:</p>
-          <Code>{'claude mcp add --transport http hadith https://hadith.dev/mcp --header "Authorization: Bearer hd_…"'}</Code>
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-gray-800">ChatGPT وCursor وVS Code وغيرها</h3>
-          <p className="text-sm text-gray-600 mt-1">أضف خادم MCP بعيدًا (Streamable HTTP) بأحد الرابطين؛ ورابط الحساب يدعم تسجيل الدخول (OAuth).</p>
-          <Code>{`{
-  "mcpServers": {
-    "hadith": { "url": "https://hadith.dev/mcp" }
-  }
-}`}</Code>
-        </div>
+        <McpSetup />
 
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">الأدوات</h3>
