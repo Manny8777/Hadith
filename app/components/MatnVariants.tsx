@@ -592,7 +592,7 @@ function VersionList({ source, others, chainOnly }: {
   others: TextEntry[]
   chainOnly: SourceRef[]
 }) {
-  const [openAll, setOpenAll] = useState(true)
+  const [openAll, setOpenAll] = useState(false)
   const diffs = useMemo(() => {
     const srcWords = tokenize(source.matn)
     const srcNorm = srcWords.map(normWord)
@@ -601,16 +601,18 @@ function VersionList({ source, others, chainOnly }: {
   if (diffs.length === 0 && chainOnly.length === 0) return null
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
-        <h3 className="text-sm font-bold text-gray-700">
+    <details className="version-texts rounded-xl border border-border p-4">
+      <summary className="flex items-center justify-between cursor-pointer gap-2 text-sm font-bold text-gray-700">
+        <span>
           نصوص الروايات كاملة
           <span className="text-xs font-normal text-gray-400 mr-2">({diffs.length} رواية)</span>
-        </h3>
-        <button type="button" onClick={() => setOpenAll(o => !o)} className="text-xs text-green-700 hover:underline">
-          {openAll ? 'طيّ الكل' : 'فتح الكل'}
-        </button>
-      </div>
+        </span>
+        <span aria-hidden="true">⌄</span>
+      </summary>
+      <div className="mt-3">
+      <button type="button" onClick={() => setOpenAll(o => !o)} className="text-xs text-green-700 hover:underline mb-3">
+        {openAll ? 'طيّ الكل' : 'فتح الكل'}
+      </button>
       <p className="text-xs text-gray-400 mb-2">
         متن هذا الحديث أولًا، ثم متن كل روايةٍ كاملًا مقابَلًا به كلمةً كلمة — مرتّبةً من الأقرب إلى الأبعد
       </p>
@@ -661,7 +663,8 @@ function VersionList({ source, others, chainOnly }: {
           ))}
         </p>
       )}
-    </div>
+      </div>
+    </details>
   )
 }
 
