@@ -1,3 +1,4 @@
+import { findDisplayedPivot } from '@/lib/isnadPivot'
 export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import pool from '@/lib/db'
@@ -337,17 +338,10 @@ export default async function HadithPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  // Common narrators across all chains
-  let commonNarrators: NarratorInChain[] = []
-  if (chains.length > 1) {
-    const idSets = chains.map(c => new Set(c.narrators.map(n => n.id)))
-    const sharedIds = Array.from(idSets[0]).filter(id => idSets.every(s => s.has(id)))
-    if (sharedIds.length > 0) {
-      const narMap: Record<number, NarratorInChain> = {}
-      chains[0].narrators.forEach(n => { narMap[n.id] = n })
-      commonNarrators = sharedIds.map(id => narMap[id]).filter(Boolean)
-    }
-  }
+  const displayedPivot = findDisplayedPivot(chains.map(chain => chain.narrators.map(n => n.id)))
+  const commonNarrators = displayedPivot
+    ? chains[0].narrators.filter(n => n.id === displayedPivot.narratorId)
+    : []
 
   const takhrijBooks = (takhrijBooksRes as { rows: Array<{ title: string }> }).rows.map(r => r.title)
   const takhrijSummary = takhrijSummaryRes as { mutabaatCount: number; shawahidCount: number }

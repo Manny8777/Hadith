@@ -188,11 +188,12 @@ export default function HadithSidebarLayout({
   const SECTIONS = [
     { id: 'matn', label: 'المتن' },
     { id: 'isnad',   label: 'الأسانيد والرواة' },
-    ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
     { id: 'takhrij', label: 'التخريج' },
     { id: 'variants', label: 'الروايات الموازية' },
     { id: 'matn-similarity', label: 'مطابقة المتون' },
-    ...serviceSections.map(s => ({ id: s.id, label: s.label })),
+    ...serviceSections.filter(s => s.kind === 'witnesses').map(s => ({ id: s.id, label: s.label })),
+    ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
+    ...serviceSections.filter(s => s.kind !== 'witnesses').map(s => ({ id: s.id, label: s.label })),
     { id: 'adawat',  label: 'أدوات البحث' },
   ]
 
@@ -521,7 +522,10 @@ export default function HadithSidebarLayout({
         </div>
 
         {/* ── الأسانيد والرواة ── */}
-        <CollapsibleSection id="isnad" label="الأسانيد والرواة" badges={chains.length > 0 ? (() => {
+        <section className="research-group research-group-isnad" aria-labelledby="research-isnad-title">
+        <h2 id="research-isnad-title" className="research-group-title">السند والرواة</h2>
+        <p className="research-group-description">تتبّع سلسلة الرواية وتعرّف إلى رجال الإسناد</p>
+        <CollapsibleSection sub="سلاسل الإسناد وتراجم الرواة وأقوال النقاد" id="isnad" label="الأسانيد والرواة" badges={chains.length > 0 ? (() => {
             const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
             const lens = chains.map(c => c.narrators.length)
             const mn = Math.min(...lens), mx = Math.max(...lens)
@@ -553,7 +557,8 @@ export default function HadithSidebarLayout({
 
               {commonNarrators.length > 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-green-800 mb-2">النقطة المشتركة (مدار) جميع الأسانيد</p>
+                  <p className="text-xs font-semibold text-green-800 mb-2">مدار الأسانيد المعروضة — موضع تفرّع الطرق</p>
+                  <p className="text-xs text-gray-600 mb-2">آخر راوٍ في المسار المشترك قبل تفرّعه إلى تلميذين أو أكثر. النتيجة مقصورة على الأسانيد المعروضة، وليست حكماً بالتفرد المطلق أو بصحة الحديث.</p>
                   <div className="flex flex-wrap gap-2">
                     {commonNarrators.map(n => (
                       <Link key={n.id} href={`/narrator/${n.id}`}
@@ -568,6 +573,40 @@ export default function HadithSidebarLayout({
           )}
         </CollapsibleSection>
 
+        </section>
+        <section className="research-group research-group-comparison" aria-labelledby="research-comparison-title">
+        <h2 id="research-comparison-title" className="research-group-title">التخريج ومقارنة الروايات</h2>
+        <p className="research-group-description">حدّد المصادر وقارن الطرق والألفاظ بين الروايات</p>
+        {/* ── التخريج ── */}
+        <CollapsibleSection id="takhrij" label="التخريج" badges={sectionBadges.takhrij} sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
+          {takhrijSlot}
+        </CollapsibleSection>
+
+        {/* ── الروايات الموازية (takhrij groups) ── */}
+        <CollapsibleSection id="variants" label="الروايات الموازية" badges={sectionBadges.variants} sub="روايات موازية من كتب التخريج">
+          <MatnVariants
+            hadithId={hadithId}
+            currentTarf={h.tarf}
+            currentBookTitle={h.book_title}
+            currentDeath={h.takhrij_death}
+          />
+        </CollapsibleSection>
+
+        {/* ── مطابقة المتون (حساب مباشر) ── */}
+        <CollapsibleSection id="matn-similarity" label="مطابقة المتون" badges={sectionBadges['matn-similarity']} sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
+          <MatnSimilaritySection hadithId={hadithId} bare />
+        </CollapsibleSection>
+
+        {serviceSections.filter(cfg => cfg.kind === 'witnesses').map(cfg => (
+          <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label} badges={sectionBadges[cfg.id]} sub="الطرق الموازية والشواهد المرتبطة بالحديث">
+            <HadithServiceSection hadithId={hadithId} config={cfg} />
+          </CollapsibleSection>
+        ))}
+        {matngroupSlot}
+        </section>
+        {(judgmentGroups.length > 0 || serviceSections.some(cfg => cfg.kind !== 'witnesses') || relatedHadiths.length > 0) && <section className="research-group research-group-study" aria-labelledby="research-study-title">
+        <h2 id="research-study-title" className="research-group-title">الشروح والدراسة</h2>
+        <p className="research-group-description">راجع الشروح وأقوال العلماء والنصوص المرتبطة</p>
         {/* ── أقوال العلماء والدرجة ── */}
         {judgmentGroups.length > 0 && (
           <CollapsibleSection id="aqwal" label="أقوال العلماء" badges={<Chips chips={[{ text: `${judgments.length} قول` }, { text: `${judgmentGroups.length} عالم`, tone: 'info' }]} />}>
@@ -635,35 +674,11 @@ export default function HadithSidebarLayout({
           </CollapsibleSection>
         )}
 
-        {/* ── التخريج ── */}
-        <CollapsibleSection id="takhrij" label="التخريج" badges={sectionBadges.takhrij} sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
-          {takhrijSlot}
-        </CollapsibleSection>
-
-        {/* ── الروايات الموازية (takhrij groups) ── */}
-        <CollapsibleSection id="variants" label="الروايات الموازية" badges={sectionBadges.variants} sub="روايات موازية من كتب التخريج">
-          <MatnVariants
-            hadithId={hadithId}
-            currentTarf={h.tarf}
-            currentBookTitle={h.book_title}
-            currentDeath={h.takhrij_death}
-          />
-        </CollapsibleSection>
-
-        {/* ── مطابقة المتون (حساب مباشر) ── */}
-        <CollapsibleSection id="matn-similarity" label="مطابقة المتون" badges={sectionBadges['matn-similarity']} sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
-          <MatnSimilaritySection hadithId={hadithId} bare />
-        </CollapsibleSection>
-
-        {/* ── الخدمات العلمية (inline) ── */}
-        {serviceSections.map(cfg => (
+        {serviceSections.filter(cfg => cfg.kind !== 'witnesses').map(cfg => (
           <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label} badges={sectionBadges[cfg.id]}>
             <HadithServiceSection hadithId={hadithId} config={cfg} />
           </CollapsibleSection>
         ))}
-
-        {/* ── روايات بنفس المتن (group matn) — renders its own collapsed section, or nothing ── */}
-        {matngroupSlot}
 
         {relatedHadiths.length > 0 && (
           <CollapsibleSection id="related" label="أحاديث ذات صلة" badges={<Chips chips={[{ text: `${relatedHadiths.length} حديث` }]} />} sub="روايات مرتبطة بنفس الموضوع أو الغرض">
@@ -686,6 +701,9 @@ export default function HadithSidebarLayout({
           </CollapsibleSection>
         )}
 
+        </section>}
+        <div className="research-group research-group-tools">
+        <h2 className="research-group-title">أدوات الباحث</h2>
         {/* ── أدوات البحث ── */}
         <CollapsibleSection id="adawat" label="أدوات البحث">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -708,6 +726,7 @@ export default function HadithSidebarLayout({
             ))}
           </div>
         </CollapsibleSection>
+        </div>
 
         <PrevNextNav
           prevId={h.prev_paragraph_id || null}

@@ -1,3 +1,4 @@
+import { findDisplayedPivot } from '@/lib/isnadPivot'
 import pool from '@/lib/db'
 import Link from '@/app/components/Link'
 import { notFound } from 'next/navigation'
@@ -110,8 +111,12 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
 
   const allNarrators = allNarratorsRes.rows
 
-  // Full pivots: appear in ALL chains
-  const fullPivots = allNarrators.filter(n => n.chains_with_narrator === totalChains)
+  const paths = await pool.query<{ narrator_id_array: number[] }>(
+    `SELECT DISTINCT ic.narrator_id_array FROM isnad_hadiths ih
+     JOIN isnad_chains ic ON ic.id = ih.isnad_id WHERE ih.hadith_id = $1`, [hadithId]
+  )
+  const pivot = findDisplayedPivot(paths.rows.map(row => row.narrator_id_array))
+  const fullPivots = allNarrators.filter(n => n.nar_id === pivot?.narratorId)
   // Near-pivots: appear in 70%+ chains but not all
   const nearPivots = allNarrators.filter(n =>
     n.chains_with_narrator < totalChains &&
@@ -119,20 +124,10 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
   )
   // Others: show top 10 by coverage
   const otherNarrators = allNarrators.filter(n =>
-    n.chains_with_narrator < Math.ceil(totalChains * 0.7)
+    n.chains_with_narrator < Math.ceil(totalChains * 0.7) || (n.chains_with_narrator === totalChains && n.nar_id !== pivot?.narratorId)
   ).slice(0, 10)
 
-  // Pivot classification
-  let pivotLabel = ''
-  if (fullPivots.length === 1 && !fullPivots[0].is_companion) {
-    pivotLabel = 'مدار على راوٍ واحد'
-  } else if (fullPivots.length === 0 && totalChains > 1) {
-    pivotLabel = 'لا يوجد مدار مطلق — الأسانيد متعددة الطرق'
-  } else if (fullPivots.length === 1 && fullPivots[0].is_companion) {
-    pivotLabel = 'يجمع عند الصحابي'
-  } else if (fullPivots.length > 1) {
-    pivotLabel = `يجمع عند ${fullPivots.length} رواة في الإسناد`
-  }
+  const pivotLabel = pivot ? 'موضع تفرّع الطرق المعروضة' : 'لا تكفي الطرق المعروضة لتحديد مدار'
 
   return (
     <div dir="rtl">
@@ -155,7 +150,7 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
         </div>
         <div className={`${fullPivots.length === 1 && !fullPivots[0].is_companion ? 'bg-red-700' : 'bg-indigo-700'} text-white rounded-xl p-3 text-center`}>
           <div className="text-xl font-bold">{fullPivots.length}</div>
-          <div className="text-xs opacity-80">مدار مطلق</div>
+          <div className="text-xs opacity-80">مدار الطرق المعروضة</div>
         </div>
         <div className="bg-amber-600 text-white rounded-xl p-3 text-center">
           <div className="text-xl font-bold">{allNarrators.length}</div>
@@ -169,10 +164,8 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
 
       {/* Terminology box */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4 text-xs text-blue-800">
-        <span className="font-semibold">مفهوم المدار: </span>
-        الراوي الذي تجتمع عنده جميع طرق الحديث يُسمى "مدار الحديث" — إذا كان ضعيفاً فالحديث ضعيف مهما تعددت الطرق لأنها كلها ترجع إليه.
-        إذا تعددت الطرق بعد المدار (أي بعد الراوي المشترك) استُفيد من التعدد في تقوية الحديث.
-        <span className="font-semibold mr-2">الانفراد</span>: مدار على راوٍ غير صحابي يُضعِّف إمكانية التقوية بالشواهد.
+        <span className="font-semibold">نطاق التحليل: </span>
+        يُحدَّد آخر راوٍ في المسار المشترك قبل تفرّعه إلى تلميذين أو أكثر، بحسب ترتيب الأسانيد المسجلة لهذا الحديث فقط. لا تثبت هذه النتيجة التفرد المطلق، ولا تتضمن حكماً على صحة الحديث أو ضعفه.
       </div>
 
       {/* Full pivots */}
@@ -180,38 +173,19 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
         <section className="mb-5">
           <h2 className="text-sm font-bold text-red-700 mb-2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
-            المدار المطلق — يظهر في جميع الأسانيد ({totalChains})
+            مدار الأسانيد المعروضة — موضع تفرّع الطرق
           </h2>
           <div className="space-y-2">
             {fullPivots.map(n => (
               <NarratorRow key={n.nar_id} n={n} total={totalChains} isFullPivot />
             ))}
           </div>
-          {fullPivots.length === 1 && !fullPivots[0].is_companion && (
-            <div className={`mt-2 rounded-lg p-3 text-xs border ${
-              /ثقة|ثبت/.test(fullPivots[0].martaba_ibn_hajar || '')
-                ? 'bg-green-50 border-green-100 text-green-800'
-                : /ضعيف|منكر|مجهول/.test(fullPivots[0].martaba_ibn_hajar || '')
-                ? 'bg-red-50 border-red-100 text-red-800'
-                : 'bg-amber-50 border-amber-100 text-amber-800'
-            }`}>
-              <span className="font-semibold">تقييم الباحث: </span>
-              الحديث يدور على {fullPivots[0].abb_name || fullPivots[0].name} وحده
-              {fullPivots[0].martaba_ibn_hajar && ` — درجته: ${fullPivots[0].martaba_ibn_hajar}`}.
-              {/ثقة|ثبت/.test(fullPivots[0].martaba_ibn_hajar || '')
-                ? ' وهو ثقة، فتعدد الطرق بعده يُقوّي الحديث.'
-                : /ضعيف|منكر/.test(fullPivots[0].martaba_ibn_hajar || '')
-                ? ' وهو ضعيف، فلا تنفع كثرة الطرق إذا كانت كلها عنه.'
-                : ' ينبغي التحقق من حاله في مصادر الجرح والتعديل.'}
-            </div>
-          )}
         </section>
       )}
 
       {fullPivots.length === 0 && totalChains > 1 && (
         <div className="mb-4 bg-green-50 border border-green-100 rounded-xl p-3 text-xs text-green-800">
-          <span className="font-semibold">لا يوجد مدار مطلق: </span>
-          الأسانيد لهذا الحديث متعددة الطرق ولا تجتمع كلها عند راوٍ واحد بعد الصحابي — هذا يُعزز قوة الحديث.
+          لم تتضح نقطة تفرّع مشتركة في الأسانيد المتاحة. قد تكون الطرق غير كافية أو مختلفة المسارات؛ لا يُستنتج من ذلك حكم على قوة الحديث.
         </div>
       )}
 
@@ -220,7 +194,7 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
         <section className="mb-5">
           <h2 className="text-sm font-bold text-orange-700 mb-2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-            شبه المدار — يظهر في 70%+ من الأسانيد
+            رواة مشتركون في 70% أو أكثر من الأسانيد — ليست نسبة التغطية دليلاً على المدار
           </h2>
           <div className="space-y-2">
             {nearPivots.map(n => (
@@ -233,7 +207,7 @@ export default async function PivotPage({ params }: { params: Promise<{ id: stri
       {/* Other narrators coverage */}
       {otherNarrators.length > 0 && (
         <section className="mb-5">
-          <h2 className="text-sm font-bold text-gray-600 mb-2">رواة بتغطية أقل</h2>
+          <h2 className="text-sm font-bold text-gray-600 mb-2">رواة آخرون ونسبة ظهورهم في الأسانيد</h2>
           <div className="space-y-1.5">
             {otherNarrators.map(n => (
               <NarratorRow key={n.nar_id} n={n} total={totalChains} compact />

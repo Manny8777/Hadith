@@ -1114,3 +1114,24 @@ html.dark .theme-texture {
 /* The reader's own highlights on a hadith (HadithHighlights, CSS Custom Highlight API) */
 ::highlight(hd-user) { background-color: rgba(201, 169, 107, 0.45); }
 .dark ::highlight(hd-user) { background-color: rgba(201, 169, 107, 0.35); }
+
+/* Research accordions: purpose-based groups rather than identical action pills. */
+.research-group { --research-accent: var(--color-primary); margin-block: 1.75rem; }
+.research-group-comparison { --research-accent: #327675; }
+.research-group-study { --research-accent: #8a682d; }
+.dark .research-group-comparison { --research-accent: #7bbdb6; }
+.dark .research-group-study { --research-accent: #d1b477; }
+.research-group-title { font-size: 20px; font-weight: 700; color: var(--research-accent); margin-bottom: .25rem; }
+.research-group-description { font-size: 14px; color: var(--color-primary); margin-bottom: 1rem; opacity: .85; }
+.research-accordion { border-radius: 12px; border-inline-start: 3px solid var(--research-accent, var(--color-primary)); box-shadow: none; }
+.research-accordion-heading { align-items: flex-start; }
+.research-section-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--research-accent, var(--color-primary)); background: color-mix(in srgb, var(--research-accent, var(--color-primary)) 8%, var(--color-surface)); border-radius: 10px; }
+.research-section-counts > span { background: transparent; border-color: var(--color-border); color: var(--color-primary); font-weight: 400; }
+.research-section-toggle { color: var(--research-accent, var(--color-primary)); padding-top: .55rem; }
+.research-accordion:has(> button[aria-expanded="true"]) { border-color: var(--research-accent, var(--color-primary)); }
+.research-accordion-heading[aria-expanded="true"] { background: color-mix(in srgb, var(--research-accent, var(--color-primary)) 8%, var(--color-surface)); }
+@media (max-width: 639px) {
+  .research-group { margin-block: 1.4rem; }
+  .research-accordion-heading { gap: .65rem; padding: .9rem .75rem; }
+  .research-section-icon { width: 32px; height: 32px; }
+}
