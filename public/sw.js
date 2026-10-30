@@ -27,7 +27,8 @@ function refreshShell() {
 async function downloaded() {
   try {
     const fh = await (await navigator.storage.getDirectory()).getFileHandle('offline-state.json')
-    return !!JSON.parse(await (await fh.getFile()).text()).ready
+    const state = JSON.parse(await (await fh.getFile()).text())
+    return !!(state.ready && state.dataDir && state.manifest?.engine === 'pglite')
   } catch {
     return false
   }

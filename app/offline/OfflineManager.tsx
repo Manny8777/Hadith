@@ -48,7 +48,7 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
 
   const m = manifest ?? s.status?.manifest ?? null
   const ready = s.status?.ready
-  const update = ready && manifest && s.status?.version && manifest.version !== s.status.version
+  const update = ready && manifest && s.status?.manifest && (manifest.version !== s.status.version || manifest.sha256 !== s.status.manifest.sha256)
   const busy = s.phase === 'download' || s.phase === 'import'
   const remaining = s.phase === 'download' && s.speed > 0 ? (s.total - s.done) / s.speed : NaN
 
