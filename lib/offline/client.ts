@@ -69,6 +69,7 @@ function getWorker(): Worker {
       return
     }
     if (m.type === 'progress') {
+      lastProgress = Date.now()
       const now = Date.now()
       if (m.phase === 'download') {
         samples.push({ t: now, b: m.done })
@@ -133,8 +134,26 @@ export async function fetchOfflineManifest(): Promise<OfflineManifest | null> {
   }
 }
 
+// A worker the browser stopped mid-download (seen on Android) sends nothing more: after a quiet
+// minute, start a fresh one, which carries on from the last unpacked chunk
+let lastProgress = 0
+let watchdog: ReturnType<typeof setInterval> | null = null
+function watch() {
+  lastProgress = Date.now()
+  watchdog ??= setInterval(() => {
+    if (state.phase !== 'download' && state.phase !== 'import') { clearInterval(watchdog!); watchdog = null; return }
+    if (Date.now() - lastProgress < 60_000) return
+    lastProgress = Date.now()
+    worker?.terminate()
+    worker = null
+    pending.clear()
+    call('download', { base: OFFLINE_FILES }).catch(() => {})
+  }, 10_000)
+}
+
 export function startOfflineDownload() {
   if (state.phase === 'download' || state.phase === 'import') return
+  watch()
   samples.length = 0
   try { localStorage.setItem('offline-started', '1') } catch {}
   set({ phase: 'download', error: null })
