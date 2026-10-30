@@ -20,7 +20,7 @@ import sys
 import zlib
 
 # Never shipped even if a later dump includes them: accounts, sessions, analytics, personal libraries
-PRIVATE_TABLES = re.compile(r'^(users|login_links|login_codes|api_tokens|oauth_.*|page_views|mcp_events|library_.*|user_.*|admin_.*)$')
+PRIVATE_TABLES = re.compile(r'^(users|sessions|login_links|login_codes|api_tokens|oauth_.*|page_views|mcp_events|collections|highlights|library_.*|user_.*|admin_.*)$')
 PIECE_MAX = 48_000_000
 
 # --- pg_dump custom format ------------------------------------------------------------------
@@ -94,10 +94,9 @@ COPY_ESCAPES = {'t': '\t', 'n': '\n', 'r': '\r', '\\': '\\', 'b': '\b', 'f': '\f
 
 
 def private(e):
-    m = re.search(r'public\.(\w+)', e['defn'] or '')
-    if m and PRIVATE_TABLES.match(m.group(1)):
-        return True
-    return e['desc'] in ('TABLE', 'TABLE DATA', 'SEQUENCE') and bool(PRIVATE_TABLES.match(e['tag'] or ''))
+    """Anything of a private table: the table, its data, its sequences, constraints and indexes."""
+    names = re.findall(r'public\.(\w+)', e['defn'] or '') + [e['tag'] or '']
+    return any(PRIVATE_TABLES.match(re.sub(r'_id_seq$', '', n)) for n in names)
 
 
 def main():
