@@ -92,7 +92,8 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
         </>
       ) : busy ? (
         <>
-          <p className="font-bold text-green-900">
+          <Steps at={s.phase === 'download' ? 0 : 1} />
+          <p className="font-bold text-green-900 mt-3">
             {s.phase === 'download' ? 'جارٍ تحميل الجامع…' : 'جارٍ تجهيز البيانات على الجهاز…'}
           </p>
           <div className="mt-3 h-3 rounded-full bg-surface-sunken overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct(s.done, s.total)}>
@@ -103,9 +104,7 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
             {s.phase === 'download' && s.speed > 0 && <span>{formatBytes(s.speed)}/ث · {eta(remaining)}</span>}
             {s.phase === 'import' && <span>الخطوة الأخيرة، لا تُغلق التطبيق</span>}
           </div>
-          <p className="text-xs text-muted mt-3 leading-relaxed">
-            أبقِ التطبيق مفتوحًا حتى ينتهي. إن انقطع الاتصال أو أُغلق التطبيق فسيكمل من حيث توقّف.
-          </p>
+          <p className="text-xs text-muted mt-3">أبقِ الصفحة مفتوحة. إن انقطع الاتصال يكمل من حيث توقّف.</p>
           {s.phase === 'download' && (
             <button type="button" onClick={pauseOfflineDownload} className={btnOutline + ' mt-3'}>إيقاف مؤقت</button>
           )}
@@ -113,11 +112,12 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
       ) : (
         <>
           <p className="font-bold text-green-900">استخدم الجامع دون إنترنت</p>
-          <p className="text-sm text-muted mt-1 leading-relaxed">
-            حمّل الموسوعة كاملة على جهازك مرة واحدة، فيعمل الموقع كله دون اتصال: الكتب والشروح، والرواة وتراجمهم، وشجرة الإسناد، والبحث، والقرآن، وكل أدوات التحليل.
-            {m && <> حجم التحميل {formatBytes(m.downloadSize)}، وتشغل {formatBytes(m.dbSize)} على الجهاز.</>}
-            {' '}يُفضَّل التحميل عبر Wi-Fi.
-          </p>
+          <p className="text-sm text-muted mt-1">الموقع كله بكل صفحاته وأدواته على جهازك، يعمل بلا اتصال.</p>
+          <ol className="mt-3 space-y-1.5 text-sm">
+            <li><b>١.</b> اضغط «تحميل»{m && <> ({formatBytes(m.downloadSize)}، ويُفضَّل عبر Wi-Fi)</>}.</li>
+            <li><b>٢.</b> أبقِ الصفحة مفتوحة حتى يكتمل الشريط. إن انقطع الاتصال يكمل من حيث توقّف.</li>
+            <li><b>٣.</b> افتح الجامع متى شئت، ولو دون إنترنت.</li>
+          </ol>
           {s.phase === 'paused' && s.status && s.status.staged > 0 && (
             <p className="text-sm mt-2">تمّ تحميل {formatBytes(s.status.stagedBytes)} من قبل، ويكمل التحميل من حيث توقّف.</p>
           )}
@@ -144,6 +144,21 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
 
 const btn = 'inline-flex items-center gap-2 rounded-full bg-primary text-on-dark font-bold px-5 py-2.5 text-sm'
 const btnOutline = 'inline-flex items-center gap-2 rounded-full border border-primary text-primary font-bold px-4 py-2 text-sm'
+
+// Where the download is: تحميل → تجهيز → جاهز
+const Steps = ({ at }: { at: number }) => (
+  <ol className="flex items-center gap-2 text-xs font-bold" aria-label="مراحل التحميل">
+    {['تحميل', 'تجهيز', 'جاهز'].map((label, i) => (
+      <li key={label} className="flex items-center gap-2" aria-current={i === at ? 'step' : undefined}>
+        {i > 0 && <span className={'w-6 h-px ' + (i <= at ? 'bg-primary' : 'bg-border')} />}
+        <span className={'w-6 h-6 rounded-full flex items-center justify-center ' + (i < at ? 'bg-primary text-on-dark' : i === at ? 'border-2 border-primary text-primary' : 'border border-border text-muted')}>
+          {i < at ? '✓' : ar(i + 1)}
+        </span>
+        <span className={i === at ? 'text-green-900' : 'text-muted'}>{label}</span>
+      </li>
+    ))}
+  </ol>
+)
 
 const Card = ({ children }: { children: React.ReactNode }) => (
   <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 font-sans shadow-sm">{children}</div>

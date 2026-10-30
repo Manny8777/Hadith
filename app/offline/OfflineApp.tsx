@@ -72,7 +72,7 @@ function Site() {
       </Panel>
     )
   }
-  return <div ref={el}><Loading /></div>
+  return <div ref={el}><Loading label="جارٍ فتح الجامع من جهازك…" /></div>
 }
 
 function OfflineBar({ online }: { online: boolean }) {
@@ -85,9 +85,10 @@ function OfflineBar({ online }: { online: boolean }) {
 }
 
 const Panel = ({ children }: { children: React.ReactNode }) => <div className="rounded-2xl border border-border bg-surface p-4 font-sans">{children}</div>
-const Loading = () => (
-  <div className="flex justify-center py-16" aria-label="جارٍ التحميل">
+const Loading = ({ label }: { label?: string }) => (
+  <div className="flex flex-col items-center gap-3 py-16 font-sans" aria-label={label ?? 'جارٍ التحميل'}>
     <span className="w-8 h-8 rounded-full border-4 border-border border-t-primary animate-spin" />
+    {label && <span className="text-sm text-muted">{label}</span>}
   </div>
 )
 const NotDownloaded = () => (
