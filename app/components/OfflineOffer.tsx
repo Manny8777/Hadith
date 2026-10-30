@@ -6,6 +6,7 @@
 // reader, so the reader matches the site after each release.
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { canPrompt, installApp } from './InstallApp'
 import {
   fetchOfflineManifest, formatBytes, offlineSupported, refreshOfflineStatus, startOfflineDownload,
   useOfflineState, type OfflineManifest,
@@ -67,6 +68,7 @@ export default function OfflineOffer() {
   const start = () => {
     setOffer(false)
     try { localStorage.setItem('offline-started', '1') } catch {}
+    if (canPrompt()) installApp()
     startOfflineDownload()
   }
 
@@ -83,7 +85,7 @@ export default function OfflineOffer() {
       </p>
       <div className="flex items-center gap-2 mt-3">
         <button type="button" onClick={start} className="rounded-full bg-[#C9A96B] text-[#13261b] text-sm font-bold px-4 py-2">
-          {resuming ? 'متابعة التحميل' : 'تحميل الآن'}
+          {resuming ? 'متابعة التحميل' : 'تثبيت الجامع'}
         </button>
         <a href="/offline" className="text-sm underline underline-offset-2 opacity-90">التفاصيل</a>
         <button type="button" onClick={dismiss} className="mr-auto text-sm opacity-70 hover:opacity-100">ليس الآن</button>

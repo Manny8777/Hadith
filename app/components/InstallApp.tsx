@@ -57,12 +57,28 @@ async function install() {
 }
 const closeSheet = () => { iosSheet = false; emit() }
 
-/** «تثبيت التطبيق» — renders nothing where the site cannot be installed or already is */
-export function InstallButton({ className, label = 'تثبيت التطبيق' }: { className?: string; label?: string }) {
+/** Whether the browser can install the site right now (its prompt is kept) */
+export const canPrompt = () => !!deferred
+
+/**
+ * «ثبّت الجامع على جهازك»: one step for the reader. Installs the app where the browser offers a
+ * prompt, then opens the download screen, which starts the offline download. On iPhone the home
+ * screen app keeps its own storage, so there the steps sheet is shown and the download is offered
+ * when the app is first opened from the home screen.
+ */
+export async function installAndDownload() {
+  if (isIos() && !standalone()) { iosSheet = true; emit(); return }
+  if (deferred) await install()
+  if (location.pathname !== '/offline') location.assign('/offline?start=1')
+}
+export { install as installApp }
+
+/** «ثبّت الجامع» — renders nothing where the site cannot be installed or already is */
+export function InstallButton({ className, label = 'ثبّت الجامع' }: { className?: string; label?: string }) {
   const mode = useMode()
   if (mode === 'none') return null
   return (
-    <button type="button" onClick={install} className={className}>
+    <button type="button" onClick={installAndDownload} className={className}>
       <DownloadIcon /> {label}
     </button>
   )
@@ -109,9 +125,9 @@ export default function InstallApp() {
           <img src="/icons/icon-192.png" alt="" width={44} height={44} className="rounded-xl shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold leading-snug">ثبّت الجامع على هاتفك</p>
-            <p className="text-xs opacity-75 leading-snug">يفتح كتطبيق، من الشاشة الرئيسية</p>
+            <p className="text-xs opacity-75 leading-snug">تطبيق على الشاشة الرئيسية، يعمل ولو دون إنترنت</p>
           </div>
-          <button type="button" onClick={() => { setBar(false); install() }}
+          <button type="button" onClick={() => { setBar(false); installAndDownload() }}
             className="shrink-0 rounded-full bg-[#C9A96B] text-[#13261b] text-sm font-bold px-4 py-2">
             تثبيت
           </button>
@@ -143,6 +159,10 @@ export default function InstallApp() {
               <li className="flex items-center gap-3">
                 <Step n={3} />
                 <span>اضغط «إضافة» — يظهر الجامع بين تطبيقاتك</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Step n={4} />
+                <span>افتحه من الشاشة الرئيسية واضغط «تحميل» ليعمل دون إنترنت</span>
               </li>
             </ol>
             <button type="button" onClick={closeSheet}
