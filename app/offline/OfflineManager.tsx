@@ -97,7 +97,7 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
             {s.phase === 'download' ? 'جارٍ تحميل الجامع…' : 'جارٍ تجهيز البيانات على الجهاز…'}
           </p>
           <div className="mt-3 h-3 rounded-full bg-surface-sunken overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct(s.done, s.total)}>
-            <div className="h-full bg-primary transition-[width] duration-300" style={{ width: `${pct(s.done, s.total)}%` }} />
+            <div className="h-full ml-auto bg-primary transition-[width] duration-300" style={{ width: `${pct(s.done, s.total)}%` }} />
           </div>
           <div className="mt-2 flex flex-wrap justify-between gap-x-4 text-sm text-muted">
             <span>{ar(pct(s.done, s.total))}٪ — {formatBytes(s.done)} من {formatBytes(s.total)}</span>
