@@ -7,6 +7,7 @@ import SearchSubHeader, { SearchSubHeaderFallback } from './components/SearchSub
 import NumeralConverter from './components/NumeralConverter'
 import Analytics from './components/Analytics'
 import InstallApp, { InstallButton } from './components/InstallApp'
+import OfflineOffer from './components/OfflineOffer'
 import LibraryImport from './components/LibraryImport'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NumeralConverter />
             <Analytics />
             <InstallApp />
+            <OfflineOffer />
             <LibraryImport />
             {/* The slim bar, and under it the site-wide search box (useSearchParams, so in Suspense) */}
             <header className="sticky top-0 z-50 shadow-sm">
@@ -77,6 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </a>
               </p>
               <InstallButton label="ثبّت الجامع كتطبيق" className="font-sans text-xs mt-2 inline-flex items-center gap-1.5 underline underline-offset-2 hover:opacity-80" />
+              <a href="/offline" className="font-sans text-xs mt-2 mr-3 inline-flex items-center gap-1.5 underline underline-offset-2 hover:opacity-80">استخدم الجامع دون إنترنت</a>
             </div>
             <img src="/assets/theme-ornament.svg" alt="" width="240" height="24" className="site-footer-ornament" />
           </div>

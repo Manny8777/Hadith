@@ -6,7 +6,9 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "predev": "node scripts/offline/copy-sqlite-wasm.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/offline/copy-sqlite-wasm.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
@@ -24,6 +26,7 @@
     "verify:parity": "node db/verify_matn_comparison_hadith.js && node db/repair_service_types.js --check"
   },
   "dependencies": {
+    "@sqlite.org/sqlite-wasm": "3.53.4-build2",
     "@types/dagre": "^0.7.54",
     "@types/pg": "^8.20.0",
     "dagre": "^0.8.5",
