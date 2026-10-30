@@ -12,7 +12,7 @@ import { execFileSync } from 'node:child_process'
 import { readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, sep } from 'node:path'
 import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const [dir, thresholdArg] = process.argv.slice(2)
 if (!dir) { console.error('usage: build-query-cache.mjs <data dir> [threshold ms]'); process.exit(1) }
@@ -24,7 +24,7 @@ const VARIANTS = 12
 const bundle = join(ROOT, 'node_modules', '.cache', 'offline-node.mjs')
 execFileSync(process.execPath, [join(ROOT, 'scripts', 'offline', 'build-offline-app.mjs'), '--node', bundle], { stdio: 'inherit' })
 globalThis.React = createRequire(join(ROOT, 'package.json'))('react')
-const app = await import(bundle)
+const app = await import(pathToFileURL(bundle).href)
 
 const db = await PGlite.create({ dataDir: dir, extensions: { pg_trgm, unaccent }, parsers: { 20: v => v, 1700: v => v } })
 await db.exec(`CREATE TABLE IF NOT EXISTS offline_query_cache (key text PRIMARY KEY, sql text NOT NULL, params text NOT NULL, rows text NOT NULL, ms int NOT NULL)`)
