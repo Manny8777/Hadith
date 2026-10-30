@@ -127,16 +127,10 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return
 
   // While pages are opening from the device, the site's own calls to the server (the reader's
-  // account, page-view counting) are answered here at once: on a connection that hangs they would
-  // otherwise hold the browser's connections for many seconds before the offline app could start
+  // account, page-view counting) are answered here at once, without the network: on a connection
+  // that hangs, a request left open holds up everything the page asks of the browser after it
   if (fromDevice && (url.pathname === '/api/track' || url.pathname === '/api/auth/me')) {
-    event.respondWith((async () => {
-      const res = await Promise.race([fetch(req).catch(() => null), new Promise(r => setTimeout(() => r(null), 1500))])
-      if (res) { fromDevice = false; return res }
-      return url.pathname === '/api/track'
-        ? new Response(null, { status: 204 })
-        : Response.json({ user: null })
-    })())
+    event.respondWith(url.pathname === '/api/track' ? new Response(null, { status: 204 }) : Response.json({ user: null }))
     return
   }
   if (req.method !== 'GET') return
