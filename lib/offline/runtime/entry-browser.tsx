@@ -30,6 +30,10 @@ const netFetch = window.fetch.bind(window)
 window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = new URL(typeof input === 'string' || input instanceof URL ? input.toString() : input.url, location.href)
   if (url.origin === location.origin && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/offline/')) {
+    // The reader's account and page-view counting live on the server: answered at once, so a
+    // connection that hangs never holds up the page
+    if (url.pathname === '/api/auth/me') return Response.json({ user: null })
+    if (url.pathname === '/api/track') return new Response(null, { status: 204 })
     try {
       const res = await handleApi(url, init ?? (input instanceof Request ? { method: input.method, headers: input.headers } : undefined))
       if (res) return res

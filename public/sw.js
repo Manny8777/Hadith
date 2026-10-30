@@ -110,6 +110,9 @@ async function cacheShell() {
   }))
 }
 
+// Whether the last page opened from the device rather than the network
+let fromDevice = false
+
 const isStatic = url => /^\/(_next\/static|fonts|offline|assets|icons)\//.test(url.pathname)
 
 async function trim(cache) {
@@ -119,9 +122,29 @@ async function trim(cache) {
 
 self.addEventListener('fetch', event => {
   const req = event.request
-  if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
+
+  // While pages are opening from the device, the site's own calls to the server (the reader's
+  // account, page-view counting) are answered here at once: on a connection that hangs they would
+  // otherwise hold the browser's connections for many seconds before the offline app could start
+  if (fromDevice && (url.pathname === '/api/track' || url.pathname === '/api/auth/me')) {
+    event.respondWith((async () => {
+      const res = await Promise.race([fetch(req).catch(() => null), new Promise(r => setTimeout(() => r(null), 1500))])
+      if (res) { fromDevice = false; return res }
+      return url.pathname === '/api/track'
+        ? new Response(null, { status: 204 })
+        : Response.json({ user: null })
+    })())
+    return
+  }
+  if (req.method !== 'GET') return
+
+  // The app's manifest: from the cache when there, so it never waits on the network
+  if (url.pathname === '/manifest.webmanifest') {
+    event.respondWith(caches.match(req, { cacheName: SHELL_CACHE }).then(c => c || fetch(req)))
+    return
+  }
 
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
@@ -135,9 +158,10 @@ self.addEventListener('fetch', event => {
       if (await downloaded()) {
         const late = new Promise(r => setTimeout(() => r(null), NAV_TIMEOUT))
         const res = await Promise.race([net.catch(() => null), late])
+        fromDevice = !res
         return res || offline()
       }
-      return net.catch(offline)
+      return net.then(r => { fromDevice = false; return r }, () => { fromDevice = true; return offline() })
     })())
     return
   }
