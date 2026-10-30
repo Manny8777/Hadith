@@ -150,7 +150,8 @@ self.addEventListener('fetch', event => {
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       const offline = async () => (await caches.match(SHELL, { cacheName: SHELL_CACHE })) || caches.match(OFFLINE_NOTICE)
-      const net = fetch(req)
+      const ctl = new AbortController()
+      const net = fetch(req, { signal: ctl.signal })
       // A page that loads from the network means a working connection: a good moment to bring the
       // offline build up to date (at most hourly)
       event.waitUntil(net.then(r => { if (r.ok) return refreshShell() }).catch(() => {}))
@@ -160,6 +161,8 @@ self.addEventListener('fetch', event => {
         const late = new Promise(r => setTimeout(() => r(null), NAV_TIMEOUT))
         const res = await Promise.race([net.catch(() => null), late])
         fromDevice = !res
+        // A request left hanging holds up everything the page then asks of the browser
+        if (!res) ctl.abort()
         return res || offline()
       }
       return net.then(r => { fromDevice = false; return r }, () => { fromDevice = true; return offline() })
