@@ -153,10 +153,12 @@ self.addEventListener('fetch', event => {
       // page) does not keep the reader waiting: after a few seconds the page opens from the device
       if (await downloaded()) {
         const late = new Promise(r => setTimeout(() => r(null), NAV_TIMEOUT))
-        const res = await Promise.race([net.catch(() => null), late])
-        fromDevice = !res
+        let res = await Promise.race([net.catch(() => null), late])
         // A request left hanging holds up everything the page then asks of the browser
         if (!res) ctl.abort()
+        // A server error page is no use when the device has the whole encyclopedia
+        if (res && res.status >= 500) res = null
+        fromDevice = !res
         return res || offline()
       }
       return net.then(r => { fromDevice = false; return r }, () => { fromDevice = true; return offline() })
