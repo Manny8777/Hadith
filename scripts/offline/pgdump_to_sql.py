@@ -116,9 +116,9 @@ def main():
             pre.append(e['defn'])
         elif d in ('CONSTRAINT', 'INDEX', 'FK CONSTRAINT'):
             post.append(e['defn'])
-    with open(os.path.join(out, 'pre.sql'), 'w') as f:
+    with open(os.path.join(out, 'pre.sql'), 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(pre))
-    with open(os.path.join(out, 'post.sql'), 'w') as f:
+    with open(os.path.join(out, 'post.sql'), 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(post))
 
     files = []
@@ -131,7 +131,7 @@ def main():
             if not buf:
                 return
             name = f"{e['tag']}.{n:03d}.copy"
-            with open(os.path.join(out, 'data', name), 'w') as f:
+            with open(os.path.join(out, 'data', name), 'w', encoding='utf-8', newline='\n') as f:
                 f.write(''.join(buf))
             files.append({'table': e['tag'], 'copy': e['copy'].split(' FROM')[0], 'file': name})
             n, buf, size = n + 1, [], 0
@@ -141,7 +141,7 @@ def main():
             if size > PIECE_MAX:
                 flush()
         flush()
-    with open(os.path.join(out, 'files.json'), 'w') as f:
+    with open(os.path.join(out, 'files.json'), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(files, f)
     print(f'{len(pre)} schema entries, {len(post)} indexes and constraints, {len(files)} data pieces')
 
