@@ -21,7 +21,7 @@ export function withQueryCache(run: Runner): Runner {
   return async (text, params) => {
     const p = cacheParams(params)
     if ((await keys()).has(text + '\0' + p)) {
-      const r = await run('SELECT rows FROM offline_query_cache WHERE key = md5($1 || chr(0) || $2)', [text, p])
+      const r = await run('SELECT rows FROM offline_query_cache WHERE key = md5($2 || $1)', [text, p])
       if (r.rows[0]) { const rows = decodeRows(r.rows[0].rows); return { rows, rowCount: rows.length, fields: [] } }
     }
     return run(text, params)
