@@ -107,7 +107,7 @@ function chunkStart(manifest, files, i) {
 // The file tree PGlite's opfs-ahp file system keeps in state.txt
 function ahpState(entries) {
   const now = Date.now()
-  const root = { type: 'directory', lastModified: now, mode: 16384 | 0o700, children: {} }
+  const root = { type: 'directory', lastModified: now, mode: 0o40700, children: {} }
   let n = 0
   for (const e of entries) {
     const parts = e.path.split('/').filter(Boolean)
@@ -115,8 +115,9 @@ function ahpState(entries) {
     for (const p of parts.slice(0, -1)) dir = dir.children[p]
     const name = parts[parts.length - 1]
     dir.children[name] = e.dir
-      ? { type: 'directory', lastModified: now, mode: e.mode, children: {} }
-      : { type: 'file', lastModified: now, mode: e.mode, backingFilename: `f${(n++).toString(36)}` }
+      // Fixed modes: PostgreSQL needs to enter its folders and read its files, whatever the manifest says
+      ? { type: 'directory', lastModified: now, mode: 0o40700, children: {} }
+      : { type: 'file', lastModified: now, mode: 0o100600, backingFilename: `f${(n++).toString(36)}` }
   }
   return { root, pool: [] }
 }

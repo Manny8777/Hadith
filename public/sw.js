@@ -113,23 +113,26 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // Build files never change under one name: the network fills the cache, the cache answers offline
+  // Build files never change under one name: the network fills the cache, the cache answers offline.
+  // The offline build, PGlite, fonts and icons are answered from the cache first (and refreshed in
+  // the background), so on a connection that hangs rather than fails the offline app still opens
+  // at once.
   if (isStatic(url)) {
     event.respondWith((async () => {
       const cached = await caches.match(req)
-      if (cached && url.pathname.startsWith('/_next/static/')) return cached
-      try {
-        const res = await fetch(req)
+      const refresh = () => fetch(req).then(async res => {
         if (res.ok) {
           const c = await caches.open(url.pathname.startsWith('/offline/') ? SHELL_CACHE : STATIC_CACHE)
           await c.put(req, res.clone())
           if (url.pathname.startsWith('/_next/static/')) trim(c)
         }
         return res
-      } catch (e) {
-        if (cached) return cached
-        throw e
+      })
+      if (cached) {
+        if (!url.pathname.startsWith('/_next/static/')) event.waitUntil(refresh().catch(() => {}))
+        return cached
       }
+      return refresh()
     })())
   }
 })

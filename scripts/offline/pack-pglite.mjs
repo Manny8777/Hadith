@@ -33,8 +33,9 @@ const entries = []
     const p = join(dir, name)
     const st = statSync(p)
     const path = '/' + relative(src, p).split('\\').join('/')
-    if (st.isDirectory()) { entries.push({ path, dir: true, mode: st.mode }); walk(p) }
-    else entries.push({ path, size: st.size, mode: st.mode })
+    // Modes as PostgreSQL wants them, whatever the build machine had (Windows reports no execute bit)
+    if (st.isDirectory()) { entries.push({ path, dir: true, mode: 0o40700 }); walk(p) }
+    else entries.push({ path, size: st.size, mode: 0o100600 })
   }
 })(src)
 
