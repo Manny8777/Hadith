@@ -32,7 +32,8 @@ export default function OfflineOffer() {
     setEligible(true)
     refreshOfflineStatus().then(status => {
       if (status?.ready) {
-        navigator.serviceWorker?.ready.then(r => r.active?.postMessage({ type: 'cache-offline-shell' })).catch(() => {})
+        // Bring the offline build up to date, unless this page itself came from the device
+        if (pathname !== '/offline' && !('__OFFLINE_TARGET' in window)) navigator.serviceWorker?.ready.then(r => r.active?.postMessage({ type: 'cache-offline-shell' })).catch(() => {})
         return
       }
       let dismissed = 0
@@ -77,7 +78,7 @@ export default function OfflineOffer() {
       <p className="text-xs opacity-80 leading-relaxed mt-1">
         {resuming
           ? `تمّ تحميل ${formatBytes(s.status!.stagedBytes)}، ويكمل من حيث توقّف.`
-          : 'حمّل الموسوعة كاملة على جهازك مرة واحدة، فتعمل الكتب والرواة والبحث بلا اتصال.'}
+          : 'حمّل الموسوعة كاملة على جهازك مرة واحدة، فيعمل الموقع كله بلا اتصال.'}
         {manifest && <> حجم التحميل {formatBytes(manifest.downloadSize)} (يُفضَّل عبر Wi-Fi).</>}
       </p>
       <div className="flex items-center gap-2 mt-3">

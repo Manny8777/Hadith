@@ -29,12 +29,18 @@ export async function GET(
 
     // Books this narrator appears in
     const booksRes = await pool.query(
-      `SELECT b.id, b.title, COUNT(DISTINCT ht.main_id)::int AS hadith_count
+      // The narrator's hadiths are found once, then counted per book (joining the chains per book
+      // repeated the same chain scan for every book: seconds for a prolific narrator)
+      `SELECT b.id, b.title, COUNT(DISTINCT h.main_id)::int AS hadith_count
        FROM narrator_books nb
        JOIN books b ON b.id = nb.book_id
-       LEFT JOIN isnad_chains ic ON ic.narrator_id_array @> ARRAY[nb.narrator_id]
-       LEFT JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
-       LEFT JOIN hadith_toc ht ON ht.main_id = ih.hadith_id AND ht.book_id = b.id AND ht.is_leaf = true
+       LEFT JOIN (
+         SELECT DISTINCT ht.main_id, ht.book_id
+         FROM isnad_chains ic
+         JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+         JOIN hadith_toc ht ON ht.main_id = ih.hadith_id AND ht.is_leaf = true
+         WHERE ic.narrator_id_array @> ARRAY[$1::int]
+       ) h ON h.book_id = b.id
        WHERE nb.narrator_id = $1
        GROUP BY b.id, b.title
        ORDER BY b.title`,

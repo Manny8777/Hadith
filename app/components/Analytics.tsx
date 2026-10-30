@@ -8,7 +8,8 @@ import { usePathname } from 'next/navigation'
 export default function Analytics() {
   const pathname = usePathname()
   useEffect(() => {
-    if (!pathname || pathname.startsWith('/admin')) return
+    // Pages read from the device's copy (the offline app) have no server to count them
+    if (!pathname || pathname.startsWith('/admin') || pathname.startsWith('/offline') || '__OFFLINE_TARGET' in window) return
     const data = JSON.stringify({ p: pathname, r: document.referrer })
     try {
       if (!navigator.sendBeacon?.('/api/track', new Blob([data], { type: 'application/json' }))) {
