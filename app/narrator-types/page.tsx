@@ -16,7 +16,7 @@ interface NarratorRow {
   abb_name: string | null
   martaba_ibn_hajar: string | null
   hadiths_count: number | null
-  death_year_num: string | null
+  death_year_num: number | null
   tabaqa: string | null
   related_ids: number[] | null
   related_names: string[] | null
@@ -157,7 +157,7 @@ export default async function NarratorTypesPage({
                         {n.abb_name || n.name}
                       </Link>
                       <div className="text-xs text-gray-400 mt-0.5 flex gap-2 flex-wrap">
-                        {n.death_year_num?.trim() && <span>ت {n.death_year_num.trim()}</span>}
+                        {n.death_year_num != null && <span>ت {n.death_year_num}</span>}
                         {n.tabaqa?.trim() && (
                           <span className="truncate max-w-[8rem]">{n.tabaqa.trim()}</span>
                         )}
