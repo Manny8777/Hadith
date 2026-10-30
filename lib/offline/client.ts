@@ -152,10 +152,6 @@ export async function removeOfflineData() {
   notifyServiceWorker()
 }
 
-export function offlineQuery<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
-  return call<T[]>('query', { sql, params })
-}
-
 export function useOfflineState(): OfflineState {
   return useSyncExternalStore(
     l => { listeners.add(l); return () => { listeners.delete(l) } },

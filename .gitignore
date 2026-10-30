@@ -64,5 +64,5 @@ pgdata/
 # local audit of the legacy Windows app (not for the repo)
 /legacy-audit/
 
-# SQLite WebAssembly, copied from node_modules by scripts/offline/copy-sqlite-wasm.mjs
-/public/offline/sqlite/
+/public/offline/pglite/
+/public/offline/app/

@@ -61,7 +61,7 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
             <div className="flex-1 min-w-0">
               <p className="font-bold text-green-900">الجامع محفوظ على جهازك</p>
               <p className="text-sm text-muted">
-                يعمل دون إنترنت: الكتب والأحاديث والرواة والبحث والقرآن.
+                يعمل الموقع كله دون إنترنت بكل صفحاته وأدواته، عدا تسجيل الدخول والمكتبة الشخصية.
                 {s.status?.version && <> إصدار البيانات {s.status.version}.</>}
               </p>
             </div>
@@ -114,7 +114,7 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
         <>
           <p className="font-bold text-green-900">استخدم الجامع دون إنترنت</p>
           <p className="text-sm text-muted mt-1 leading-relaxed">
-            حمّل الموسوعة كاملة على جهازك مرة واحدة: كتب الحديث وشروحها، والرواة وتراجمهم، والأسانيد، والقرآن، مع البحث.
+            حمّل الموسوعة كاملة على جهازك مرة واحدة، فيعمل الموقع كله دون اتصال: الكتب والشروح، والرواة وتراجمهم، وشجرة الإسناد، والبحث، والقرآن، وكل أدوات التحليل.
             {m && <> حجم التحميل {formatBytes(m.downloadSize)}، وتشغل {formatBytes(m.dbSize)} على الجهاز.</>}
             {' '}يُفضَّل التحميل عبر Wi-Fi.
           </p>

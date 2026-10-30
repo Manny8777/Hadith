@@ -6,9 +6,9 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "predev": "node scripts/offline/copy-sqlite-wasm.mjs",
+    "predev": "node scripts/offline/copy-offline-assets.mjs && node scripts/offline/build-offline-app.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/offline/copy-sqlite-wasm.mjs",
+    "prebuild": "node scripts/offline/copy-offline-assets.mjs && node scripts/offline/build-offline-app.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
@@ -26,7 +26,7 @@
     "verify:parity": "node db/verify_matn_comparison_hadith.js && node db/repair_service_types.js --check"
   },
   "dependencies": {
-    "@sqlite.org/sqlite-wasm": "3.53.4-build2",
+    "@electric-sql/pglite": "0.5.13",
     "@types/dagre": "^0.7.54",
     "@types/pg": "^8.20.0",
     "dagre": "^0.8.5",
@@ -42,6 +42,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "0.25.12",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

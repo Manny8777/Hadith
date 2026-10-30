@@ -5,7 +5,7 @@
 
 export const dynamic = 'force-dynamic'
 
-const SOURCE = (process.env.OFFLINE_DATA_URL || 'https://github.com/Manny8777/Hadith/releases/download/offline-db').replace(/\/+$/, '')
+const SOURCE = (process.env.OFFLINE_DATA_URL || 'https://github.com/Manny8777/Hadith/releases/download/offline-pg').replace(/\/+$/, '')
 const NAME = /^(manifest\.json|aljami-[\w.-]+\.part\d{3}\.gz)$/
 
 export async function GET(_req: Request, { params }: { params: Promise<{ name: string }> }) {

@@ -77,7 +77,7 @@ export default function OfflineOffer() {
       <p className="text-xs opacity-80 leading-relaxed mt-1">
         {resuming
           ? `تمّ تحميل ${formatBytes(s.status!.stagedBytes)}، ويكمل من حيث توقّف.`
-          : 'حمّل الموسوعة كاملة على جهازك مرة واحدة، فتعمل الكتب والرواة والبحث بلا اتصال.'}
+          : 'حمّل الموسوعة كاملة على جهازك مرة واحدة، فيعمل الموقع كله بلا اتصال.'}
         {manifest && <> حجم التحميل {formatBytes(manifest.downloadSize)} (يُفضَّل عبر Wi-Fi).</>}
       </p>
       <div className="flex items-center gap-2 mt-3">
