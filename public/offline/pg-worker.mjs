@@ -13,10 +13,29 @@ async function dataDir() {
   return state.dataDir
 }
 
+// The page before this one may still hold the database's files for a moment while it closes
+// (only one open handle per file is allowed): wait until they are free
+async function whenFree(dir) {
+  const root = await navigator.storage.getDirectory()
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const fh = await (await root.getDirectoryHandle(dir)).getFileHandle('state.txt')
+      const h = await fh.createSyncAccessHandle()
+      h.close()
+      return
+    } catch (e) {
+      if (e?.name !== 'NoModificationAllowedError' || attempt >= 40) return
+      await new Promise(r => setTimeout(r, 250))
+    }
+  }
+}
+
 worker({
   async init() {
+    const dir = await dataDir()
+    await whenFree(dir)
     return PGlite.create({
-      dataDir: 'opfs-ahp://' + (await dataDir()),
+      dataDir: 'opfs-ahp://' + dir,
       extensions: { pg_trgm, unaccent },
       // As node-pg returns them on the server: bigint and numeric as strings
       parsers: { 20: v => v, 1700: v => v },

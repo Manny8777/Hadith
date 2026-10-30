@@ -12,6 +12,17 @@ const KEEP = [SHELL_CACHE, STATIC_CACHE]
 const OFFLINE_NOTICE = '/offline.html'
 const SHELL = '/offline'
 const STATIC_LIMIT = 400
+const NAV_TIMEOUT = 4000
+
+// Whether the encyclopedia is on the device (written by public/offline/worker.mjs)
+async function downloaded() {
+  try {
+    const fh = await (await navigator.storage.getDirectory()).getFileHandle('offline-state.json')
+    return !!JSON.parse(await (await fh.getFile()).text()).ready
+  } catch {
+    return false
+  }
+}
 
 // Fixed files the reader needs besides what its page links to
 const SHELL_FILES = [
@@ -106,10 +117,18 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return
 
   if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req).catch(async () =>
-        (await caches.match(SHELL, { cacheName: SHELL_CACHE })) || caches.match(OFFLINE_NOTICE)),
-    )
+    event.respondWith((async () => {
+      const offline = async () => (await caches.match(SHELL, { cacheName: SHELL_CACHE })) || caches.match(OFFLINE_NOTICE)
+      const net = fetch(req)
+      // With the encyclopedia on the device, a connection that hangs (weak signal, a Wi-Fi login
+      // page) does not keep the reader waiting: after a few seconds the page opens from the device
+      if (await downloaded()) {
+        const late = new Promise(r => setTimeout(() => r(null), NAV_TIMEOUT))
+        const res = await Promise.race([net.catch(() => null), late])
+        return res || offline()
+      }
+      return net.catch(offline)
+    })())
     return
   }
 

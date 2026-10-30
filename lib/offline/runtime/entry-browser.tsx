@@ -16,7 +16,10 @@ import { NumeralProvider } from '@/lib/numeralContext'
 
 declare global { interface Window { __OFFLINE_TARGET?: string } }
 
-const pg = new PGliteWorker(new Worker('/offline/pg-worker.mjs', { type: 'module' }))
+const pgWorker = new Worker('/offline/pg-worker.mjs', { type: 'module' })
+const pg = new PGliteWorker(pgWorker)
+// Let go of the database's files at once when leaving, so the next page can open them
+window.addEventListener('pagehide', e => { if (!e.persisted) pgWorker.terminate() })
 setOfflineRunner(withQueryCache(async (text, params) => {
   const r = await pg.query(text, params ?? [])
   return { rows: r.rows, rowCount: r.affectedRows ?? r.rows.length, fields: r.fields }
