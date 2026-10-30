@@ -8,6 +8,13 @@ import {
   fetchOfflineManifest, formatBytes, offlineSupported, pauseOfflineDownload, refreshOfflineStatus,
   removeOfflineData, startOfflineDownload, useOfflineState, type OfflineManifest,
 } from '@/lib/offline/client'
+import { canPrompt, installApp } from '@/app/components/InstallApp'
+
+// One step: install the app where the browser offers it, and start the download
+const installAndStart = () => {
+  if (canPrompt()) installApp()
+  startOfflineDownload()
+}
 
 const pct = (done: number, total: number) => (total > 0 ? Math.min(100, Math.floor((done / total) * 100)) : 0)
 const ar = (n: number) => n.toLocaleString('ar-EG')
@@ -34,6 +41,11 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
     window.addEventListener('online', on)
     window.addEventListener('offline', off)
     if (navigator.onLine) fetchOfflineManifest().then(setManifest)
+    // Arrived from «ثبّت الجامع» elsewhere on the site: the download starts by itself
+    if (new URLSearchParams(location.search).get('start') === '1') {
+      history.replaceState(null, '', '/offline')
+      refreshOfflineStatus().then(st => { if (!st?.ready && navigator.onLine) startOfflineDownload() })
+    }
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
 
@@ -111,12 +123,12 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
         </>
       ) : (
         <>
-          <p className="font-bold text-green-900">استخدم الجامع دون إنترنت</p>
+          <p className="font-bold text-green-900">ثبّت الجامع على جهازك</p>
           <p className="text-sm text-muted mt-1">الموقع كله بكل صفحاته وأدواته على جهازك، يعمل بلا اتصال.</p>
           <ol className="mt-3 space-y-1.5 text-sm">
-            <li><b>١.</b> اضغط «تحميل»{m && <> ({formatBytes(m.downloadSize)}، ويُفضَّل عبر Wi-Fi)</>}.</li>
+            <li><b>١.</b> اضغط «تثبيت الجامع» ووافق إن سألك المتصفح{m && <> ({formatBytes(m.downloadSize)}، ويُفضَّل عبر Wi-Fi)</>}.</li>
             <li><b>٢.</b> أبقِ الصفحة مفتوحة حتى يكتمل الشريط. إن انقطع الاتصال يكمل من حيث توقّف.</li>
-            <li><b>٣.</b> افتح الجامع متى شئت، ولو دون إنترنت.</li>
+            <li><b>٣.</b> افتح الجامع من أيقونته متى شئت، ولو دون إنترنت.</li>
           </ol>
           {s.phase === 'paused' && s.status && s.status.staged > 0 && (
             <p className="text-sm mt-2">تمّ تحميل {formatBytes(s.status.stagedBytes)} من قبل، ويكمل التحميل من حيث توقّف.</p>
@@ -130,9 +142,9 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
                   : `تعذّر التحميل${online ? '' : ' (لا يوجد اتصال)'}. أعد المحاولة، وسيكمل من حيث توقّف.`}
             </p>
           )}
-          <button type="button" onClick={startOfflineDownload} disabled={!online || (!m && !s.status?.manifest)}
+          <button type="button" onClick={installAndStart} disabled={!online || (!m && !s.status?.manifest)}
             className={btn + ' mt-3 disabled:opacity-50'}>
-            <DownloadIcon /> {s.phase === 'paused' || s.status?.staged ? 'متابعة التحميل' : 'تحميل للعمل دون إنترنت'}
+            <DownloadIcon /> {s.phase === 'paused' || s.status?.staged ? 'متابعة التحميل' : 'تثبيت الجامع'}
           </button>
           {!online && <p className="text-xs text-muted mt-2">يلزم اتصال بالإنترنت للتحميل.</p>}
           {online && !m && s.phase !== 'checking' && <p className="text-xs text-muted mt-2">بيانات التحميل غير متاحة الآن.</p>}
