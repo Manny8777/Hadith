@@ -34,6 +34,7 @@ export default function OfflineApp() {
       <div className="max-w-4xl mx-auto font-sans">
         <OfflineBar online={online} />
         <OfflineManager />
+        {online && <HowTo />}
       </div>
     )
   }
@@ -83,6 +84,20 @@ function OfflineBar({ online }: { online: boolean }) {
     </div>
   )
 }
+
+// The film «الجامع دون إنترنت» (motion-graphics/offline): the install button, the download, then
+// the site in airplane mode. Only shown online, since the video itself isn't kept on the device.
+const HowTo = () => (
+  <section className="mt-4 rounded-2xl border border-border bg-surface p-4 sm:p-5 font-sans">
+    <h2 className="font-bold text-green-900 mb-3">شاهد كيف يعمل</h2>
+    <video controls preload="metadata" playsInline poster="/media/offline-poster.jpg"
+      aria-label="الجامع دون إنترنت: التثبيت والتحميل والقراءة في وضع الطيران"
+      className="w-full max-w-md mx-auto aspect-square rounded-xl border border-[#D9C9A8] bg-[#0F3D2E]">
+      <source src="/media/offline.mp4" type="video/mp4" />
+      <track kind="captions" src="/media/offline.ar.vtt" srcLang="ar" label="العربية" />
+    </video>
+  </section>
+)
 
 const Panel = ({ children }: { children: React.ReactNode }) => <div className="rounded-2xl border border-border bg-surface p-4 font-sans">{children}</div>
 const Loading = ({ label }: { label?: string }) => (
