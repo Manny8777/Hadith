@@ -13,4 +13,5 @@
 !next-env.d.ts
 !tsconfig.json
 !postcss.config.mjs
+!scripts/offline/copy-sqlite-wasm.mjs
 !Dockerfile
