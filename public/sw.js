@@ -13,6 +13,8 @@ const OFFLINE_NOTICE = '/offline.html'
 const SHELL = '/offline'
 const STATIC_LIMIT = 400
 const NAV_TIMEOUT = 4000
+// Whether the last page opened from the device rather than the network
+let fromDevice = false
 
 let lastRefresh = 0
 function refreshShell() {
@@ -58,7 +60,9 @@ self.addEventListener('activate', event => {
 })
 
 self.addEventListener('message', event => {
-  if (event.data?.type === 'cache-offline-shell') event.waitUntil(cacheShell().catch(() => {}))
+  // Not while pages are opening from the device: on a connection that hangs, its requests would
+  // hold up the offline app
+  if (event.data?.type === 'cache-offline-shell' && !fromDevice) event.waitUntil(cacheShell().catch(() => {}))
 })
 
 // The offline app's page, everything it links to (/_next/static/…), the fonts its styles use, the
@@ -109,9 +113,6 @@ async function cacheShell() {
     await statics.put(u, r)
   }))
 }
-
-// Whether the last page opened from the device rather than the network
-let fromDevice = false
 
 const isStatic = url => /^\/(_next\/static|fonts|offline|assets|icons)\//.test(url.pathname)
 

@@ -32,7 +32,8 @@ export default function OfflineOffer() {
     setEligible(true)
     refreshOfflineStatus().then(status => {
       if (status?.ready) {
-        navigator.serviceWorker?.ready.then(r => r.active?.postMessage({ type: 'cache-offline-shell' })).catch(() => {})
+        // Bring the offline build up to date, unless this page itself came from the device
+        if (pathname !== '/offline' && !('__OFFLINE_TARGET' in window)) navigator.serviceWorker?.ready.then(r => r.active?.postMessage({ type: 'cache-offline-shell' })).catch(() => {})
         return
       }
       let dismissed = 0
