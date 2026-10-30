@@ -14,6 +14,13 @@ const SHELL = '/offline'
 const STATIC_LIMIT = 400
 const NAV_TIMEOUT = 4000
 
+let lastRefresh = 0
+function refreshShell() {
+  if (Date.now() - lastRefresh < 3600e3) return
+  lastRefresh = Date.now()
+  return cacheShell().catch(() => {})
+}
+
 // Whether the encyclopedia is on the device (written by public/offline/worker.mjs)
 async function downloaded() {
   try {
@@ -120,6 +127,9 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const offline = async () => (await caches.match(SHELL, { cacheName: SHELL_CACHE })) || caches.match(OFFLINE_NOTICE)
       const net = fetch(req)
+      // A page that loads from the network means a working connection: a good moment to bring the
+      // offline build up to date (at most hourly)
+      event.waitUntil(net.then(r => { if (r.ok) return refreshShell() }).catch(() => {}))
       // With the encyclopedia on the device, a connection that hangs (weak signal, a Wi-Fi login
       // page) does not keep the reader waiting: after a few seconds the page opens from the device
       if (await downloaded()) {
@@ -132,26 +142,20 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // Build files never change under one name: the network fills the cache, the cache answers offline.
-  // The offline build, PGlite, fonts and icons are answered from the cache first (and refreshed in
-  // the background), so on a connection that hangs rather than fails the offline app still opens
-  // at once.
+  // Build files never change under one name: the network fills the cache, the cache answers. The
+  // offline build and PGlite are kept current by cacheShell(), not here: a refresh per file would,
+  // on a connection that hangs, tie up every connection the browser has.
   if (isStatic(url)) {
     event.respondWith((async () => {
       const cached = await caches.match(req)
-      const refresh = () => fetch(req).then(async res => {
-        if (res.ok) {
-          const c = await caches.open(url.pathname.startsWith('/offline/') ? SHELL_CACHE : STATIC_CACHE)
-          await c.put(req, res.clone())
-          if (url.pathname.startsWith('/_next/static/')) trim(c)
-        }
-        return res
-      })
-      if (cached) {
-        if (!url.pathname.startsWith('/_next/static/')) event.waitUntil(refresh().catch(() => {}))
-        return cached
+      if (cached) return cached
+      const res = await fetch(req)
+      if (res.ok) {
+        const c = await caches.open(url.pathname.startsWith('/offline/') ? SHELL_CACHE : STATIC_CACHE)
+        await c.put(req, res.clone())
+        if (url.pathname.startsWith('/_next/static/')) trim(c)
       }
-      return refresh()
+      return res
     })())
   }
 })
