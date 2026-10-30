@@ -22,7 +22,10 @@ const dataDirName = (version) => `aljami-pg-${version}`
 async function readState() {
   try {
     const fh = await (await root()).getFileHandle(STATE_FILE)
-    return JSON.parse(await (await fh.getFile()).text())
+    const state = JSON.parse(await (await fh.getFile()).text())
+    // A copy from the earlier offline reader (SQLite, no data directory) counts as nothing: the
+    // download replaces it, removing its files
+    return state?.manifest?.engine === 'pglite' && state.dataDir ? state : null
   } catch {
     return null
   }

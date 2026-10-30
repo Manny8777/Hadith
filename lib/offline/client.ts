@@ -9,6 +9,7 @@ export const OFFLINE_FILES = '/api/offline/files/'
 export interface OfflineManifest {
   version: string
   dbSize: number
+  sha256?: string
   downloadSize: number
   chunks: { name: string; size: number; gzSize: number }[]
 }

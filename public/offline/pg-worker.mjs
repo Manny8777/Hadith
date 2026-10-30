@@ -9,7 +9,7 @@ import { unaccent } from '/offline/pglite/contrib/unaccent.js'
 async function dataDir() {
   const fh = await (await navigator.storage.getDirectory()).getFileHandle('offline-state.json')
   const state = JSON.parse(await (await fh.getFile()).text())
-  if (!state.ready) throw new Error('not-downloaded')
+  if (!state.ready || !state.dataDir || state.manifest?.engine !== 'pglite') throw new Error('not-downloaded')
   return state.dataDir
 }
 
