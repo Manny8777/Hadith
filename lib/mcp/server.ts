@@ -46,8 +46,9 @@ function origin(req: Request): string {
   return process.env.SITE_URL || `${proto}://${host}`
 }
 
-function unauthorized(req: Request, path: string, error?: string): Response {
-  const meta = `${origin(req)}/.well-known/oauth-protected-resource${path}`
+function unauthorized(req: Request, error?: string): Response {
+  // sign-in lives on /mcp/account only; the open /mcp has no protected-resource metadata of its own
+  const meta = `${origin(req)}/.well-known/oauth-protected-resource/mcp/account`
   return new Response(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: error ? 'Invalid or expired token' : 'Sign in to use this endpoint' }, id: null }), {
     status: 401,
     headers: { ...CORS, 'Content-Type': 'application/json',
@@ -130,8 +131,8 @@ export async function mcpPost(req: Request, { requireAuth, path }: { requireAuth
   const auth = req.headers.get('authorization') ?? ''
   const bearer = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : ''
   const user = bearer ? await userForBearer(bearer) : null
-  if (bearer && !user) return unauthorized(req, path, 'invalid_token')
-  if (requireAuth && !user) return unauthorized(req, path)
+  if (bearer && !user) return unauthorized(req, 'invalid_token')
+  if (requireAuth && !user) return unauthorized(req)
 
   let body: Rpc | Rpc[]
   try { body = await req.json() } catch {

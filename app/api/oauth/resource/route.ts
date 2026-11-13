@@ -2,7 +2,7 @@ import { originOf } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
 
-// Served at /.well-known/oauth-protected-resource[/mcp[/account]] (rewrites in next.config.ts):
+// Served at /.well-known/oauth-protected-resource/mcp/account (rewrite in next.config.ts):
 // tells MCP clients which authorization server signs them in for the MCP endpoint
 export function GET(req: Request) {
   const origin = originOf(req)

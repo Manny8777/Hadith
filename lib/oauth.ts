@@ -1,6 +1,7 @@
 // OAuth 2.1 for the MCP server (hadith.dev/mcp/account), the minimum the MCP authorization spec asks
 // for: protected-resource and authorization-server metadata, dynamic client registration, the
-// authorization-code grant with PKCE (S256), and refresh tokens. Public clients only (no secrets).
+// authorization-code grant with PKCE (S256), and refresh tokens. Public clients, and confidential ones
+// with a client secret (claude.ai registers that way; only the secret's hash is stored).
 // The sign-in itself is the site's email link; the consent page is app/oauth/authorize.
 import { createHash } from 'node:crypto'
 import pool from '@/lib/db'
@@ -24,7 +25,8 @@ export const authServerMetadata = (origin: string) => ({
   response_types_supported: ['code'],
   grant_types_supported: ['authorization_code', 'refresh_token'],
   code_challenge_methods_supported: ['S256'],
-  token_endpoint_auth_methods_supported: ['none'],
+  // public clients (none) and confidential ones such as claude.ai, which keep a secret on their servers
+  token_endpoint_auth_methods_supported: ['none', 'client_secret_post', 'client_secret_basic'],
   scopes_supported: ['mcp'],
   service_documentation: `${origin}/developers#mcp`,
 })
@@ -39,9 +41,28 @@ export function validRedirect(u: string): boolean {
 }
 
 export async function getClient(clientId: string) {
-  const r = await pool.query<{ client_id: string; client_name: string | null; redirect_uris: string[] }>(
-    `SELECT client_id, client_name, redirect_uris FROM oauth_clients WHERE client_id = $1`, [clientId])
+  const r = await pool.query<{ client_id: string; client_name: string | null; redirect_uris: string[]; client_secret_hash: string | null }>(
+    `SELECT client_id, client_name, redirect_uris, client_secret_hash FROM oauth_clients WHERE client_id = $1`, [clientId])
   return r.rows[0] ?? null
+}
+
+/** The client's id and secret from a token request: HTTP Basic (client_secret_basic) or the form
+ *  (client_secret_post). */
+export function clientCredentials(req: Request, form: URLSearchParams): { id: string; secret: string | null } {
+  const basic = req.headers.get('authorization')?.match(/^Basic\s+(.+)$/i)
+  if (basic) {
+    const raw = Buffer.from(basic[1], 'base64').toString('utf8')
+    const i = raw.indexOf(':')
+    if (i > 0) return { id: decodeURIComponent(raw.slice(0, i)), secret: decodeURIComponent(raw.slice(i + 1)) }
+  }
+  return { id: form.get('client_id') ?? '', secret: form.get('client_secret') }
+}
+
+/** A client registered with a secret must present it; a public client needs none. */
+export async function clientAuthenticated(clientId: string, secret: string | null): Promise<boolean> {
+  const c = await getClient(clientId)
+  if (!c) return false
+  return !c.client_secret_hash || (!!secret && sha256(secret) === c.client_secret_hash)
 }
 
 export async function issueCode(clientId: string, userId: number, redirectUri: string, challenge: string): Promise<string> {

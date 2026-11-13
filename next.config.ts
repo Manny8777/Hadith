@@ -18,8 +18,8 @@ const nextConfig: NextConfig = {
       { source: '/.well-known/oauth-authorization-server', destination: '/api/oauth/metadata' },
       { source: '/.well-known/oauth-authorization-server/:path*', destination: '/api/oauth/metadata' },
       { source: '/.well-known/openid-configuration', destination: '/api/oauth/metadata' },
-      { source: '/.well-known/oauth-protected-resource', destination: '/api/oauth/resource?path=/mcp/account' },
-      { source: '/.well-known/oauth-protected-resource/mcp', destination: '/api/oauth/resource?path=/mcp' },
+      // Only the account endpoint has protected-resource metadata. The open /mcp needs no sign-in, and
+      // metadata for it (or a site-wide one) made Claude offer a sign-in for the wrong resource.
       { source: '/.well-known/oauth-protected-resource/mcp/account', destination: '/api/oauth/resource?path=/mcp/account' },
     ];
   },
